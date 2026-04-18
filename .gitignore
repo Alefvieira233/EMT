@@ -82,3 +82,11 @@ Desktop.ini
 *.env.local
 secrets.json
 appsettings.Local.json
+.github-token
+
+# --- Pacotes de upload / backups locais ---
+up emt/
+up emt.zip
+FerramentaEMT_Completo.zip
+FerramentaEMT_Patch_DropIn.zip
+*.zip
