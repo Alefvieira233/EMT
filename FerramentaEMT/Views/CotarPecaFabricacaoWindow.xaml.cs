@@ -25,7 +25,7 @@ namespace FerramentaEMT.Views
         public CotarPecaFabricacaoConfig BuildConfig()
         {
             double offset = 250;
-            if (double.TryParse(txtOffset.Text, out double parsed) && parsed > 0)
+            if (NumberParsing.TryParseDouble(txtOffset.Text, out double parsed) && parsed > 0)
                 offset = parsed;
 
             return new CotarPecaFabricacaoConfig

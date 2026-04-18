@@ -207,13 +207,7 @@ namespace FerramentaEMT.Views
 
         private double ParseDouble(string texto, double padrao)
         {
-            if (double.TryParse(texto, NumberStyles.Float, CultureInfo.InvariantCulture, out double valor))
-                return valor;
-
-            if (double.TryParse(texto, NumberStyles.Float, new CultureInfo("pt-BR"), out valor))
-                return valor;
-
-            return padrao;
+            return NumberParsing.ParseDoubleOrDefault(texto, padrao);
         }
 
         private int ParseInt(string texto, int padrao)

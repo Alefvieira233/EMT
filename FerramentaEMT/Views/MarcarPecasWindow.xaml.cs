@@ -47,7 +47,7 @@ namespace FerramentaEMT.Views
             }
 
             double tolerancia = 1.0;
-            if (double.TryParse(txtTolerancia.Text, out double tolParsed) && tolParsed >= 0)
+            if (NumberParsing.TryParseDouble(txtTolerancia.Text, out double tolParsed) && tolParsed >= 0)
                 tolerancia = tolParsed;
 
             var destino = DestinoMarca.ParametroMark;

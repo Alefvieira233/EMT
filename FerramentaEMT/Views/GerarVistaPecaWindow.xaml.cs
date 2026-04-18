@@ -38,7 +38,7 @@ namespace FerramentaEMT.Views
             }
 
             double margem = 150;
-            if (double.TryParse(txtMargem.Text, out double margemParsed) && margemParsed > 0)
+            if (NumberParsing.TryParseDouble(txtMargem.Text, out double margemParsed) && margemParsed > 0)
                 margem = margemParsed;
 
             string titleBlockFamily = "";

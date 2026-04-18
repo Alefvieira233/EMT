@@ -38,7 +38,7 @@ namespace FerramentaEMT.Views
         public IdentificarPerfilConfig BuildConfig()
         {
             double offsetMm = 300.0;
-            if (double.TryParse(txtOffsetTagMm.Text, out double offsetParsed) && offsetParsed >= 0)
+            if (NumberParsing.TryParseDouble(txtOffsetTagMm.Text, out double offsetParsed) && offsetParsed >= 0)
                 offsetMm = offsetParsed;
 
             return new IdentificarPerfilConfig

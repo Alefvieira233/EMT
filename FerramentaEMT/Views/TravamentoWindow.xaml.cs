@@ -213,7 +213,7 @@ namespace FerramentaEMT.Views
                 int subd = 1;
                 double zOffset = 0.0;
                 int.TryParse(numSubd.Text, out subd);
-                double.TryParse(numZOffset.Text, out zOffset);
+                NumberParsing.TryParseDouble(numZOffset.Text, out zOffset);
                 if (subd <= 0) subd = 1;
                 return new TravamentoConfig
                 {

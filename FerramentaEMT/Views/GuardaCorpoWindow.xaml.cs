@@ -127,9 +127,9 @@ namespace FerramentaEMT.Views
             double espacamento = 150.0;
             int quantidadeTravessas = 6;
 
-            double.TryParse(numAltura.Text, out altura);
-            double.TryParse(numOffsetLateral.Text, out offsetLateral);
-            double.TryParse(numEspacamentoMaximo.Text, out espacamento);
+            NumberParsing.TryParseDouble(numAltura.Text, out altura);
+            NumberParsing.TryParseDouble(numOffsetLateral.Text, out offsetLateral);
+            NumberParsing.TryParseDouble(numEspacamentoMaximo.Text, out espacamento);
             int.TryParse(numQuantidadeTravessas.Text, out quantidadeTravessas);
 
             if (altura <= 0.0)

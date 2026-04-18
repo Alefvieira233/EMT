@@ -224,9 +224,9 @@ namespace FerramentaEMT.Views
             double espelho = 20.0;
             int quantidadeDegraus = 0;
 
-            double.TryParse(numLargura.Text, out largura);
-            double.TryParse(numEspelho.Text, out espelho);
-            double.TryParse(numPisada.Text, out pisada);
+            NumberParsing.TryParseDouble(numLargura.Text, out largura);
+            NumberParsing.TryParseDouble(numEspelho.Text, out espelho);
+            NumberParsing.TryParseDouble(numPisada.Text, out pisada);
             int.TryParse(numQuantidadeDegraus.Text, out quantidadeDegraus);
 
             if (largura <= 0.0) largura = 100.0;

@@ -114,10 +114,10 @@ namespace FerramentaEMT.Views
                 int qtde = 1;
                 double beiralIni = 0, beiralFim = 0, offset = 0, rot = 0;
                 int.TryParse(numQtde.Text, out qtde);
-                double.TryParse(numBeiralIni.Text, out beiralIni);
-                double.TryParse(numBeiralFim.Text, out beiralFim);
-                double.TryParse(numOffset.Text, out offset);
-                double.TryParse(numRotacao.Text, out rot);
+                NumberParsing.TryParseDouble(numBeiralIni.Text, out beiralIni);
+                NumberParsing.TryParseDouble(numBeiralFim.Text, out beiralFim);
+                NumberParsing.TryParseDouble(numOffset.Text, out offset);
+                NumberParsing.TryParseDouble(numRotacao.Text, out rot);
 
                 return new TercasConfig
                 {

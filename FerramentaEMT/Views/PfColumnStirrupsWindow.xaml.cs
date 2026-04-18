@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using Autodesk.Revit.DB;
 using FerramentaEMT.Models.PF;
@@ -67,9 +66,7 @@ namespace FerramentaEMT.Views
 
         private static double ParseDouble(string text, double fallback)
         {
-            return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
-                ? value
-                : fallback;
+            return NumberParsing.ParseDoubleOrDefault(text, fallback);
         }
     }
 }

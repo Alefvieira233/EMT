@@ -58,9 +58,9 @@ namespace FerramentaEMT.Views
                 };
 
                 // Chapa de Ponta
-                if (double.TryParse(txtCPEspessura.Text, out double espCP) &&
-                    double.TryParse(txtCPLargura.Text, out double largCP) &&
-                    double.TryParse(txtCPAltura.Text, out double altCP) &&
+                if (NumberParsing.TryParseDouble(txtCPEspessura.Text, out double espCP) &&
+                    NumberParsing.TryParseDouble(txtCPLargura.Text, out double largCP) &&
+                    NumberParsing.TryParseDouble(txtCPAltura.Text, out double altCP) &&
                     int.TryParse(txtCPNumParafusos.Text, out int numCP))
                 {
                     config.ChapaPonta = new ConfiguracaoChapaPonta
@@ -73,9 +73,9 @@ namespace FerramentaEMT.Views
                 }
 
                 // Dupla Cantoneira
-                if (double.TryParse(txtDCEspessura.Text, out double espDC) &&
-                    double.TryParse(txtDCLargura.Text, out double largDC) &&
-                    double.TryParse(txtDCAltura.Text, out double altDC) &&
+                if (NumberParsing.TryParseDouble(txtDCEspessura.Text, out double espDC) &&
+                    NumberParsing.TryParseDouble(txtDCLargura.Text, out double largDC) &&
+                    NumberParsing.TryParseDouble(txtDCAltura.Text, out double altDC) &&
                     int.TryParse(txtDCNumParafusos.Text, out int numDC))
                 {
                     config.Cantoneira = new ConfiguracaoCantoneira
@@ -88,10 +88,10 @@ namespace FerramentaEMT.Views
                 }
 
                 // Chapa Gusset
-                if (double.TryParse(txtGSEspessura.Text, out double espGS) &&
-                    double.TryParse(txtGSLargura.Text, out double largGS) &&
-                    double.TryParse(txtGSAltura.Text, out double altGS) &&
-                    double.TryParse(txtGSAngulo.Text, out double angGS))
+                if (NumberParsing.TryParseDouble(txtGSEspessura.Text, out double espGS) &&
+                    NumberParsing.TryParseDouble(txtGSLargura.Text, out double largGS) &&
+                    NumberParsing.TryParseDouble(txtGSAltura.Text, out double altGS) &&
+                    NumberParsing.TryParseDouble(txtGSAngulo.Text, out double angGS))
                 {
                     config.Gusset = new ConfiguracaoGusset
                     {
