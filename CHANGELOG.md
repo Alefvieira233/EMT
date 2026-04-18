@@ -9,8 +9,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
-Próximo alvo: wiring do botão Cancelar + progress bar nas janelas (consome
-`CancellationToken` e `IProgress` que já estão no pipeline).
+
+### Added — UX de cancelamento (ADR-004)
+- **`Views/ProgressWindow.xaml(.cs)`** — dialogo reutilizavel de progresso com barra, percentual, contador N/Total, mensagem detalhada e botao Cancelar. Tematico com `AppTheme.Base.xaml`. Fechar pelo X equivale a Cancelar.
+- **`Utils/RevitProgressHost`** — host estatico `Run<T>(title, headline, work)` que abre a janela, corre o servico no thread principal do Revit (requisito de API single-threaded) e bombeia o `Dispatcher` entre eventos de `IProgress` para a UI atualizar e o Cancelar chegar ao `CancellationTokenSource`. Exception `OperationCanceledException` propaga ate o comando, que retorna `Result.Cancelled`.
+- **`docs/ADR/004-threading-model-progress-cancel.md`** — documenta o modelo de threading, por que `Task.Run` e proibido com Revit API, quando usar o host e quando nao usar.
+- **`CmdVerificarModelo`** passa a usar `RevitProgressHost` — primeiro consumidor real. Usuario ve progresso por regra e pode cancelar sem esperar 30s de `DuplicateMarkRule` em modelos grandes.
 
 ### Changed — Segunda adoção do ADR-003
 - **`ModelCheckService.Executar`** agora retorna `Result<ModelCheckReport>` e aceita `IProgress<ProgressReport>` + `CancellationToken` opcionais. Falhas de domínio (`uidoc` nulo, config ausente, nenhuma regra habilitada) voltam como `Result.Fail` com mensagem amigável — o comando chamador apresenta o diálogo. Progresso é reportado por regra executada (`N/Total — nome da regra: X problema(s)`), throttle de 100 ms. `OperationCanceledException` propaga até o comando, que retorna `Result.Cancelled`. Segue-se o template do ADR-003 validado antes no `DstvExportService`.

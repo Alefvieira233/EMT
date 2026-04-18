@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -25,20 +24,21 @@ namespace FerramentaEMT.Commands
 
             ModelCheckConfig config = janela.BuildConfig();
 
-            // TODO(ADR-003): quando tivermos progress bar na UI de verificacao,
-            // passar IProgress<ProgressReport> aqui para feedback em tempo real.
-            // CancellationToken ligaria num botao Cancelar — infraestrutura pronta.
+            // ADR-004: RevitProgressHost abre a janela de progresso, corre o servico
+            // no mesmo thread (requisito Revit API) e bombeia o dispatcher entre
+            // eventos de IProgress para a UI atualizar e o botao Cancelar chegar ao CTS.
             ModelCheckService service = new ModelCheckService();
 
             FerramentaEMT.Core.Result<ModelCheckReport> outcome;
             try
             {
-                outcome = service.Executar(uidoc, config, progress: null, ct: CancellationToken.None);
+                outcome = RevitProgressHost.Run(
+                    title: CommandName,
+                    headline: "Verificando modelo...",
+                    work: (progress, ct) => service.Executar(uidoc, config, progress, ct));
             }
             catch (OperationCanceledException)
             {
-                // Futuro: quando CT estiver amarrado a um botao Cancelar,
-                // este bloco trata a interrupcao como cancelamento limpo.
                 return Result.Cancelled;
             }
 
