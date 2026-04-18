@@ -1,0 +1,158 @@
+From 3851706bf7995cb254d65d65a9885d313a56c36f Mon Sep 17 00:00:00 2001
+From: Alefvieira233 <alefchristiangomesvieira@gmail.com>
+Date: Sat, 18 Apr 2026 00:27:26 -0300
+Subject: [PATCH] ci: hardening do workflow de build & test
+
+- Cache de NuGet para reduzir tempo de restore
+- Concurrency group que cancela runs obsoletos no mesmo ref
+- Timeout explicito por job para evitar builds travados
+- Job dedicado para construir o EmtKeyGen (com upload do artefato)
+- dorny/test-reporter para publicar resultado xUnit como check
+- EMT_LICENSE_SECRET injetado via secrets (opcional, cai no fallback)
+- Comentario TODO deixando o hook para matrix multi-Revit da fase 1
+---
+ .github/workflows/build.yml | 92 +++++++++++++++++++++++++++++--------
+ 1 file changed, 74 insertions(+), 18 deletions(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 3b90f6a..a54bceb 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -7,10 +7,23 @@ on:
+     branches: [main, develop]
+   workflow_dispatch:
+ 
++# Cancela runs anteriores do mesmo ref para economizar minutos
++concurrency:
++  group: ${{ github.workflow }}-${{ github.ref }}
++  cancel-in-progress: true
++
++env:
++  DOTNET_NOLOGO: true
++  DOTNET_CLI_TELEMETRY_OPTOUT: true
++  # Injeta o segredo HMAC no build via secret do repositorio. Cai no
++  # fallback DEV_ONLY se nao estiver configurado (tudo bem para PR de fork).
++  EMT_LICENSE_SECRET: ${{ secrets.LICENSE_HMAC_SECRET }}
++
+ jobs:
+-  build:
+-    name: Build (Release) + Test
++  test:
++    name: Tests (Release)
+     runs-on: windows-latest
++    timeout-minutes: 15
+ 
+     steps:
+       - name: Checkout
+@@ -21,31 +34,32 @@ jobs:
+         with:
+           dotnet-version: '8.0.x'
+ 
++      - name: Cache NuGet packages
++        uses: actions/cache@v4
++        with:
++          path: ~/.nuget/packages
++          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
++          restore-keys: ${{ runner.os }}-nuget-
++
+       - name: Show .NET info
+         run: dotnet --info
+ 
+-      # Mock RevitAPI/RevitAPIUI - CI doesn't have Revit installed.
+-      # We compile against shim assemblies; tests do NOT depend on Revit.
+-      - name: Create RevitAPI shims (CI only)
+-        shell: pwsh
+-        run: |
+-          $shimDir = "$env:GITHUB_WORKSPACE\ci-shims"
+-          New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
+-          # We don't actually compile against shims - we just skip the main project on CI
+-          # and only build the test project, which should not depend on RevitAPI.
+-          Write-Host "CI shim directory: $shimDir"
+-
+-      - name: Restore dependencies (Tests project only)
++      - name: Restore
+         working-directory: FerramentaEMT.Tests
+         run: dotnet restore
+ 
+-      - name: Build Tests
++      - name: Build
+         working-directory: FerramentaEMT.Tests
+         run: dotnet build --configuration Release --no-restore
+ 
+       - name: Run Tests
+         working-directory: FerramentaEMT.Tests
+-        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
++        run: >
++          dotnet test --configuration Release --no-build
++          --logger "trx;LogFileName=test-results.trx"
++          --logger "console;verbosity=normal"
++          --collect:"XPlat Code Coverage"
++          --results-directory TestResults
+ 
+       - name: Upload test results
+         uses: actions/upload-artifact@v4
+@@ -53,17 +67,59 @@ jobs:
+         with:
+           name: test-results
+           path: FerramentaEMT.Tests/TestResults/
++          if-no-files-found: warn
++          retention-days: 14
++
++      - name: Test summary (report)
++        uses: dorny/test-reporter@v1
++        if: always()
++        continue-on-error: true
++        with:
++          name: xUnit Tests
++          path: FerramentaEMT.Tests/TestResults/*.trx
++          reporter: dotnet-trx
++
++  build-tool:
++    name: Build EmtKeyGen
++    runs-on: windows-latest
++    timeout-minutes: 10
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-dotnet@v4
++        with:
++          dotnet-version: '8.0.x'
++      - name: Cache NuGet packages
++        uses: actions/cache@v4
++        with:
++          path: ~/.nuget/packages
++          key: ${{ runner.os }}-nuget-keygen-${{ hashFiles('tools/EmtKeyGen/*.csproj') }}
++          restore-keys: ${{ runner.os }}-nuget-keygen-
++      - name: Restore
++        run: dotnet restore tools/EmtKeyGen/EmtKeyGen.csproj
++      - name: Build EmtKeyGen (Release)
++        run: dotnet build tools/EmtKeyGen/EmtKeyGen.csproj -c Release --no-restore
++      - name: Upload EmtKeyGen artifact
++        uses: actions/upload-artifact@v4
++        with:
++          name: EmtKeyGen-${{ github.sha }}
++          path: tools/EmtKeyGen/bin/Release/
++          retention-days: 7
+ 
+   lint:
+     name: Code Quality (dotnet format)
+     runs-on: windows-latest
++    timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@v4
+       - uses: actions/setup-dotnet@v4
+         with:
+           dotnet-version: '8.0.x'
+-
+       - name: Verify formatting (Tests project)
+         working-directory: FerramentaEMT.Tests
+         run: dotnet format --verify-no-changes --verbosity diagnostic
+-        continue-on-error: true   # WARNING ONLY for now; flip to fail later
++        continue-on-error: true   # WARNING ONLY por enquanto; flipar para fail depois
++
++  # TODO (multi-Revit, fase 1): job matrix building against
++  # Revit 2024 / 2025 / 2026 reference assemblies.
++  # Depende de converter FerramentaEMT.csproj para multi-target
++  # (net48;net8.0-windows) e publicar/shimar RevitAPI.dll por versao.
+-- 
+2.34.1
+
