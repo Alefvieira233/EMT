@@ -5,7 +5,7 @@
 Desenvolvido para acelerar o fluxo de modelagem, detalhamento e fabricação de estruturas em aço, do projeto ao chão de fábrica.
 
 [![Build Status](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
 [![Revit](https://img.shields.io/badge/Revit-2025-orange.svg)](https://www.autodesk.com/products/revit)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 

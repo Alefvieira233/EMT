@@ -9,6 +9,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
+Próximo alvo: migração do `ModelCheckService` para o pattern ADR-003 (Result + IProgress + CancellationToken).
+
+---
+
+## [1.3.0] — 2026-04-18 (Fundação arquitetural + Primeira adoção ADR-003)
+
+Primeira release focada em **qualidade interna**: fundação arquitetural (Result<T>, IRevitContext, ProgressReporter com CancellationToken), hardening a partir de auditoria independente, primeiro serviço (DSTV Export) migrado para o novo pattern como template, além de documentação operacional (RUNBOOK) e ADR-003 formalizando a política de adoção incremental.
 
 ### Security
 - **Segredo HMAC de licenciamento externalizado.** `LicenseSecretProvider` resolve em cascata: `EMT_LICENSE_SECRET` (env var) → `%LOCALAPPDATA%\FerramentaEMT\license.secret` → arquivo ao lado do assembly → fallback DEV_ONLY hardcoded. Fallback mantém compatibilidade 100% com licenças já emitidas. `App.OnStartup` logga a fonte resolvida e emite warning quando cai no DEV_ONLY. `EmtKeyGen` alerta em amarelo no console.
