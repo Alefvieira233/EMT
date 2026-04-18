@@ -6,10 +6,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using FerramentaEMT.Core;
 using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.CncExport;
 using FerramentaEMT.Utils;
@@ -38,22 +40,38 @@ namespace FerramentaEMT.Services.CncExport
             public int ArquivosComDimensaoZerada { get; set; }
         }
 
-        public ResultadoExport Executar(UIDocument uidoc, ExportarDstvConfig config)
+        /// <summary>
+        /// Executa a exportacao DSTV/NC1. Primeira adocao do padrao ADR-003:
+        /// retorna <see cref="Result{T}"/>, aceita <see cref="IProgress{T}"/> e
+        /// <see cref="CancellationToken"/> opcionais para progresso e cancelamento.
+        ///
+        /// <para>
+        /// <b>Contrato:</b> o servico ja logga e, em caso de sucesso, ainda chama
+        /// <see cref="ExibirResumo"/> com o summary dialog nativo (responsabilidade
+        /// do servico hoje; pode migrar para o comando no futuro). Os casos de
+        /// falha de dominio (pasta nao informada, selecao vazia, etc.) voltam como
+        /// <c>Result.Fail</c> com mensagem amigavel — o comando decide se exibe
+        /// dialog ou nao.
+        /// </para>
+        /// </summary>
+        public Result<ResultadoExport> Executar(
+            UIDocument uidoc,
+            ExportarDstvConfig config,
+            IProgress<ProgressReport>? progress = null,
+            CancellationToken ct = default)
         {
-            var sw = Stopwatch.StartNew();
-            var resultado = new ResultadoExport { PastaDestino = config?.PastaDestino ?? "" };
-
             if (config == null) throw new ArgumentNullException(nameof(config));
             if (uidoc == null) throw new ArgumentNullException(nameof(uidoc));
+
+            var sw = Stopwatch.StartNew();
+            var resultado = new ResultadoExport { PastaDestino = config.PastaDestino ?? "" };
+            var reporter = new ProgressReporter(progress, throttleMs: 100, ct);
 
             Document doc = uidoc.Document;
 
             // 1. Validar pasta destino
             if (string.IsNullOrWhiteSpace(config.PastaDestino))
-            {
-                AppDialogService.ShowError(Titulo, "Pasta de destino nao informada.", "Configuracao invalida");
-                return resultado;
-            }
+                return Result<ResultadoExport>.Fail("Pasta de destino nao informada.");
 
             try
             {
@@ -62,11 +80,11 @@ namespace FerramentaEMT.Services.CncExport
             catch (Exception ex)
             {
                 Logger.Error(ex, "DstvExportService: falha ao criar pasta {Path}", config.PastaDestino);
-                AppDialogService.ShowError(Titulo,
-                    $"Nao foi possivel criar a pasta de destino:\n{ex.Message}",
-                    "Falha de I/O");
-                return resultado;
+                return Result<ResultadoExport>.Fail(
+                    $"Nao foi possivel criar a pasta de destino:\n{ex.Message}");
             }
+
+            reporter.Report(0, 0, "Coletando elementos...");
 
             // 2. Coletar elementos
             bool cancelado = false;
@@ -75,33 +93,25 @@ namespace FerramentaEMT.Services.CncExport
             {
                 resultado.Cancelado = true;
                 Logger.Info("[DstvExport] Usuario cancelou a selecao");
-                return resultado; // nao exibe erro — cancelamento e fluxo legitimo
+                return Result<ResultadoExport>.Ok(resultado); // cancelamento explicito e fluxo legitimo
             }
             if (elementos.Count == 0)
-            {
-                AppDialogService.ShowWarning(Titulo,
-                    "Nenhuma peca estrutural encontrada para exportar.",
-                    "Selecao vazia");
-                return resultado;
-            }
+                return Result<ResultadoExport>.Fail("Nenhuma peca estrutural encontrada para exportar.");
 
             elementos = FiltrarPorCategoria(elementos, config);
             resultado.TotalElementos = elementos.Count;
 
             if (elementos.Count == 0)
-            {
-                AppDialogService.ShowWarning(Titulo,
-                    "Nenhum elemento corresponde as categorias selecionadas.",
-                    "Filtro vazio");
-                return resultado;
-            }
+                return Result<ResultadoExport>.Fail("Nenhum elemento corresponde as categorias selecionadas.");
 
             // 3. Agrupar por marca (se aplicavel)
             var arquivos = new Dictionary<string, DstvFile>(StringComparer.Ordinal);
             var contagemPorMarca = new Dictionary<string, int>(StringComparer.Ordinal);
 
+            int processados = 0;
             foreach (FamilyInstance elem in elementos)
             {
+                reporter.ThrowIfCancellationRequested();
                 try
                 {
                     var dstv = new DstvFile();
@@ -154,6 +164,10 @@ namespace FerramentaEMT.Services.CncExport
                     resultado.Warnings.Add($"Elemento {elem.Id?.Value}: {ex.Message}");
                     resultado.ElementosPulados++;
                 }
+
+                processados++;
+                reporter.Report(processados, elementos.Count,
+                    $"Processando peca {processados}/{elementos.Count}");
             }
 
             // Ajustar Quantity para UmPorMarca
@@ -167,8 +181,10 @@ namespace FerramentaEMT.Services.CncExport
             }
 
             // 4. Gravar arquivos
+            int gravados = 0;
             foreach (var kvp in arquivos)
             {
+                reporter.ThrowIfCancellationRequested();
                 try
                 {
                     string nomeArquivo = SanitizarNomeArquivo(kvp.Key) + ".nc1";
@@ -189,6 +205,9 @@ namespace FerramentaEMT.Services.CncExport
                     Logger.Error(ex, "DstvExportService: falha ao gravar {Nome}", kvp.Key);
                     resultado.Warnings.Add($"Falha ao gravar {kvp.Key}: {ex.Message}");
                 }
+                gravados++;
+                reporter.Report(gravados, arquivos.Count,
+                    $"Gravando {gravados}/{arquivos.Count} arquivos...");
             }
 
             // 5. Relatorio
@@ -197,6 +216,7 @@ namespace FerramentaEMT.Services.CncExport
 
             sw.Stop();
             resultado.Duracao = sw.Elapsed;
+            reporter.ReportFinal(resultado.ArquivosGerados, arquivos.Count, "Exportacao concluida");
 
             // 6. Resumo
             ExibirResumo(resultado);
@@ -205,7 +225,7 @@ namespace FerramentaEMT.Services.CncExport
             if (config.AbrirPastaAposExportar && resultado.ArquivosGerados > 0)
                 AbrirPastaNoExplorer(config.PastaDestino);
 
-            return resultado;
+            return Result<ResultadoExport>.Ok(resultado);
         }
 
         // ============================================================

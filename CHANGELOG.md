@@ -26,6 +26,9 @@ Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
 - **`.github/PULL_REQUEST_TEMPLATE.md`** e **issue templates** (bug, feature, docs) — polish de processo.
 - **`CONTRIBUTING.md`** — workflow de PR, convenção de commits, regras de commits e testes.
 
+### Changed — Primeira adocao do ADR-003
+- **`DstvExportService.Executar`** agora retorna `Result<ResultadoExport>` e aceita `IProgress<ProgressReport>` + `CancellationToken` opcionais. Falhas de dominio (pasta nao informada, selecao vazia, filtro vazio, pasta com erro de IO) voltam como `Result.Fail` com mensagem amigavel — o comando chamador decide se exibe dialog. Progresso e reportado por peca processada e por arquivo gravado, throttlado em 100 ms. Loops respeitam `ThrowIfCancellationRequested()`. Breaking change: callers do metodo publico (apenas `CmdExportarDstv` hoje) foram atualizados.
+
 ### Fixed (audit 2026-04)
 - **`Core/Result<T>` default-struct trap.** Antes, `default(Result<T>)` produzia `IsSuccess=false + Error=null`, causando NRE em qualquer `if (r.IsFailure) log(r.Error)`. Agora o flag interno é `_isFailure` (nasce `false`), então `default` é tratado como `Ok(default(T))`. Regressão coberta por teste.
 - **`Infrastructure/CrashReporter` dupla subscrição.** Se `Logger.Info` falhasse no primeiro `Initialize()`, `_initialized` continuava `false` e o próximo `Initialize()` registraria os handlers **de novo**, produzindo dois dumps por crash. Agora `_initialized=true` é definido **antes** da subscrição, e o logger final fica em try/catch isolado.
