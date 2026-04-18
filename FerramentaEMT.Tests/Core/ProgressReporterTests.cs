@@ -119,5 +119,54 @@ namespace FerramentaEMT.Tests.Core
 
             sink.Events.Should().HaveCount(2);
         }
+
+        [Fact]
+        public void ThrottleMs_zero_lets_every_event_through()
+        {
+            var sink = new CaptureProgress();
+            var r = new ProgressReporter(sink, throttleMs: 0);
+
+            r.Report(1, 10);
+            r.Report(2, 10);
+            r.Report(3, 10);
+
+            sink.Events.Should().HaveCount(3);
+        }
+
+        [Fact]
+        public void CancellationToken_defaults_to_None()
+        {
+            var r = new ProgressReporter(null, 0);
+            r.CancellationToken.Should().Be(CancellationToken.None);
+            r.IsCancellationRequested.Should().BeFalse();
+            Action noop = () => r.ThrowIfCancellationRequested();
+            noop.Should().NotThrow();
+        }
+
+        [Fact]
+        public void ThrowIfCancellationRequested_raises_when_token_cancelled()
+        {
+            using var cts = new CancellationTokenSource();
+            var r = new ProgressReporter(null, 0, cts.Token);
+
+            r.IsCancellationRequested.Should().BeFalse();
+            Action noop = () => r.ThrowIfCancellationRequested();
+            noop.Should().NotThrow();
+
+            cts.Cancel();
+
+            r.IsCancellationRequested.Should().BeTrue();
+            Action throws = () => r.ThrowIfCancellationRequested();
+            throws.Should().Throw<OperationCanceledException>();
+        }
+
+        [Fact]
+        public void CancellationToken_accessor_exposes_provided_token()
+        {
+            using var cts = new CancellationTokenSource();
+            var r = new ProgressReporter(null, 50, cts.Token);
+
+            r.CancellationToken.Should().Be(cts.Token);
+        }
     }
 }
