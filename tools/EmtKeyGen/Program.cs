@@ -26,6 +26,18 @@ namespace EmtKeyGen
             Console.WriteLine("======================================================");
             Console.WriteLine("  FerramentaEMT — Gerador de Chaves de Licenca");
             Console.WriteLine("======================================================");
+
+            LicenseSecretProvider.SecretSource secretSource = LicenseSecretProvider.GetResolvedSource();
+            Console.WriteLine($"  Fonte do segredo HMAC: {secretSource}");
+            if (secretSource == LicenseSecretProvider.SecretSource.DevOnlyFallback)
+            {
+                ConsoleColor prev = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("  [AVISO] Usando fallback DEV_ONLY. Para producao defina");
+                Console.WriteLine($"          a variavel de ambiente {LicenseSecretProvider.EnvVarName}");
+                Console.WriteLine($"          ou crie {LicenseSecretProvider.SecretFileName} em %LOCALAPPDATA%\\FerramentaEMT\\.");
+                Console.ForegroundColor = prev;
+            }
             Console.WriteLine();
 
             string email;

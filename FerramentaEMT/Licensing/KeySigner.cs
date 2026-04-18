@@ -26,14 +26,17 @@ namespace FerramentaEMT.Licensing
     public static class KeySigner
     {
         // ---------------------------------------------------------------------
-        // SECRET DE PRODUCAO — TROCAR ANTES DA PRIMEIRA VENDA, DEPOIS NUNCA MAIS.
+        // SEGREDO HMAC — resolvido dinamicamente pelo LicenseSecretProvider.
         // ---------------------------------------------------------------------
-        // Use uma string aleatoria de 32+ caracteres. Para gerar:
-        //   PowerShell:  [System.Convert]::ToBase64String((1..32 | %%{ Get-Random -Min 0 -Max 256 } | %%{ [byte]$_ }))
+        // O segredo e resolvido nesta ordem:
+        //   1. variavel de ambiente EMT_LICENSE_SECRET
+        //   2. %LOCALAPPDATA%\FerramentaEMT\license.secret
+        //   3. arquivo license.secret ao lado do assembly
+        //   4. fallback DEV_ONLY hardcoded (logga warning)
         //
-        // Trocar este valor invalida TODAS as licencas previamente emitidas.
+        // Consulte LicenseSecretProvider.cs para detalhes. Trocar o segredo
+        // invalida TODAS as licencas ja emitidas.
         // ---------------------------------------------------------------------
-        private const string Secret = "EMT-PROD-SECRET-CHANGE-BEFORE-FIRST-SALE-2026-ALEF";
 
         /// <summary>
         /// Gera o token assinado a partir de um payload.
@@ -97,7 +100,7 @@ namespace FerramentaEMT.Licensing
 
         private static byte[] ComputeHmac(byte[] payload)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(Secret);
+            byte[] keyBytes = Encoding.UTF8.GetBytes(LicenseSecretProvider.GetSecret());
             using HMACSHA256 hmac = new HMACSHA256(keyBytes);
             return hmac.ComputeHash(payload);
         }

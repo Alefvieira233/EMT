@@ -5,6 +5,7 @@ using Xunit;
 
 namespace FerramentaEMT.Tests.Licensing
 {
+    [Collection("LicensingSerial")]
     public class KeySignerTests
     {
         private static LicensePayload SamplePayload(string email = "alef@exemplo.com", int diasFuturo = 365)

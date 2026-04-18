@@ -28,6 +28,9 @@
     <Compile Include="..\..\FerramentaEMT\Licensing\KeySigner.cs">
       <Link>Linked\KeySigner.cs</Link>
     </Compile>
+    <Compile Include="..\..\FerramentaEMT\Licensing\LicenseSecretProvider.cs">
+      <Link>Linked\LicenseSecretProvider.cs</Link>
+    </Compile>
     <Compile Include="..\..\FerramentaEMT\Licensing\Base64Url.cs">
       <Link>Linked\Base64Url.cs</Link>
     </Compile>
