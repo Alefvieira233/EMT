@@ -108,6 +108,10 @@
     <Compile Include="..\FerramentaEMT\Utils\NumberParsing.cs"
              Link="LinkedSources\Utils\NumberParsing.cs" />
 
+    <!-- 1.4.0 — Onda 3 (PR-1 incorporacao Victor): resultado de corte automatico -->
+    <Compile Include="..\FerramentaEMT\Models\CortarElementosResultado.cs"
+             Link="LinkedSources\Models\CortarElementosResultado.cs" />
+
     <!-- Config DTOs puros (sem Revit) — adicionados pela auditoria AIOX -->
     <Compile Include="..\FerramentaEMT\Models\CotarTrelicaConfig.cs"
              Link="LinkedSources\Models\CotarTrelicaConfig.cs" />

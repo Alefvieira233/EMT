@@ -134,6 +134,17 @@ namespace FerramentaEMT
             );
 
             AddButton(
+                panelEstrutura,
+                "btnCortarElementos",
+                "Cortar\nElementos",
+                assemblyPath,
+                "FerramentaEMT.Commands.CmdCortarElementos",
+                "Seleciona pisos, quadros estruturais e colunas/pilares; localiza interferencias e aplica corte automatico (JoinGeometry ou SolidSolidCut).",
+                "viga_dividida_large.png",
+                "viga_dividida_small.png"
+            );
+
+            AddButton(
                 panelVigas,
                 "btnAjustarEncontroVigas",
                 "Encontro",
