@@ -12,15 +12,23 @@ Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
 
 ### Security
 - **Segredo HMAC de licenciamento externalizado.** `LicenseSecretProvider` resolve em cascata: `EMT_LICENSE_SECRET` (env var) → `%LOCALAPPDATA%\FerramentaEMT\license.secret` → arquivo ao lado do assembly → fallback DEV_ONLY hardcoded. Fallback mantém compatibilidade 100% com licenças já emitidas. `App.OnStartup` logga a fonte resolvida e emite warning quando cai no DEV_ONLY. `EmtKeyGen` alerta em amarelo no console.
+- **`LicenseSecretProvider` cache agora é atômico** via `Lazy<ResolvedSecret>` com `ExecutionAndPublication` — elimina janela em que leitor concorrente via `secret` resolvido mas `source` ainda `NotResolved`. Teste de concorrência com 128 threads valida a invariante.
+- **`LicenseSecretProvider.HasMalformedSecretFile`** detecta arquivo de segredo vazio/whitespace-only para distinguir "não configurado" de "mal configurado" em logs de startup.
 
 ### Added
-- **`FerramentaEMT/Core/Result<T>`** — struct imutável para fluxos previsíveis de domínio (input inválido, regra de negócio, seleção vazia), deixando exceções para bugs e falhas de infra. Cobertura: 9 testes. Documentado em `docs/ADR/001-result-pattern.md`.
+- **`FerramentaEMT/Core/Result<T>`** — struct imutável para fluxos previsíveis de domínio (input inválido, regra de negócio, seleção vazia), deixando exceções para bugs e falhas de infra. Cobertura: 11 testes (inclui regressão do `default` struct). Documentado em `docs/ADR/001-result-pattern.md`.
 - **`FerramentaEMT/Core/IRevitContext`** — wrapper skeleton v1 sobre `UIDocument`/`Document` para desacoplar serviços da construção de `ExternalCommandData`. Abre caminho para abstrações de nível mais alto (`IElementQuery`, `ITransactionScope`) conforme necessidade. Documentado em `docs/ADR/002-irevit-context.md`.
+- **`FerramentaEMT/Core/ProgressReporter`** agora aceita `CancellationToken` opcional, expõe `IsCancellationRequested` e `ThrowIfCancellationRequested()` para loops longos cancelarem graciosamente.
+- **`FerramentaEMT/Infrastructure/CrashReporter`** — captura `AppDomain.UnhandledException` e `TaskScheduler.UnobservedTaskException`, dump em `%LOCALAPPDATA%\FerramentaEMT\crashes\`.
 - **`docs/ADR/`** — diretório de Architecture Decision Records inaugurado com 2 ADRs.
 - **`docs/PLANO-100-100.md`** — roadmap em 7 fases para levar o plugin de 7/10 interno para 10/10 comercial (26 semanas, ~$485-1085/ano de custo externo).
 - **`.editorconfig`** — regras de formatação/estilo C# consumíveis por Visual Studio, Rider, VS Code e `dotnet format`.
 - **`.github/PULL_REQUEST_TEMPLATE.md`** e **issue templates** (bug, feature, docs) — polish de processo.
 - **`CONTRIBUTING.md`** — workflow de PR, convenção de commits, regras de commits e testes.
+
+### Fixed (audit 2026-04)
+- **`Core/Result<T>` default-struct trap.** Antes, `default(Result<T>)` produzia `IsSuccess=false + Error=null`, causando NRE em qualquer `if (r.IsFailure) log(r.Error)`. Agora o flag interno é `_isFailure` (nasce `false`), então `default` é tratado como `Ok(default(T))`. Regressão coberta por teste.
+- **`Infrastructure/CrashReporter` dupla subscrição.** Se `Logger.Info` falhasse no primeiro `Initialize()`, `_initialized` continuava `false` e o próximo `Initialize()` registraria os handlers **de novo**, produzindo dois dumps por crash. Agora `_initialized=true` é definido **antes** da subscrição, e o logger final fica em try/catch isolado.
 
 ### Changed
 - `.gitignore` adicionado para `license.secret`, `*.license.secret` e `sentry.dsn` — prevenir commit acidental.
