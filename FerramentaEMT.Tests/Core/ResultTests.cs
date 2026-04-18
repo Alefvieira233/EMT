@@ -74,6 +74,28 @@ namespace FerramentaEMT.Tests.Core
             Result<int>.Ok(7).ToString().Should().Be("Ok(7)");
             Result<int>.Fail("x").ToString().Should().Be("Fail(x)");
         }
+
+        [Fact]
+        public void Default_struct_is_treated_as_Ok_with_default_value()
+        {
+            // Regressao: antes, default(Result<T>) era IsSuccess=false + Error=null,
+            // o que causava NRE em qualquer "if (r.IsFailure) log(r.Error)".
+            // Agora o flag interno e _isFailure (default=false), entao default vira Ok.
+            Result<int> r = default;
+            r.IsSuccess.Should().BeTrue();
+            r.IsFailure.Should().BeFalse();
+            r.Value.Should().Be(0);
+            r.Error.Should().BeNull();
+        }
+
+        [Fact]
+        public void Default_struct_for_reference_type_is_Ok_null()
+        {
+            Result<string> r = default;
+            r.IsSuccess.Should().BeTrue();
+            r.Value.Should().BeNull();
+            r.Error.Should().BeNull();
+        }
     }
 
     public class ResultTests
@@ -91,6 +113,16 @@ namespace FerramentaEMT.Tests.Core
         {
             Action act = () => Result.Fail("");
             act.Should().Throw<ArgumentException>();
+        }
+
+        [Fact]
+        public void Default_struct_is_treated_as_Ok()
+        {
+            // Mesma regressao da variante generica: default(Result) nao deve ser "falha silenciosa".
+            Result r = default;
+            r.IsSuccess.Should().BeTrue();
+            r.IsFailure.Should().BeFalse();
+            r.Error.Should().BeNull();
         }
     }
 }

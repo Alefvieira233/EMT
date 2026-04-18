@@ -27,30 +27,45 @@ namespace FerramentaEMT.Core
     ///       return Autodesk.Revit.UI.Result.Cancelled;
     ///   }
     ///   int marca = r.Value;
+    ///
+    /// <para>
+    /// <b>Semantica do default:</b> <c>default(Result&lt;T&gt;)</c> e tratado como
+    /// <c>Ok(default(T))</c> — o flag interno e <c>_isFailure</c>, que nasce false.
+    /// Isso evita a armadilha classica de struct onde um campo nao inicializado
+    /// aparece como "falha sem mensagem" (surfaced como NRE ao logar Error).
+    /// Continue preferindo os factories <c>Ok</c>/<c>Fail</c> — o tratamento de
+    /// default existe so para defesa em profundidade.
+    /// </para>
     /// </summary>
     public readonly struct Result<T>
     {
-        public T Value { get; }
-        public string Error { get; }
-        public bool IsSuccess { get; }
-        public bool IsFailure => !IsSuccess;
+        // Invariante do default-safe: _isFailure nasce false -> IsSuccess nasce true.
+        // Se voce inverter isso, releia a rationale acima antes.
+        private readonly bool _isFailure;
+        private readonly T _value;
+        private readonly string _error;
 
-        private Result(T value, string error, bool isSuccess)
+        public T Value => _value;
+        public string Error => _error;
+        public bool IsSuccess => !_isFailure;
+        public bool IsFailure => _isFailure;
+
+        private Result(T value, string error, bool isFailure)
         {
-            Value = value;
-            Error = error;
-            IsSuccess = isSuccess;
+            _value = value;
+            _error = error;
+            _isFailure = isFailure;
         }
 
-        /// <summary>Resultado de sucesso com valor.</summary>
-        public static Result<T> Ok(T value) => new Result<T>(value, null, true);
+        /// <summary>Resultado de sucesso com valor. <c>value</c> pode ser null (permitido).</summary>
+        public static Result<T> Ok(T value) => new Result<T>(value, null, isFailure: false);
 
         /// <summary>Resultado de falha com mensagem amigavel ao usuario.</summary>
         public static Result<T> Fail(string error)
         {
             if (string.IsNullOrWhiteSpace(error))
                 throw new ArgumentException("Error deve ser uma mensagem nao vazia.", nameof(error));
-            return new Result<T>(default, error, false);
+            return new Result<T>(default, error, isFailure: true);
         }
 
         /// <summary>
@@ -79,26 +94,34 @@ namespace FerramentaEMT.Core
     /// <summary>
     /// Variante sem valor, util para operacoes que so importa sucesso/falha.
     /// Exemplo: aplicar uma edicao no modelo que nao retorna nada.
+    ///
+    /// <para>
+    /// <b>Semantica do default:</b> mesma de <see cref="Result{T}"/> — <c>default(Result)</c>
+    /// e tratado como <c>Ok()</c>.
+    /// </para>
     /// </summary>
     public readonly struct Result
     {
-        public string Error { get; }
-        public bool IsSuccess { get; }
-        public bool IsFailure => !IsSuccess;
+        private readonly bool _isFailure;
+        private readonly string _error;
 
-        private Result(string error, bool isSuccess)
+        public string Error => _error;
+        public bool IsSuccess => !_isFailure;
+        public bool IsFailure => _isFailure;
+
+        private Result(string error, bool isFailure)
         {
-            Error = error;
-            IsSuccess = isSuccess;
+            _error = error;
+            _isFailure = isFailure;
         }
 
-        public static Result Ok() => new Result(null, true);
+        public static Result Ok() => new Result(null, isFailure: false);
 
         public static Result Fail(string error)
         {
             if (string.IsNullOrWhiteSpace(error))
                 throw new ArgumentException("Error deve ser uma mensagem nao vazia.", nameof(error));
-            return new Result(error, false);
+            return new Result(error, isFailure: true);
         }
 
         public override string ToString() => IsSuccess ? "Ok" : $"Fail({Error})";

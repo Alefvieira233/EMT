@@ -18,16 +18,24 @@ namespace FerramentaEMT.Core
     /// </summary>
     public interface IRevitContext
     {
-        /// <summary>Documento Revit ativo.</summary>
+        /// <summary>
+        /// Documento Revit ativo. <b>Nota:</b> acesso "ao vivo" — se o usuario
+        /// trocar de documento entre chamadas dentro de um servico, esta property
+        /// refletira o novo. Se o servico precisar estabilidade dentro de uma
+        /// operacao, cache a referencia no inicio.
+        /// </summary>
         Document Document { get; }
 
-        /// <summary>UIDocument ativo.</summary>
+        /// <summary>UIDocument ativo. Mesma semantica de "ao vivo" do <see cref="Document"/>.</summary>
         UIDocument UIDocument { get; }
 
         /// <summary>Aplicacao Revit (para leitura de versao, locale, etc).</summary>
         Autodesk.Revit.ApplicationServices.Application Application { get; }
 
-        /// <summary>Versao do Revit como string (ex: "2025.0.0").</summary>
+        /// <summary>
+        /// Versao major do Revit como string (ex: "2025") — valor bruto de
+        /// <c>Application.VersionNumber</c>. Nao inclui build nem patch.
+        /// </summary>
         string RevitVersion { get; }
     }
 

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using FerramentaEMT.Licensing;
 using FluentAssertions;
 using Xunit;
@@ -118,6 +120,60 @@ namespace FerramentaEMT.Tests.Licensing
             {
                 Environment.SetEnvironmentVariable(LicenseSecretProvider.EnvVarName, original);
                 LicenseSecretProvider.ResetCacheForTests();
+            }
+        }
+
+        [Fact]
+        public void Secret_and_source_snapshot_is_atomic_under_contention()
+        {
+            // Regressao do audit 2026-04: antes, secret e source eram escritos em
+            // chamadas separadas (Volatile.Write + atribuicao). Um leitor concorrente
+            // podia ver secret resolvido mas source ainda NotResolved.
+            //
+            // Agora ambos vem do mesmo Lazy<ResolvedSecret>.Value, entao ou os dois
+            // aparecem juntos ou nenhum.
+            string original = Environment.GetEnvironmentVariable(LicenseSecretProvider.EnvVarName);
+            try
+            {
+                Environment.SetEnvironmentVariable(LicenseSecretProvider.EnvVarName, "race-check");
+                LicenseSecretProvider.ResetCacheForTests();
+
+                var inconsistencies = new ConcurrentBag<string>();
+                Parallel.For(0, 128, _ =>
+                {
+                    string secret = LicenseSecretProvider.GetSecret();
+                    LicenseSecretProvider.SecretSource source = LicenseSecretProvider.GetResolvedSource();
+
+                    if (secret == "race-check" && source != LicenseSecretProvider.SecretSource.EnvironmentVariable)
+                        inconsistencies.Add($"secret ok, source={source}");
+                    if (secret != "race-check" && source == LicenseSecretProvider.SecretSource.EnvironmentVariable)
+                        inconsistencies.Add($"source ok, secret={secret}");
+                });
+
+                inconsistencies.Should().BeEmpty("snapshot de (secret, source) deve ser atomico");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(LicenseSecretProvider.EnvVarName, original);
+                LicenseSecretProvider.ResetCacheForTests();
+            }
+        }
+
+        [Fact]
+        public void HasMalformedSecretFile_returns_false_when_no_file_exists()
+        {
+            // Em CI nao ha arquivo de segredo, entao HasMalformedSecretFile e sempre false.
+            // Se alguma vez rodarmos em maquina dev com license.secret real, este teste
+            // vira false com path nulo — ainda valido.
+            bool malformed = LicenseSecretProvider.HasMalformedSecretFile(out string path);
+            if (malformed)
+            {
+                // Se achou, path tem que estar preenchido.
+                path.Should().NotBeNullOrWhiteSpace();
+            }
+            else
+            {
+                path.Should().BeNull();
             }
         }
     }

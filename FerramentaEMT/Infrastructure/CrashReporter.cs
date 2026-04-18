@@ -40,19 +40,31 @@ namespace FerramentaEMT.Infrastructure
 
                 try
                 {
+                    // Etapas fallibles PRIMEIRO. Se qualquer uma lanca, o handler nao
+                    // sera registrado e um futuro Initialize() pode tentar de novo
+                    // sem risco de duplicar subscricao (regressao do audit 2026-04).
                     string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                     CrashDirectory = Path.Combine(localAppData, "FerramentaEMT", "crashes");
                     Directory.CreateDirectory(CrashDirectory);
 
+                    // Commit do estado ANTES de registrar handlers OU logar. Se Logger.Info
+                    // fosse o culpado de uma excecao no primeiro attempt (antes),
+                    // _initialized ficava false e um retry subscrevia os handlers de novo,
+                    // produzindo dois dumps por crash.
+                    _initialized = true;
+
                     AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
                     TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-                    _initialized = true;
-                    Logger.Info("[CrashReporter] inicializado em {Dir}", CrashDirectory);
+                    // Log final — isolado num try/catch proprio para que uma falha aqui
+                    // nao derrube a captura ja registrada.
+                    try { Logger.Info("[CrashReporter] inicializado em {Dir}", CrashDirectory); }
+                    catch { /* logger pode falhar sem comprometer captura */ }
                 }
                 catch (Exception ex)
                 {
-                    // ultimo recurso — log ao menos; nao quebrar plugin
+                    // Falha antes de _initialized=true: handlers nao foram registrados,
+                    // CrashDirectory pode estar null. Estado consistente para retry.
                     try { Logger.Error(ex, "[CrashReporter] falha ao inicializar — continuara sem captura"); }
                     catch { /* logger tambem falhou, nada a fazer */ }
                 }

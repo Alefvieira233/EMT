@@ -16,12 +16,13 @@ namespace FerramentaEMT.Licensing
     /// - payload-base64url e o JSON do <see cref="LicensePayload"/> codificado em Base64URL
     /// - hmac-base64url e o HMAC-SHA256(payload-bytes, SECRET) tambem em Base64URL
     ///
-    /// O SECRET FICA HARDCODED. SO O ALEF (que tem o codigo) consegue gerar chaves validas.
-    /// O usuario nao consegue forjar porque nao conhece o SECRET — qualquer alteracao no payload
-    /// invalida o HMAC.
+    /// O segredo e resolvido dinamicamente via <see cref="LicenseSecretProvider"/> —
+    /// ambiente -> %LOCALAPPDATA% -> ao lado do assembly -> fallback DEV_ONLY. Quem
+    /// gera chaves (EmtKeyGen) e quem valida precisam usar o mesmo segredo; em
+    /// producao ambos sao injetados via variavel de ambiente ou arquivo.
     ///
-    /// IMPORTANTE: este SECRET tem que ser o MESMO no projeto principal (validacao) e no
-    /// EmtKeyGen (geracao). Trocar o SECRET invalida TODAS as licencas em uso.
+    /// IMPORTANTE: trocar o segredo invalida TODAS as licencas em uso. Coordenar
+    /// rotacao com uma janela de transicao e reemissao para clientes ativos.
     /// </remarks>
     public static class KeySigner
     {

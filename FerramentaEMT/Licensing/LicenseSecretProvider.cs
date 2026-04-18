@@ -30,8 +30,13 @@ namespace FerramentaEMT.Licensing
         // TODO [RELEASE-1.3]: remover apos externalizar em todos os ambientes de build.
         private const string DevOnlyFallback = "EMT-PROD-SECRET-CHANGE-BEFORE-FIRST-SALE-2026-ALEF";
 
-        private static string _cached;
-        private static SecretSource _cachedSource;
+        // Snapshot atomico (secret, source). Escrito de uma vez so via Lazy
+        // (ExecutionAndPublication) — elimina a janela em que outro thread
+        // poderia ler secret != null mas source == NotResolved.
+        private static Lazy<ResolvedSecret> _lazy = NewLazy();
+
+        private static Lazy<ResolvedSecret> NewLazy() =>
+            new Lazy<ResolvedSecret>(ResolveSnapshot, LazyThreadSafetyMode.ExecutionAndPublication);
 
         /// <summary>Fonte resolvida do segredo, para diagnostico.</summary>
         public enum SecretSource
@@ -43,44 +48,39 @@ namespace FerramentaEMT.Licensing
             DevOnlyFallback
         }
 
-        public static string GetSecret()
+        private readonly struct ResolvedSecret
         {
-            string cached = Volatile.Read(ref _cached);
-            if (cached != null)
-                return cached;
-
-            SecretSource source;
-            string resolved = ResolveFromSources(out source);
-            Volatile.Write(ref _cached, resolved);
-            _cachedSource = source;
-            return resolved;
+            public ResolvedSecret(string secret, SecretSource source) { Secret = secret; Source = source; }
+            public string Secret { get; }
+            public SecretSource Source { get; }
         }
+
+        public static string GetSecret() => _lazy.Value.Secret;
 
         /// <summary>
         /// Indica se o segredo atual veio do fallback hardcoded (DEV_ONLY).
         /// Uso: testes, startup logging e diagnostico.
         /// </summary>
-        public static bool IsUsingDevOnlyFallback()
-        {
-            // garante que GetSecret() foi chamado pelo menos uma vez
-            GetSecret();
-            return _cachedSource == SecretSource.DevOnlyFallback;
-        }
+        public static bool IsUsingDevOnlyFallback() => _lazy.Value.Source == SecretSource.DevOnlyFallback;
 
         /// <summary>Fonte resolvida do segredo ativo. Util para logs de startup.</summary>
-        public static SecretSource GetResolvedSource()
-        {
-            GetSecret();
-            return _cachedSource;
-        }
+        public static SecretSource GetResolvedSource() => _lazy.Value.Source;
 
         /// <summary>
         /// Limpa o cache de resolucao. Uso exclusivo em testes.
         /// </summary>
         internal static void ResetCacheForTests()
         {
-            Volatile.Write(ref _cached, null);
-            _cachedSource = SecretSource.NotResolved;
+            // Substituir o Lazy inteiro e o jeito limpo de "resetar" sem
+            // precisar de reflection ou campos mutaveis dentro da snapshot.
+            Interlocked.Exchange(ref _lazy, NewLazy());
+        }
+
+        private static ResolvedSecret ResolveSnapshot()
+        {
+            SecretSource source;
+            string secret = ResolveFromSources(out source);
+            return new ResolvedSecret(secret, source);
         }
 
         private static string ResolveFromSources(out SecretSource source)
@@ -164,14 +164,45 @@ namespace FerramentaEMT.Licensing
                 return null;
             try
             {
-                if (!File.Exists(path))
-                    return null;
+                // Eliminar File.Exists + ReadAllText TOCTOU num unico try/catch.
+                // Se o arquivo foi deletado entre check e read, FileNotFound e tratado
+                // como "nao existe" (fallback para proxima fonte) — comportamento identico
+                // ao File.Exists mas sem syscalls duplicadas.
                 return File.ReadAllText(path);
             }
+            catch (FileNotFoundException) { return null; }
+            catch (DirectoryNotFoundException) { return null; }
             catch
             {
+                // Se houver permissao negada ou IO error num arquivo que existe,
+                // a surface superior (logger em App.OnStartup) ja reporta que o
+                // segredo caiu no fallback.
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Indica se o arquivo de segredo existe mas esta vazio/whitespace-only.
+        /// Util para o startup logger distinguir "arquivo nao configurado" de
+        /// "arquivo configurado errado" — quem caiu em DevOnlyFallback por um arquivo
+        /// vazio provavelmente tem um bug de deploy.
+        /// </summary>
+        public static bool HasMalformedSecretFile(out string offendingPath)
+        {
+            offendingPath = null;
+            foreach (string candidate in new[] { TryBuildLocalAppDataPath(), TryBuildAssemblyAdjacentPath() })
+            {
+                if (string.IsNullOrWhiteSpace(candidate)) continue;
+                string raw;
+                try { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
+                catch { continue; }
+                if (raw != null && string.IsNullOrWhiteSpace(raw))
+                {
+                    offendingPath = candidate;
+                    return true;
+                }
+            }
+            return false;
         }
 
     }
