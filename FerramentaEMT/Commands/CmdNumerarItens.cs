@@ -28,8 +28,41 @@ namespace FerramentaEMT.Commands
                 return Result.Failed;
             }
 
+            // ADR-003: servico e "mudo" — retorna Result<T> com o estado do kickoff.
+            // Comando decide a UX (warning, info, etc). O ShowInfo final de sucesso
+            // fica dentro da sessao porque pertence ao lifecycle da janela persistente.
             NumeracaoItensService service = new NumeracaoItensService();
-            return service.IniciarSessao(uidoc.Application, uidoc, config);
+            FerramentaEMT.Core.Result<NumeracaoItensService.InicioResultado> outcome =
+                service.IniciarSessao(uidoc.Application, uidoc, config);
+
+            if (outcome.IsFailure)
+            {
+                AppDialogService.ShowError(CommandName, outcome.Error, "Não foi possível iniciar");
+                return Result.Failed;
+            }
+
+            NumeracaoItensService.InicioResultado info = outcome.Value;
+
+            if (info.JaHaviaSessaoAtiva)
+            {
+                AppDialogService.ShowWarning(
+                    CommandName,
+                    "Já existe uma sessão de numeração em andamento. A janela foi trazida para frente.",
+                    "Sessão ativa");
+                return Result.Cancelled;
+            }
+
+            if (!info.SessaoIniciada && info.TotalElegiveis == 0)
+            {
+                AppDialogService.ShowWarning(
+                    CommandName,
+                    $"Nenhum elemento elegível foi encontrado com os filtros escolhidos.\n\n" +
+                    $"Candidatos examinados: {info.TotalCandidatos}",
+                    "Nenhum item encontrado");
+                return Result.Cancelled;
+            }
+
+            return Result.Succeeded;
         }
     }
 }

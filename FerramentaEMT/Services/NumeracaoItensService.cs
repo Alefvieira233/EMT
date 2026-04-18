@@ -5,6 +5,7 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models;
 using FerramentaEMT.Utils;
 using FerramentaEMT.Views;
@@ -16,25 +17,58 @@ namespace FerramentaEMT.Services
         private const string Titulo = "Numerar Itens";
         private static NumeracaoItensSessao _sessaoAtiva;
 
-        public Result IniciarSessao(UIApplication uiapp, UIDocument uidoc, NumeracaoItensConfig config)
+        /// <summary>
+        /// Resultado do kickoff da sessao de numeracao. ADR-003: o servico nao fala
+        /// com o usuario, retorna o que aconteceu e o comando decide a UX.
+        /// </summary>
+        public sealed class InicioResultado
+        {
+            /// <summary>Sessao nova foi iniciada (<c>true</c>) ou a chamada foi "no-op"
+            /// por conta de uma sessao ja ativa / nenhum elemento elegivel.</summary>
+            public bool SessaoIniciada { get; set; }
+
+            /// <summary>Usuario ja tinha uma sessao aberta — a janela dessa sessao foi
+            /// trazida pra frente. Comando deve avisar o usuario.</summary>
+            public bool JaHaviaSessaoAtiva { get; set; }
+
+            /// <summary>Total de candidatos coletados antes dos filtros de config.</summary>
+            public int TotalCandidatos { get; set; }
+
+            /// <summary>Total de elementos que sobraram apos filtros — se zero, a sessao
+            /// NAO foi iniciada.</summary>
+            public int TotalElegiveis { get; set; }
+        }
+
+        /// <summary>
+        /// Kickoff de uma sessao interativa de numeracao. ADR-003: retorna
+        /// <see cref="Core.Result{T}"/> com o estado — comando faz todos os dialogs
+        /// (ShowInfo/ShowWarning). O ShowInfo final de "processamento concluido" fica
+        /// dentro da sessao porque pertence ao lifecycle da janela persistente, nao
+        /// ao kickoff.
+        /// </summary>
+        public Core.Result<InicioResultado> IniciarSessao(UIApplication uiapp, UIDocument uidoc, NumeracaoItensConfig config)
         {
             if (uidoc is null)
             {
-                AppDialogService.ShowError(Titulo, "UIDocument nulo.", "Documento indisponível");
-                return Result.Failed;
+                Logger.Error("[NumeracaoItens] IniciarSessao recebeu UIDocument nulo.");
+                return Core.Result<InicioResultado>.Fail("UIDocument nulo.");
             }
 
             if (config is null)
             {
-                AppDialogService.ShowWarning(Titulo, "Configuração inválida.", "Dados incompletos");
-                return Result.Failed;
+                Logger.Warn("[NumeracaoItens] IniciarSessao recebeu config nula.");
+                return Core.Result<InicioResultado>.Fail("Configuração inválida.");
             }
 
             if (_sessaoAtiva != null && !_sessaoAtiva.IsFinalizada)
             {
                 _sessaoAtiva.AtivarJanela();
-                AppDialogService.ShowWarning(Titulo, "Já existe uma sessão de numeração em andamento.", "Sessão ativa");
-                return Result.Cancelled;
+                Logger.Info("[NumeracaoItens] Sessao ja ativa — janela trazida para frente.");
+                return Core.Result<InicioResultado>.Ok(new InicioResultado
+                {
+                    SessaoIniciada = false,
+                    JaHaviaSessaoAtiva = true,
+                });
             }
 
             List<NumeracaoElementoInfo> candidatos = NumeracaoItensCatalog.ColetarCandidatos(uidoc, config.Escopo);
@@ -42,13 +76,24 @@ namespace FerramentaEMT.Services
 
             if (elegiveis.Count == 0)
             {
-                AppDialogService.ShowWarning(Titulo, "Nenhum elemento elegível foi encontrado com os filtros escolhidos.", "Nenhum item encontrado");
-                return Result.Cancelled;
+                Logger.Info($"[NumeracaoItens] Nenhum elemento elegivel ({candidatos.Count} candidatos, filtros descartaram todos).");
+                return Core.Result<InicioResultado>.Ok(new InicioResultado
+                {
+                    SessaoIniciada = false,
+                    TotalCandidatos = candidatos.Count,
+                    TotalElegiveis = 0,
+                });
             }
 
             _sessaoAtiva = new NumeracaoItensSessao(uidoc, config, elegiveis, LimparSessaoAtiva);
             _sessaoAtiva.Iniciar();
-            return Result.Succeeded;
+            Logger.Info($"[NumeracaoItens] Sessao iniciada com {elegiveis.Count} elementos elegiveis.");
+            return Core.Result<InicioResultado>.Ok(new InicioResultado
+            {
+                SessaoIniciada = true,
+                TotalCandidatos = candidatos.Count,
+                TotalElegiveis = elegiveis.Count,
+            });
         }
 
         private static void LimparSessaoAtiva(NumeracaoItensSessao sessao)
