@@ -14,17 +14,25 @@ using Autodesk.Revit.UI.Selection;
 using FerramentaEMT.Core;
 using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.CncExport;
-using FerramentaEMT.Utils;
 
 namespace FerramentaEMT.Services.CncExport
 {
     /// <summary>
     /// Servico orquestrador: coleta elementos, monta os DstvFile e grava arquivos .nc1 na pasta destino.
+    ///
+    /// <para>
+    /// Arquitetura ADR-003 + ADR-004 (fases separadas):
+    /// <list type="bullet">
+    ///   <item><see cref="ColetarElementos"/> — pode abrir PickObjects (modal nativo do Revit).
+    ///   Nao aceita progress/CT porque e interacao sincrona curta com o usuario.</item>
+    ///   <item><see cref="Executar"/> — processa e grava, aceita progress+CT. Nao interage
+    ///   com selecao — recebe a lista pronta. Compativel com <see cref="FerramentaEMT.Utils.RevitProgressHost"/>.</item>
+    /// </list>
+    /// Servico e "mudo" (so loga). Dialogos de resumo sao responsabilidade do comando.
+    /// </para>
     /// </summary>
     public sealed class DstvExportService
     {
-        private const string Titulo = "Exportar DSTV/NC1";
-
         public sealed class ResultadoExport
         {
             public int TotalElementos { get; set; }
@@ -34,44 +42,82 @@ namespace FerramentaEMT.Services.CncExport
             public List<string> ArquivosCriados { get; } = new();
             public string PastaDestino { get; set; } = "";
             public TimeSpan Duracao { get; set; }
-            /// <summary>Distingue cancelamento (ESC no PickObjects) de "sem elementos".</summary>
-            public bool Cancelado { get; set; }
             /// <summary>Contagem de arquivos que sairam com alguma dimensao critica zerada (perfil nao reconhecido). Sinaliza NC1 invalido mesmo se gravado.</summary>
             public int ArquivosComDimensaoZerada { get; set; }
         }
 
         /// <summary>
-        /// Executa a exportacao DSTV/NC1. Primeira adocao do padrao ADR-003:
-        /// retorna <see cref="Result{T}"/>, aceita <see cref="IProgress{T}"/> e
-        /// <see cref="CancellationToken"/> opcionais para progresso e cancelamento.
+        /// Envelope de coleta: elementos selecionados + flag de cancelamento explicito
+        /// do usuario (ESC em PickObjects). Distingue "cancelado" de "selecao vazia".
+        /// </summary>
+        public sealed class ColetaResult
+        {
+            public List<FamilyInstance> Elementos { get; set; } = new();
+            public bool Cancelado { get; set; }
+        }
+
+        /// <summary>
+        /// Fase 1: coletar elementos conforme o escopo configurado. Pode abrir PickObjects
+        /// (SelecaoManual) ou varrer o modelo/vista ativa. Nao aceita progress porque a
+        /// interacao com o usuario e sincrona e curta — a UI de progresso entra na fase seguinte.
+        /// </summary>
+        public Result<ColetaResult> ColetarElementos(UIDocument uidoc, ExportarDstvConfig config)
+        {
+            if (config == null) return Result<ColetaResult>.Fail("Configuracao nao informada.");
+            if (uidoc == null) return Result<ColetaResult>.Fail("Documento do Revit nao disponivel.");
+
+            Document doc = uidoc.Document;
+            bool cancelado;
+            List<FamilyInstance> elementos = ColetarElementosInterno(uidoc, doc, config, out cancelado);
+
+            if (cancelado)
+                return Result<ColetaResult>.Ok(new ColetaResult { Cancelado = true });
+
+            if (elementos.Count == 0)
+                return Result<ColetaResult>.Fail("Nenhuma peca estrutural encontrada para exportar.");
+
+            elementos = FiltrarPorCategoria(elementos, config);
+
+            if (elementos.Count == 0)
+                return Result<ColetaResult>.Fail("Nenhum elemento corresponde as categorias selecionadas.");
+
+            return Result<ColetaResult>.Ok(new ColetaResult { Elementos = elementos });
+        }
+
+        /// <summary>
+        /// Fase 2: processar a lista pre-selecionada e gravar arquivos DSTV.
+        /// Wrapper-friendly do ADR-004: callsite deve envolver em <see cref="FerramentaEMT.Utils.RevitProgressHost.Run"/>.
         ///
-        /// <para>
-        /// <b>Contrato:</b> o servico ja logga e, em caso de sucesso, ainda chama
-        /// <see cref="ExibirResumo"/> com o summary dialog nativo (responsabilidade
-        /// do servico hoje; pode migrar para o comando no futuro). Os casos de
-        /// falha de dominio (pasta nao informada, selecao vazia, etc.) voltam como
-        /// <c>Result.Fail</c> com mensagem amigavel — o comando decide se exibe
-        /// dialog ou nao.
-        /// </para>
+        /// Falhas de dominio (pasta invalida, elementos vazios) retornam Result.Fail.
+        /// OperationCanceledException via CT propaga — o callsite mapeia para Result.Cancelled.
         /// </summary>
         public Result<ResultadoExport> Executar(
             UIDocument uidoc,
+            IReadOnlyList<FamilyInstance> elementos,
             ExportarDstvConfig config,
             IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             if (uidoc == null) throw new ArgumentNullException(nameof(uidoc));
+            if (elementos == null) throw new ArgumentNullException(nameof(elementos));
 
-            var sw = Stopwatch.StartNew();
-            var resultado = new ResultadoExport { PastaDestino = config.PastaDestino ?? "" };
-            var reporter = new ProgressReporter(progress, throttleMs: 100, ct);
+            Stopwatch sw = Stopwatch.StartNew();
+            ResultadoExport resultado = new ResultadoExport
+            {
+                PastaDestino = config.PastaDestino ?? "",
+                TotalElementos = elementos.Count
+            };
+            ProgressReporter reporter = new ProgressReporter(progress, throttleMs: 100, ct);
 
             Document doc = uidoc.Document;
 
             // 1. Validar pasta destino
             if (string.IsNullOrWhiteSpace(config.PastaDestino))
                 return Result<ResultadoExport>.Fail("Pasta de destino nao informada.");
+
+            if (elementos.Count == 0)
+                return Result<ResultadoExport>.Fail("Nenhum elemento para processar.");
 
             try
             {
@@ -84,29 +130,9 @@ namespace FerramentaEMT.Services.CncExport
                     $"Nao foi possivel criar a pasta de destino:\n{ex.Message}");
             }
 
-            reporter.Report(0, 0, "Coletando elementos...");
-
-            // 2. Coletar elementos
-            bool cancelado = false;
-            List<FamilyInstance> elementos = ColetarElementos(uidoc, doc, config, out cancelado);
-            if (cancelado)
-            {
-                resultado.Cancelado = true;
-                Logger.Info("[DstvExport] Usuario cancelou a selecao");
-                return Result<ResultadoExport>.Ok(resultado); // cancelamento explicito e fluxo legitimo
-            }
-            if (elementos.Count == 0)
-                return Result<ResultadoExport>.Fail("Nenhuma peca estrutural encontrada para exportar.");
-
-            elementos = FiltrarPorCategoria(elementos, config);
-            resultado.TotalElementos = elementos.Count;
-
-            if (elementos.Count == 0)
-                return Result<ResultadoExport>.Fail("Nenhum elemento corresponde as categorias selecionadas.");
-
-            // 3. Agrupar por marca (se aplicavel)
-            var arquivos = new Dictionary<string, DstvFile>(StringComparer.Ordinal);
-            var contagemPorMarca = new Dictionary<string, int>(StringComparer.Ordinal);
+            // 2. Processar elementos
+            Dictionary<string, DstvFile> arquivos = new Dictionary<string, DstvFile>(StringComparer.Ordinal);
+            Dictionary<string, int> contagemPorMarca = new Dictionary<string, int>(StringComparer.Ordinal);
 
             int processados = 0;
             foreach (FamilyInstance elem in elementos)
@@ -114,7 +140,7 @@ namespace FerramentaEMT.Services.CncExport
                 reporter.ThrowIfCancellationRequested();
                 try
                 {
-                    var dstv = new DstvFile();
+                    DstvFile dstv = new DstvFile();
                     DstvHeaderBuilder.Build(doc, elem, config, dstv);
 
                     // VALIDACAO: se a altura do perfil ou o comprimento vieram zerados, o NC1 gerado
@@ -135,21 +161,17 @@ namespace FerramentaEMT.Services.CncExport
                     foreach (DstvHole h in DstvHoleExtractor.Extract(doc, elem))
                         dstv.Holes.Add(h);
 
-                    // Anguros de corte (placeholder — extracao geometrica fica para versao futura)
-
                     string marca = string.IsNullOrWhiteSpace(dstv.PieceMark)
                         ? $"ID-{elem.Id?.Value ?? 0}"
                         : dstv.PieceMark;
 
                     if (config.Agrupamento == AgrupamentoArquivosDstv.UmPorInstancia)
                     {
-                        // Sufixar com ID para evitar colisao
                         string chave = $"{marca}_{elem.Id?.Value ?? 0}";
                         arquivos[chave] = dstv;
                     }
                     else
                     {
-                        // UmPorMarca: primeira ocorrencia ganha; quantidade conta
                         if (!arquivos.ContainsKey(marca))
                             arquivos[marca] = dstv;
 
@@ -157,6 +179,10 @@ namespace FerramentaEMT.Services.CncExport
                             contagemPorMarca[marca] = 0;
                         contagemPorMarca[marca]++;
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw; // cancelamento nao e erro da peca
                 }
                 catch (Exception ex)
                 {
@@ -173,16 +199,16 @@ namespace FerramentaEMT.Services.CncExport
             // Ajustar Quantity para UmPorMarca
             if (config.Agrupamento == AgrupamentoArquivosDstv.UmPorMarca)
             {
-                foreach (var kvp in contagemPorMarca)
+                foreach (KeyValuePair<string, int> kvp in contagemPorMarca)
                 {
                     if (arquivos.TryGetValue(kvp.Key, out DstvFile? df) && df != null)
                         df.Quantity = kvp.Value;
                 }
             }
 
-            // 4. Gravar arquivos
+            // 3. Gravar arquivos
             int gravados = 0;
-            foreach (var kvp in arquivos)
+            foreach (KeyValuePair<string, DstvFile> kvp in arquivos)
             {
                 reporter.ThrowIfCancellationRequested();
                 try
@@ -210,7 +236,7 @@ namespace FerramentaEMT.Services.CncExport
                     $"Gravando {gravados}/{arquivos.Count} arquivos...");
             }
 
-            // 5. Relatorio
+            // 4. Relatorio
             if (config.GerarRelatorio)
                 GravarRelatorio(config.PastaDestino, resultado);
 
@@ -218,21 +244,70 @@ namespace FerramentaEMT.Services.CncExport
             resultado.Duracao = sw.Elapsed;
             reporter.ReportFinal(resultado.ArquivosGerados, arquivos.Count, "Exportacao concluida");
 
-            // 6. Resumo
-            ExibirResumo(resultado);
-
-            // 7. Abrir pasta
-            if (config.AbrirPastaAposExportar && resultado.ArquivosGerados > 0)
-                AbrirPastaNoExplorer(config.PastaDestino);
-
             return Result<ResultadoExport>.Ok(resultado);
         }
 
         // ============================================================
-        //  Coleta
+        //  Helpers publicos para o comando montar UX
         // ============================================================
 
-        private List<FamilyInstance> ColetarElementos(UIDocument uidoc, Document doc, ExportarDstvConfig config, out bool cancelado)
+        /// <summary>
+        /// Monta o texto de resumo a ser exibido ao usuario apos uma exportacao.
+        /// Separado de ShowInfo/ShowWarning para o comando decidir (AppDialogService, log, etc.).
+        /// </summary>
+        public static string BuildResumoText(ResultadoExport r)
+        {
+            if (r == null) throw new ArgumentNullException(nameof(r));
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Exportacao DSTV/NC1 concluida.");
+            sb.AppendLine();
+            sb.AppendLine($"Pasta: {r.PastaDestino}");
+            sb.AppendLine($"Elementos processados: {r.TotalElementos}");
+            sb.AppendLine($"Arquivos .nc1 gerados: {r.ArquivosGerados}");
+            if (r.ElementosPulados > 0)
+                sb.AppendLine($"Elementos pulados: {r.ElementosPulados}");
+            sb.AppendLine($"Duracao: {r.Duracao.TotalSeconds:F2}s");
+            if (r.ArquivosComDimensaoZerada > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"⚠ {r.ArquivosComDimensaoZerada} arquivo(s) com dimensao zerada (NC1 INVALIDO).");
+                sb.AppendLine("   Verifique o parametro de secao da familia do Revit.");
+            }
+            if (r.Warnings.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"Avisos: {r.Warnings.Count} (ver relatorio na pasta)");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Abre a pasta de destino no Windows Explorer. No-op silencioso em caso de erro.
+        /// Exposto publico porque o comando decide QUANDO abrir (ADR-003 — service mudo).
+        /// </summary>
+        public static void AbrirPastaNoExplorer(string pasta)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{pasta}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "DstvExportService: falha ao abrir Explorer");
+            }
+        }
+
+        // ============================================================
+        //  Coleta interna
+        // ============================================================
+
+        private List<FamilyInstance> ColetarElementosInterno(UIDocument uidoc, Document doc, ExportarDstvConfig config, out bool cancelado)
         {
             cancelado = false;
             switch (config.Escopo)
@@ -251,7 +326,7 @@ namespace FerramentaEMT.Services.CncExport
 
         private List<FamilyInstance> ColetarDoModelo(Document doc)
         {
-            var result = new List<FamilyInstance>();
+            List<FamilyInstance> result = new List<FamilyInstance>();
             foreach (BuiltInCategory cat in CategoriasEstruturais)
             {
                 result.AddRange(new FilteredElementCollector(doc)
@@ -265,7 +340,7 @@ namespace FerramentaEMT.Services.CncExport
 
         private List<FamilyInstance> ColetarDaVista(Document doc)
         {
-            var result = new List<FamilyInstance>();
+            List<FamilyInstance> result = new List<FamilyInstance>();
             View view = doc.ActiveView;
             if (view == null) return result;
 
@@ -284,10 +359,10 @@ namespace FerramentaEMT.Services.CncExport
         {
             cancelado = false;
 
-            var ids = uidoc.Selection.GetElementIds();
+            ICollection<ElementId> ids = uidoc.Selection.GetElementIds();
             if (ids != null && ids.Count > 0)
             {
-                var fromSel = ids
+                List<FamilyInstance> fromSel = ids
                     .Select(id => doc.GetElement(id))
                     .OfType<FamilyInstance>()
                     .Where(IsEstrutural)
@@ -320,7 +395,7 @@ namespace FerramentaEMT.Services.CncExport
         {
             return elementos.Where(e =>
             {
-                var cat = e.Category?.BuiltInCategory;
+                BuiltInCategory? cat = e.Category?.BuiltInCategory;
                 if (cat == BuiltInCategory.OST_StructuralColumns) return config.ExportarPilares;
                 if (cat == BuiltInCategory.OST_StructuralFraming)
                 {
@@ -344,7 +419,7 @@ namespace FerramentaEMT.Services.CncExport
 
         private static bool IsEstrutural(FamilyInstance fi)
         {
-            var cat = fi.Category?.BuiltInCategory;
+            BuiltInCategory? cat = fi.Category?.BuiltInCategory;
             return cat == BuiltInCategory.OST_StructuralFraming
                 || cat == BuiltInCategory.OST_StructuralColumns;
         }
@@ -356,7 +431,7 @@ namespace FerramentaEMT.Services.CncExport
             try
             {
                 string caminho = Path.Combine(pasta, $"_DSTV_export_{DateTime.Now:yyyyMMdd-HHmmss}.txt");
-                var sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder();
                 sb.AppendLine("=== Relatorio de Exportacao DSTV/NC1 ===");
                 sb.AppendLine($"Data: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 sb.AppendLine($"Pasta: {pasta}");
@@ -383,57 +458,11 @@ namespace FerramentaEMT.Services.CncExport
             }
         }
 
-        private static void ExibirResumo(ResultadoExport r)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("Exportacao DSTV/NC1 concluida.");
-            sb.AppendLine();
-            sb.AppendLine($"Pasta: {r.PastaDestino}");
-            sb.AppendLine($"Elementos processados: {r.TotalElementos}");
-            sb.AppendLine($"Arquivos .nc1 gerados: {r.ArquivosGerados}");
-            if (r.ElementosPulados > 0)
-                sb.AppendLine($"Elementos pulados: {r.ElementosPulados}");
-            sb.AppendLine($"Duracao: {r.Duracao.TotalSeconds:F2}s");
-            if (r.ArquivosComDimensaoZerada > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine($"⚠ {r.ArquivosComDimensaoZerada} arquivo(s) com dimensao zerada (NC1 INVALIDO).");
-                sb.AppendLine("   Verifique o parametro de secao da familia do Revit.");
-            }
-            if (r.Warnings.Count > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine($"Avisos: {r.Warnings.Count} (ver relatorio na pasta)");
-            }
-
-            if (r.ArquivosComDimensaoZerada > 0)
-                AppDialogService.ShowWarning(Titulo, sb.ToString(), "Exportacao com avisos");
-            else
-                AppDialogService.ShowInfo(Titulo, sb.ToString(), "Exportacao concluida");
-        }
-
-        private static void AbrirPastaNoExplorer(string pasta)
-        {
-            try
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = "explorer.exe",
-                    Arguments = $"\"{pasta}\"",
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn(ex, "DstvExportService: falha ao abrir Explorer");
-            }
-        }
-
         private sealed class FiltroEstrutural : ISelectionFilter
         {
             public bool AllowElement(Element elem)
             {
-                var cat = elem.Category?.BuiltInCategory;
+                BuiltInCategory? cat = elem.Category?.BuiltInCategory;
                 return cat == BuiltInCategory.OST_StructuralFraming
                     || cat == BuiltInCategory.OST_StructuralColumns;
             }

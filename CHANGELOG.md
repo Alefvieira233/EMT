@@ -15,6 +15,15 @@ Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
 - **`Utils/RevitProgressHost`** — host estatico `Run<T>(title, headline, work)` que abre a janela, corre o servico no thread principal do Revit (requisito de API single-threaded) e bombeia o `Dispatcher` entre eventos de `IProgress` para a UI atualizar e o Cancelar chegar ao `CancellationTokenSource`. Exception `OperationCanceledException` propaga ate o comando, que retorna `Result.Cancelled`.
 - **`docs/ADR/004-threading-model-progress-cancel.md`** — documenta o modelo de threading, por que `Task.Run` e proibido com Revit API, quando usar o host e quando nao usar.
 - **`CmdVerificarModelo`** passa a usar `RevitProgressHost` — primeiro consumidor real. Usuario ve progresso por regra e pode cancelar sem esperar 30s de `DuplicateMarkRule` em modelos grandes.
+- **`CmdExportarDstv`** passa a usar `RevitProgressHost` — segundo consumidor. Agora o usuario ve quantas pecas ja foram processadas/gravadas e pode cancelar no meio, util em exports de modelos grandes (>500 pecas) onde a maquina CNC esta ocupada e o usuario quer abortar.
+
+### Changed — DSTV export em duas fases (ADR-003 + ADR-004)
+- **`DstvExportService` refatorado em duas fases** para conciliar `PickObjects` (modal Revit nativo) com `RevitProgressHost` sem UX conflitante (janela de progresso ficaria vazia por tras da selecao). Nova API:
+  - `ColetarElementos(uidoc, config) → Result<ColetaResult>` — pode abrir `PickObjects`, NAO aceita progress/CT (interacao curta). `ColetaResult { List<FamilyInstance> Elementos; bool Cancelado }` distingue ESC de selecao vazia.
+  - `Executar(uidoc, IReadOnlyList<FamilyInstance> elementos, config, progress, ct) → Result<ResultadoExport>` — processa e grava, aceita progress+CT. Compativel com `RevitProgressHost`.
+- **`DstvExportService.BuildResumoText(ResultadoExport) → string`** e **`AbrirPastaNoExplorer(string)`** expostos como static — o comando monta o dialogo e decide quando abrir o Explorer. Removido `AppDialogService` do servico (principio ADR-003: service "mudo", so retorna e loga).
+- **`ResultadoExport.Cancelado` removido** — cancelamento so acontece na fase de coleta; a flag migrou para `ColetaResult`. Drop-safe porque o unico caller (`CmdExportarDstv`) foi atualizado simultaneamente.
+- **`CmdExportarDstv`** ajustado ao novo fluxo: coleta → `RevitProgressHost.Run(service.Executar)` → montagem do resumo → warning/info → abertura opcional do Explorer. `try/catch (OperationCanceledException) → Result.Cancelled` cobre o Cancel da nova janela.
 
 ### Changed — Segunda adoção do ADR-003
 - **`ModelCheckService.Executar`** agora retorna `Result<ModelCheckReport>` e aceita `IProgress<ProgressReport>` + `CancellationToken` opcionais. Falhas de domínio (`uidoc` nulo, config ausente, nenhuma regra habilitada) voltam como `Result.Fail` com mensagem amigável — o comando chamador apresenta o diálogo. Progresso é reportado por regra executada (`N/Total — nome da regra: X problema(s)`), throttle de 100 ms. `OperationCanceledException` propaga até o comando, que retorna `Result.Cancelled`. Segue-se o template do ADR-003 validado antes no `DstvExportService`.

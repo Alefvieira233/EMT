@@ -1,4 +1,4 @@
-using System.Threading;
+using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -26,12 +26,40 @@ namespace FerramentaEMT.Commands
 
             DstvExportService service = new DstvExportService();
 
-            // TODO(ADR-003): quando tivermos um status bar widget no Revit host,
-            // passar IProgress<ProgressReport> aqui para feedback em tempo real.
-            // Por enquanto a exportacao corre sincrona e o summary e exibido
-            // via AppDialogService.ShowInfo no final.
-            FerramentaEMT.Core.Result<DstvExportService.ResultadoExport> outcome =
-                service.Executar(uidoc, config, progress: null, ct: CancellationToken.None);
+            // ===== FASE 1: coleta =====
+            // Pode abrir PickObjects (modal Revit). Nao usa RevitProgressHost aqui
+            // porque deixariamos a janela de progresso vazia por tras da selecao nativa.
+            FerramentaEMT.Core.Result<DstvExportService.ColetaResult> coleta =
+                service.ColetarElementos(uidoc, config);
+
+            if (coleta.IsFailure)
+            {
+                AppDialogService.ShowWarning(CommandName, coleta.Error, "Nao foi possivel iniciar exportacao");
+                return Result.Failed;
+            }
+
+            if (coleta.Value.Cancelado)
+                return Result.Cancelled;
+
+            System.Collections.Generic.IReadOnlyList<Autodesk.Revit.DB.FamilyInstance> elementos =
+                coleta.Value.Elementos;
+
+            // ===== FASE 2: processamento com progress + cancel =====
+            // ADR-004: RevitProgressHost abre janela com barra + botao Cancelar,
+            // corre o servico no mesmo thread (Revit API single-threaded) e bombeia
+            // o dispatcher entre eventos de IProgress para a UI atualizar.
+            FerramentaEMT.Core.Result<DstvExportService.ResultadoExport> outcome;
+            try
+            {
+                outcome = RevitProgressHost.Run(
+                    title: CommandName,
+                    headline: "Exportando DSTV/NC1...",
+                    work: (progress, ct) => service.Executar(uidoc, elementos, config, progress, ct));
+            }
+            catch (OperationCanceledException)
+            {
+                return Result.Cancelled;
+            }
 
             if (outcome.IsFailure)
             {
@@ -41,10 +69,23 @@ namespace FerramentaEMT.Commands
 
             DstvExportService.ResultadoExport resultado = outcome.Value;
 
-            // Cancelamento explicito via PickObjects e modelado como "Ok com Cancelado=true"
-            // para distinguir de "selecao vazia" (que e Fail). Nao reportamos erro ao usuario.
-            if (resultado.Cancelado)
-                return Result.Cancelled;
+            // ===== POS-PROCESSAMENTO =====
+            // Feedback e abertura de pasta sao decisao do comando (service e "mudo" por ADR-003).
+            // Sobrescreve o sucesso com warning quando ha NC1s com dimensao zerada — usuario precisa
+            // saber antes de enviar pra maquina CNC.
+            string resumo = DstvExportService.BuildResumoText(resultado);
+
+            if (resultado.ArquivosComDimensaoZerada > 0)
+            {
+                AppDialogService.ShowWarning(CommandName, resumo, "Exportacao concluida com avisos");
+            }
+            else if (resultado.ArquivosGerados > 0)
+            {
+                AppDialogService.ShowInfo(CommandName, resumo, "Exportacao concluida");
+            }
+
+            if (config.AbrirPastaAposExportar && resultado.ArquivosGerados > 0)
+                DstvExportService.AbrirPastaNoExplorer(config.PastaDestino);
 
             return resultado.ArquivosGerados > 0
                 ? Result.Succeeded
