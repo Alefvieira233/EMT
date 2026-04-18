@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>EmtKeyGen</RootNamespace>
+    <AssemblyName>EmtKeyGen</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Necessario para acessar Microsoft.Win32.Registry e DPAPI -->
+    <UseWindowsForms>false</UseWindowsForms>
+  </PropertyGroup>
+
+  <!--
+    Linka os arquivos do projeto principal para garantir QUE A CHAVE GERADA AQUI
+    USA O MESMO SECRET QUE O PLUGIN VALIDA. Se o secret no plugin for trocado,
+    isso recompila junto sem precisar duplicar codigo.
+
+    NOTA: para o link funcionar voce deve compilar a partir da pasta tools/EmtKeyGen
+    OU referenciar os caminhos relativos exatos abaixo.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\FerramentaEMT\Licensing\LicensePayload.cs">
+      <Link>Linked\LicensePayload.cs</Link>
+    </Compile>
+    <Compile Include="..\..\FerramentaEMT\Licensing\KeySigner.cs">
+      <Link>Linked\KeySigner.cs</Link>
+    </Compile>
+    <Compile Include="..\..\FerramentaEMT\Licensing\Base64Url.cs">
+      <Link>Linked\Base64Url.cs</Link>
+    </Compile>
+    <Compile Include="..\..\FerramentaEMT\Licensing\SimpleJson.cs">
+      <Link>Linked\SimpleJson.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+</Project>

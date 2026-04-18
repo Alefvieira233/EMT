@@ -1,0 +1,144 @@
+<Window x:Class="FerramentaEMT.Views.NumeracaoItensWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Numerar Itens"
+        Width="760"
+        Height="560"
+        MinWidth="680"
+        MinHeight="480"
+        MaxHeight="720"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Numeração Manual de Itens" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Escolha o escopo, filtre os elementos e defina o parâmetro que receberá a sequência manual." Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Escopo da busca">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="rbModeloInteiro" Content="Modelo inteiro" Checked="Scope_Checked"/>
+                <RadioButton x:Name="rbVistaAtiva" Content="Vista ativa" Checked="Scope_Checked"/>
+                <RadioButton x:Name="rbSelecaoAtual" Content="Seleção atual" Checked="Scope_Checked"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="Filtros do conjunto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Categoria:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbCategoria" Grid.Row="0" Grid.Column="1" MinWidth="220" Margin="4,0" SelectionChanged="Categoria_SelectionChanged"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Família:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbFamilia" Grid.Row="0" Grid.Column="3" MinWidth="220" Margin="4,0" SelectionChanged="Familia_SelectionChanged"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Tipo:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbTipo" Grid.Row="1" Grid.Column="1" MinWidth="220" Margin="4,0" SelectionChanged="Tipo_SelectionChanged"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Parâmetro:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbParametro" Grid.Row="1" Grid.Column="3" MinWidth="220" Margin="4,0" SelectionChanged="Parametro_SelectionChanged"/>
+
+                <Border Grid.Row="3" Grid.ColumnSpan="4" Margin="0,10,0,0" Style="{StaticResource WarningCardBorder}">
+                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WarningTextBrush}">
+                        Os parâmetros exibidos são os graváveis em comum para todos os elementos filtrados. A sessão de numeração trabalha com painel flutuante e seleção contínua.
+                    </TextBlock>
+                </Border>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="3" Header="Definir valor">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Prefixo:" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtPrefixo" Grid.Row="0" Grid.Column="1" Margin="4,0" TextChanged="Valor_TextChanged"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Sufixo:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="txtSufixo" Grid.Row="0" Grid.Column="3" Margin="4,0" TextChanged="Valor_TextChanged"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Início:" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtInicio" Grid.Row="1" Grid.Column="1" Width="120" Margin="4,0" TextChanged="Valor_TextChanged"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Degrau:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="txtDegrau" Grid.Row="1" Grid.Column="3" Width="120" Margin="4,0" TextChanged="Valor_TextChanged"/>
+
+                <CheckBox x:Name="chkManterDestaque" Grid.Row="2" Grid.ColumnSpan="2" Content="Manter destaque visual ao concluir" Margin="0,10,0,0"/>
+                <Border Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Margin="20,10,0,0" Style="{StaticResource AccentCardBorder}">
+                    <TextBlock x:Name="txtPreview" FontWeight="Bold" Foreground="{DynamicResource AccentCardTextBrush}" Text="Próximo valor: 1"/>
+                </Border>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="4" Header="Fluxo do comando">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" TextWrapping="Wrap" Style="{StaticResource SectionBodyText}">
+                    Depois de clicar em Iniciar: a ferramenta abre um painel flutuante de controle e entra em seleção contínua. Os elementos escolhidos ficam destacados na vista ativa, e você pode avançar ou retroceder a numeração sem abrir uma caixa de diálogo a cada clique.
+                </TextBlock>
+
+                <Border Grid.Row="1" Margin="0,12,0,0" Style="{StaticResource SubtleCardBorder}">
+                    <TextBlock x:Name="txtResumo" TextWrapping="Wrap"/>
+                </Border>
+
+                <GroupBox Grid.Row="2" Header="Itens filtrados" Margin="0,12,0,0">
+                    <ListBox x:Name="lstElementos"
+                             MinHeight="150"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </GroupBox>
+            </Grid>
+        </GroupBox>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="btnCancel" Content="Cancelar" Width="90" Style="{StaticResource SecondaryActionButton}"/>
+            <Button x:Name="btnOk" Content="Iniciar" Width="90" Style="{StaticResource PrimaryActionButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

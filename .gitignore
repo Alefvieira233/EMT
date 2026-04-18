@@ -1,0 +1,84 @@
+# =====================================================
+# .gitignore — FerramentaEMT (Revit add-in)
+# =====================================================
+
+# --- .NET build outputs ---
+bin/
+obj/
+out/
+artifacts/
+publish/
+*.dll
+*.pdb
+*.exe
+*.cache
+*.suo
+*.user
+
+# --- Visual Studio ---
+.vs/
+*.vssscc
+*.vspscc
+*.vsdx
+.vshistory/
+
+# --- VS Code / Rider ---
+.vscode/
+.idea/
+*.code-workspace
+
+# --- NuGet ---
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# --- Testes ---
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.opencover.xml
+lcov.info
+
+# --- ReSharper ---
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Outputs locais ---
+*.local
+*.tmp
+*.bak
+*.old
+
+# --- Específicos do Revit / FerramentaEMT ---
+# Templates não-default que sejam de teste:
+Templates/_test_*.xlsx
+Templates/_temp_*.xlsx
+# Pasta de instalador gerada:
+installer/output/
+*.msi
+*.exe.config
+
+# --- Sistema operacional ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Backup do Claude / IA ---
+.claude/cache/
+.claude/sessions/
+
+# --- Secrets ---
+*.env
+*.env.local
+secrets.json
+appsettings.Local.json

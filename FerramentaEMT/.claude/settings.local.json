@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:help.autodesk.com)",
+      "WebFetch(domain:www.revitapidocs.com)",
+      "WebSearch",
+      "WebFetch(domain:thebuildingcoder.typepad.com)",
+      "WebFetch(domain:www.networksolutions.com)",
+      "WebFetch(domain:jeremytammik.github.io)",
+      "Bash(python:*)"
+    ]
+  }
+}

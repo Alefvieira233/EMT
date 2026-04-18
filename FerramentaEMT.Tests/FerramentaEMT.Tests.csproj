@@ -1,0 +1,141 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <PlatformTarget>x64</PlatformTarget>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="FluentAssertions" Version="6.12.2" />
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+  </ItemGroup>
+
+  <!--
+    NOTA: Nao referenciamos diretamente FerramentaEMT.csproj pois ele depende do
+    RevitAPI.dll que so existe na maquina de desenvolvimento. Em vez disso,
+    extraimos a logica testavel para classes puras (sem Revit) que podemos
+    testar isoladamente, e linkamos esses arquivos individualmente abaixo.
+  -->
+
+  <!-- Pure-logic files compartilhados (sem dependencia de Revit) -->
+  <ItemGroup>
+    <!-- Sprint 5: DSTV/NC1 Export (modelos + writer + mapper sao pure C#) -->
+    <Compile Include="..\FerramentaEMT\Models\CncExport\DstvProfileType.cs"
+             Link="LinkedSources\Models\CncExport\DstvProfileType.cs" />
+    <Compile Include="..\FerramentaEMT\Models\CncExport\DstvHole.cs"
+             Link="LinkedSources\Models\CncExport\DstvHole.cs" />
+    <Compile Include="..\FerramentaEMT\Models\CncExport\DstvFile.cs"
+             Link="LinkedSources\Models\CncExport\DstvFile.cs" />
+    <Compile Include="..\FerramentaEMT\Models\CncExport\ExportarDstvConfig.cs"
+             Link="LinkedSources\Models\CncExport\ExportarDstvConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Services\CncExport\DstvFileWriter.cs"
+             Link="LinkedSources\Services\CncExport\DstvFileWriter.cs" />
+    <Compile Include="..\FerramentaEMT\Services\CncExport\DstvProfileMapper.cs"
+             Link="LinkedSources\Services\CncExport\DstvProfileMapper.cs" />
+    <Compile Include="..\FerramentaEMT\Services\CncExport\DstvFileNameSanitizer.cs"
+             Link="LinkedSources\Services\CncExport\DstvFileNameSanitizer.cs" />
+
+    <!-- Sprint 6: Model Check (modelos sao pure C#) -->
+    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckSeverity.cs"
+             Link="LinkedSources\Models\ModelCheck\ModelCheckSeverity.cs" />
+    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckIssue.cs"
+             Link="LinkedSources\Models\ModelCheck\ModelCheckIssue.cs" />
+    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckRuleResult.cs"
+             Link="LinkedSources\Models\ModelCheck\ModelCheckRuleResult.cs" />
+    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckReport.cs"
+             Link="LinkedSources\Models\ModelCheck\ModelCheckReport.cs" />
+    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckConfig.cs"
+             Link="LinkedSources\Models\ModelCheck\ModelCheckConfig.cs" />
+
+    <!-- Sprint 7: Plano de Montagem (modelos sao pure C#) -->
+    <Compile Include="..\FerramentaEMT\Models\Montagem\EtapaMontagem.cs"
+             Link="LinkedSources\Models\Montagem\EtapaMontagem.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Montagem\PlanoMontagemConfig.cs"
+             Link="LinkedSources\Models\Montagem\PlanoMontagemConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Montagem\PlanoMontagemReport.cs"
+             Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Montagem\EtapaMontagemParser.cs"
+             Link="LinkedSources\Services\Montagem\EtapaMontagemParser.cs" />
+
+    <!-- Sprint 7: Conexoes (modelos e calculadora sao pure C#) -->
+    <Compile Include="..\FerramentaEMT\Models\Conexoes\TipoConexao.cs"
+             Link="LinkedSources\Models\Conexoes\TipoConexao.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConfiguracaoChapaPonta.cs"
+             Link="LinkedSources\Models\Conexoes\ConfiguracaoChapaPonta.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConfiguracaoCantoneira.cs"
+             Link="LinkedSources\Models\Conexoes\ConfiguracaoCantoneira.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConfiguracaoGusset.cs"
+             Link="LinkedSources\Models\Conexoes\ConfiguracaoGusset.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConexaoConfig.cs"
+             Link="LinkedSources\Models\Conexoes\ConexaoConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Conexoes\ConexaoCalculator.cs"
+             Link="LinkedSources\Services\Conexoes\ConexaoCalculator.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Conexoes\ConexaoFamilyNames.cs"
+             Link="LinkedSources\Services\Conexoes\ConexaoFamilyNames.cs" />
+
+    <!-- 1.0.0: Sistema de Licenca (pure C#, sem Revit) -->
+    <Compile Include="..\FerramentaEMT\Licensing\LicensePayload.cs"
+             Link="LinkedSources\Licensing\LicensePayload.cs" />
+    <Compile Include="..\FerramentaEMT\Licensing\Base64Url.cs"
+             Link="LinkedSources\Licensing\Base64Url.cs" />
+    <Compile Include="..\FerramentaEMT\Licensing\SimpleJson.cs"
+             Link="LinkedSources\Licensing\SimpleJson.cs" />
+    <Compile Include="..\FerramentaEMT\Licensing\KeySigner.cs"
+             Link="LinkedSources\Licensing\KeySigner.cs" />
+
+    <!-- Config DTOs puros (sem Revit) — adicionados pela auditoria AIOX -->
+    <Compile Include="..\FerramentaEMT\Models\CotarTrelicaConfig.cs"
+             Link="LinkedSources\Models\CotarTrelicaConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\ExportarListaMateriaisConfig.cs"
+             Link="LinkedSources\Models\ExportarListaMateriaisConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\GerarVistaPecaConfig.cs"
+             Link="LinkedSources\Models\GerarVistaPecaConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\IdentificarPerfilConfig.cs"
+             Link="LinkedSources\Models\IdentificarPerfilConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\MarcarPecasConfig.cs"
+             Link="LinkedSources\Models\MarcarPecasConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\TagearTrelicaConfig.cs"
+             Link="LinkedSources\Models\TagearTrelicaConfig.cs" />
+
+    <!-- v1.2.0: PF (Pre-Fabricado de Concreto) — helpers puros -->
+    <Compile Include="..\FerramentaEMT\Services\PF\PfNamingFormatter.cs"
+             Link="LinkedSources\Services\PF\PfNamingFormatter.cs" />
+    <Compile Include="..\FerramentaEMT\Models\PF\PfRebarConfigs.cs"
+             Link="LinkedSources\Models\PF\PfRebarConfigs.cs" />
+
+    <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
+    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
+             Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaGeometria.cs"
+             Link="LinkedSources\Services\Trelica\TrelicaGeometria.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaPerfilFormatter.cs"
+             Link="LinkedSources\Services\Trelica\TrelicaPerfilFormatter.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaTopologia.cs"
+             Link="LinkedSources\Services\Trelica\TrelicaTopologia.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Trelica\CotaFaixaBuilder.cs"
+             Link="LinkedSources\Services\Trelica\CotaFaixaBuilder.cs" />
+    <Compile Include="..\FerramentaEMT\Services\Trelica\CotarTrelicaReport.cs"
+             Link="LinkedSources\Services\Trelica\CotarTrelicaReport.cs" />
+  </ItemGroup>
+
+  <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,
+       TrelicaRevitHelper) nao compilam fora do Revit. Sao excluidos aqui; o comportamento eh
+       validado por smoke test manual no Revit ao inves de xUnit. -->
+  <ItemGroup>
+    <Compile Remove="Services\Trelica\TagearTrelicaReportTests.cs" />
+    <Compile Remove="Services\Trelica\TrelicaRevitHelperTests.cs" />
+    <Compile Remove="Services\IdentificacaoPerfil\IdentificarPerfilReportTests.cs" />
+  </ItemGroup>
+
+</Project>

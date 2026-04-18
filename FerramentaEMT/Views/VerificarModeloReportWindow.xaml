@@ -1,0 +1,73 @@
+<Window x:Class="FerramentaEMT.Views.VerificarModeloReportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Relatorio de Verificacao"
+        Width="820"
+        Height="580"
+        MinWidth="720"
+        MinHeight="480"
+        MaxHeight="760"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Titulo e resumo -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Relatorio de Verificacao de Modelo" Style="{StaticResource DialogTitleText}"/>
+            <Grid Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Total de Elementos: " FontWeight="SemiBold"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="lblTotalElementos" Text="0"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Total de Problemas: " FontWeight="SemiBold" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="lblTotalProblemas" Text="0" Margin="0,4,0,0"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Erros: " FontWeight="SemiBold" Margin="0,4,0,0" Foreground="Red"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="lblErros" Text="0" Margin="0,4,0,0" Foreground="Red"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Avisos: " FontWeight="SemiBold" Margin="0,4,0,0" Foreground="Orange"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="lblAvisos" Text="0" Margin="0,4,0,0" Foreground="Orange"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Separador -->
+        <Border Grid.Row="1" Height="1" Background="#CCCCCC" Margin="0,8"/>
+
+        <!-- TreeView com problemas -->
+        <TreeView Grid.Row="2" x:Name="treeProblemas" Margin="0,8"/>
+
+        <!-- Botoes -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="btnIsolarNaVista" Content="Isolar na Vista" Width="120" Height="32" Margin="0,0,8,0"
+                    Style="{StaticResource AccentButtonStyle}"/>
+            <Button x:Name="btnSelecionarElementos" Content="Selecionar Elementos" Width="140" Height="32" Margin="0,0,8,0"/>
+            <Button x:Name="btnExportarExcel" Content="Exportar Excel" Width="120" Height="32" Margin="0,0,8,0"/>
+            <Button x:Name="btnFechar" Content="Fechar" Width="100" Height="32"/>
+        </StackPanel>
+    </Grid>
+</Window>

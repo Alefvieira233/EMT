@@ -1,0 +1,182 @@
+<Window x:Class="FerramentaEMT.Views.ConexaoConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configurar Conexão"
+        Width="560"
+        Height="580"
+        MinWidth="520"
+        MinHeight="480"
+        MaxHeight="720"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Titulo -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Configuração de Conexão" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Selecione o tipo de conexão e configure seus parâmetros."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <!-- Tipo de Conexão -->
+        <GroupBox Grid.Row="1" Header="Tipo de Conexão" Margin="0 0 0 12">
+            <Grid Margin="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <ComboBox x:Name="cmbTipoConexao" Grid.Row="0" Height="32" Padding="8"
+                          Background="{DynamicResource TextBoxBackgroundBrush}"
+                          Foreground="{DynamicResource TextBoxForegroundBrush}"
+                          SelectionChanged="CmbTipoConexao_SelectionChanged">
+                    <ComboBoxItem Content="Chapa de Ponta" Tag="0"/>
+                    <ComboBoxItem Content="Dupla Cantoneira" Tag="1"/>
+                    <ComboBoxItem Content="Chapa Gusset" Tag="2"/>
+                </ComboBox>
+            </Grid>
+        </GroupBox>
+
+        <!-- Scroll para os painéis de configuração -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0">
+                <!-- Panel: Chapa de Ponta -->
+                <GroupBox x:Name="gbChapaPonta" Header="Chapa de Ponta" Margin="0 0 0 12">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Espessura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtCPEspessura" Grid.Row="1" Height="28" Padding="6" Text="12.7"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="2" Text="Largura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtCPLargura" Grid.Row="3" Height="28" Padding="6" Text="150"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="4" Text="Altura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtCPAltura" Grid.Row="5" Height="28" Padding="6" Text="250"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="6" Text="Número de Parafusos" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtCPNumParafusos" Grid.Row="7" Height="28" Padding="6" Text="4"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Panel: Dupla Cantoneira -->
+                <GroupBox x:Name="gbCantoneira" Header="Dupla Cantoneira" Margin="0 0 0 12" Visibility="Collapsed">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Espessura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtDCEspessura" Grid.Row="1" Height="28" Padding="6" Text="12.7"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="2" Text="Largura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtDCLargura" Grid.Row="3" Height="28" Padding="6" Text="100"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="4" Text="Altura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtDCAltura" Grid.Row="5" Height="28" Padding="6" Text="200"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="6" Text="Parafusos por Cantoneira" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtDCNumParafusos" Grid.Row="7" Height="28" Padding="6" Text="3"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Panel: Chapa Gusset -->
+                <GroupBox x:Name="gbGusset" Header="Chapa Gusset" Margin="0 0 0 12" Visibility="Collapsed">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Espessura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtGSEspessura" Grid.Row="1" Height="28" Padding="6" Text="9.53"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="2" Text="Largura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtGSLargura" Grid.Row="3" Height="28" Padding="6" Text="300"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="4" Text="Altura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtGSAltura" Grid.Row="5" Height="28" Padding="6" Text="300"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="6" Text="Ângulo Diagonal (graus)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtGSAngulo" Grid.Row="7" Height="28" Padding="6" Text="45"
+                                 Background="{DynamicResource TextBoxBackgroundBrush}"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Opções Gerais -->
+                <GroupBox Header="Opções" Margin="0 0 0 12">
+                    <Grid Margin="8">
+                        <CheckBox x:Name="chkGerarFurosDstv" Content="Gerar furos DSTV (para exportação CNC)"
+                                  IsChecked="True" VerticalAlignment="Center" Height="20"/>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botões -->
+        <Grid Grid.Row="3" Margin="0 12 0 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="btnOk" Grid.Column="1" Content="OK" Width="80" Height="32"
+                    Background="{DynamicResource ButtonBackgroundBrush}"
+                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                    Margin="0 0 8 0"
+                    Click="BtnOk_Click"/>
+
+            <Button x:Name="btnCancel" Grid.Column="2" Content="Cancelar" Width="80" Height="32"
+                    Background="{DynamicResource ButtonBackgroundBrush}"
+                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                    Click="BtnCancel_Click"/>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,120 @@
+<Window x:Class="FerramentaEMT.Views.ExportarListaMateriaisWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Exportar Lista de Materiais"
+        Width="780"
+        Height="580"
+        MinWidth="700"
+        MinHeight="480"
+        MaxHeight="740"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Exportar Lista de Materiais" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Gera um arquivo Excel a partir do modelo atual, com abas de elementos estruturais, perfis de conexão, conexões e resumo consolidado." Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Escopo da coleta">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="rbModeloInteiro" Content="Modelo inteiro" Checked="Configuracao_Changed"/>
+                <RadioButton x:Name="rbVistaAtiva" Content="Vista ativa" Checked="Configuracao_Changed"/>
+                <RadioButton x:Name="rbSelecaoAtual" Content="Seleção atual" Checked="Configuracao_Changed"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="Categorias estruturais">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <CheckBox x:Name="chkVigas" Content="Vigas estruturais" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                    <CheckBox x:Name="chkPilares" Content="Pilares estruturais" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                    <CheckBox x:Name="chkFundacoes" Content="Fundações estruturais" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1">
+                    <CheckBox x:Name="chkContraventamentos" Content="Contraventamentos" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                    <CheckBox x:Name="chkChapasConexoes" Content="Conexões e perfis de conexão" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="3" Header="Saída do Excel">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Arquivo:" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtCaminhoArquivo" Grid.Row="0" Grid.Column="1" Margin="4,0" TextChanged="Configuracao_Changed"/>
+                <Button x:Name="btnProcurar" Grid.Row="0" Grid.Column="2" Content="Procurar..." Width="110" Style="{StaticResource SecondaryActionButton}"/>
+
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,10,0,0">
+                    <CheckBox x:Name="chkAbaPerfis" Content="Elementos Estruturais" Margin="0,0,18,0" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                    <CheckBox x:Name="chkAbaChapas" Content="Conexões" Margin="0,0,18,0" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                    <CheckBox x:Name="chkAbaResumo" Content="Resumo" Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="4" Header="Prévia da exportação">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource AccentCardBorder}">
+                    <TextBlock x:Name="txtPreviewArquivo"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AccentCardTextBrush}"
+                               Text="Arquivo de saída: ListaMateriais.xlsx"/>
+                </Border>
+
+                <Border Grid.Row="1" Margin="0,12,0,0" Style="{StaticResource WarningCardBorder}">
+                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WarningTextBrush}">
+                        A exportação usa o material estrutural principal do elemento, mantém concreto e aço, separa perfis de conexão das demais conexões e expõe o detalhe do agrupamento no Excel.
+                    </TextBlock>
+                </Border>
+
+                <Border Grid.Row="2" Margin="0,12,0,0" Style="{StaticResource SubtleCardBorder}">
+                    <TextBlock x:Name="txtResumo" TextWrapping="Wrap"/>
+                </Border>
+            </Grid>
+        </GroupBox>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="btnCancelar" Content="Cancelar" Width="100" Style="{StaticResource SecondaryActionButton}"/>
+            <Button x:Name="btnExportar" Content="Exportar" Width="100" Style="{StaticResource PrimaryActionButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

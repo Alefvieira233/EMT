@@ -1,0 +1,105 @@
+<Window x:Class="FerramentaEMT.Views.LicenseActivationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ativar Licença - FerramentaEMT"
+        Width="640"
+        MinWidth="560" MinHeight="460"
+        MaxHeight="620"
+        SizeToContent="Height"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 16">
+            <TextBlock Text="Ativar FerramentaEMT" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Cole abaixo a chave que você recebeu por email após a compra."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <!-- Status atual -->
+        <Border Grid.Row="1" x:Name="borderStatus" Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 12">
+            <StackPanel>
+                <TextBlock x:Name="txtStatusTitle" Text="Estado atual"
+                           FontWeight="SemiBold" FontSize="14"/>
+                <TextBlock x:Name="txtStatusBody" Text="—"
+                           Style="{StaticResource SectionBodyText}" Margin="0 4 0 0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Campo da chave -->
+        <GroupBox Grid.Row="2" Header="Chave de Licença">
+            <StackPanel>
+                <TextBlock Text="Chave (cole a string completa que recebeu)"
+                           Style="{StaticResource LabelText}" Margin="0 0 0 4"/>
+                <TextBox x:Name="txtChave"
+                         Height="80"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Consolas"
+                         FontSize="11"
+                         Margin="0 0 0 12"/>
+
+                <TextBlock Text="Identificador desta máquina (informe ao suporte se precisar reativar)"
+                           Style="{StaticResource LabelText}" Margin="0 0 0 4"/>
+                <Grid Margin="0 0 0 4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="txtFingerprint"
+                             Grid.Column="0"
+                             IsReadOnly="True"
+                             FontFamily="Consolas"
+                             FontSize="11"/>
+                    <Button x:Name="btnCopiarFingerprint"
+                            Grid.Column="1"
+                            Content="Copiar"
+                            Width="80"
+                            Margin="6 0 0 0"
+                            Style="{StaticResource SecondaryActionButton}"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Mensagem de feedback -->
+        <Border Grid.Row="3" x:Name="borderFeedback"
+                Style="{StaticResource WarningCardBorder}"
+                Margin="0 12 0 0"
+                Visibility="Collapsed">
+            <TextBlock x:Name="txtFeedback" Style="{StaticResource SectionBodyText}"/>
+        </Border>
+
+        <!-- Botoes -->
+        <Border Grid.Row="4" Style="{StaticResource ActionBarBorder}" Margin="-20,16,-20,-20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnFechar"
+                        Content="Fechar"
+                        Width="100"
+                        Style="{StaticResource SecondaryActionButton}"
+                        Margin="0,0,8,0"/>
+                <Button x:Name="btnAtivar"
+                        Content="Ativar"
+                        Width="120"
+                        Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+	<AddIn Type="Application">
+		<Name>FerramentaEMT</Name>
+		<Assembly>C:\Users\User\Downloads\FerramentaEMT  OFICIAL\FerramentaEMT\bin\Release\net8.0-windows\FerramentaEMT.dll</Assembly>
+		<AddInId>610FE337-F95D-4813-8BF8-2CE11C9948C1</AddInId>
+		<FullClassName>FerramentaEMT.App</FullClassName>
+		<VendorId>EMT</VendorId>
+		<VendorDescription>Ferramenta EMT</VendorDescription>
+	</AddIn>
+</RevitAddIns>

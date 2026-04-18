@@ -1,0 +1,111 @@
+<Window x:Class="FerramentaEMT.Views.TercasWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Gerar Terças por Plano"
+        Width="800" Height="600"
+        MinWidth="720" MinHeight="520"
+        MaxHeight="760"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- header -->
+            <RowDefinition Height="Auto"/> <!-- dados principais -->
+            <RowDefinition Height="Auto"/> <!-- geometria -->
+            <RowDefinition Height="Auto"/> <!-- instrucoes -->
+            <RowDefinition Height="*"/>   <!-- filler -->
+            <RowDefinition Height="Auto"/> <!-- buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- header -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Configuração de Lançamento das Terças" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Defina os parâmetros geométricos e de posicionamento antes da seleção do plano e dos limites." Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <!-- Dados principais -->
+        <GroupBox Grid.Row="1" Header="Dados principais" Margin="0 0 0 12" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Família estrutural:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbFamilia" Grid.Row="0" Grid.Column="1" MinWidth="200" Margin="4,0" SelectionChanged="CmbFamilia_SelectionChanged"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Perfil estrutural:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbPerfil" Grid.Row="1" Grid.Column="1" MinWidth="200" Margin="4,0"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Quantidade por vão:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="numQtde" Grid.Row="1" Grid.Column="3" Width="80" Text="5" Margin="4,0"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Geometria e ajuste -->
+        <GroupBox Grid.Row="2" Header="Geometria e ajuste" Margin="0 0 0 12" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Beiral inicial (cm):" VerticalAlignment="Center"/>
+                <TextBox x:Name="numBeiralIni" Grid.Row="0" Grid.Column="1" Width="100" Margin="4"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Beiral final (cm):" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="numBeiralFim" Grid.Row="0" Grid.Column="3" Width="100" Margin="4"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Offset ao plano (mm):" VerticalAlignment="Center"/>
+                <TextBox x:Name="numOffset" Grid.Row="1" Grid.Column="1" Width="100" Margin="4"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Ângulo da seção (graus):" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="numRotacao" Grid.Row="1" Grid.Column="3" Width="100" Margin="4"/>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Justificação Z:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbZJust" Grid.Row="2" Grid.Column="1" Width="120" Margin="4"/>
+
+                <CheckBox x:Name="chkInverter" Grid.Row="3" Grid.Column="0" Content="Inverter sentido das terças" Margin="0,6,0,0"/>
+                <CheckBox x:Name="chkDividir" Grid.Row="3" Grid.Column="1" Content="Dividir terças nos banzos selecionados" IsChecked="True" Margin="20,6,0,0"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- instrucoes -->
+        <GroupBox Grid.Row="3" Header="Sequência do comando" Margin="0 0 0 8" Padding="6">
+            <TextBlock TextWrapping="Wrap" Style="{StaticResource SectionBodyText}">
+                Apos clicar em OK: selecione a linha limite inicial, a linha limite final e, se marcado, os banzos de divisao.
+            </TextBlock>
+        </GroupBox>
+
+
+        <!-- buttons -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 0 0 0">
+            <Button x:Name="btnCancel" Content="Cancelar" Width="90" Style="{StaticResource SecondaryActionButton}"/>
+            <Button x:Name="btnOk" Content="OK" Width="80" Style="{StaticResource PrimaryActionButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

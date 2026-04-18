@@ -1,0 +1,85 @@
+<Window x:Class="FerramentaEMT.Views.PfColumnStirrupsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PM - Estribos Pilar"
+        Width="480"
+        MinWidth="400" MinHeight="360"
+        MaxHeight="520"
+        SizeToContent="Height"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Estribos em Pilar" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Distribui os estribos automaticamente dentro do cobrimento a partir do espacamento informado."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <GroupBox Header="Configuracao">
+                <Grid Margin="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Vergalhao:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <ComboBox x:Name="cmbBarType" Grid.Row="0" Grid.Column="1" Margin="0 0 0 8"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Cobrimento (cm):" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <TextBox x:Name="txtCover" Grid.Row="1" Grid.Column="1" Margin="0 0 0 8" Text="3"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Espac. base (cm):" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <TextBox x:Name="txtEspInferior" Grid.Row="2" Grid.Column="1" Margin="0 0 0 8" Text="12"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Espac. corpo (cm):" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <TextBox x:Name="txtEspCentral" Grid.Row="3" Grid.Column="1" Margin="0 0 0 8" Text="20"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Espac. topo (cm):" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <TextBox x:Name="txtEspSuperior" Grid.Row="4" Grid.Column="1" Margin="0 0 0 8" Text="12"/>
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Altura zona (cm):" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                    <TextBox x:Name="txtAlturaZona" Grid.Row="5" Grid.Column="1" Text="60"/>
+                </Grid>
+            </GroupBox>
+
+            <Border Margin="0 12 0 0" Padding="12" CornerRadius="8" Background="#11000000">
+                <StackPanel>
+                    <TextBlock x:Name="txtAmostra" TextWrapping="Wrap" Margin="0 0 0 6"/>
+                    <TextBlock TextWrapping="Wrap"
+                               Text="O estribo e sempre criado dentro da secao. A distribuicao usa o espacamento informado e a visualizacao final da dobra fica na propria forma do Revit."/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel" Content="Cancelar" Width="96" Style="{StaticResource SecondaryActionButton}" Margin="0,0,8,0"/>
+                <Button x:Name="btnOk" Content="Aplicar" Width="110" Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

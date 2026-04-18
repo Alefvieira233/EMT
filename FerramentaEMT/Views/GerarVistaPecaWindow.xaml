@@ -1,0 +1,142 @@
+<Window x:Class="FerramentaEMT.Views.GerarVistaPecaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Auto-Vista de Peça"
+        Width="600"
+        MinWidth="520" MinHeight="520"
+        MaxHeight="720"
+        SizeToContent="Height"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Titulo -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Auto-Vista de Peça" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Gera vistas de detalhe (longitudinal e transversal) para peças estruturais, voltadas para shop drawings de fabricação metálica."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <!-- Escopo -->
+        <GroupBox Grid.Row="1" Header="Escopo da seleção">
+            <StackPanel>
+                <RadioButton x:Name="rbSelecaoManual" Content="Seleção manual (selecionar após confirmar)"
+                             IsChecked="True" Checked="Configuracao_Changed"/>
+                <RadioButton x:Name="rbVistaAtiva" Content="Todos os elementos estruturais da vista ativa"
+                             Margin="0,6,0,0" Checked="Configuracao_Changed"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Tipos de vista -->
+        <GroupBox Grid.Row="2" Header="Vistas a gerar">
+            <StackPanel>
+                <Border Style="{StaticResource AccentCardBorder}" Margin="0 0 0 8">
+                    <StackPanel>
+                        <CheckBox x:Name="chkLongitudinal" Content="Vista longitudinal (elevação lateral)"
+                                  IsChecked="True" FontWeight="SemiBold"
+                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                        <TextBlock Text="Mostra o comprimento total da peça com o perfil visto de frente."
+                                   Style="{StaticResource SectionBodyText}" Margin="20,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource SubtleCardBorder}">
+                    <StackPanel>
+                        <CheckBox x:Name="chkTransversal" Content="Corte transversal (seção no meio)"
+                                  IsChecked="True" FontWeight="SemiBold"
+                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                        <TextBlock Text="Mostra a seção transversal do perfil no ponto médio da peça."
+                                   Style="{StaticResource SectionBodyText}" Margin="20,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Configuracoes -->
+        <GroupBox Grid.Row="3" Header="Configurações">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="120"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Escala:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbEscala" Grid.Row="0" Grid.Column="1"
+                          SelectedValuePath="Tag" Margin="4,2">
+                    <ComboBoxItem Content="1:10" Tag="10"/>
+                    <ComboBoxItem Content="1:15" Tag="15"/>
+                    <ComboBoxItem Content="1:20" Tag="20" IsSelected="True"/>
+                    <ComboBoxItem Content="1:25" Tag="25"/>
+                    <ComboBoxItem Content="1:50" Tag="50"/>
+                    <ComboBoxItem Content="1:75" Tag="75"/>
+                    <ComboBoxItem Content="1:100" Tag="100"/>
+                </ComboBox>
+
+                <Label Grid.Row="0" Grid.Column="3" Content="Margem (mm):" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtMargem" Grid.Row="0" Grid.Column="4" Text="150" Margin="4,2"
+                         VerticalContentAlignment="Center"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Prefixo:" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtPrefixo" Grid.Row="1" Grid.Column="1" Text="SD" Margin="4,2"
+                         VerticalContentAlignment="Center"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Folha -->
+        <GroupBox Grid.Row="4" Header="Folha (opcional)">
+            <StackPanel>
+                <CheckBox x:Name="chkCriarFolha"
+                          Content="Criar folha e posicionar vistas automaticamente"
+                          Checked="ChkCriarFolha_Changed" Unchecked="ChkCriarFolha_Changed"/>
+
+                <Grid x:Name="gridFolha" Margin="20,8,0,0" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="Folha de título:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="cmbTitleBlock" Grid.Column="1" Margin="4,0"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Previa -->
+        <Border Grid.Row="5" Style="{StaticResource SubtleCardBorder}" Margin="0,8,0,0">
+            <TextBlock x:Name="txtResumo" TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- Botoes -->
+        <Border Grid.Row="6" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel" Content="Cancelar" Width="96"
+                        Style="{StaticResource SecondaryActionButton}" Margin="0,0,8,0"/>
+                <Button x:Name="btnOk" Content="Gerar Vistas" Width="120"
+                        Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

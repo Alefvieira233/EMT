@@ -1,0 +1,67 @@
+<Window x:Class="FerramentaEMT.Views.NumeracaoItensControleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Numerar Itens"
+        Width="430"
+        MinWidth="430"
+        MinHeight="260"
+        MaxHeight="520"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel Margin="12">
+        <Border DockPanel.Dock="Bottom" Margin="0 12 0 0" Style="{StaticResource ActionBarBorder}">
+            <WrapPanel HorizontalAlignment="Right" ItemHeight="36">
+                <Button x:Name="btnRetroceder" Content="&lt;" Width="42" Margin="0 0 6 0"/>
+                <Button x:Name="btnAvancar" Content="&gt;" Width="42" Margin="0 0 6 0"/>
+                <Button x:Name="btnDesfazer" Content="Desfazer" Width="84" Margin="0 0 6 0"/>
+                <Button x:Name="btnRetomar" Content="Retomar" Width="84" Margin="0 0 6 0" Style="{StaticResource PrimaryActionButton}"/>
+                <Button x:Name="btnConcluir" Content="Concluir" Width="84" Style="{StaticResource SecondaryActionButton}"/>
+            </WrapPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <CheckBox x:Name="chkAutoIncremento"
+                          Content="Incremento automático"
+                          Margin="0 0 0 10"/>
+
+                <Border Style="{StaticResource AccentCardBorder}">
+                    <StackPanel>
+                        <TextBlock x:Name="txtValorAtual" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentCardTextBrush}" Text="Valor atual: 1"/>
+                        <TextBlock x:Name="txtProximo" Margin="0 4 0 0" Style="{StaticResource DialogSubtitleText}" Text="Próximo automático: 2"/>
+                        <TextBlock x:Name="txtParametro" Margin="0 6 0 0" Style="{StaticResource DialogSubtitleText}" Text="Campo: Marca"/>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock x:Name="txtContagem"
+                           Margin="0 10 0 6"
+                           FontWeight="SemiBold"
+                           Text="0 de 0 itens numerados"/>
+
+                <TextBlock x:Name="txtAjuda"
+                           Margin="0 0 0 8"
+                           Style="{StaticResource DialogSubtitleText}"
+                           Text="ESC pausa a seleção. Use &lt; e &gt; para ajustar a sequência antes do próximo clique."/>
+
+                <Border Style="{StaticResource WarningCardBorder}">
+                    <TextBlock x:Name="txtStatus"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource WarningTextBrush}"
+                               Text="Preparando sessão..."/>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

@@ -1,0 +1,147 @@
+<Window x:Class="FerramentaEMT.Views.EscadaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lançar Escada Convencional"
+        Width="740" Height="580"
+        MinWidth="680" MinHeight="480"
+        MaxHeight="720"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+        <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Lançamento de Escada Convencional" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Gera longarinas inclinadas e degraus entre dois pontos, com referência lateral, extensões e tipo de degrau configuráveis." Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <!-- Longarinas -->
+        <GroupBox Grid.Row="1" Header="Perfil das longarinas (vigas laterais)" Margin="0 0 0 6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Família:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbLongarinaFamilia" Grid.Row="0" Grid.Column="1" Margin="4,0" MinWidth="220"
+                          SelectionChanged="CmbLongarinaFamilia_SelectionChanged"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Tipo:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbLongarina" Grid.Row="0" Grid.Column="3" Margin="4,0" MinWidth="220"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Nível de referência:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbNivel" Grid.Row="1" Grid.Column="1" Margin="4,6,4,0" MinWidth="220"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Justificação do perfil:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbZJust" Grid.Row="1" Grid.Column="3" Margin="4,6,4,0" MinWidth="180"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Degraus -->
+        <GroupBox Grid.Row="2" Header="Perfil dos degraus" Margin="0 0 0 6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Column="0" Content="Família:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbDegrauFamilia" Grid.Column="1" Margin="4,0" MinWidth="220"
+                          SelectionChanged="CmbDegrauFamilia_SelectionChanged"/>
+
+                <Label Grid.Column="2" Content="Tipo:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbDegrau" Grid.Column="3" Margin="4,0" MinWidth="220"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Parâmetros geométricos -->
+        <GroupBox Grid.Row="3" Header="Parâmetros geométricos" Margin="0 0 0 6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Largura da escada (cm):" VerticalAlignment="Center"/>
+                <TextBox x:Name="numLargura" Grid.Row="0" Grid.Column="1" Width="90" Margin="4"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Altura do espelho (cm):" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="numEspelho" Grid.Row="0" Grid.Column="3" Width="90" Margin="4"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Lado de inserção:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbLadoInsercao" Grid.Row="1" Grid.Column="1" Margin="4,6,4,0" MinWidth="180"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Pisada (cm):" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="numPisada" Grid.Row="1" Grid.Column="3" Width="90" Margin="4,6,4,0"/>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Quantidade de degraus:" VerticalAlignment="Center" Margin="0,6,0,0"/>
+                <TextBox x:Name="numQuantidadeDegraus" Grid.Row="2" Grid.Column="1" Width="90" Margin="4,6,4,0"/>
+
+                <Label Grid.Row="2" Grid.Column="2" Content="Tipo de degrau:" VerticalAlignment="Center" Margin="20,6,0,0"/>
+                <ComboBox x:Name="cmbTipoDegrauModelagem" Grid.Row="2" Grid.Column="3" Margin="4,6,4,0" MinWidth="180"
+                          SelectionChanged="CmbTipoDegrauModelagem_SelectionChanged"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Opções -->
+        <GroupBox Grid.Row="4" Header="Opções de criação" Margin="0 0 0 6">
+            <StackPanel>
+                <CheckBox x:Name="chkCriarDegraus" Content="Criar degraus horizontais ao longo das longarinas" Margin="0,2,0,0"/>
+                <CheckBox x:Name="chkUnirGeometrias" Content="Permitir união entre os perfis lançados" Margin="0,6,0,0"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Sequência -->
+        <GroupBox Grid.Row="5" Header="Sequência desta etapa">
+            <TextBlock TextWrapping="Wrap" Style="{StaticResource SectionBodyText}">
+                Depois de clicar em Criar, a ferramenta pedirá dois pontos:&#x0a;
+                1. Ponto INFERIOR — base da escada (piso de origem)&#x0a;
+                2. Ponto SUPERIOR — topo da escada (piso de destino)&#x0a;&#x0a;
+                As longarinas serão criadas inclinadas conforme o lado de inserção escolhido. Os degraus podem
+                ser modelados como perfil linear ou chapa.
+                Se a quantidade de degraus for informada, ela será usada no lançamento; caso contrário,
+                o número de degraus é calculado a partir da altura de espelho informada. A ferramenta
+                verifica a regra de Blondel usando a pisada configurada.
+            </TextBlock>
+        </GroupBox>
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="btnCancel" Content="Cancelar" Width="90" Margin="0,0,8,0" Style="{StaticResource SecondaryActionButton}"/>
+            <Button x:Name="btnCreate" Content="Criar" Width="90" Style="{StaticResource PrimaryActionButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

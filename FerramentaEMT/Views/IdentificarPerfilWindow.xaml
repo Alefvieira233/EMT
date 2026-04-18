@@ -1,0 +1,81 @@
+<Window x:Class="FerramentaEMT.Views.IdentificarPerfilWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Identificar Perfil"
+        Width="520"
+        MinWidth="440" MinHeight="380"
+        MaxHeight="520"
+        SizeToContent="Height"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Identificar Perfil em Massa" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Coloca tags de perfil em todos os elementos selecionados (vigas, pilares, contraventos)."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <GroupBox Header="Categorias de elementos">
+                <StackPanel Margin="4">
+                    <CheckBox x:Name="chkIncluirVigas" Content="Vigas (Structural Framing)" IsChecked="True" Margin="0 2"/>
+                    <CheckBox x:Name="chkIncluirPilares" Content="Pilares (Structural Columns)" IsChecked="True" Margin="0 2"/>
+                    <CheckBox x:Name="chkIncluirContraventos" Content="Contraventos (Bracing)" IsChecked="True" Margin="0 2"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Opcoes de identificacao" Margin="0 12 0 0">
+                <StackPanel Margin="4">
+                    <CheckBox x:Name="chkSubstituirTagsExistentes"
+                              Content="Substituir tags existentes (se nao marcado, pula elementos com tag)"
+                              IsChecked="False"
+                              Margin="0 2"/>
+                    <CheckBox x:Name="chkCantoneiraDupla"
+                              Content="Cantoneiras duplas com prefixo 2x (ex: 2x L 76x76x6.3)"
+                              IsChecked="True"
+                              Margin="0 2"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Posicionamento" Margin="0 12 0 0">
+                <Grid Margin="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Offset da tag (mm):"
+                               VerticalAlignment="Center" Margin="0 0 8 0"/>
+                    <TextBox x:Name="txtOffsetTagMm" Grid.Column="1"
+                             Text="300.0"
+                             Margin="0"/>
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel" Content="Cancelar" Width="96" Style="{StaticResource SecondaryActionButton}" Margin="0,0,8,0"/>
+                <Button x:Name="btnOk"     Content="OK"       Width="110" Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

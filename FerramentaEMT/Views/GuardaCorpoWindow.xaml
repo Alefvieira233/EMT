@@ -1,0 +1,121 @@
+<Window x:Class="FerramentaEMT.Views.GuardaCorpoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lançar Guarda-Corpo"
+        Width="700" Height="500"
+        MinWidth="640" MinHeight="440"
+        MaxHeight="720"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Lançamento de Guarda-Corpo" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Primeira etapa da ferramenta: corrimão por dois pontos com postes automáticos e interface configurável." Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Perfil estrutural" Margin="0 0 0 10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Família:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbFamilia" Grid.Row="0" Grid.Column="1" Margin="4,0" MinWidth="220" SelectionChanged="CmbFamilia_SelectionChanged"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Tipo:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbTipo" Grid.Row="0" Grid.Column="3" Margin="4,0" MinWidth="220"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Nível de referência:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbNivel" Grid.Row="1" Grid.Column="1" Margin="4,6,4,0" MinWidth="220"/>
+
+                <Label Grid.Row="1" Grid.Column="2" Content="Justificação do perfil:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <ComboBox x:Name="cmbZJust" Grid.Row="1" Grid.Column="3" Margin="4,6,4,0" MinWidth="180"/>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" Header="Parâmetros geométricos" Margin="0 0 0 10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Altura do corrimão (cm):" VerticalAlignment="Center"/>
+                <TextBox x:Name="numAltura" Grid.Row="0" Grid.Column="1" Width="90" Margin="4"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Offset lateral (cm):" VerticalAlignment="Center"/>
+                <TextBox x:Name="numOffsetLateral" Grid.Row="1" Grid.Column="1" Width="90" Margin="4"/>
+
+                <Label Grid.Row="0" Grid.Column="2" Content="Vão máximo entre postes (cm):" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <TextBox x:Name="numEspacamentoMaximo" Grid.Row="0" Grid.Column="3" Width="90" Margin="4"/>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="3" Header="Opções de criação" Margin="0 0 0 10">
+            <StackPanel>
+                <CheckBox x:Name="chkUnirGeometrias" Content="Permitir união entre os trechos lançados" Margin="0,2,0,0"/>
+                <CheckBox x:Name="chkCriarPostes" Content="Criar postes automáticos ao longo do trecho" Margin="0,6,0,0"/>
+                <Grid Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="chkCriarTravessas"
+                              Grid.Column="0"
+                              Content="Criar travessas intermediárias"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              Checked="ChkCriarTravessas_Changed"
+                              Unchecked="ChkCriarTravessas_Changed"/>
+                    <Label Grid.Column="1" Content="Quantidade:" VerticalAlignment="Center"/>
+                    <TextBox x:Name="numQuantidadeTravessas" Grid.Column="2" Width="90" Margin="4,0,0,0"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Grid.Row="4" Header="Sequência desta etapa">
+            <TextBlock TextWrapping="Wrap" Style="{StaticResource SectionBodyText}">
+                Depois de clicar em Criar, a ferramenta pedirá o ponto inicial e o ponto final do guarda-corpo.
+                O corrimão e as travessas acompanharão a inclinação do trecho, enquanto os postes serão criados
+                sempre verticais no mundo e distribuídos segundo o vão máximo informado.
+            </TextBlock>
+        </GroupBox>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="btnCancel" Content="Cancelar" Width="90" Margin="0,0,8,0" Style="{StaticResource SecondaryActionButton}"/>
+            <Button x:Name="btnCreate" Content="Criar" Width="90" Style="{StaticResource PrimaryActionButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

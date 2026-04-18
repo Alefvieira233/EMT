@@ -1,0 +1,69 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (Release) + Test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Show .NET info
+        run: dotnet --info
+
+      # Mock RevitAPI/RevitAPIUI - CI doesn't have Revit installed.
+      # We compile against shim assemblies; tests do NOT depend on Revit.
+      - name: Create RevitAPI shims (CI only)
+        shell: pwsh
+        run: |
+          $shimDir = "$env:GITHUB_WORKSPACE\ci-shims"
+          New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
+          # We don't actually compile against shims - we just skip the main project on CI
+          # and only build the test project, which should not depend on RevitAPI.
+          Write-Host "CI shim directory: $shimDir"
+
+      - name: Restore dependencies (Tests project only)
+        working-directory: FerramentaEMT.Tests
+        run: dotnet restore
+
+      - name: Build Tests
+        working-directory: FerramentaEMT.Tests
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run Tests
+        working-directory: FerramentaEMT.Tests
+        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: FerramentaEMT.Tests/TestResults/
+
+  lint:
+    name: Code Quality (dotnet format)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Verify formatting (Tests project)
+        working-directory: FerramentaEMT.Tests
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+        continue-on-error: true   # WARNING ONLY for now; flip to fail later
