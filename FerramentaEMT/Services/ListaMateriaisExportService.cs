@@ -1,21 +1,57 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using ClosedXML.Excel;
+using FerramentaEMT.Core;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models;
 using FerramentaEMT.Utils;
 
 namespace FerramentaEMT.Services
 {
+    /// <summary>
+    /// Servico de exportacao da Lista de Materiais (LDM) para .xlsx.
+    ///
+    /// <para>
+    /// Arquitetura ADR-003 + ADR-004 (terceira adocao, pos-DstvExport e ModelCheck):
+    /// <list type="bullet">
+    ///   <item>Retorna <see cref="FerramentaEMT.Core.Result{T}"/> — falhas de dominio sao valores,
+    ///   nao excecoes. Excecoes ficam para bugs/falhas de infra (IO, Revit API).</item>
+    ///   <item>Aceita <see cref="IProgress{T}"/> + <see cref="CancellationToken"/>. O comando
+    ///   wrappa em <see cref="FerramentaEMT.Utils.RevitProgressHost"/> para UI de progresso.</item>
+    ///   <item>Servico e "mudo": sem AppDialogService — so <see cref="Logger"/>. Dialogos ficam
+    ///   no comando para manter separacao UI vs logica.</item>
+    /// </list>
+    /// </para>
+    /// </summary>
     public class ListaMateriaisExportService
     {
+        /// <summary>
+        /// Envelope de resultado da exportacao LDM. Valores somados durante o processamento.
+        /// Transportado via <see cref="FerramentaEMT.Core.Result{T}"/> de volta ao comando,
+        /// que monta o dialogo de resumo (ADR-003 — service mudo).
+        /// </summary>
+        public sealed class ResultadoExport
+        {
+            public int TotalElementosColetados { get; set; }
+            public int LinhasProduzidas { get; set; }
+            public int GruposConsolidados { get; set; }
+            public int ElementosEstruturais { get; set; }
+            public int PerfisConexao { get; set; }
+            public int Conexoes { get; set; }
+            public string CaminhoArquivo { get; set; } = string.Empty;
+            public TimeSpan Duracao { get; set; }
+        }
+
         private const string Titulo = "Exportar Lista de Materiais";
         private const string NomeTemplateLdm = "ModeloLDM.xlsx";
         private const string NomeAbaCapa = "CAPA";
@@ -76,70 +112,140 @@ namespace FerramentaEMT.Services
         private static readonly Regex NumeroTextoRegex =
             new Regex(@"[-+]?\d+(?:[.,]\d+)?", RegexOptions.Compiled);
 
-        public Result Exportar(UIDocument uidoc, ExportarListaMateriaisConfig config, ref string message)
+        /// <summary>
+        /// Executa a exportacao da lista de materiais para .xlsx.
+        ///
+        /// <para>
+        /// Fluxo:
+        /// <list type="number">
+        ///   <item>Validar config e UIDocument (Result.Fail para input invalido).</item>
+        ///   <item>Coletar elementos + classificar em linhas (aceita progress+CT).</item>
+        ///   <item>Agrupar linhas em grupos consolidados (CPU-only, nao interrompivel).</item>
+        ///   <item>Salvar workbook via ClosedXML (IO, nao interrompivel).</item>
+        /// </list>
+        /// </para>
+        ///
+        /// <para>
+        /// Contrato ADR-003:
+        /// <list type="bullet">
+        ///   <item>Nao abre dialogos — apenas <see cref="Logger"/>.</item>
+        ///   <item>Excecoes de IO/Revit sao capturadas e viram <c>Result.Fail</c> com mensagem amigavel.</item>
+        ///   <item><see cref="OperationCanceledException"/> propaga sem ser tratada — callsite
+        ///   (comando + <see cref="FerramentaEMT.Utils.RevitProgressHost"/>) decide.</item>
+        /// </list>
+        /// </para>
+        /// </summary>
+        public Core.Result<ResultadoExport> Exportar(
+            UIDocument uidoc,
+            ExportarListaMateriaisConfig config,
+            IProgress<ProgressReport> progress = null,
+            CancellationToken ct = default)
         {
+            if (uidoc == null)
+                return Core.Result<ResultadoExport>.Fail("UIDocument nao disponivel.");
+
+            if (config == null)
+                return Core.Result<ResultadoExport>.Fail("Configuracao nao informada.");
+
+            if (!config.TemCategoriaSelecionada())
+                return Core.Result<ResultadoExport>.Fail("Selecione ao menos uma categoria.");
+
+            if (!config.TemAbaSelecionada())
+                return Core.Result<ResultadoExport>.Fail("Selecione ao menos uma aba de saida.");
+
+            if (string.IsNullOrWhiteSpace(config.CaminhoArquivo))
+                return Core.Result<ResultadoExport>.Fail("Caminho do arquivo nao informado.");
+
+            Stopwatch sw = Stopwatch.StartNew();
+            ProgressReporter reporter = new ProgressReporter(progress, throttleMs: 100, ct);
+            Document doc = uidoc.Document;
+
+            // Fase 1: coleta + classificacao — pode ser longa em modelos grandes.
+            // Propaga OperationCanceledException se usuario cancelar.
+            List<ListaMateriaisLinha> linhas;
             try
             {
-                if (uidoc is null)
-                {
-                    AppDialogService.ShowError(Titulo, "UIDocument nulo.", "Documento indisponível");
-                    return Result.Failed;
-                }
-
-                if (config is null)
-                {
-                    AppDialogService.ShowWarning(Titulo, "Configuração inválida.", "Dados incompletos");
-                    return Result.Failed;
-                }
-
-                if (!config.TemCategoriaSelecionada())
-                {
-                    AppDialogService.ShowWarning(Titulo, "Selecione ao menos uma categoria.", "Seleção incompleta");
-                    return Result.Cancelled;
-                }
-
-                if (!config.TemAbaSelecionada())
-                {
-                    AppDialogService.ShowWarning(Titulo, "Selecione ao menos uma aba de saída.", "Seleção incompleta");
-                    return Result.Cancelled;
-                }
-
-                Document doc = uidoc.Document;
-                List<ListaMateriaisLinha> linhas = ColetarLinhas(doc, uidoc, config);
-                if (linhas.Count == 0)
-                {
-                    AppDialogService.ShowWarning(Titulo, "Nenhum elemento elegível foi encontrado com os filtros escolhidos.", "Nenhum item encontrado");
-                    return Result.Cancelled;
-                }
-
-                List<ListaMateriaisGrupo> grupos = AgruparLinhas(linhas);
-                SalvarWorkbook(config.CaminhoArquivo, grupos, config, doc.Title);
-
-                int elementosEstruturais = grupos.Count(x => x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.ElementosEstruturais);
-                int perfisConexao = grupos.Count(x => x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.PerfisConexao);
-                int conexoes = grupos.Count(x => x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.Conexoes);
-
-                AppDialogService.ShowInfo(
-                    Titulo,
-                    "Exportação concluída com sucesso." +
-                    $"\n\nArquivo: {config.CaminhoArquivo}" +
-                    $"\nLinhas consolidadas: {grupos.Count}" +
-                    $"\nElementos estruturais: {elementosEstruturais}" +
-                    $"\nPerfis de conexão: {perfisConexao}" +
-                    $"\nConexões: {conexoes}",
-                    "Arquivo gerado");
-
-                return Result.Succeeded;
+                reporter.ReportFinal(0, 0, "Coletando elementos...");
+                linhas = ColetarLinhas(doc, uidoc, config, reporter);
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // callsite mapeia para Result.Cancelled do Revit
             }
             catch (Exception ex)
             {
-                message = ex.Message;
-                AppDialogService.ShowError(Titulo, ex.Message, "Falha na exportação");
-                return Result.Failed;
+                Logger.Error(ex, "ListaMateriaisExport: falha durante coleta de elementos");
+                return Core.Result<ResultadoExport>.Fail(
+                    $"Falha ao coletar elementos do modelo:\n{ex.Message}");
             }
+
+            if (linhas.Count == 0)
+                return Core.Result<ResultadoExport>.Fail(
+                    "Nenhum elemento elegivel foi encontrado com os filtros escolhidos.");
+
+            // Fase 2: agrupamento — CPU-only, rapido, nao interrompivel.
+            reporter.ReportFinal(linhas.Count, linhas.Count, "Consolidando linhas...");
+            List<ListaMateriaisGrupo> grupos = AgruparLinhas(linhas);
+
+            // Fase 3: geracao do workbook — IO nao interrompivel (abortar no meio deixaria
+            // arquivo corrompido). Nao verifica ct aqui: a pipeline ClosedXML e atomica.
+            reporter.ReportFinal(grupos.Count, grupos.Count, "Gravando planilha Excel...");
+            try
+            {
+                SalvarWorkbook(config.CaminhoArquivo, grupos, config, doc.Title);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "ListaMateriaisExport: falha ao gravar workbook {Path}", config.CaminhoArquivo);
+                return Core.Result<ResultadoExport>.Fail(
+                    $"Falha ao gravar planilha:\n{ex.Message}");
+            }
+
+            sw.Stop();
+            ResultadoExport resultado = new ResultadoExport
+            {
+                TotalElementosColetados = linhas.Count,
+                LinhasProduzidas = linhas.Count,
+                GruposConsolidados = grupos.Count,
+                ElementosEstruturais = grupos.Count(x => x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.ElementosEstruturais),
+                PerfisConexao = grupos.Count(x => x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.PerfisConexao),
+                Conexoes = grupos.Count(x => x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.Conexoes),
+                CaminhoArquivo = config.CaminhoArquivo,
+                Duracao = sw.Elapsed
+            };
+
+            Logger.Info("ListaMateriaisExport OK: {Linhas} linhas -> {Grupos} grupos em {Ms}ms",
+                linhas.Count, grupos.Count, sw.ElapsedMilliseconds);
+            reporter.ReportFinal(grupos.Count, grupos.Count, "Exportacao concluida");
+
+            return Core.Result<ResultadoExport>.Ok(resultado);
         }
 
-        private static List<ListaMateriaisLinha> ColetarLinhas(Document doc, UIDocument uidoc, ExportarListaMateriaisConfig config)
+        /// <summary>
+        /// Monta texto de resumo da exportacao para o dialogo de sucesso.
+        /// Separado do <see cref="Exportar"/> para o comando decidir como apresentar (ADR-003).
+        /// </summary>
+        public static string BuildResumoText(ResultadoExport r)
+        {
+            if (r == null) throw new ArgumentNullException(nameof(r));
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Exportacao concluida com sucesso.");
+            sb.AppendLine();
+            sb.AppendLine($"Arquivo: {r.CaminhoArquivo}");
+            sb.AppendLine($"Linhas consolidadas: {r.GruposConsolidados}");
+            sb.AppendLine($"Elementos estruturais: {r.ElementosEstruturais}");
+            sb.AppendLine($"Perfis de conexao: {r.PerfisConexao}");
+            sb.AppendLine($"Conexoes: {r.Conexoes}");
+            sb.AppendLine($"Duracao: {r.Duracao.TotalSeconds:F2}s");
+            return sb.ToString();
+        }
+
+        private static List<ListaMateriaisLinha> ColetarLinhas(
+            Document doc,
+            UIDocument uidoc,
+            ExportarListaMateriaisConfig config,
+            ProgressReporter reporter = null)
         {
             List<Element> elementos = ColetarElementos(doc, uidoc, config);
             List<ListaMateriaisLinha> linhas = new List<ListaMateriaisLinha>();
@@ -149,11 +255,21 @@ namespace FerramentaEMT.Services
             // existem <50 materiais distintos, entao o cache resolve quase 100% das chamadas).
             Dictionary<ElementId, Material> materiaisCache = new Dictionary<ElementId, Material>();
 
+            int total = elementos.Count;
+            int indice = 0;
             foreach (Element elemento in elementos)
             {
+                // ADR-004: checa CT no topo do loop para permitir cancelamento responsivo
+                // mesmo em modelos com milhares de elementos.
+                reporter?.ThrowIfCancellationRequested();
+                indice++;
+
                 ListaMateriaisCategoriaLogica? categoriaLogica = ClassificarElemento(elemento);
                 if (!categoriaLogica.HasValue || !CategoriaPermitida(categoriaLogica.Value, config))
+                {
+                    reporter?.Report(indice, total, $"Processando {indice}/{total}...");
                     continue;
+                }
 
                 ElementType tipo = ObterTipoElemento(doc, elemento, tiposCache);
                 Material material = ObterMaterialPrincipal(doc, elemento, tipo, materiaisCache);
@@ -205,6 +321,8 @@ namespace FerramentaEMT.Services
                     assinatura,
                     quantidadeBase,
                     detalheAgrupamento));
+
+                reporter?.Report(indice, total, $"Processando {indice}/{total} — {categoriaExibicao}");
             }
 
             return linhas;

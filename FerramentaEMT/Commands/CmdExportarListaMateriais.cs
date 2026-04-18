@@ -3,6 +3,7 @@ using System.IO;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using FerramentaEMT.Core;
 using FerramentaEMT.Models;
 using FerramentaEMT.Services;
 using FerramentaEMT.Utils;
@@ -19,6 +20,9 @@ namespace FerramentaEMT.Commands
         {
             try
             {
+                // ===== FASE 1: configuracao =====
+                // Janela modal do Revit (ShowDialog) ANTES da UI de progresso — se abrirmos
+                // a barra agora, ficaria vazia atras do modal. Padrao consistente com DSTV.
                 ExportarListaMateriaisWindow janela = new ExportarListaMateriaisWindow(uidoc);
                 bool? resultado = janela.ShowDialog();
                 if (resultado != true)
@@ -27,22 +31,51 @@ namespace FerramentaEMT.Commands
                 ExportarListaMateriaisConfig config = janela.BuildConfig();
                 if (config == null)
                 {
-                    AppDialogService.ShowWarning(CommandName, "Configuração inválida.", "Dados incompletos");
+                    AppDialogService.ShowWarning(CommandName, "Configuracao invalida.", "Dados incompletos");
                     return Result.Failed;
                 }
 
                 ListaMateriaisExportService service = new ListaMateriaisExportService();
-                var message = string.Empty;
-                return service.Exportar(uidoc, config, ref message);
+
+                // ===== FASE 2: processamento com progress + cancel =====
+                // ADR-004: RevitProgressHost corre no mesmo thread (Revit API single-threaded)
+                // e bombeia o dispatcher para a UI atualizar a barra de progresso e receber
+                // clicks no botao Cancelar.
+                FerramentaEMT.Core.Result<ListaMateriaisExportService.ResultadoExport> outcome;
+                try
+                {
+                    outcome = RevitProgressHost.Run(
+                        title: CommandName,
+                        headline: "Exportando lista de materiais...",
+                        work: (progress, ct) => service.Exportar(uidoc, config, progress, ct));
+                }
+                catch (OperationCanceledException)
+                {
+                    return Result.Cancelled;
+                }
+
+                if (outcome.IsFailure)
+                {
+                    AppDialogService.ShowWarning(CommandName, outcome.Error, "Nao foi possivel exportar");
+                    return Result.Failed;
+                }
+
+                // ===== POS-PROCESSAMENTO =====
+                // Feedback e decisao do comando (service e "mudo" por ADR-003).
+                ListaMateriaisExportService.ResultadoExport r = outcome.Value;
+                string resumo = ListaMateriaisExportService.BuildResumoText(r);
+                AppDialogService.ShowInfo(CommandName, resumo, "Arquivo gerado");
+
+                return Result.Succeeded;
             }
             catch (FileNotFoundException ex) when (EhDependenciaExcelAusente(ex))
             {
-                AppDialogService.ShowError(CommandName, MontarMensagemDependenciaAusente(), "Dependência ausente");
+                AppDialogService.ShowError(CommandName, MontarMensagemDependenciaAusente(), "Dependencia ausente");
                 return Result.Failed;
             }
             catch (FileLoadException ex) when (EhDependenciaExcelAusente(ex))
             {
-                AppDialogService.ShowError(CommandName, MontarMensagemDependenciaAusente(), "Dependência ausente");
+                AppDialogService.ShowError(CommandName, MontarMensagemDependenciaAusente(), "Dependencia ausente");
                 return Result.Failed;
             }
         }

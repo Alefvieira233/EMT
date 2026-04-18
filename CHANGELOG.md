@@ -30,6 +30,12 @@ Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
 - **`ModelCheckReport` ganha `ExportedToPath` e `ExportError`** — exportação Excel falhar **não invalida** a análise (princípio de falha parcial, ADR-003). Comando chamador inspeciona as duas propriedades e decide como apresentar: warning quando Excel falhou, info quando concluiu, nada quando export não foi solicitado. Remove dois `AppDialogService.ShowInfo/ShowError` do serviço.
 - **`CmdVerificarModelo`** atualizado para consumir `Result<ModelCheckReport>` e dois sinais de Excel independentes. `try/catch (OperationCanceledException) → Result.Cancelled` pronto para quando a UI ganhar botão Cancelar.
 
+### Changed — Terceira adoção do ADR-003 + ADR-004 (Lista de Materiais)
+- **`ListaMateriaisExportService.Exportar` refatorado** — nova assinatura `Result<ResultadoExport> Exportar(uidoc, config, IProgress<ProgressReport>?, CancellationToken)`. Removidas as 7 chamadas a `AppDialogService` do serviço (service "mudo" por ADR-003). Falhas de domínio (UIDocument nulo, config inválida, categoria/aba vazia, caminho vazio, nenhum elemento elegível) voltam como `Result.Fail` com mensagem amigável; o comando decide como apresentar. Falhas de IO/Revit durante coleta ou gravação capturadas via `try/catch → Result.Fail` com log em `Logger.Error`. `OperationCanceledException` propaga ao callsite.
+- **Progresso reportado durante `ColetarLinhas`** — elemento a elemento (throttle 100 ms), com mensagem `"Processando N/Total — Categoria"`. Em modelos grandes (milhares de elementos), usuário vê avanço real em vez de UI travada. `ThrowIfCancellationRequested()` no topo do loop permite cancelamento responsivo.
+- **Três fases explícitas** — coleta (interrompível), agrupamento (CPU-only rápido, não interrompível) e gravação Excel via ClosedXML (IO atômica, não interrompível — abortar no meio corromperia o `.xlsx`). `ResultadoExport` carrega contagens separadas (linhas, grupos, elementos estruturais, perfis, conexões) + duração + caminho do arquivo. `BuildResumoText(ResultadoExport)` estático monta o texto do diálogo de sucesso no comando.
+- **`CmdExportarListaMateriais`** consome a nova API via `RevitProgressHost.Run` (ADR-004), ganhando barra de progresso + botão Cancelar sem mudar UX de sucesso. `try/catch (OperationCanceledException) → Result.Cancelled`. Mantém o catch existente para `FileNotFoundException/FileLoadException` de ClosedXML ausente (dependência de deploy).
+
 ---
 
 ## [1.3.0] — 2026-04-18 (Fundação arquitetural + Primeira adoção ADR-003)
