@@ -19,6 +19,9 @@ namespace FerramentaEMT
             Logger.Initialize();
             Logger.Info("App.OnStartup — registrando ribbon");
 
+            // 1.3.0: captura crashes nao-observados em arquivo local (futuro: Sentry)
+            CrashReporter.Initialize();
+
             // 1.0.0: inicializar sistema de licenca (cria trial na primeira execucao)
             try { LicenseService.Initialize(); }
             catch (Exception licEx) { Logger.Error(licEx, "[App] LicenseService.Initialize falhou — continuar mesmo assim"); }
