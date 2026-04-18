@@ -1,18 +1,61 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Utils;
+using FerramentaEMT.Core;
+using FerramentaEMT.Infrastructure;
 
 namespace FerramentaEMT.Services
 {
+    /// <summary>
+    /// Quarta adocao do ADR-003 + ADR-004 (Onda 2).
+    ///
+    /// Contrato novo: retorna <see cref="Core.Result{ResultadoAgrupamento}"/> /
+    /// <see cref="Core.Result{ResultadoLimpeza}"/>, aceita <see cref="IProgress{ProgressReport}"/>
+    /// opcional e <see cref="CancellationToken"/> opcional. Servico "mudo" por ADR-003
+    /// (so <see cref="Logger"/>; dialogos sao decididos pelo comando).
+    ///
+    /// ADR-004: progresso granular e checagem de cancelamento no loop de assinaturas
+    /// +overrides. A transacao Revit e nao-interrompivel (cancelar no meio deixa grupos
+    /// parcialmente criados — e feio mas nao corrompe o modelo, entao o pattern
+    /// e: checar CT antes de comecar a aplicar, depois deixar a transacao terminar).
+    ///
+    /// Classes permanecem estaticas porque nao tem estado e nao precisam de mock em
+    /// testes (consomem FilteredElementCollector direto da Revit API).
+    /// </summary>
     internal static class AgrupamentoVisualService
     {
         private const string PrefixoGruposPilares = "EMT_COL_";
         private const string PrefixoGruposVigas = "EMT_VIG_";
+
+        /// <summary>Resultado de uma operacao de agrupamento (pilares ou vigas).</summary>
+        public sealed class ResultadoAgrupamento
+        {
+            public string TituloOperacao { get; set; } = string.Empty;
+            public int ElementosNaVista { get; set; }
+            public int ConjuntosIdentificados { get; set; }
+            public int ConjuntosColoridos { get; set; }
+            public int ElementosComOverride { get; set; }
+            public int GruposEmtCriados { get; set; }
+            public int GruposEmtDesfeitosAntes { get; set; }
+            public int ConjuntosSomenteVisuais { get; set; }
+            public bool CriouGruposNativos { get; set; }
+            public List<string> Falhas { get; } = new List<string>();
+            public TimeSpan Duracao { get; set; }
+        }
+
+        /// <summary>Resultado de uma operacao de limpeza de overrides + grupos EMT.</summary>
+        public sealed class ResultadoLimpeza
+        {
+            public int OverridesRemovidos { get; set; }
+            public int GruposDesfeitos { get; set; }
+            public TimeSpan Duracao { get; set; }
+        }
 
         private static readonly Color[] PaletaCores =
         {
@@ -26,36 +69,62 @@ namespace FerramentaEMT.Services
             new Color(70, 130, 180)
         };
 
-        public static Result AgruparPilares(UIDocument uidoc, ref string message)
+        public static Core.Result<ResultadoAgrupamento> AgruparPilares(
+            UIDocument uidoc,
+            IProgress<ProgressReport> progress = null,
+            CancellationToken ct = default)
         {
             return AgruparPorTipo(
                 uidoc,
                 BuiltInCategory.OST_StructuralColumns,
                 "Agrupar Pilares",
                 PrefixoGruposPilares,
-                ref message);
+                progress,
+                ct);
         }
 
-        public static Result AgruparVigas(UIDocument uidoc, ref string message)
+        public static Core.Result<ResultadoAgrupamento> AgruparVigas(
+            UIDocument uidoc,
+            IProgress<ProgressReport> progress = null,
+            CancellationToken ct = default)
         {
             return AgruparPorTipo(
                 uidoc,
                 BuiltInCategory.OST_StructuralFraming,
                 "Agrupar Vigas",
                 PrefixoGruposVigas,
-                ref message);
+                progress,
+                ct);
         }
 
-        public static Result LimparAgrupamentos(UIDocument uidoc, ref string message)
+        public static Core.Result<ResultadoLimpeza> LimparAgrupamentos(
+            UIDocument uidoc,
+            IProgress<ProgressReport> progress = null,
+            CancellationToken ct = default)
         {
             if (uidoc is null)
-            {
-                AppDialogService.ShowError("Limpar Cores e Grupos", "UIDocument nulo.");
-                return Result.Failed;
-            }
+                return Core.Result<ResultadoLimpeza>.Fail("UIDocument nulo.");
 
+            Stopwatch sw = Stopwatch.StartNew();
             Document doc = uidoc.Document;
             View view = doc.ActiveView;
+
+            if (view == null)
+                return Core.Result<ResultadoLimpeza>.Fail("Nao ha vista ativa.");
+
+            ProgressReporter reporter = new ProgressReporter(progress, throttleMs: 100, ct);
+
+            // Fase 1 (interrompivel): coleta de IDs.
+            reporter.Report(0, 0, "Coletando elementos da vista...");
+            try
+            {
+                reporter.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info("Limpar Agrupamentos cancelado antes da coleta.");
+                throw;
+            }
 
             List<ElementId> idsPilares = ColetarElementosDaVista(doc, view, BuiltInCategory.OST_StructuralColumns, incluirElementosEmGruposDoUsuario: true)
                 .Select(x => x.Id)
@@ -65,61 +134,118 @@ namespace FerramentaEMT.Services
                 .Select(x => x.Id)
                 .ToList();
 
-            int gruposDesfeitos = 0;
+            List<ElementId> idsAfetados = idsPilares.Concat(idsVigas).Distinct().ToList();
 
-            using (Transaction t = new Transaction(doc, "Limpar Cores e Grupos EMT"))
+            // Ultimo check antes da transacao — durante o commit, cancelar nao e seguro.
+            try
             {
-                t.Start();
+                reporter.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info("Limpar Agrupamentos cancelado antes da transacao.");
+                throw;
+            }
 
-                OverrideGraphicSettings limpar = new OverrideGraphicSettings();
-                foreach (ElementId id in idsPilares.Concat(idsVigas).Distinct())
-                    view.SetElementOverrides(id, limpar);
+            // Fase 2 (nao interrompivel): aplicar overrides + desfazer grupos.
+            int gruposDesfeitos;
+            try
+            {
+                using (Transaction t = new Transaction(doc, "Limpar Cores e Grupos EMT"))
+                {
+                    t.Start();
 
-                gruposDesfeitos += DesfazerGruposCriados(doc, PrefixoGruposPilares);
-                gruposDesfeitos += DesfazerGruposCriados(doc, PrefixoGruposVigas);
+                    OverrideGraphicSettings limpar = new OverrideGraphicSettings();
+                    foreach (ElementId id in idsAfetados)
+                        view.SetElementOverrides(id, limpar);
 
-                t.Commit();
+                    gruposDesfeitos = DesfazerGruposCriados(doc, PrefixoGruposPilares)
+                                    + DesfazerGruposCriados(doc, PrefixoGruposVigas);
+
+                    t.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Falha ao limpar agrupamentos.");
+                return Core.Result<ResultadoLimpeza>.Fail("Falha ao limpar agrupamentos: " + ex.Message);
             }
 
             uidoc.Selection.SetElementIds(new List<ElementId>());
 
-            AppDialogService.ShowInfo(
-                "Limpar Cores e Grupos",
-                "Limpeza concluida." +
-                $"\n\nOverrides removidos na vista: {idsPilares.Count + idsVigas.Count}" +
-                $"\nGrupos EMT desfeitos: {gruposDesfeitos}",
-                "Limpeza concluida");
+            sw.Stop();
 
-            return Result.Succeeded;
+            ResultadoLimpeza resultado = new ResultadoLimpeza
+            {
+                OverridesRemovidos = idsAfetados.Count,
+                GruposDesfeitos = gruposDesfeitos,
+                Duracao = sw.Elapsed
+            };
+
+            reporter.ReportFinal(idsAfetados.Count, idsAfetados.Count, "Limpeza concluida");
+            Logger.Info(
+                "Agrupamentos limpos: {Overrides} overrides, {Grupos} grupos EMT desfeitos em {ElapsedMs} ms",
+                resultado.OverridesRemovidos,
+                resultado.GruposDesfeitos,
+                (long)resultado.Duracao.TotalMilliseconds);
+
+            return Core.Result<ResultadoLimpeza>.Ok(resultado);
         }
 
-        private static Result AgruparPorTipo(
+        private static Core.Result<ResultadoAgrupamento> AgruparPorTipo(
             UIDocument uidoc,
             BuiltInCategory categoria,
             string titulo,
             string prefixoGrupo,
-            ref string message)
+            IProgress<ProgressReport> progress,
+            CancellationToken ct)
         {
             if (uidoc is null)
-            {
-                AppDialogService.ShowError(titulo, "UIDocument nulo.");
-                return Result.Failed;
-            }
+                return Core.Result<ResultadoAgrupamento>.Fail("UIDocument nulo.");
 
+            Stopwatch sw = Stopwatch.StartNew();
             Document doc = uidoc.Document;
             View view = doc.ActiveView;
 
-            List<FamilyInstance> elementos = ColetarElementosDaVista(doc, view, categoria, incluirElementosEmGruposDoUsuario: false);
+            if (view == null)
+                return Core.Result<ResultadoAgrupamento>.Fail("Nao ha vista ativa.");
+
+            ProgressReporter reporter = new ProgressReporter(progress, throttleMs: 100, ct);
+
+            // ===== FASE 1 (interrompivel): coleta + assinaturas de equivalencia =====
+            reporter.Report(0, 0, "Coletando elementos da vista...");
+            List<FamilyInstance> elementos = ColetarElementosDaVista(
+                doc, view, categoria, incluirElementosEmGruposDoUsuario: false);
+
             if (elementos.Count == 0)
+                return Core.Result<ResultadoAgrupamento>.Fail(
+                    "Nenhum elemento estrutural valido foi encontrado na vista ativa.");
+
+            reporter.Report(0, elementos.Count, $"Gerando assinaturas de {elementos.Count} elementos...");
+
+            // Pre-computar assinaturas com check de CT a cada N elementos. Em modelos com
+            // alguns milhares de elementos, CriarAssinaturaEquivalencia nao e trivial
+            // (le varios parametros e geometria da curve) — vale a pena o progresso.
+            List<KeyValuePair<string, FamilyInstance>> assinaturas = new List<KeyValuePair<string, FamilyInstance>>(elementos.Count);
+            for (int i = 0; i < elementos.Count; i++)
             {
-                AppDialogService.ShowWarning(titulo, "Nenhum elemento estrutural valido foi encontrado na vista ativa.", "Nada para agrupar");
-                return Result.Cancelled;
+                if ((i & 31) == 0) // a cada 32 elementos (barato)
+                    reporter.ThrowIfCancellationRequested();
+
+                FamilyInstance el = elementos[i];
+                assinaturas.Add(new KeyValuePair<string, FamilyInstance>(CriarAssinaturaEquivalencia(el), el));
+
+                if ((i & 63) == 0)
+                    reporter.Report(i + 1, elementos.Count, $"Gerando assinaturas {i + 1}/{elementos.Count}");
             }
 
-            List<IGrouping<string, FamilyInstance>> gruposPorTipo = elementos
-                .GroupBy(CriarAssinaturaEquivalencia)
+            List<IGrouping<string, FamilyInstance>> gruposPorTipo = assinaturas
+                .GroupBy(kv => kv.Key, kv => kv.Value)
                 .OrderBy(x => DescreverElemento(x.FirstOrDefault(), doc))
                 .ToList();
+
+            // Ultimo check antes da transacao.
+            reporter.ThrowIfCancellationRequested();
 
             bool criarGruposNativos = categoria != BuiltInCategory.OST_StructuralColumns;
             int gruposCriados = 0;
@@ -129,91 +255,165 @@ namespace FerramentaEMT.Services
             int gruposDesfeitosAntes = 0;
             List<string> falhas = new List<string>();
 
-            using (Transaction t = new Transaction(doc, titulo))
+            // ===== FASE 2 (NAO interrompivel): transacao Revit =====
+            // Uma vez dentro da transacao, nao checamos CT. Abortar no meio criaria grupos
+            // orfaos e overrides parciais na vista. Pattern consistente com o resto da
+            // base (DSTV, LDM, ModelCheck).
+            reporter.Report(0, gruposPorTipo.Count, "Aplicando cores e criando grupos...");
+
+            try
             {
-                t.Start();
-
-                gruposDesfeitosAntes += DesfazerGruposCriados(doc, prefixoGrupo);
-
-                int indiceCor = 0;
-                foreach (IGrouping<string, FamilyInstance> grupoPorTipo in gruposPorTipo)
+                using (Transaction t = new Transaction(doc, titulo))
                 {
-                    List<ElementId> ids = grupoPorTipo
-                        .Select(x => x.Id)
-                        .Distinct()
-                        .ToList();
+                    t.Start();
 
-                    if (ids.Count == 0)
-                        continue;
+                    gruposDesfeitosAntes += DesfazerGruposCriados(doc, prefixoGrupo);
 
-                    OverrideGraphicSettings overrideGrafico = CriarOverride(PaletaCores[indiceCor % PaletaCores.Length]);
-                    foreach (ElementId id in ids)
-                        view.SetElementOverrides(id, overrideGrafico);
-
-                    conjuntosColoridos++;
-                    elementosColoridos += ids.Count;
-                    indiceCor++;
-
-                    if (ids.Count < 2)
-                        continue;
-
-                    if (!criarGruposNativos)
+                    int indiceCor = 0;
+                    int indiceConjunto = 0;
+                    foreach (IGrouping<string, FamilyInstance> grupoPorTipo in gruposPorTipo)
                     {
-                        conjuntosSomenteVisuais++;
-                        continue;
+                        indiceConjunto++;
+
+                        List<ElementId> ids = grupoPorTipo
+                            .Select(x => x.Id)
+                            .Distinct()
+                            .ToList();
+
+                        if (ids.Count == 0)
+                            continue;
+
+                        OverrideGraphicSettings overrideGrafico = CriarOverride(PaletaCores[indiceCor % PaletaCores.Length]);
+                        foreach (ElementId id in ids)
+                            view.SetElementOverrides(id, overrideGrafico);
+
+                        conjuntosColoridos++;
+                        elementosColoridos += ids.Count;
+                        indiceCor++;
+
+                        reporter.Report(indiceConjunto, gruposPorTipo.Count,
+                            $"Colorindo conjunto {indiceConjunto}/{gruposPorTipo.Count} ({ids.Count} elementos)");
+
+                        if (ids.Count < 2)
+                            continue;
+
+                        if (!criarGruposNativos)
+                        {
+                            conjuntosSomenteVisuais++;
+                            continue;
+                        }
+
+                        try
+                        {
+                            Group group = doc.Create.NewGroup(ids);
+                            doc.Regenerate();
+                            string descricaoGrupo = DescreverElemento(grupoPorTipo.FirstOrDefault(), doc);
+                            RenomearGrupo(doc, group, prefixoGrupo + SanitizarNome(descricaoGrupo));
+                            gruposCriados++;
+                        }
+                        catch (Exception ex)
+                        {
+                            string descricao = DescreverElemento(grupoPorTipo.FirstOrDefault(), doc);
+                            falhas.Add($"{descricao}: {ex.Message}");
+                            Logger.Warn(ex, "Falha ao criar grupo EMT para conjunto {Descricao}", descricao);
+                        }
                     }
 
-                    try
-                    {
-                        Group group = doc.Create.NewGroup(ids);
-                        doc.Regenerate();
-                        string descricaoGrupo = DescreverElemento(grupoPorTipo.FirstOrDefault(), doc);
-                        RenomearGrupo(doc, group, prefixoGrupo + SanitizarNome(descricaoGrupo));
-                        gruposCriados++;
-                    }
-                    catch (Exception ex)
-                    {
-                        falhas.Add($"{DescreverElemento(grupoPorTipo.FirstOrDefault(), doc)}: {ex.Message}");
-                    }
+                    t.Commit();
                 }
-
-                t.Commit();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Falha na transacao de {Titulo}.", titulo);
+                return Core.Result<ResultadoAgrupamento>.Fail($"Falha ao processar {titulo}: {ex.Message}");
             }
 
             uidoc.Selection.SetElementIds(elementos.Select(x => x.Id).ToList());
 
-            StringBuilder resumo = new StringBuilder();
-            resumo.AppendLine("Processamento concluido.");
-            resumo.AppendLine();
-            resumo.AppendLine($"Elementos na vista: {elementos.Count}");
-            resumo.AppendLine($"Conjuntos exatamente identicos: {gruposPorTipo.Count}");
-            resumo.AppendLine($"Conjuntos coloridos: {conjuntosColoridos}");
-            resumo.AppendLine($"Elementos com override: {elementosColoridos}");
-            if (criarGruposNativos)
-                resumo.AppendLine($"Grupos EMT criados: {gruposCriados}");
+            sw.Stop();
+
+            ResultadoAgrupamento resultado = new ResultadoAgrupamento
+            {
+                TituloOperacao = titulo,
+                ElementosNaVista = elementos.Count,
+                ConjuntosIdentificados = gruposPorTipo.Count,
+                ConjuntosColoridos = conjuntosColoridos,
+                ElementosComOverride = elementosColoridos,
+                GruposEmtCriados = gruposCriados,
+                GruposEmtDesfeitosAntes = gruposDesfeitosAntes,
+                ConjuntosSomenteVisuais = conjuntosSomenteVisuais,
+                CriouGruposNativos = criarGruposNativos,
+                Duracao = sw.Elapsed
+            };
+            resultado.Falhas.AddRange(falhas);
+
+            reporter.ReportFinal(gruposPorTipo.Count, gruposPorTipo.Count, "Processamento concluido");
+
+            Logger.Info(
+                "{Titulo} concluido: {Elementos} elementos, {Conjuntos} conjuntos, {Grupos} grupos EMT em {ElapsedMs} ms (falhas={Falhas})",
+                titulo,
+                resultado.ElementosNaVista,
+                resultado.ConjuntosIdentificados,
+                resultado.GruposEmtCriados,
+                (long)resultado.Duracao.TotalMilliseconds,
+                resultado.Falhas.Count);
+
+            return Core.Result<ResultadoAgrupamento>.Ok(resultado);
+        }
+
+        /// <summary>
+        /// Monta a mensagem amigavel de sucesso consumida pelo comando via
+        /// <c>AppDialogService.ShowInfo</c>. Fica no servico pra garantir que o texto
+        /// se alinha com o que o servico realmente fez.
+        /// </summary>
+        public static string BuildResumoText(ResultadoAgrupamento r)
+        {
+            if (r == null) return "Processamento concluido.";
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Processamento concluido.");
+            sb.AppendLine();
+            sb.AppendLine($"Elementos na vista: {r.ElementosNaVista}");
+            sb.AppendLine($"Conjuntos exatamente identicos: {r.ConjuntosIdentificados}");
+            sb.AppendLine($"Conjuntos coloridos: {r.ConjuntosColoridos}");
+            sb.AppendLine($"Elementos com override: {r.ElementosComOverride}");
+            if (r.CriouGruposNativos)
+                sb.AppendLine($"Grupos EMT criados: {r.GruposEmtCriados}");
             else
-                resumo.AppendLine($"Conjuntos mantidos apenas no agrupamento visual: {conjuntosSomenteVisuais}");
-            resumo.AppendLine($"Grupos EMT antigos desfeitos antes da recriacao: {gruposDesfeitosAntes}");
+                sb.AppendLine($"Conjuntos mantidos apenas no agrupamento visual: {r.ConjuntosSomenteVisuais}");
+            sb.AppendLine($"Grupos EMT antigos desfeitos antes da recriacao: {r.GruposEmtDesfeitosAntes}");
 
-            if (!criarGruposNativos)
+            if (!r.CriouGruposNativos)
             {
-                resumo.AppendLine();
-                resumo.AppendLine("Observacao:");
-                resumo.AppendLine("Para pilares, o comando evita criar grupos nativos do Revit para nao desanexar membros dos eixos.");
+                sb.AppendLine();
+                sb.AppendLine("Observacao:");
+                sb.AppendLine("Para pilares, o comando evita criar grupos nativos do Revit para nao desanexar membros dos eixos.");
             }
 
-            if (falhas.Count > 0)
+            if (r.Falhas.Count > 0)
             {
-                resumo.AppendLine();
-                resumo.AppendLine("Falhas ao criar alguns grupos:");
-                foreach (string falha in falhas.Take(6))
-                    resumo.AppendLine("• " + falha);
-                if (falhas.Count > 6)
-                    resumo.AppendLine($"• ... e mais {falhas.Count - 6}.");
+                sb.AppendLine();
+                sb.AppendLine("Falhas ao criar alguns grupos:");
+                foreach (string falha in r.Falhas.Take(6))
+                    sb.AppendLine("• " + falha);
+                if (r.Falhas.Count > 6)
+                    sb.AppendLine($"• ... e mais {r.Falhas.Count - 6}.");
             }
 
-            AppDialogService.ShowInfo(titulo, resumo.ToString(), "Processamento concluido");
-            return Result.Succeeded;
+            return sb.ToString();
+        }
+
+        /// <summary>Mensagem amigavel pra operacao de limpeza.</summary>
+        public static string BuildResumoText(ResultadoLimpeza r)
+        {
+            if (r == null) return "Limpeza concluida.";
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Limpeza concluida.");
+            sb.AppendLine();
+            sb.AppendLine($"Overrides removidos na vista: {r.OverridesRemovidos}");
+            sb.AppendLine($"Grupos EMT desfeitos: {r.GruposDesfeitos}");
+            return sb.ToString();
         }
 
         private static List<FamilyInstance> ColetarElementosDaVista(
