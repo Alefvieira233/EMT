@@ -96,9 +96,17 @@
     <Compile Include="..\FerramentaEMT\Licensing\LicenseSecretProvider.cs"
              Link="LinkedSources\Licensing\LicenseSecretProvider.cs" />
 
-    <!-- 1.3.0: Core (Result<T>) — pure C#, sem Revit -->
+    <!-- 1.3.0: Core (Result<T>, Progress) — pure C#, sem Revit -->
     <Compile Include="..\FerramentaEMT\Core\Result.cs"
              Link="LinkedSources\Core\Result.cs" />
+    <Compile Include="..\FerramentaEMT\Core\ProgressReport.cs"
+             Link="LinkedSources\Core\ProgressReport.cs" />
+    <Compile Include="..\FerramentaEMT\Core\ProgressReporter.cs"
+             Link="LinkedSources\Core\ProgressReporter.cs" />
+
+    <!-- 1.3.0: Utils (NumberParsing) — pure C#, sem Revit -->
+    <Compile Include="..\FerramentaEMT\Utils\NumberParsing.cs"
+             Link="LinkedSources\Utils\NumberParsing.cs" />
 
     <!-- Config DTOs puros (sem Revit) — adicionados pela auditoria AIOX -->
     <Compile Include="..\FerramentaEMT\Models\CotarTrelicaConfig.cs"
