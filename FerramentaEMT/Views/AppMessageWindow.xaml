@@ -4,6 +4,7 @@
         Title="Mensagem"
         Width="620"
         Height="420"
+        MaxHeight="560"
         Background="{DynamicResource WindowBackgroundBrush}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">

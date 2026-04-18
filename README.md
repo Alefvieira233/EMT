@@ -5,7 +5,7 @@
 Desenvolvido para acelerar o fluxo de modelagem, detalhamento e fabricação de estruturas em aço, do projeto ao chão de fábrica.
 
 [![Build Status](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions)
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.0--rc.1-blue.svg)](CHANGELOG.md)
 [![Revit](https://img.shields.io/badge/Revit-2025-orange.svg)](https://www.autodesk.com/products/revit)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -170,10 +170,11 @@ FerramentaEMT/
 
 Veja [CHANGELOG.md](CHANGELOG.md) e [docs/ROADMAP.md](docs/ROADMAP.md) para o plano completo.
 
-### Próximas Releases
-- **v0.10** — Logging estruturado + base de testes
-- **v0.11** — Refator de God Classes (Lista Materiais, Cotas)
-- **v1.0** — Export DSTV/NC1, Verificação de Modelo, Plano de Montagem, Conexões, Instalador MSI
+### Status por Release
+- **v1.0 – v1.3** *(entregue)* — DSTV/NC1, Verificação de Modelo, Plano de Montagem, Conexões, Lista de Materiais, Sistema de Licença (HMAC), Instalador MSI
+- **v1.4.0-rc.1** *(em preparação)* — Template ADR-003 (Result<T>) + ADR-004 (progresso + cancelamento) adotado em **DSTV Export**, **Model Check** e **Lista de Materiais**. Playbook de migração em [`docs/PLAYBOOK-adr-003-migration.md`](docs/PLAYBOOK-adr-003-migration.md).
+- **v1.5.0** *(planejado)* — Migração ADR-003 dos demais serviços em lote (Agrupamento Visual, Cotas, Marcação de Peças). Expansão de cobertura de testes.
+- **v2.0** *(planejado)* — Multi-Revit (2024/2025/2026), telemetria opt-in, auto-updater, i18n (en-US, es-ES).
 
 ---
 
