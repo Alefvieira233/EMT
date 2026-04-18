@@ -1,8 +1,27 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+    Manifesto Revit do FerramentaEMT (template).
+
+    NOTA: este arquivo e um TEMPLATE. O path em <Assembly> NAO precisa ser valido no repo
+    porque nenhum fluxo real o consome diretamente:
+
+      * Compilar-Debug.bat e Compilar-e-Instalar.bat sobrescrevem o <Assembly>
+        ao copiar o manifesto para %AppData%\Autodesk\Revit\Addins\2025\ apontando
+        para o bin\Debug/bin\Release do repositorio.
+      * installer\Build-Distribution.ps1 le apenas os metadados
+        (Name, AddInId, FullClassName, VendorId, VendorDescription) e gera um novo
+        manifesto "FerramentaEMT.Distribuicao.addin" ja com o path definitivo.
+      * installer\Install-FerramentaEMT.ps1 escreve um <Assembly> apontando para a
+        pasta de instalacao real (%AppData%\Autodesk\Revit\Addins\{ano}\FerramentaEMT).
+
+    Se quiser testar carregando manualmente, copie este arquivo para
+    %AppData%\Autodesk\Revit\Addins\2025\ e edite o <Assembly> para o caminho
+    completo do seu FerramentaEMT.dll.
+-->
 <RevitAddIns>
 	<AddIn Type="Application">
 		<Name>FerramentaEMT</Name>
-		<Assembly>C:\Users\User\Downloads\FerramentaEMT  OFICIAL\FerramentaEMT\bin\Release\net8.0-windows\FerramentaEMT.dll</Assembly>
+		<Assembly>%AppData%\Autodesk\Revit\Addins\2025\FerramentaEMT\FerramentaEMT.dll</Assembly>
 		<AddInId>610FE337-F95D-4813-8BF8-2CE11C9948C1</AddInId>
 		<FullClassName>FerramentaEMT.App</FullClassName>
 		<VendorId>EMT</VendorId>

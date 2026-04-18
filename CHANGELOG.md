@@ -33,14 +33,22 @@ Integração do fork do Victor (concreto pré-fabricado) sobre o tronco oficial 
 ### Fixed
 - **`Tests/Services/Trelica/CotarTrelicaReportTests.cs`** — adicionado `using FluentAssertions;` que faltava (impedia compilação ao linkar os sources Trelica).
 
+### Added — Auditoria AIOX (score 7.25/10 → melhorado)
+- **32 catch blocks silenciosos substituídos por `Logger.Warn`** com contexto do elemento/operação — paradigma "falhas devem deixar rastro".
+- **`MaxHeight` adicionado em 21 janelas WPF** que faltavam (garante cabimento em telas 1366×768 junto com `MinHeight`/`MinWidth` já existentes).
+- **`CultureInfo.InvariantCulture`** aplicado em `Services/CncExport/DstvExportService` (output de relatório) e `Services/ModelCheck/ModelCheckRules/ZeroLengthRule` (formatação de descrição de issue) — garante que marcadores e relatórios saiam idênticos em pt-BR, en-US, de-DE.
+- **`Commands/CmdCortarPerfilPorInterferencia`** migrado para `FerramentaCommandBase` — licenciamento + logging + tratamento de erro centralizados, padronizando com os outros 36 commands.
+- **9 classes de testes de Config criadas** (`*ConfigTests.cs` em `Models/`): `ExportarDstvConfig`, `ConexaoConfig`, `CotarTrelicaConfig`, `ExportarListaMateriaisConfig`, `GerarVistaPecaConfig`, `IdentificarPerfilConfig`, `MarcarPecasConfig`, `ModelCheckConfig`, `PlanoMontagemConfig`, `TagearTrelicaConfig` — **68 novos testes** cobrindo defaults, mutabilidade e roundtrips.
+
 ### Quality gates
 - `dotnet build FerramentaEMT.Solution.sln -c Release` → plugin principal: **0 erros, 2 avisos MSB3277** (cruzamento de referências Revit API, não-impeditivos).
-- `dotnet test` → **279/279 aprovados** em 52 ms.
+- `dotnet test` → **347/347 aprovados** (era 279 antes da auditoria AIOX).
 - `TreatWarningsAsErrors` mantido em Release.
 
 ### Notes
 - Pasta do fork original (`FerramentaEMT-Victor/`) preservada em `backup-victor-pre-merge.zip` (301 MB) e removida após validação.
 - Três test files de comportamento dependente de Revit runtime (`TagearTrelicaReportTests`, `TrelicaRevitHelperTests`, `IdentificarPerfilReportTests`) estão explicitamente excluídos do build pois testam membros de services Revit-bound; seu comportamento é validado por smoke test manual no Revit.
+- HMAC secret em `Licensing/KeySigner.cs` mantido hardcoded por decisão explícita do mantenedor. O comentário no arquivo alerta: "TROCAR ANTES DA PRIMEIRA VENDA". Antes de distribuir a clientes externos, o repositório deve estar privado ou o secret deve ser movido para env var / DPAPI / arquivo externo.
 
 ---
 
