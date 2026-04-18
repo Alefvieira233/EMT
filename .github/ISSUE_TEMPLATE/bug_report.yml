@@ -1,0 +1,74 @@
+name: Bug Report
+description: Algo nao funciona como esperado no plugin
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Preencha com o maximo de detalhe possivel —
+        isso encurta drasticamente o tempo de diagnostico.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumo
+      description: O que voce estava tentando fazer e o que aconteceu?
+      placeholder: "Cliquei em Marcar Pecas com 500 vigas selecionadas e o Revit fechou"
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Passos para reproduzir
+      description: Sequencia exata que reproduz o problema.
+      placeholder: |
+        1. Abro Revit 2025
+        2. Abro projeto X
+        3. Selecionar 500 vigas
+        4. Ribbon -> Ferramenta EMT -> Marcar Pecas
+        5. Observar o crash
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      placeholder: "Cada viga recebe um numero de marca sequencial"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: revit
+    attributes:
+      label: Versao do Revit
+      options:
+        - Revit 2025
+        - Revit 2024
+        - Revit 2026
+        - Outro (descrever abaixo)
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Versao do plugin
+      description: Ribbon -> Sobre -> Versao
+      placeholder: "1.2.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log (%LOCALAPPDATA%\FerramentaEMT\logs)
+      description: Cole as ultimas ~50 linhas do log do dia do erro. Remova qualquer info sensivel.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Contexto adicional
+      description: Screenshots, arquivo Revit reduzido, configuracao especifica, etc.

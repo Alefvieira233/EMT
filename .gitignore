@@ -83,6 +83,12 @@ Desktop.ini
 secrets.json
 appsettings.Local.json
 .github-token
+# Segredo HMAC de licenciamento — NUNCA commitar. Deve ficar em
+# %LOCALAPPDATA%\FerramentaEMT\ ou via variavel EMT_LICENSE_SECRET.
+license.secret
+*.license.secret
+# DSN do Sentry — carregado em runtime, nao deve ficar no repo.
+sentry.dsn
 
 # --- Pacotes de upload / backups locais ---
 up emt/

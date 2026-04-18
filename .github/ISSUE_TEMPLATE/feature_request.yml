@@ -1,0 +1,50 @@
+name: Feature Request
+description: Sugerir uma nova funcionalidade ou melhoria
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve?
+      description: |
+        Descreva o problema/dor que motiva a feature. Exemplos:
+        - "Hoje preciso cotar cada peca manualmente"
+        - "O DSTV gerado nao cobre perfis H laminados"
+      placeholder: "Sempre que preciso de X, acontece Y, que me custa Z tempo"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta de solucao
+      description: Como voce imagina a solucao ideal?
+      placeholder: "Um novo comando no ribbon que..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Existe workaround hoje? Por que ele nao e suficiente?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Escopo
+      options:
+        - Comando novo no ribbon
+        - Melhoria em comando existente
+        - Integracao externa (Excel, DSTV, outros)
+        - Performance / qualidade
+        - Licenciamento / instalacao
+        - Outro
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Contexto adicional
+      description: Screenshots, referencias de outros softwares, ADRs relacionados.

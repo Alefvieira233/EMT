@@ -1,0 +1,26 @@
+name: Documentacao
+description: Erro, omissao ou melhoria em documentacao
+labels: ["documentation"]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Onde esta o problema?
+      description: URL, caminho de arquivo, secao especifica
+      placeholder: "docs/ARCHITECTURE.md secao 'Commands'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual e o problema?
+      description: O que esta errado, incompleto ou confuso?
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Sugestao de correcao
+      description: Como voce escreveria?

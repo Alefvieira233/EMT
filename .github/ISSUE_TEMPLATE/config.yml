@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentacao
+    url: https://github.com/Alefvieira233/EMT/tree/main/docs
+    about: Arquitetura, plano 100/100, guias de onboarding e ADRs.
+  - name: Changelog
+    url: https://github.com/Alefvieira233/EMT/blob/main/CHANGELOG.md
+    about: Historico completo de mudancas.

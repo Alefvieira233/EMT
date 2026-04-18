@@ -1,0 +1,124 @@
+root = true
+
+# =====================================================
+# FerramentaEMT — regras de formatacao e estilo
+# =====================================================
+# Consumido por:
+#   - Visual Studio / Rider / VS Code (formatacao automatica)
+#   - dotnet format (gate no CI)
+# =====================================================
+
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,csx,vb,vbx}]
+indent_size = 4
+
+[*.{xml,xaml,csproj,props,targets,config,nuspec,resx,ruleset}]
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{bat,cmd}]
+end_of_line = crlf
+
+# =====================================================
+# C# — convencoes de codigo
+# =====================================================
+[*.cs]
+
+# Organizacao de usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+
+# this./me. qualification
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Linguagem: preferir tipos framework nos membros publicos
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+
+# Modificadores
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:warning
+
+# Expression-bodied members — deixar autor escolher
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+csharp_style_expression_bodied_properties = when_on_single_line:silent
+
+# var: preferir tipo explicito quando obvio (padrao FerramentaEMT)
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# Null-checking moderno
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+
+# Braces sempre (cultura defensiva em codigo que manipula modelo Revit)
+csharp_prefer_braces = true:suggestion
+
+# Newlines
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+
+# Espacos
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+
+# Indentacao de bloco
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = flush_left
+
+# Wrapping
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+# =====================================================
+# Regras de analise (Roslyn)
+# =====================================================
+
+# CA1031: Do not catch general exception types
+#   Toleravel nos commands (ver FerramentaCommandBase) — o catch generico
+#   e parte do contrato. Manter como warning fora disso.
+dotnet_diagnostic.CA1031.severity = suggestion
+
+# CA2007: Do not directly await a Task
+#   Nao relevante em plugin UI-bound (nao tem SynchronizationContext trocavel).
+dotnet_diagnostic.CA2007.severity = none
+
+# IDE0058: Expression value is never used
+#   Ruidoso em codigo que chama APIs do Revit que retornam objeto ignorado.
+dotnet_diagnostic.IDE0058.severity = none
+
+# IDE0161: Convert to file-scoped namespace
+#   Toleravel — codebase usa namespace tradicional por consistencia.
+dotnet_diagnostic.IDE0161.severity = silent
+
+# CS1591: Missing XML comment
+#   Ja silenciado no csproj (NoWarn). Replicado aqui por consistencia.
+dotnet_diagnostic.CS1591.severity = none

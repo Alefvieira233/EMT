@@ -6,6 +6,31 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [Unreleased]
+
+Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
+
+### Security
+- **Segredo HMAC de licenciamento externalizado.** `LicenseSecretProvider` resolve em cascata: `EMT_LICENSE_SECRET` (env var) → `%LOCALAPPDATA%\FerramentaEMT\license.secret` → arquivo ao lado do assembly → fallback DEV_ONLY hardcoded. Fallback mantém compatibilidade 100% com licenças já emitidas. `App.OnStartup` logga a fonte resolvida e emite warning quando cai no DEV_ONLY. `EmtKeyGen` alerta em amarelo no console.
+
+### Added
+- **`FerramentaEMT/Core/Result<T>`** — struct imutável para fluxos previsíveis de domínio (input inválido, regra de negócio, seleção vazia), deixando exceções para bugs e falhas de infra. Cobertura: 9 testes. Documentado em `docs/ADR/001-result-pattern.md`.
+- **`FerramentaEMT/Core/IRevitContext`** — wrapper skeleton v1 sobre `UIDocument`/`Document` para desacoplar serviços da construção de `ExternalCommandData`. Abre caminho para abstrações de nível mais alto (`IElementQuery`, `ITransactionScope`) conforme necessidade. Documentado em `docs/ADR/002-irevit-context.md`.
+- **`docs/ADR/`** — diretório de Architecture Decision Records inaugurado com 2 ADRs.
+- **`docs/PLANO-100-100.md`** — roadmap em 7 fases para levar o plugin de 7/10 interno para 10/10 comercial (26 semanas, ~$485-1085/ano de custo externo).
+- **`.editorconfig`** — regras de formatação/estilo C# consumíveis por Visual Studio, Rider, VS Code e `dotnet format`.
+- **`.github/PULL_REQUEST_TEMPLATE.md`** e **issue templates** (bug, feature, docs) — polish de processo.
+- **`CONTRIBUTING.md`** — workflow de PR, convenção de commits, regras de commits e testes.
+
+### Changed
+- `.gitignore` adicionado para `license.secret`, `*.license.secret` e `sentry.dsn` — prevenir commit acidental.
+
+### Fixed
+- Parse de `double` em 13 janelas WPF (WPF inteiro + PF + PipeRack) padronizado via `NumberParsing.TryParseDouble`, que tenta `InvariantCulture` e cai em `pt-BR` — elimina bug de usuário pt-BR digitando `"3,5"` e recebendo `35` em locales mistos.
+- `ModelCheck` rules: log agregado em vez de catch-block vazio para elementos pulados por erro de leitura — agora gera `Logger.Warn("[{Rule}] {Count} elemento(s) pulado(s)...")` em todas as 9 regras.
+
+---
+
 ## [1.2.0] — 2026-04-17 (Módulo PF — Pré-Fabricado de Concreto)
 
 Integração do fork do Victor (concreto pré-fabricado) sobre o tronco oficial Alef. A versão Alef ganha 10 novos comandos e 3 painéis de ribbon cobrindo documentação de pilares/vigas PF, inserção de armaduras (estribos, barras longitudinais, armadura de consolo) e organização de modelos com elementos PF, sem depender do Dynamo.
