@@ -9,7 +9,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
-Próximo alvo: migração do `ModelCheckService` para o pattern ADR-003 (Result + IProgress + CancellationToken).
+Próximo alvo: wiring do botão Cancelar + progress bar nas janelas (consome
+`CancellationToken` e `IProgress` que já estão no pipeline).
+
+### Changed — Segunda adoção do ADR-003
+- **`ModelCheckService.Executar`** agora retorna `Result<ModelCheckReport>` e aceita `IProgress<ProgressReport>` + `CancellationToken` opcionais. Falhas de domínio (`uidoc` nulo, config ausente, nenhuma regra habilitada) voltam como `Result.Fail` com mensagem amigável — o comando chamador apresenta o diálogo. Progresso é reportado por regra executada (`N/Total — nome da regra: X problema(s)`), throttle de 100 ms. `OperationCanceledException` propaga até o comando, que retorna `Result.Cancelled`. Segue-se o template do ADR-003 validado antes no `DstvExportService`.
+- **`ModelCheckReport` ganha `ExportedToPath` e `ExportError`** — exportação Excel falhar **não invalida** a análise (princípio de falha parcial, ADR-003). Comando chamador inspeciona as duas propriedades e decide como apresentar: warning quando Excel falhou, info quando concluiu, nada quando export não foi solicitado. Remove dois `AppDialogService.ShowInfo/ShowError` do serviço.
+- **`CmdVerificarModelo`** atualizado para consumir `Result<ModelCheckReport>` e dois sinais de Excel independentes. `try/catch (OperationCanceledException) → Result.Cancelled` pronto para quando a UI ganhar botão Cancelar.
 
 ---
 

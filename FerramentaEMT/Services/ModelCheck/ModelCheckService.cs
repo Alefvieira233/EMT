@@ -4,19 +4,27 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using ClosedXML.Excel;
+using FerramentaEMT.Core;
 using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.ModelCheck;
 using FerramentaEMT.Services.ModelCheck.ModelCheckRules;
-using FerramentaEMT.Utils;
 
 namespace FerramentaEMT.Services.ModelCheck
 {
     /// <summary>
     /// Orquestrador de verificacao de modelo.
     /// Coleta o escopo, executa as regras habilitadas, constroi relatorio e opcionalmente exporta para Excel.
+    ///
+    /// Contrato ADR-003:
+    /// - Retorna <see cref="Result{ModelCheckReport}"/> — Fail carrega mensagem para dialogo.
+    /// - Aceita <see cref="IProgress{ProgressReport}"/> opcional para UI nao congelar.
+    /// - Aceita <see cref="CancellationToken"/> para o usuario poder interromper.
+    /// - Falhas de exportacao Excel sao reportadas via <see cref="ModelCheckReport.ExportError"/>
+    ///   e NAO invalidam o relatorio de analise — callsite decide como apresentar.
     /// </summary>
     public class ModelCheckService
     {
@@ -25,114 +33,124 @@ namespace FerramentaEMT.Services.ModelCheck
         /// <summary>
         /// Executa a verificacao de modelo de acordo com a configuracao fornecida.
         /// </summary>
-        public ModelCheckReport Executar(UIDocument uidoc, ModelCheckConfig config)
+        /// <param name="uidoc">UIDocument ativo (nao pode ser null).</param>
+        /// <param name="config">Configuracao com regras habilitadas e opcao de export.</param>
+        /// <param name="progress">Reporter opcional — recebe 1 evento por regra executada.</param>
+        /// <param name="ct">Token de cancelamento. Cancelamento gera <see cref="OperationCanceledException"/>
+        /// que o comando chamador trata como Result.Cancelled.</param>
+        public Result<ModelCheckReport> Executar(
+            UIDocument uidoc,
+            ModelCheckConfig config,
+            IProgress<ProgressReport>? progress = null,
+            CancellationToken ct = default)
         {
-            var sw = Stopwatch.StartNew();
-            var report = new ModelCheckReport();
-
             if (uidoc?.Document == null)
-            {
-                Logger.Warn("[{Cmd}] uidoc nulo — abortando", Titulo);
-                return report;
-            }
+                return Result<ModelCheckReport>.Fail("Documento do Revit nao disponivel.");
+
+            if (config == null)
+                return Result<ModelCheckReport>.Fail("Configuracao de verificacao nao informada.");
 
             Document doc = uidoc.Document;
+            ProgressReporter reporter = new ProgressReporter(progress, throttleMs: 100, ct);
+            Stopwatch sw = Stopwatch.StartNew();
+            ModelCheckReport report = new ModelCheckReport();
 
-            try
+            // --- 1. Coletar escopo ---
+            Logger.Info("[{Cmd}] coletando escopo", Titulo);
+            IList<ElementId> scopeIds = ColetarEscopo(uidoc, config.ScopeViewOnly);
+            report.TotalElementsAnalyzed = scopeIds.Count;
+            Logger.Info("[{Cmd}] escopo contem {Total} elementos", Titulo, scopeIds.Count);
+
+            // --- 2. Criar lista de regras habilitadas ---
+            List<IModelCheckRule> regras = CriarRegras(config);
+            Logger.Info("[{Cmd}] {RulesCount} regras habilitadas", Titulo, regras.Count);
+
+            if (regras.Count == 0)
+                return Result<ModelCheckReport>.Fail(
+                    "Nenhuma regra habilitada. Selecione ao menos uma regra na configuracao.");
+
+            // --- 3. Executar cada regra ---
+            for (int i = 0; i < regras.Count; i++)
             {
-                // --- 1. Coletar escopo ---
-                Logger.Info("[{Cmd}] coletando escopo", Titulo);
-                IList<ElementId> scopeIds = ColetarEscopo(uidoc, config.ScopeViewOnly);
-                report.TotalElementsAnalyzed = scopeIds.Count;
+                reporter.ThrowIfCancellationRequested();
 
-                Logger.Info("[{Cmd}] escopo contem {Total} elementos", Titulo, scopeIds.Count);
+                IModelCheckRule regra = regras[i];
+                Stopwatch swRegra = Stopwatch.StartNew();
 
-                // --- 2. Criar lista de regras habilitadas ---
-                var regras = CriarRegras(config);
-                Logger.Info("[{Cmd}] {RulesCount} regras habilitadas", Titulo, regras.Count);
-
-                if (regras.Count == 0)
+                try
                 {
-                    Logger.Warn("[{Cmd}] nenhuma regra habilitada — abortando", Titulo);
-                    return report;
-                }
+                    Logger.Info("[{Cmd}] executando regra: {Rule} ({Index}/{Total})",
+                        Titulo, regra.Name, i + 1, regras.Count);
 
-                // --- 3. Executar cada regra ---
-                foreach (var regra in regras)
+                    IEnumerable<ModelCheckIssue> problemas = regra.Check(doc, scopeIds);
+                    List<ModelCheckIssue> problemasList = problemas.ToList();
+
+                    swRegra.Stop();
+
+                    ModelCheckRuleResult resultado = new ModelCheckRuleResult
+                    {
+                        RuleName = regra.Name,
+                        Description = regra.Description,
+                        ElapsedMs = swRegra.ElapsedMilliseconds,
+                        Issues = problemasList
+                    };
+                    report.Results.Add(resultado);
+
+                    Logger.Info("[{Cmd}] {Rule} encontrou {Count} problemas em {Elapsed}ms",
+                        Titulo, regra.Name, problemasList.Count, swRegra.ElapsedMilliseconds);
+
+                    reporter.Report(i + 1, regras.Count,
+                        $"Regra {regra.Name}: {problemasList.Count} problema(s)");
+                }
+                catch (OperationCanceledException)
                 {
-                    var swRegra = Stopwatch.StartNew();
-
-                    try
-                    {
-                        Logger.Info("[{Cmd}] executando regra: {Rule}", Titulo, regra.Name);
-
-                        var problemas = regra.Check(doc, scopeIds);
-                        var problemasList = problemas.ToList();
-
-                        swRegra.Stop();
-
-                        var resultado = new ModelCheckRuleResult
-                        {
-                            RuleName = regra.Name,
-                            Description = regra.Description,
-                            ElapsedMs = swRegra.ElapsedMilliseconds,
-                            Issues = problemasList
-                        };
-
-                        report.Results.Add(resultado);
-
-                        Logger.Info("[{Cmd}] {Rule} encontrou {Count} problemas em {Elapsed}ms",
-                            Titulo, regra.Name, problemasList.Count, swRegra.ElapsedMilliseconds);
-                    }
-                    catch (Exception ex)
-                    {
-                        swRegra.Stop();
-                        Logger.Error(ex, "[{Cmd}] erro ao executar regra {Rule}",
-                            Titulo, regra.Name);
-                    }
+                    // Propaga — nao e erro da regra, e cancelamento do usuario.
+                    throw;
                 }
-
-                // --- 4. Exportar para Excel se configurado ---
-                if (config.ExportExcel && !string.IsNullOrWhiteSpace(config.ExcelPath))
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        Logger.Info("[{Cmd}] exportando relatorio para Excel: {Path}",
-                            Titulo, config.ExcelPath);
-
-                        ExportarExcel(report, config.ExcelPath);
-
-                        Logger.Info("[{Cmd}] relatorio Excel exportado com sucesso", Titulo);
-                        AppDialogService.ShowInfo(
-                            Titulo,
-                            $"Relatorio exportado com sucesso:\n{config.ExcelPath}",
-                            "Exportacao Concluida");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "[{Cmd}] erro ao exportar Excel", Titulo);
-                        AppDialogService.ShowError(
-                            Titulo,
-                            $"Erro ao exportar relatorio: {ex.Message}",
-                            "Erro de Exportacao");
-                    }
+                    swRegra.Stop();
+                    Logger.Error(ex, "[{Cmd}] erro ao executar regra {Rule} — pulando",
+                        Titulo, regra.Name);
+                    // Uma regra com defeito nao invalida o batch.
                 }
-
-                sw.Stop();
-                report.Duration = sw.ElapsedMilliseconds;
-
-                Logger.Info("[{Cmd}] verificacao concluida em {Elapsed}ms — {Total} problemas encontrados",
-                    Titulo, sw.ElapsedMilliseconds, report.TotalIssues);
-
-                return report;
             }
-            catch (Exception ex)
+
+            // --- 4. Exportar para Excel se configurado ---
+            // Falha de export NAO invalida o relatorio de analise; usuario pode
+            // abrir o report window mesmo assim. Command apresenta dois dialogos
+            // separados caso necessario.
+            if (config.ExportExcel && !string.IsNullOrWhiteSpace(config.ExcelPath))
             {
-                sw.Stop();
-                Logger.Error(ex, "[{Cmd}] FALHA geral na verificacao apos {Elapsed}ms",
-                    Titulo, sw.ElapsedMilliseconds);
-                throw;
+                reporter.ThrowIfCancellationRequested();
+
+                try
+                {
+                    Logger.Info("[{Cmd}] exportando relatorio para Excel: {Path}",
+                        Titulo, config.ExcelPath);
+
+                    ExportarExcel(report, config.ExcelPath!);
+                    report.ExportedToPath = config.ExcelPath;
+
+                    Logger.Info("[{Cmd}] relatorio Excel exportado com sucesso", Titulo);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "[{Cmd}] erro ao exportar Excel — analise preservada", Titulo);
+                    report.ExportError = ex.Message;
+                }
             }
+
+            sw.Stop();
+            report.Duration = sw.ElapsedMilliseconds;
+
+            Logger.Info("[{Cmd}] verificacao concluida em {Elapsed}ms — {Total} problemas encontrados",
+                Titulo, sw.ElapsedMilliseconds, report.TotalIssues);
+
+            reporter.ReportFinal(regras.Count, regras.Count,
+                $"Verificacao concluida — {report.TotalIssues} problema(s) em {regras.Count} regra(s)");
+
+            return Result<ModelCheckReport>.Ok(report);
         }
 
         private IList<ElementId> ColetarEscopo(UIDocument uidoc, bool viewOnly)
@@ -140,7 +158,7 @@ namespace FerramentaEMT.Services.ModelCheck
             if (viewOnly && uidoc.ActiveView != null)
             {
                 // Coletar apenas elementos visiveis na vista ativa
-                var collector = new FilteredElementCollector(uidoc.Document, uidoc.ActiveView.Id)
+                FilteredElementCollector collector = new FilteredElementCollector(uidoc.Document, uidoc.ActiveView.Id)
                     .OfClass(typeof(FamilyInstance));
 
                 return collector.ToElementIds().ToList();
@@ -148,7 +166,7 @@ namespace FerramentaEMT.Services.ModelCheck
             else
             {
                 // Coletar modelo inteiro
-                var collector = new FilteredElementCollector(uidoc.Document)
+                FilteredElementCollector collector = new FilteredElementCollector(uidoc.Document)
                     .OfClass(typeof(FamilyInstance));
 
                 return collector.ToElementIds().ToList();
@@ -157,7 +175,7 @@ namespace FerramentaEMT.Services.ModelCheck
 
         private List<IModelCheckRule> CriarRegras(ModelCheckConfig config)
         {
-            var regras = new List<IModelCheckRule>();
+            List<IModelCheckRule> regras = new List<IModelCheckRule>();
 
             if (config.RunMissingMaterial)
                 regras.Add(new MissingMaterialRule());
@@ -204,10 +222,10 @@ namespace FerramentaEMT.Services.ModelCheck
                 File.Delete(excelPath);
 
             // Criar workbook
-            using (var workbook = new XLWorkbook())
+            using (XLWorkbook workbook = new XLWorkbook())
             {
                 // Aba 1: Issues consolidadas
-                var wsIssues = workbook.Worksheets.Add("Issues");
+                IXLWorksheet wsIssues = workbook.Worksheets.Add("Issues");
 
                 // Cabecalho
                 wsIssues.Cell(1, 1).Value = "Severidade";
@@ -217,15 +235,15 @@ namespace FerramentaEMT.Services.ModelCheck
                 wsIssues.Cell(1, 5).Value = "Sugestao";
 
                 // Formatar cabecalho
-                var headerRange = wsIssues.Range(1, 1, 1, 5);
+                IXLRange headerRange = wsIssues.Range(1, 1, 1, 5);
                 headerRange.Style.Font.Bold = true;
                 headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
 
                 // Preencher dados
                 int row = 2;
-                foreach (var resultado in report.Results)
+                foreach (ModelCheckRuleResult resultado in report.Results)
                 {
-                    foreach (var issue in resultado.Issues)
+                    foreach (ModelCheckIssue issue in resultado.Issues)
                     {
                         wsIssues.Cell(row, 1).Value = issue.Severity.ToString();
                         wsIssues.Cell(row, 2).Value = issue.RuleName;
@@ -241,7 +259,7 @@ namespace FerramentaEMT.Services.ModelCheck
                 wsIssues.Columns("A", "E").AdjustToContents();
 
                 // Aba 2: Resumo
-                var wsResumo = workbook.Worksheets.Add("Resumo");
+                IXLWorksheet wsResumo = workbook.Worksheets.Add("Resumo");
 
                 wsResumo.Cell(1, 1).Value = "Total de Elementos Analisados";
                 wsResumo.Cell(1, 2).Value = report.TotalElementsAnalyzed;

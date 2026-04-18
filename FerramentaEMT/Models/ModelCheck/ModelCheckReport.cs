@@ -26,6 +26,20 @@ namespace FerramentaEMT.Models.ModelCheck
         public List<ModelCheckRuleResult> Results { get; set; } = new();
 
         /// <summary>
+        /// Caminho do arquivo Excel gerado pela exportacao, quando configurada e bem-sucedida.
+        /// Null se nao foi solicitada exportacao ou se a exportacao falhou
+        /// (neste caso ver <see cref="ExportError"/>).
+        /// </summary>
+        public string ExportedToPath { get; set; }
+
+        /// <summary>
+        /// Mensagem de erro da exportacao para Excel, quando configurada e falha.
+        /// Null quando nao houve falha (inclusive quando exportacao nao foi solicitada).
+        /// Analise de regras sempre e preservada mesmo se Excel falhar.
+        /// </summary>
+        public string ExportError { get; set; }
+
+        /// <summary>
         /// Conta o total de problemas por severidade.
         /// </summary>
         /// <param name="severity">Severidade a contar.</param>
