@@ -93,6 +93,12 @@
              Link="LinkedSources\Licensing\SimpleJson.cs" />
     <Compile Include="..\FerramentaEMT\Licensing\KeySigner.cs"
              Link="LinkedSources\Licensing\KeySigner.cs" />
+    <Compile Include="..\FerramentaEMT\Licensing\LicenseSecretProvider.cs"
+             Link="LinkedSources\Licensing\LicenseSecretProvider.cs" />
+
+    <!-- 1.3.0: Core (Result<T>) — pure C#, sem Revit -->
+    <Compile Include="..\FerramentaEMT\Core\Result.cs"
+             Link="LinkedSources\Core\Result.cs" />
 
     <!-- Config DTOs puros (sem Revit) — adicionados pela auditoria AIOX -->
     <Compile Include="..\FerramentaEMT\Models\CotarTrelicaConfig.cs"
