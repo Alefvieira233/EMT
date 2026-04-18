@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.ModelCheck;
 
 namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
@@ -24,6 +25,7 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
             var collector = new FilteredElementCollector(doc)
                 .OfClass(typeof(Group));
 
+            int skippedOnError = 0;
             foreach (Group grupo in collector.Cast<Group>())
             {
                 if (grupo == null)
@@ -47,9 +49,12 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
                 }
                 catch (Exception)
                 {
-                    // Ignorar
+                    skippedOnError++;
                 }
             }
+
+            if (skippedOnError > 0)
+                Logger.Warn("[{Rule}] {Count} grupo(s) pulado(s) por erro na leitura de membros.", Name, skippedOnError);
 
             return issues;
         }

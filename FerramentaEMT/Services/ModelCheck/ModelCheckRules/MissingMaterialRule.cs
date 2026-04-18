@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.ModelCheck;
 
 namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
@@ -31,6 +32,7 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
                 .OfClass(typeof(FamilyInstance))
                 .OfCategory(BuiltInCategory.OST_StructuralFraming);
 
+            int skippedOnError = 0;
             foreach (FamilyInstance elem in collector)
             {
                 if (elem == null || elem.Symbol == null)
@@ -58,10 +60,12 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
                 }
                 catch (Exception)
                 {
-                    // Ignorar elementos com erro na leitura de parametros
-                    // Continuar com proximo
+                    skippedOnError++;
                 }
             }
+
+            if (skippedOnError > 0)
+                Logger.Warn("[{Rule}] {Count} elemento(s) pulado(s) por erro na leitura de parametros.", Name, skippedOnError);
 
             return issues;
         }

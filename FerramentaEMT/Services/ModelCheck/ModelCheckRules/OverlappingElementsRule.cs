@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.ModelCheck;
 
 namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
@@ -18,11 +19,15 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
 
         private const double MinVolumeThreshold = 0.0001; // metro cubico
 
+        private int _skippedOnError;
+
         public IEnumerable<ModelCheckIssue> Check(Document doc, IList<ElementId>? scopeIds)
         {
             var issues = new List<ModelCheckIssue>();
             if (doc == null)
                 return issues;
+
+            _skippedOnError = 0;
 
             FilteredElementCollector collector = (scopeIds != null && scopeIds.Count > 0)
                 ? new FilteredElementCollector(doc, scopeIds)
@@ -60,6 +65,9 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
                     }
                 }
             }
+
+            if (_skippedOnError > 0)
+                Logger.Warn("[{Rule}] {Count} par(es) de elementos pulado(s) por erro na analise geometrica.", Name, _skippedOnError);
 
             return issues;
         }
@@ -117,6 +125,7 @@ namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
             catch
             {
                 // Erro na verificacao — asumir sem sobreposicao
+                _skippedOnError++;
                 return false;
             }
         }
