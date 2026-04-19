@@ -4,7 +4,7 @@
         Title="Verificacao de Modelo"
         Width="640"
         MinWidth="560" MinHeight="700"
-        MaxHeight="820"
+        MaxHeight="900"
         SizeToContent="Height"
         Background="{DynamicResource WindowBackgroundBrush}"
         WindowStartupLocation="CenterScreen"
@@ -19,127 +19,194 @@
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Titulo -->
-        <StackPanel Grid.Row="0" Margin="0 0 0 12">
-            <TextBlock Text="Verificacao de Modelo" Style="{StaticResource DialogTitleText}"/>
-            <TextBlock Text="Executa multiplas regras de validacao (material, marcas, sobreposicoes, etc.) e gera relatorio consolidado. Selecione as regras a executar abaixo."
-                       Style="{StaticResource DialogSubtitleText}"/>
-        </StackPanel>
-
-        <!-- Escopo -->
-        <GroupBox Grid.Row="1" Header="Escopo da verificacao">
+        <!-- Conteudo rolavel (rede de seguranca para monitores pequenos) -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <RadioButton x:Name="rbVistaAtiva" Content="Vista ativa" IsChecked="True"
-                             Checked="Configuracao_Changed"/>
-                <RadioButton x:Name="rbModeloInteiro" Content="Modelo inteiro"
-                             Margin="0,4,0,0" Checked="Configuracao_Changed"/>
-            </StackPanel>
-        </GroupBox>
 
-        <!-- Regras a executar -->
-        <GroupBox Grid.Row="2" Header="Regras a executar">
-            <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <CheckBox x:Name="chkMaterial" Content="Material Ausente"
-                              IsChecked="True" Margin="0,2"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza elementos estruturais sem material atribuido."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkMarca" Content="Marca Ausente"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza elementos estruturais sem marca de fabricacao."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkMarcaDuplicada" Content="Marca Duplicada"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza marcas usadas em elementos de tipos diferentes."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkSobreposicao" Content="Sobreposicao de Elementos"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Detecta elementos estruturais que se sobrepoe (interseccao de geometria)."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkPerfil" Content="Perfil Ausente"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza elementos com simbolo ausente ou dimensoes zero."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkComprimento" Content="Comprimento Zero"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza elementos estruturais com comprimento menor que 1mm."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkNivel" Content="Nivel Ausente"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza elementos sem nivel atribuido."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkTipo" Content="Sem Tipo"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza instancias sem simbolo ou familia."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkComentario" Content="Sem Comentario (informativo)"
-                              IsChecked="False" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza elementos sem comentario (apenas informativo)."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
-
-                    <CheckBox x:Name="chkGrupoOrfao" Content="Grupo Orfao"
-                              IsChecked="True" Margin="0,8,0,0"
-                              Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                    <TextBlock Text="Localiza grupos sem elementos."
-                               Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+                <!-- Titulo -->
+                <StackPanel Margin="0,0,0,12">
+                    <TextBlock Text="Verificacao de Modelo" Style="{StaticResource DialogTitleText}"/>
+                    <TextBlock Text="Executa multiplas regras de validacao (material, marcas, sobreposicoes, etc.) e gera relatorio consolidado. Selecione as regras a executar abaixo."
+                               Style="{StaticResource DialogSubtitleText}"/>
                 </StackPanel>
-            </ScrollViewer>
-        </GroupBox>
 
-        <!-- Exportacao -->
-        <GroupBox Grid.Row="3" Header="Exportacao para Excel">
-            <StackPanel>
-                <CheckBox x:Name="chkExportarExcel" Content="Exportar relatorio em Excel apos execucao"
-                          IsChecked="False" Margin="0,2"
-                          Checked="ChkExportarExcel_Checked" Unchecked="ChkExportarExcel_Unchecked"/>
+                <!-- Escopo -->
+                <GroupBox Header="Escopo da verificacao">
+                    <StackPanel>
+                        <RadioButton x:Name="rbVistaAtiva" Content="Vista ativa" IsChecked="True"
+                                     Checked="Configuracao_Changed"/>
+                        <RadioButton x:Name="rbModeloInteiro" Content="Modelo inteiro"
+                                     Margin="0,4,0,0" Checked="Configuracao_Changed"/>
+                    </StackPanel>
+                </GroupBox>
 
-                <Grid Margin="20,8,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <!-- Regras a executar -->
+                <GroupBox Header="Regras a executar">
+                    <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <CheckBox x:Name="chkMaterial" Content="Material Ausente"
+                                      IsChecked="True" Margin="0,2"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza elementos estruturais sem material atribuido."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
 
-                    <TextBox x:Name="txtExcelPath" Grid.Column="0"
-                             IsEnabled="False" VerticalContentAlignment="Center"
-                             Margin="0,0,8,0"/>
-                    <Button x:Name="btnBrowseExcel" Grid.Column="1"
-                            Content="..." Width="30" Height="26"
-                            IsEnabled="False" Click="BtnBrowseExcel_Click"/>
-                </Grid>
+                            <CheckBox x:Name="chkMarca" Content="Marca Ausente"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza elementos estruturais sem marca de fabricacao."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkMarcaDuplicada" Content="Marca Duplicada"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza marcas usadas em elementos de tipos diferentes."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkSobreposicao" Content="Sobreposicao de Elementos"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Detecta elementos estruturais que se sobrepoe (interseccao de geometria)."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkPerfil" Content="Perfil Ausente"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza elementos com simbolo ausente ou dimensoes zero."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkComprimento" Content="Comprimento Zero"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza elementos estruturais com comprimento menor que 1mm."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkNivel" Content="Nivel Ausente"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza elementos sem nivel atribuido."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkTipo" Content="Sem Tipo"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza instancias sem simbolo ou familia."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkComentario" Content="Sem Comentario (informativo)"
+                                      IsChecked="False" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza elementos sem comentario (apenas informativo)."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+
+                            <CheckBox x:Name="chkGrupoOrfao" Content="Grupo Orfao"
+                                      IsChecked="True" Margin="0,8,0,0"
+                                      Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                            <TextBlock Text="Localiza grupos sem elementos."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="20,0,0,4"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </GroupBox>
+
+                <!-- Exportacao -->
+                <GroupBox Header="Exportacao para Excel">
+                    <StackPanel>
+                        <CheckBox x:Name="chkExportarExcel" Content="Exportar relatorio em Excel apos execucao"
+                                  IsChecked="False" Margin="0,2"
+                                  Checked="ChkExportarExcel_Checked" Unchecked="ChkExportarExcel_Unchecked"/>
+
+                        <Grid Margin="20,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="txtExcelPath" Grid.Column="0"
+                                     IsEnabled="False" VerticalContentAlignment="Center"
+                                     Margin="0,0,8,0"/>
+                            <Button x:Name="btnBrowseExcel" Grid.Column="1"
+                                    Content="..." Width="30" Height="26"
+                                    IsEnabled="False" Click="BtnBrowseExcel_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Verificacao de Carimbo -->
+                <GroupBox Header="Verificacao de Carimbo">
+                    <StackPanel>
+                        <CheckBox x:Name="chkCarimbo" Content="Verificar parametros de carimbo nas folhas"
+                                  IsChecked="False" Margin="0,2"
+                                  Checked="ChkCarimbo_Checked" Unchecked="ChkCarimbo_Unchecked"/>
+
+                        <StackPanel x:Name="pnlCarimboOpcoes" IsEnabled="False" Margin="20,8,0,0">
+                            <CheckBox x:Name="chkCarimboFolhaAtiva" Content="Verificar apenas a folha ativa"
+                                      IsChecked="False" Margin="0,4,0,0"/>
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Familia do carimbo:"
+                                           Style="{StaticResource LabelText}"
+                                           VerticalAlignment="Center" Margin="0,0,8,4"/>
+                                <TextBox x:Name="txtCarimboFamilia" Grid.Row="0" Grid.Column="1"
+                                         ToolTip="Ex: A1 - EMT — deixe vazio para aceitar qualquer familia"
+                                         Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Tipo do carimbo:"
+                                           Style="{StaticResource LabelText}"
+                                           VerticalAlignment="Center" Margin="0,0,8,4"/>
+                                <TextBox x:Name="txtCarimboTipo" Grid.Row="1" Grid.Column="1"
+                                         ToolTip="Ex: Padrao — deixe vazio para aceitar qualquer tipo"
+                                         Margin="0,0,0,4"/>
+                            </Grid>
+
+                            <TextBlock Text="Deixe os campos vazios para verificar todos os carimbos do projeto."
+                                       Style="{StaticResource DialogSubtitleText}" Margin="0,2,0,8"/>
+
+                            <TextBlock Text="Parametros do carimbo que devem estar preenchidos:"
+                                       Style="{StaticResource LabelText}" Margin="0,4,0,4"/>
+
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox x:Name="txtNovoParametro" Grid.Column="0"
+                                         ToolTip="Ex: Projetista, Revisao, Data — pressione Enter para adicionar"
+                                         KeyDown="TxtNovoParametro_KeyDown"
+                                         Margin="0,0,4,0"/>
+                                <Button x:Name="btnAddParametro" Grid.Column="1"
+                                        Content="Adicionar" Width="75" Height="26"
+                                        ToolTip="Adicionar parametro a lista (Enter tambem funciona)"
+                                        Click="BtnAddParametro_Click" Margin="0,0,4,0"/>
+                                <Button x:Name="btnRemoveParametro" Grid.Column="2"
+                                        Content="Remover" Width="75" Height="26"
+                                        ToolTip="Remover parametro selecionado da lista"
+                                        Click="BtnRemoveParametro_Click"/>
+                            </Grid>
+
+                            <ListBox x:Name="lstParametros" Height="80" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
             </StackPanel>
-        </GroupBox>
+        </ScrollViewer>
 
-        <!-- Spacer -->
-        <Border Grid.Row="5"/>
-
-        <!-- Botoes -->
-        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        <!-- Botoes (fora do scroll, sempre visiveis) -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button x:Name="btnOk" Content="Verificar" Width="100" Height="32"
                     Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"/>
             <Button x:Name="btnCancel" Content="Cancelar" Width="100" Height="32"/>
