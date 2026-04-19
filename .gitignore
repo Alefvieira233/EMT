@@ -90,6 +90,9 @@ license.secret
 # DSN do Sentry — carregado em runtime, nao deve ficar no repo.
 sentry.dsn
 
+# --- Relatorios de comparacao (apoio local) ---
+comparacao-victor/
+
 # --- Pacotes de upload / backups locais ---
 up emt/
 up emt.zip
