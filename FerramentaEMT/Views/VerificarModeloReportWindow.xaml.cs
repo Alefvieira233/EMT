@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using ClosedXML.Excel;
 using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.ModelCheck;
+using FerramentaEMT.Services.ModelCheck;
 using FerramentaEMT.Utils;
 using Microsoft.Win32;
 
@@ -16,9 +18,23 @@ namespace FerramentaEMT.Views
 {
     public partial class VerificarModeloReportWindow : Window
     {
+        private sealed class IssueNodeData
+        {
+            public string Titulo { get; set; } = string.Empty;
+            public string Descricao { get; set; } = string.Empty;
+            public string Sugestao { get; set; } = string.Empty;
+            public List<long> ElementIds { get; set; } = new List<long>();
+            public bool IsSheetIssue { get; set; }
+        }
+
         private readonly UIDocument _uidoc;
         private readonly ModelCheckReport _report;
-        private List<long> _elementIdsDoRelatorio;
+        private readonly List<long> _elementIdsDoRelatorio;
+        private readonly List<long> _elementIdsDoModelo;
+        private readonly HashSet<long> _sheetElementIds;
+        private readonly ModelCheckVisualizationService _visualizationService;
+        private List<long> _elementIdsSelecionados;
+        private bool _populandoRelatorio;
 
         public VerificarModeloReportWindow(UIDocument uidoc, ModelCheckReport report)
         {
@@ -28,197 +44,330 @@ namespace FerramentaEMT.Views
             _uidoc = uidoc;
             _report = report ?? new ModelCheckReport();
             _elementIdsDoRelatorio = new List<long>();
+            _elementIdsDoModelo = new List<long>();
+            _sheetElementIds = new HashSet<long>();
+            _visualizationService = new ModelCheckVisualizationService(uidoc);
+            _elementIdsSelecionados = new List<long>();
 
+            treeProblemas.SelectedItemChanged += TreeProblemas_SelectedItemChanged;
+            treeProblemas.MouseDoubleClick += TreeProblemas_MouseDoubleClick;
             btnIsolarNaVista.Click += BtnIsolarNaVista_Click;
             btnSelecionarElementos.Click += BtnSelecionarElementos_Click;
             btnExportarExcel.Click += BtnExportarExcel_Click;
             btnFechar.Click += (_, __) => Close();
 
-            // Duplo-clique num item da arvore = selecionar e mostrar aquele elemento
-            treeProblemas.MouseDoubleClick += TreeProblemas_MouseDoubleClick;
+            try
+            {
+                PopularRelatorio();
+            }
+            catch (Exception ex)
+            {
+                txtStatusNavegacao.Text = $"Erro ao carregar o relatório: {ex.Message}";
+            }
 
-            PopularRelatorio();
+            AbrirVista3DInicial();
         }
 
         private void PopularRelatorio()
         {
-            // Atualizar resumo
-            lblTotalElementos.Text = _report.TotalElementsAnalyzed.ToString();
-            lblTotalProblemas.Text = _report.TotalIssues.ToString();
-            lblErros.Text = _report.CountBySeverity(ModelCheckSeverity.Error).ToString();
-            lblAvisos.Text = _report.CountBySeverity(ModelCheckSeverity.Warning).ToString();
-
-            // Construir tree de problemas agrupados por severidade, depois por regra
-            treeProblemas.Items.Clear();
-            _elementIdsDoRelatorio.Clear();
-
-            // Agrupar por severidade
-            var porSeveridade = new Dictionary<ModelCheckSeverity, List<ModelCheckIssue>>
-            {
-                { ModelCheckSeverity.Error, new List<ModelCheckIssue>() },
-                { ModelCheckSeverity.Warning, new List<ModelCheckIssue>() },
-                { ModelCheckSeverity.Info, new List<ModelCheckIssue>() }
-            };
-
-            foreach (var resultado in _report.Results)
-            {
-                foreach (var issue in resultado.Issues)
-                {
-                    if (!porSeveridade.ContainsKey(issue.Severity))
-                        porSeveridade[issue.Severity] = new List<ModelCheckIssue>();
-
-                    porSeveridade[issue.Severity].Add(issue);
-
-                    if (issue.ElementId.HasValue)
-                        _elementIdsDoRelatorio.Add(issue.ElementId.Value);
-                }
-            }
-
-            // Criar nodes
-            var severidades = new[] { ModelCheckSeverity.Error, ModelCheckSeverity.Warning, ModelCheckSeverity.Info };
-
-            foreach (var sev in severidades)
-            {
-                var problemas = porSeveridade[sev];
-                if (problemas.Count == 0)
-                    continue;
-
-                var nodeSetor = CriarTreeItem($"{sev} ({problemas.Count})", sev.ToString());
-
-                // Agrupar por regra dentro da severidade
-                var porRegra = problemas.GroupBy(p => p.RuleName);
-
-                foreach (var regra in porRegra)
-                {
-                    var nodeRegra = CriarTreeItem($"{regra.Key} ({regra.Count()})", $"{sev}-{regra.Key}");
-
-                    foreach (var issue in regra)
-                    {
-                        var descricao = issue.Description;
-                        if (issue.ElementId.HasValue)
-                            descricao += $" [ID: {issue.ElementId}]";
-
-                        var nodeIssue = CriarTreeItem(descricao, $"issue-{issue.ElementId}");
-                        nodeRegra.Items.Add(nodeIssue);
-                    }
-
-                    nodeSetor.Items.Add(nodeRegra);
-                }
-
-                treeProblemas.Items.Add(nodeSetor);
-            }
-        }
-
-        private TreeViewItem CriarTreeItem(string texto, string tag)
-        {
-            var item = new TreeViewItem
-            {
-                Header = texto,
-                Tag = tag,
-                IsExpanded = false
-            };
-
-            return item;
-        }
-
-        /// <summary>
-        /// Retorna o ElementId selecionado no TreeView se o node atual corresponde
-        /// a uma issue individual (Tag no formato "issue-<id>"). Retorna null caso contrário.
-        /// </summary>
-        private long? ObterElementIdSelecionadoNaTree()
-        {
-            if (treeProblemas.SelectedItem is not TreeViewItem item) return null;
-            if (item.Tag is not string tag) return null;
-            if (!tag.StartsWith("issue-")) return null;
-            string idStr = tag.Substring("issue-".Length);
-            if (long.TryParse(idStr, out long id)) return id;
-            return null;
-        }
-
-        /// <summary>
-        /// Decide quais elementos aplicar (selecionado na tree, ou todos do relatório).
-        /// </summary>
-        private List<ElementId> ResolverElementIdsParaAcao()
-        {
-            // Senior pattern: sempre revalidar ElementIds antes de usar em operacoes Revit.
-            // Usuario pode ter deletado elementos entre gerar relatorio e clicar acao — a engine
-            // do Revit lanca ArgumentException em IsolateElementsTemporary/SetElementIds
-            // se qualquer id estiver invalido. Filtra silenciosamente os stales.
-            var doc = _uidoc?.Document;
-
-            long? idSelecionado = ObterElementIdSelecionadoNaTree();
-            if (idSelecionado.HasValue)
-            {
-                var id = new ElementId(idSelecionado.Value);
-                return (doc != null && doc.GetElement(id) != null)
-                    ? new List<ElementId> { id }
-                    : new List<ElementId>();
-            }
-
-            return _elementIdsDoRelatorio
-                .Select(id => new ElementId(id))
-                .Where(id => doc == null || doc.GetElement(id) != null)
-                .ToList();
-        }
-
-        private void TreeProblemas_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            long? id = ObterElementIdSelecionadoNaTree();
-            if (!id.HasValue) return;
-
+            _populandoRelatorio = true;
             try
             {
-                var elementIds = new List<ElementId> { new ElementId(id.Value) };
-                _uidoc.Selection.SetElementIds(elementIds);
-                try { _uidoc.ShowElements(elementIds); } catch (Exception ex2) { Logger.Warn(ex2, "Falha ao focar elemento na vista"); }
-                this.WindowState = WindowState.Minimized;
-                e.Handled = true;
+                lblTotalElementos.Text = _report.TotalElementsAnalyzed.ToString();
+                lblTotalProblemas.Text = _report.TotalIssues.ToString();
+                lblErros.Text = _report.CountBySeverity(ModelCheckSeverity.Error).ToString();
+                lblAvisos.Text = _report.CountBySeverity(ModelCheckSeverity.Warning).ToString();
+
+                treeProblemas.Items.Clear();
+                _elementIdsDoRelatorio.Clear();
+                _elementIdsDoModelo.Clear();
+                _sheetElementIds.Clear();
+
+                var porSeveridade = new Dictionary<ModelCheckSeverity, List<ModelCheckIssue>>
+                {
+                    { ModelCheckSeverity.Error, new List<ModelCheckIssue>() },
+                    { ModelCheckSeverity.Warning, new List<ModelCheckIssue>() },
+                    { ModelCheckSeverity.Info, new List<ModelCheckIssue>() }
+                };
+
+                foreach (var resultado in _report.Results)
+                {
+                    foreach (var issue in resultado.Issues)
+                    {
+                        if (!porSeveridade.ContainsKey(issue.Severity))
+                            porSeveridade[issue.Severity] = new List<ModelCheckIssue>();
+
+                        porSeveridade[issue.Severity].Add(issue);
+
+                        if (issue.ElementId.HasValue)
+                        {
+                            _elementIdsDoRelatorio.Add(issue.ElementId.Value);
+                            if (issue.IsSheetIssue)
+                                _sheetElementIds.Add(issue.ElementId.Value);
+                            else
+                                _elementIdsDoModelo.Add(issue.ElementId.Value);
+                        }
+                    }
+                }
+
+                var severidades = new[] { ModelCheckSeverity.Error, ModelCheckSeverity.Warning, ModelCheckSeverity.Info };
+                foreach (var sev in severidades)
+                {
+                    var problemas = porSeveridade[sev];
+                    if (problemas.Count == 0)
+                        continue;
+
+                    var setorIds = problemas
+                        .Where(issue => issue.ElementId.HasValue)
+                        .Select(issue => issue.ElementId!.Value)
+                        .Distinct()
+                        .ToList();
+
+                    var nodeSetor = CriarTreeItem(
+                        $"{sev} ({problemas.Count})",
+                        new IssueNodeData
+                        {
+                            Titulo = $"{sev} ({problemas.Count})",
+                            Descricao = $"Seleciona todos os elementos classificados como {sev.ToString().ToLowerInvariant()} no relatório.",
+                            Sugestao = "Use a seleção para revisar os elementos desta severidade em conjunto.",
+                            ElementIds = setorIds,
+                            IsSheetIssue = setorIds.Count > 0 && setorIds.All(id => _sheetElementIds.Contains(id))
+                        },
+                        true);
+
+                    var porRegra = problemas.GroupBy(p => p.RuleName);
+
+                    foreach (var regra in porRegra)
+                    {
+                        var regraIds = regra
+                            .Where(issue => issue.ElementId.HasValue)
+                            .Select(issue => issue.ElementId!.Value)
+                            .Distinct()
+                            .ToList();
+
+                        bool regraEhDeFolha = regra.All(issue => issue.IsSheetIssue);
+
+                        var nodeRegra = CriarTreeItem(
+                            $"{regra.Key} ({regra.Count()})",
+                            new IssueNodeData
+                            {
+                                Titulo = $"{regra.Key} ({regra.Count()})",
+                                Descricao = regraEhDeFolha
+                                    ? $"{regra.Count()} folha(s) com '{regra.Key.Replace("Carimbo: ", "")}' não preenchido."
+                                    : $"Seleciona todos os elementos listados na regra '{regra.Key}'.",
+                                Sugestao = regra.FirstOrDefault()?.Suggestion ?? "Revise os itens desta regra.",
+                                ElementIds = regraIds,
+                                IsSheetIssue = regraEhDeFolha
+                            });
+
+                        foreach (var issue in regra)
+                        {
+                            var descricao = issue.Description;
+                            if (issue.ElementId.HasValue && !issue.IsSheetIssue)
+                                descricao += $" [ID: {issue.ElementId}]";
+
+                            nodeRegra.Items.Add(CriarTreeItem(
+                                descricao,
+                                new IssueNodeData
+                                {
+                                    Titulo = issue.RuleName,
+                                    Descricao = issue.Description,
+                                    Sugestao = issue.Suggestion,
+                                    IsSheetIssue = issue.IsSheetIssue,
+                                    ElementIds = issue.ElementId.HasValue
+                                        ? new List<long> { issue.ElementId.Value }
+                                        : new List<long>()
+                                }));
+                        }
+
+                        nodeSetor.Items.Add(nodeRegra);
+                    }
+
+                    treeProblemas.Items.Add(nodeSetor);
+                }
+
+                SelecionarPrimeiroItem();
+            }
+            finally
+            {
+                _populandoRelatorio = false;
+            }
+        }
+
+        private TreeViewItem CriarTreeItem(string texto, IssueNodeData data, bool expanded = false)
+        {
+            return new TreeViewItem
+            {
+                Header = texto,
+                Tag = data,
+                IsExpanded = expanded
+            };
+        }
+
+        private void SelecionarPrimeiroItem()
+        {
+            if (treeProblemas.Items.Count == 0)
+                return;
+
+            TreeViewItem item = treeProblemas.Items[0] as TreeViewItem;
+            if (item == null)
+                return;
+
+            item.IsSelected = true;
+        }
+
+        private void TreeProblemas_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (_populandoRelatorio)
+                return;
+
+            TreeViewItem item = e.NewValue as TreeViewItem;
+            IssueNodeData data = item?.Tag as IssueNodeData;
+
+            if (data == null)
+                return;
+
+            _elementIdsSelecionados = data.ElementIds
+                .Distinct()
+                .ToList();
+
+            txtSelecaoTitulo.Text = string.IsNullOrWhiteSpace(data.Titulo) ? "Sem título" : data.Titulo;
+            txtSelecaoDescricao.Text = string.IsNullOrWhiteSpace(data.Descricao) ? "Selecione outro item para ver mais detalhes." : data.Descricao;
+            txtSelecaoSugestao.Text = string.IsNullOrWhiteSpace(data.Sugestao) ? "Sem sugestão adicional." : data.Sugestao;
+        }
+
+        private void TreeProblemas_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            TreeViewItem item = treeProblemas.SelectedItem as TreeViewItem;
+            IssueNodeData data = item?.Tag as IssueNodeData;
+
+            if (data == null || data.ElementIds.Count == 0)
+                return;
+
+            e.Handled = true;
+
+            if (data.ElementIds.Count == 1)
+                NavegarParaIssue(data);
+            else
+                NavegarParaGrupo(data);
+
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void NavegarParaIssue(IssueNodeData data)
+        {
+            try
+            {
+                if (data.IsSheetIssue)
+                {
+                    _visualizationService.FocusSheetElements(data.ElementIds);
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? "Folha aberta para revisão do carimbo."
+                        : _visualizationService.LastNavigationDescription;
+                }
+                else
+                {
+                    _visualizationService.FocusElements(data.ElementIds);
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? "Elemento destacado no modelo."
+                        : _visualizationService.LastNavigationDescription;
+                }
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Erro no duplo-clique da arvore de problemas");
+                Logger.Warn(ex, "Falha ao navegar para issue individual");
+                txtStatusNavegacao.Text = $"Não foi possível navegar até o elemento: {ex.Message}";
+            }
+        }
+
+        private void NavegarParaGrupo(IssueNodeData data)
+        {
+            try
+            {
+                List<long> idsModelo = data.ElementIds
+                    .Where(id => !_sheetElementIds.Contains(id))
+                    .ToList();
+                List<long> idsFolha = data.ElementIds
+                    .Where(id => _sheetElementIds.Contains(id))
+                    .ToList();
+
+                if (idsModelo.Count > 0)
+                {
+                    _visualizationService.OpenResultsView(idsModelo);
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? $"{idsModelo.Count} elemento(s) do modelo isolados na vista 3D."
+                        : _visualizationService.LastNavigationDescription;
+                }
+                else if (idsFolha.Count > 0)
+                {
+                    _visualizationService.FocusSheetElements(idsFolha);
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? $"{idsFolha.Count} folha(s) com problema de carimbo destacada(s)."
+                        : _visualizationService.LastNavigationDescription;
+                }
+                else
+                {
+                    txtStatusNavegacao.Text = "Este grupo não possui elementos navegáveis no modelo.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Falha ao navegar para grupo de issues");
+                txtStatusNavegacao.Text = $"Não foi possível navegar até os elementos: {ex.Message}";
+            }
+        }
+
+        private void AbrirVista3DInicial()
+        {
+            if (_elementIdsDoModelo.Count == 0)
+                return;
+
+            try
+            {
+                if (_visualizationService.OpenResultsView(_elementIdsDoModelo))
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? "Vista aberta com os elementos do relatório."
+                        : _visualizationService.LastNavigationDescription;
+            }
+            catch (Exception ex)
+            {
+                txtStatusNavegacao.Text = $"Não foi possível abrir a vista do relatório: {ex.Message}";
             }
         }
 
         private void BtnIsolarNaVista_Click(object sender, RoutedEventArgs e)
         {
-            var elementIds = ResolverElementIdsParaAcao();
-            if (elementIds.Count == 0)
+            List<long> fonteIds = _elementIdsSelecionados.Count > 0 ? _elementIdsSelecionados : _elementIdsDoRelatorio;
+            List<long> idsModelo = fonteIds.Where(id => !_sheetElementIds.Contains(id)).Distinct().ToList();
+
+            if (idsModelo.Count == 0)
             {
-                AppDialogService.ShowInfo("Isolar na Vista", "Nenhum elemento para isolar.", "Sem elementos");
+                AppDialogService.ShowInfo("Isolar na Vista", "Não há elementos do modelo para exibir em 3D. Problemas de carimbo são exibidos navegando até a folha.", "Sem elementos 3D");
                 return;
             }
 
             try
             {
-                if (_uidoc.ActiveView != null)
-                {
-                    // Transaction necessaria para IsolateElementsTemporary
-                    using (var t = new Transaction(_uidoc.Document, "Isolar Elementos"))
-                    {
-                        t.Start();
-                        _uidoc.ActiveView.IsolateElementsTemporary(elementIds);
-                        t.Commit();
-                    }
-
-                    // Minimiza a janela para o usuario ver o efeito na view do Revit
-                    this.WindowState = WindowState.Minimized;
-                }
+                _visualizationService.OpenResultsView(idsModelo);
+                txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                    ? "Vista reaberta e atualizada com os elementos do relatório."
+                    : _visualizationService.LastNavigationDescription;
+                this.WindowState = WindowState.Minimized;
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Erro ao isolar elementos");
-                AppDialogService.ShowError(
-                    "Isolar na Vista",
-                    $"Erro ao isolar elementos: {ex.Message}",
-                    "Erro");
+                AppDialogService.ShowError("Isolar na Vista", $"Erro ao abrir a vista do relatório: {ex.Message}", "Erro");
             }
         }
 
         private void BtnSelecionarElementos_Click(object sender, RoutedEventArgs e)
         {
-            var elementIds = ResolverElementIdsParaAcao();
-            if (elementIds.Count == 0)
+            List<long> fonteIds = _elementIdsSelecionados.Count > 0 ? _elementIdsSelecionados : _elementIdsDoRelatorio;
+
+            List<long> idsModelo = fonteIds.Where(id => !_sheetElementIds.Contains(id)).Distinct().ToList();
+            List<long> idsFolha = fonteIds.Where(id => _sheetElementIds.Contains(id)).Distinct().ToList();
+
+            if (idsModelo.Count == 0 && idsFolha.Count == 0)
             {
                 AppDialogService.ShowInfo("Selecionar", "Nenhum elemento para selecionar.", "Sem elementos");
                 return;
@@ -226,24 +375,26 @@ namespace FerramentaEMT.Views
 
             try
             {
-                _uidoc.Selection.SetElementIds(elementIds);
-
-                // Se apenas 1 elemento, tenta mostrar/focar na vista ativa
-                if (elementIds.Count == 1)
+                if (idsModelo.Count > 0)
                 {
-                    try { _uidoc.ShowElements(elementIds); } catch (Exception ex2) { Logger.Warn(ex2, "Falha ao focar elemento apos selecao"); }
+                    _visualizationService.FocusElements(idsModelo);
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? $"{idsModelo.Count} elemento(s) do modelo selecionado(s)."
+                        : _visualizationService.LastNavigationDescription;
+                }
+                else
+                {
+                    _visualizationService.FocusSheetElements(idsFolha);
+                    txtStatusNavegacao.Text = string.IsNullOrWhiteSpace(_visualizationService.LastNavigationDescription)
+                        ? $"{idsFolha.Count} folha(s) com problema de carimbo navegada(s)."
+                        : _visualizationService.LastNavigationDescription;
                 }
 
-                // Minimiza a janela para o usuario ver a selecao na view do Revit
                 this.WindowState = WindowState.Minimized;
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Erro ao selecionar elementos");
-                AppDialogService.ShowError(
-                    "Selecionar",
-                    $"Erro ao selecionar elementos: {ex.Message}",
-                    "Erro");
+                AppDialogService.ShowError("Selecionar", $"Erro ao selecionar elementos: {ex.Message}", "Erro");
             }
         }
 
