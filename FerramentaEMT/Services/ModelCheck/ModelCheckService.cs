@@ -65,7 +65,12 @@ namespace FerramentaEMT.Services.ModelCheck
             List<IModelCheckRule> regras = CriarRegras(config);
             Logger.Info("[{Cmd}] {RulesCount} regras habilitadas", Titulo, regras.Count);
 
-            if (regras.Count == 0)
+            bool possuiRegrasDeCarimbo =
+                config.RunTitleBlockParameters &&
+                config.TitleBlockParameters != null &&
+                config.TitleBlockParameters.Count > 0;
+
+            if (regras.Count == 0 && !possuiRegrasDeCarimbo)
                 return Result<ModelCheckReport>.Fail(
                     "Nenhuma regra habilitada. Selecione ao menos uma regra na configuracao.");
 
@@ -113,6 +118,41 @@ namespace FerramentaEMT.Services.ModelCheck
                     Logger.Error(ex, "[{Cmd}] erro ao executar regra {Rule} — pulando",
                         Titulo, regra.Name);
                     // Uma regra com defeito nao invalida o batch.
+                }
+            }
+
+            // --- 3.5. Verificar carimbos (TitleBlock) ---
+            if (possuiRegrasDeCarimbo)
+            {
+                reporter.Report(regras.Count, regras.Count, "Verificando carimbos...");
+
+                try
+                {
+                    AdicionarResultadosDeCarimbo(uidoc, doc, config, report.Results, reporter, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "[{Cmd}] erro na verificacao de carimbos — pulando", Titulo);
+                    report.Results.Add(new ModelCheckRuleResult
+                    {
+                        RuleName = "Carimbo",
+                        Description = "Verifica o preenchimento dos atributos selecionados no carimbo da folha.",
+                        Issues = new List<ModelCheckIssue>
+                        {
+                            new ModelCheckIssue
+                            {
+                                RuleName = "Carimbo",
+                                Severity = ModelCheckSeverity.Warning,
+                                Description = $"Erro ao verificar parametros do carimbo: {ex.Message}",
+                                Suggestion = "Revise a configuracao de carimbo e execute novamente.",
+                                IsSheetIssue = true
+                            }
+                        }
+                    });
                 }
             }
 
@@ -208,6 +248,214 @@ namespace FerramentaEMT.Services.ModelCheck
                 regras.Add(new OrphanGroupRule());
 
             return regras;
+        }
+
+        // ---------------------------------------------------------------
+        // Verificacao de carimbo (TitleBlock)
+        // Origem: projeto Victor (incorporado e adaptado na Onda 3, Miniciclo 4).
+        // ---------------------------------------------------------------
+
+        /// <summary>
+        /// Verifica os parametros de carimbo (TitleBlock) nas folhas do projeto.
+        /// Para cada parametro listado em <see cref="ModelCheckConfig.TitleBlockParameters"/>,
+        /// cria um <see cref="ModelCheckIssue"/> com <see cref="ModelCheckIssue.IsSheetIssue"/> = true
+        /// quando o parametro estiver ausente, vazio ou invalido.
+        /// </summary>
+        /// <remarks>
+        /// O parametro e buscado em 3 niveis: ViewSheet → instancia do TitleBlock → FamilySymbol do TitleBlock.
+        /// Basta existir em qualquer um dos 3 para ser considerado preenchido.
+        /// </remarks>
+        private void AdicionarResultadosDeCarimbo(
+            UIDocument uidoc,
+            Document doc,
+            ModelCheckConfig config,
+            List<ModelCheckRuleResult> results,
+            ProgressReporter reporter,
+            CancellationToken ct)
+        {
+            if (!config.RunTitleBlockParameters ||
+                config.TitleBlockParameters == null ||
+                config.TitleBlockParameters.Count == 0)
+            {
+                return;
+            }
+
+            // --- Logging dos filtros (AJUSTE 3) ---
+            string familiaDesc = string.IsNullOrWhiteSpace(config.TitleBlockFamilyName)
+                ? "<qualquer>"
+                : config.TitleBlockFamilyName;
+            string tipoDesc = string.IsNullOrWhiteSpace(config.TitleBlockTypeName)
+                ? "<qualquer>"
+                : config.TitleBlockTypeName;
+            string escopoDesc = config.TitleBlockScopeActiveSheetOnly
+                ? "folha ativa"
+                : "todas as folhas";
+
+            Logger.Info(
+                "[ModelCheck] Verificacao de carimbo: familia=\"{0}\", tipo=\"{1}\", {2} parametros, escopo={3}",
+                familiaDesc, tipoDesc, config.TitleBlockParameters.Count, escopoDesc);
+
+            // --- Resolver symbol do carimbo ---
+            FamilySymbol? titleBlockSymbol = ResolverTitleBlockSymbol(
+                doc,
+                config.TitleBlockFamilyName,
+                config.TitleBlockTypeName);
+
+            // --- Coletar instancias de TitleBlock ---
+            List<FamilyInstance> titleBlocks = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .WhereElementIsNotElementType()
+                .OfClass(typeof(FamilyInstance))
+                .Cast<FamilyInstance>()
+                .Where(instance => titleBlockSymbol == null || instance.Symbol?.Id == titleBlockSymbol.Id)
+                .ToList();
+
+            // --- Filtrar por escopo (folha ativa ou todas) ---
+            if (config.TitleBlockScopeActiveSheetOnly && uidoc.ActiveView is ViewSheet activeSheet)
+                titleBlocks = titleBlocks.Where(instance => instance.OwnerViewId == activeSheet.Id).ToList();
+
+            // --- Nenhum titleblock encontrado ---
+            if (titleBlocks.Count == 0)
+            {
+                Logger.Warn("[ModelCheck] Nenhuma folha com o carimbo selecionado foi encontrada");
+                results.Add(new ModelCheckRuleResult
+                {
+                    RuleName = "Carimbo",
+                    Description = "Verifica o preenchimento dos atributos selecionados no carimbo da folha.",
+                    Issues = new List<ModelCheckIssue>
+                    {
+                        new ModelCheckIssue
+                        {
+                            RuleName = "Carimbo",
+                            Severity = ModelCheckSeverity.Warning,
+                            Description = "Nenhuma folha com o carimbo selecionado foi encontrada no projeto.",
+                            Suggestion = "Revise a familia da folha escolhida ou execute a verificacao em um projeto com folhas carregadas.",
+                            IsSheetIssue = true
+                        }
+                    }
+                });
+                return;
+            }
+
+            // --- Verificar cada parametro × cada titleblock ---
+            List<string> parametrosUnicos = config.TitleBlockParameters
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            for (int p = 0; p < parametrosUnicos.Count; p++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                string parameterName = parametrosUnicos[p];
+                List<ModelCheckIssue> issues = new List<ModelCheckIssue>();
+
+                for (int t = 0; t < titleBlocks.Count; t++)
+                {
+                    FamilyInstance titleBlock = titleBlocks[t];
+                    ViewSheet? sheet = doc.GetElement(titleBlock.OwnerViewId) as ViewSheet;
+
+                    if (ParametroPossuiValor(sheet, parameterName) ||
+                        ParametroPossuiValor(titleBlock, parameterName) ||
+                        ParametroPossuiValor(titleBlock.Symbol, parameterName))
+                    {
+                        continue;
+                    }
+
+                    string identificacaoFolha = sheet != null
+                        ? $"{sheet.SheetNumber} - {sheet.Name}"
+                        : $"Elemento {titleBlock.Id.Value}";
+
+                    issues.Add(new ModelCheckIssue
+                    {
+                        RuleName = $"Carimbo: {parameterName}",
+                        Severity = ModelCheckSeverity.Warning,
+                        ElementId = titleBlock.Id.Value,
+                        IsSheetIssue = true,
+                        Description = $"A folha '{identificacaoFolha}' esta sem valor para '{parameterName}'.",
+                        Suggestion = $"Preencha o parametro '{parameterName}' no carimbo da folha {identificacaoFolha}."
+                    });
+                }
+
+                results.Add(new ModelCheckRuleResult
+                {
+                    RuleName = $"Carimbo: {parameterName}",
+                    Description = $"Verifica o preenchimento do atributo '{parameterName}' no carimbo da folha.",
+                    Issues = issues
+                });
+
+                // Progress sem alterar contadores (AJUSTE 1)
+                reporter.Report(0, 0,
+                    $"Carimbo: parametro {p + 1}/{parametrosUnicos.Count} — {parameterName}");
+            }
+
+            int totalIssuesCarimbo = results
+                .Where(r => r.RuleName.StartsWith("Carimbo:", StringComparison.Ordinal))
+                .Sum(r => r.IssuesCount);
+
+            Logger.Info("[ModelCheck] Verificacao de carimbo concluida — {0} problemas em {1} folhas",
+                totalIssuesCarimbo, titleBlocks.Count);
+        }
+
+        // ---------------------------------------------------------------
+        // Helpers de carimbo
+        // ---------------------------------------------------------------
+
+        /// <summary>
+        /// Resolve o <see cref="FamilySymbol"/> do carimbo com base nos filtros de familia e tipo.
+        /// Retorna <c>null</c> quando os filtros estao vazios (aceita qualquer carimbo)
+        /// ou quando nao encontra correspondencia exata.
+        /// </summary>
+        private FamilySymbol? ResolverTitleBlockSymbol(Document doc, string familyName, string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(familyName) || string.IsNullOrWhiteSpace(typeName))
+                return null;
+
+            IEnumerable<FamilySymbol> symbols = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .OfClass(typeof(FamilySymbol))
+                .Cast<FamilySymbol>();
+
+            FamilySymbol? exact = symbols.FirstOrDefault(symbol =>
+                string.Equals(symbol.Family?.Name, familyName, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(symbol.Name, typeName, StringComparison.OrdinalIgnoreCase));
+
+            return exact;
+        }
+
+        /// <summary>
+        /// Verifica se o elemento possui um parametro com valor preenchido (nao vazio, nao nulo,
+        /// nao <see cref="ElementId.InvalidElementId"/>).
+        /// Trata os 4 tipos de armazenamento da Revit API: String, ElementId, Integer, Double.
+        /// </summary>
+        private static bool ParametroPossuiValor(Element? element, string parameterName)
+        {
+            if (element == null || string.IsNullOrWhiteSpace(parameterName))
+                return false;
+
+            Parameter? parameter = element.LookupParameter(parameterName);
+            if (parameter == null)
+                return false;
+
+            if (parameter.StorageType == StorageType.String)
+                return !string.IsNullOrWhiteSpace(parameter.AsString());
+
+            if (parameter.StorageType == StorageType.ElementId)
+            {
+                ElementId value = parameter.AsElementId();
+                return value != null && value != ElementId.InvalidElementId;
+            }
+
+            string? readableValue = parameter.AsValueString();
+            if (!string.IsNullOrWhiteSpace(readableValue))
+                return true;
+
+            return parameter.StorageType switch
+            {
+                StorageType.Integer => parameter.AsInteger() != 0,
+                StorageType.Double => Math.Abs(parameter.AsDouble()) > 1e-9,
+                _ => false
+            };
         }
 
         private void ExportarExcel(ModelCheckReport report, string excelPath)
