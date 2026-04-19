@@ -17,6 +17,14 @@ namespace FerramentaEMT.Models.ModelCheck
         /// </summary>
         public long? ElementId { get; set; }
 
+        /// <summary>
+        /// Indica se o problema esta associado a uma folha/carimbo (true)
+        /// ou a um elemento de modelo 3D (false).
+        /// Usado pela janela de relatorio para decidir se navega para a vista 3D
+        /// ou para a folha correspondente.
+        /// </summary>
+        public bool IsSheetIssue { get; set; }
+
         /// <summary>Descricao detalhada do problema.</summary>
         public string Description { get; set; } = string.Empty;
 

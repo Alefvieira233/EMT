@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Xunit;
 using FluentAssertions;
 using FerramentaEMT.Models.ModelCheck;
@@ -61,6 +62,57 @@ namespace FerramentaEMT.Tests.Models.ModelCheck
             var config = new ModelCheckConfig { RunMissingComment = true };
 
             config.GetEnabledRulesCount().Should().Be(10);
+        }
+
+        [Fact]
+        public void Constructor_Default_TitleBlockIsDisabled()
+        {
+            var config = new ModelCheckConfig();
+
+            config.RunTitleBlockParameters.Should().BeFalse();
+            config.TitleBlockScopeActiveSheetOnly.Should().BeFalse();
+            config.TitleBlockFamilyName.Should().BeEmpty();
+            config.TitleBlockTypeName.Should().BeEmpty();
+            config.TitleBlockParameters.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Fact]
+        public void GetEnabledRulesCount_WithTitleBlockParameters_IncludesParameterCount()
+        {
+            var config = new ModelCheckConfig
+            {
+                RunTitleBlockParameters = true,
+                TitleBlockParameters = new List<string> { "Projetista", "Revisao" }
+            };
+
+            // 9 regras padrao + 2 parametros de carimbo = 11
+            config.GetEnabledRulesCount().Should().Be(11);
+        }
+
+        [Fact]
+        public void GetEnabledRulesCount_TitleBlockDisabled_DoesNotCount()
+        {
+            var config = new ModelCheckConfig
+            {
+                RunTitleBlockParameters = false,
+                TitleBlockParameters = new List<string> { "Projetista", "Revisao" }
+            };
+
+            // 9 regras padrao, TitleBlock desligado nao conta
+            config.GetEnabledRulesCount().Should().Be(9);
+        }
+
+        [Fact]
+        public void GetEnabledRulesCount_TitleBlockEnabled_EmptyList_Returns9()
+        {
+            var config = new ModelCheckConfig
+            {
+                RunTitleBlockParameters = true,
+                TitleBlockParameters = new List<string>()
+            };
+
+            // Habilitado mas lista vazia = +0
+            config.GetEnabledRulesCount().Should().Be(9);
         }
 
         [Fact]

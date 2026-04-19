@@ -17,6 +17,7 @@ namespace FerramentaEMT.Tests.Services.ModelCheck
             Assert.Null(issue.ElementId);
             Assert.Equal(string.Empty, issue.Description);
             Assert.Equal(string.Empty, issue.Suggestion);
+            Assert.False(issue.IsSheetIssue);
         }
 
         [Fact]
@@ -31,6 +32,7 @@ namespace FerramentaEMT.Tests.Services.ModelCheck
             issue.ElementId = 12345;
             issue.Description = "Test Description";
             issue.Suggestion = "Test Suggestion";
+            issue.IsSheetIssue = true;
 
             // Assert
             Assert.Equal("Test Rule", issue.RuleName);
@@ -38,6 +40,7 @@ namespace FerramentaEMT.Tests.Services.ModelCheck
             Assert.Equal(12345, issue.ElementId);
             Assert.Equal("Test Description", issue.Description);
             Assert.Equal("Test Suggestion", issue.Suggestion);
+            Assert.True(issue.IsSheetIssue);
         }
 
         [Fact]

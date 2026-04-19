@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace FerramentaEMT.Models.ModelCheck
 {
     /// <summary>
@@ -38,6 +40,23 @@ namespace FerramentaEMT.Models.ModelCheck
         /// <summary>Buscar grupos orfaos (0 elementos).</summary>
         public bool RunOrphanGroup { get; set; } = true;
 
+        // --- Verificacao de carimbo (TitleBlock) ---
+
+        /// <summary>Habilitar verificacao dos parametros do carimbo nas folhas.</summary>
+        public bool RunTitleBlockParameters { get; set; } = false;
+
+        /// <summary>Se true, verificar apenas a folha ativa. Se false, todas as folhas do projeto.</summary>
+        public bool TitleBlockScopeActiveSheetOnly { get; set; } = false;
+
+        /// <summary>Nome da familia do carimbo a filtrar (vazio = qualquer familia).</summary>
+        public string TitleBlockFamilyName { get; set; } = string.Empty;
+
+        /// <summary>Nome do tipo do carimbo a filtrar (vazio = qualquer tipo).</summary>
+        public string TitleBlockTypeName { get; set; } = string.Empty;
+
+        /// <summary>Lista de nomes de parametros do carimbo a conferir (ex: "Projetista", "Revisao").</summary>
+        public List<string> TitleBlockParameters { get; set; } = new List<string>();
+
         // --- Escopo ---
 
         /// <summary>Se true, analisar apenas elementos visiveis na vista ativa. Se false, modelo inteiro.</summary>
@@ -67,6 +86,8 @@ namespace FerramentaEMT.Models.ModelCheck
             if (RunStructuralWithoutType) count++;
             if (RunMissingComment) count++;
             if (RunOrphanGroup) count++;
+            if (RunTitleBlockParameters && TitleBlockParameters != null)
+                count += TitleBlockParameters.Count;
             return count;
         }
     }
