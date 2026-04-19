@@ -2,7 +2,6 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Core;
 using FerramentaEMT.Models.ModelCheck;
 using FerramentaEMT.Services.ModelCheck;
 using FerramentaEMT.Utils;

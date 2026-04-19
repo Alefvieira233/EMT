@@ -3,7 +3,6 @@ using System.IO;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Core;
 using FerramentaEMT.Models;
 using FerramentaEMT.Services;
 using FerramentaEMT.Utils;

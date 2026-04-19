@@ -5,7 +5,6 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using FerramentaEMT.Core;
 using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models;
 using FerramentaEMT.Services;

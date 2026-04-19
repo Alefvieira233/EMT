@@ -2,7 +2,6 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Core;
 using FerramentaEMT.Models.CncExport;
 using FerramentaEMT.Services.CncExport;
 using FerramentaEMT.Utils;
