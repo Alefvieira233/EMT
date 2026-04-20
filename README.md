@@ -5,7 +5,7 @@
 Desenvolvido para acelerar o fluxo de modelagem, detalhamento e fabricação de estruturas em aço, do projeto ao chão de fábrica.
 
 [![Build Status](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions)
-[![Version](https://img.shields.io/badge/version-1.4.0--rc.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](CHANGELOG.md)
 [![Revit](https://img.shields.io/badge/Revit-2025-orange.svg)](https://www.autodesk.com/products/revit)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -106,8 +106,7 @@ FerramentaEMT é um conjunto de comandos especializados em estrutura metálica q
 ### Compilar e Instalar (1 comando)
 
 ```bat
-cd "FerramentaEMT"
-Compilar-e-Instalar.bat
+INSTALAR.bat
 ```
 
 O script:
@@ -125,6 +124,35 @@ O script:
 | `Diagnostico-SDK.bat` | Verifica .NET SDK, MSBuild e Revit |
 | `Instalar-DotNet-SDK.bat` | Instala .NET 8 SDK via winget |
 | `Gerar-Setup.bat` | Empacota .msi para distribuição |
+
+---
+
+## O que Testar (v1.5.0)
+
+Checklist para validacao manual no Revit 2025:
+
+### Comandos novos/alterados
+- [ ] **Cortar Elementos** — selecionar pisos + pilares, executar, verificar cortes aplicados
+- [ ] **Verificar Modelo** — habilitar verificacao de carimbo, rodar em projeto com folhas, conferir issues de campos vazios
+- [ ] **Verificar Modelo — Navegacao 3D** — duplo-clique em issue navega ao elemento correto
+- [ ] **Exportar DSTV** — verificar barra de progresso + botao Cancelar funcionando
+- [ ] **Exportar Lista de Materiais** — verificar progresso + cancelamento
+
+### DPI e janelas (testes em 125% e 150% DPI)
+- [ ] `CotarPecaFabricacaoWindow` — scroll funciona, botoes visiveis
+- [ ] `GerarVistaPecaWindow` — scroll funciona, botoes visiveis
+- [ ] `ExportarDstvWindow` — scroll funciona, botoes visiveis
+- [ ] `PfBeamBarsWindow` — scroll funciona, botoes visiveis
+- [ ] `MarcarPecasWindow` — scroll funciona, botoes visiveis
+- [ ] Todas as janelas devem permitir resize (grip no canto inferior direito)
+
+### Seguranca
+- [ ] Sem env var `EMT_LICENSE_SECRET` e sem arquivo `license.secret`: plugin deve mostrar erro claro ao tentar usar licenciamento
+- [ ] Com env var configurada: licenciamento funciona normalmente
+
+### Estabilidade geral
+- [ ] Executar cada comando pelo menos 1x sem crash
+- [ ] Verificar log em `%LOCALAPPDATA%\FerramentaEMT\logs\` — erros inesperados?
 
 ---
 
@@ -171,9 +199,8 @@ FerramentaEMT/
 Veja [CHANGELOG.md](CHANGELOG.md) e [docs/ROADMAP.md](docs/ROADMAP.md) para o plano completo.
 
 ### Status por Release
-- **v1.0 – v1.3** *(entregue)* — DSTV/NC1, Verificação de Modelo, Plano de Montagem, Conexões, Lista de Materiais, Sistema de Licença (HMAC), Instalador MSI
-- **v1.4.0-rc.1** *(em preparação)* — Template ADR-003 (Result<T>) + ADR-004 (progresso + cancelamento) adotado em **DSTV Export**, **Model Check** e **Lista de Materiais**. Playbook de migração em [`docs/PLAYBOOK-adr-003-migration.md`](docs/PLAYBOOK-adr-003-migration.md).
-- **v1.5.0** *(planejado)* — Migração ADR-003 dos demais serviços em lote (Agrupamento Visual, Cotas, Marcação de Peças). Expansão de cobertura de testes.
+- **v1.0 – v1.3** *(entregue)* — DSTV/NC1, Verificação de Modelo, Plano de Montagem, Conexões, Lista de Materiais, Sistema de Licença (HMAC), Instalador MSI, fundação ADR-003/004
+- **v1.5.0** *(entregue — atual)* — Incorporação do Victor (Cortar Elementos), verificação de carimbo (TitleBlock) com navegação 3D, HMAC secret externalizado, DPI overflow corrigido em 7 janelas, 10 empty catches eliminados, ADR-003/004 adotado em todos os serviços principais. **419 testes passando.**
 - **v2.0** *(planejado)* — Multi-Revit (2024/2025/2026), telemetria opt-in, auto-updater, i18n (en-US, es-ES).
 
 ---

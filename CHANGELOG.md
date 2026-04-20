@@ -8,7 +8,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Trabalho em direção ao produto comercial 10/10 (ver `docs/PLANO-100-100.md`).
+Nenhuma mudança pendente.
+
+---
+
+## [1.5.0] — 2026-04-20 (Incorporação Victor + Verificação de Carimbo + Hardening pré-release)
+
+Release de qualidade focada em **3 eixos**: (1) incorporação seletiva do trabalho do Victor (Cortar Elementos, módulo PF já integrado em v1.2.0), (2) feature completa de verificação de carimbo (TitleBlock) no ModelCheck com navegação 3D, (3) hardening de segurança e qualidade (HMAC externalizado, DPI overflow, empty catches eliminados). Adoção completa do ADR-003 (Result<T>) e ADR-004 (progresso + cancelamento) nos serviços principais. Suite de testes cresce para **419 casos**.
 
 ### Added — Cortar Elementos (Onda 3, PR-1: incorporação seletiva do trabalho do Victor)
 - **`Commands/CmdCortarElementos`** — novo botão no painel "Estrutura" ("Cortar Elementos"). Seleciona pisos, quadros estruturais e colunas/pilares (pré-seleção ou `PickObjects` com filtro), detecta interferências entre hosts e cortadores e aplica corte automático escolhendo entre `JoinGeometryUtils` e `SolidSolidCutUtils` conforme o par aceita. Comando gerencia a transação externa (commit só quando há alteração), restaura seleção com os elementos envolvidos e mostra resumo + diagnóstico ao final via helpers de `FerramentaCommandBase` (`ShowSuccess`/`ShowInfo`/`ShowWarning`).
@@ -49,8 +55,38 @@ Origem: snapshot da versão do Victor em 2026-04-14. Adaptações para a base do
 - **Duas fases explícitas por ADR-004** — (1) coleta + geração de assinaturas de equivalência é interrompível (`ThrowIfCancellationRequested` a cada 32 elementos, `Report` a cada 64); (2) transação Revit que aplica overrides e cria/desfaz grupos é não-interrompível (cancelar no meio deixaria overrides parciais na vista). Progresso durante a fase 2 usa o índice do conjunto (N conjuntos / Total). Em modelos com milhares de vigas, CriarAssinaturaEquivalencia não é trivial — o progresso granular evita a sensação de UI travada.
 - **`BuildResumoText(ResultadoAgrupamento)`** e **`BuildResumoText(ResultadoLimpeza)`** estáticos montam o texto de sucesso (incluindo as até 6 primeiras falhas com elipse `… e mais N`) — comando consome via `AppDialogService.ShowInfo`. Os 3 comandos (`CmdAgruparPilaresPorTipo`, `CmdAgruparVigasPorTipo`, `CmdLimparAgrupamentosVisuais`) foram atualizados; fluxo de sucesso e UX de erro idênticos ao que existia antes, mas a lógica de apresentação agora mora onde deve (comando, não serviço).
 
+### Added — Verificação de Carimbo no ModelCheck (Miniciclos 1–6)
+- **`Services/ModelCheck/ModelCheckCollector`** (M1) — coleta centralizada de elementos estruturais para todas as regras do ModelCheck, eliminando coletas duplicadas e garantindo consistência entre regras.
+- **`Models/ModelCheck/TitleBlockCheckConfig`** (M2) — modelos para configuração de verificação de carimbo: campos obrigatórios (nome do projeto, número da folha, data, responsável), tolerâncias e regras de validação.
+- **`Services/ModelCheck/ModelCheckVisualizationService`** (M3) — serviço de navegação 3D que permite ao usuário clicar em um problema no relatório e navegar diretamente ao elemento no modelo Revit (zoom, isolamento temporário, highlight).
+- **`Services/ModelCheck/ModelCheckRules/TitleBlockRule`** (M4) — nova regra de verificação que valida campos obrigatórios do carimbo (TitleBlock) em todas as folhas do projeto. Detecta campos vazios, valores placeholder e inconsistências entre folhas.
+- **`Views/VerificarModeloConfigWindow`** atualizada (M5) — seção de configuração de verificação de carimbo na UI, com checkboxes por campo e lista de campos customizados.
+- **`Views/VerificarModeloReportWindow`** atualizada (M6) — integração do `ModelCheckVisualizationService` na janela de relatório. Duplo-clique em qualquer issue navega ao elemento no Revit. Botões "Isolar" e "Selecionar" usam o novo serviço.
+
+### Security — HMAC Secret Externalizado (Miniciclo 9)
+- **`LicenseSecretProvider` hardening crítico** — removido o fallback hardcoded `DevOnlyFallback` que permitia a qualquer pessoa com decompiler forjar licenças válidas. Cadeia de resolução agora: env var `EMT_LICENSE_SECRET` → arquivo `%LOCALAPPDATA%\FerramentaEMT\license.secret` → arquivo ao lado do assembly → **`InvalidOperationException`** (nunca mais hardcoded). `App.cs` e `EmtKeyGen` atualizados para o novo contrato. 4 testes em `KeySignerTests` ganham setup de env var com try/finally.
+
+### Fixed — UI e Qualidade (Miniciclos 8, 10, 11)
+- **Hotfixes de UI em 3 janelas** (M8): `ConexaoConfigWindow` (layout quebrado em DPI alto), `PlanoMontagemWindow` (scroll ausente), `MarcarPecasWindow` (botões cortados — padrão DPI corrigido: MaxHeight 900, ResizeMode CanResizeWithGrip, ScrollViewer defensivo, botões fora do scroll).
+- **DPI overflow em 4 janelas** (M10): `CotarPecaFabricacaoWindow`, `GerarVistaPecaWindow`, `ExportarDstvWindow`, `PfBeamBarsWindow` — mesmo padrão M8 aplicado (MaxHeight 720/520→900, NoResize→CanResizeWithGrip, ScrollViewer com VerticalScrollBarVisibility Auto, botões em Grid.Row 2 fora do ScrollViewer). Resolve finding F1A-DPI-01 da auditoria.
+- **10 empty catches eliminados em 6 services** (M11): `CortarElementosService` (5), `MarcarPecasService` (1), `AjustarEncontroService` (1), `AgrupamentoVisualService` (1), `ConexaoGeneratorService` (1), `TrelicaService` (1). Classificação A (9 casos): Logger.Debug com fallback seguro. Classificação B (1 caso AgrupamentoVisual): Logger.Warn. TrelicaService ganha catch tipado `Autodesk.Revit.Exceptions.OperationCanceledException`. Resolve findings F1C-CATCH-01 (HIGH) e F2-CATCH-01 (MEDIUM) da auditoria.
+- **Ambiguidade CS0104** entre `Core.Result<T>` e `Revit.UI.Result` resolvida em commands afetados.
+
 ### Changed — Auditoria residual do ADR-003 (NumeracaoItensService)
 - **`NumeracaoItensService.IniciarSessao` agora retorna `Result<InicioResultado>`** — removidas 4 das 5 chamadas residuais a `AppDialogService` (UIDocument nulo, config nula, sessão já ativa, nenhum elemento elegível). Novo `InicioResultado` expõe `SessaoIniciada`, `JaHaviaSessaoAtiva`, `TotalCandidatos` e `TotalElegiveis` — `CmdNumerarItens` consome esses flags e decide a UX (ShowError, ShowWarning por caso). O ShowInfo do fim de sessão (linha do lifecycle de `NumeracaoItensSessao.FinalizarSessao`) **foi mantido deliberadamente**: ele pertence ao ciclo de vida da janela persistente `NumeracaoItensControleWindow`, não ao kickoff — refatorá-lo exigiria redesenhar o modelo de sessão interativa, fora do escopo. Logger ganhou 4 entradas nos caminhos de no-op/falha pra dar rastro em suporte.
+
+### Quality gates
+- `dotnet build FerramentaEMT.Solution.sln -c Release` → **0 erros**, 2 avisos MSB3277 pré-existentes.
+- `dotnet test` → **419/419 aprovados** (era 347 na v1.3.0).
+- `TreatWarningsAsErrors` mantido em Release.
+- Grep `catch.*{.*}` em `Services/` → **zero empty catches**.
+- Grep `DevOnlyFallback` no código rastreado → **zero matches** (apenas docs históricos).
+- Auditoria: findings F1A-DPI-01 (HIGH), F1C-CATCH-01 (HIGH), F2-CATCH-01 (MEDIUM) resolvidos.
+
+### Notes
+- Miniciclo 7 foi pulado (renumeração durante planejamento).
+- `INSTALAR.bat` criado para deploy manual (não rastreado no git — cópia local para Victor).
+- Planos detalhados de cada miniciclo em `comparacao-victor/PLANO-MINICICLO-{N}.md`.
 
 ---
 
