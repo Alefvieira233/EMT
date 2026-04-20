@@ -11,11 +11,7 @@ namespace FerramentaEMT.Licensing
     ///   1. Variavel de ambiente EMT_LICENSE_SECRET
     ///   2. Arquivo local %LOCALAPPDATA%\FerramentaEMT\license.secret
     ///   3. Arquivo local junto ao assembly: license.secret (ao lado do DLL)
-    ///   4. Fallback hardcoded DEV_ONLY (emite warning no log).
-    ///
-    /// O fallback existe para garantir compatibilidade com licencas ja emitidas
-    /// e permitir builds de desenvolvimento sem setup. PRODUCAO deve sempre
-    /// fornecer o segredo via uma das fontes externas acima.
+    ///   4. InvalidOperationException (nenhuma fonte configurada).
     ///
     /// IMPORTANTE: trocar o segredo invalida TODAS as licencas em uso. Nao trocar
     /// sem plano de migracao.
@@ -24,11 +20,6 @@ namespace FerramentaEMT.Licensing
     {
         public const string EnvVarName = "EMT_LICENSE_SECRET";
         public const string SecretFileName = "license.secret";
-
-        // Fallback DEV_ONLY. Mantido identico ao que foi usado em releases anteriores
-        // para nao invalidar licencas emitidas durante o periodo de transicao.
-        // TODO [RELEASE-1.3]: remover apos externalizar em todos os ambientes de build.
-        private const string DevOnlyFallback = "EMT-PROD-SECRET-CHANGE-BEFORE-FIRST-SALE-2026-ALEF";
 
         // Snapshot atomico (secret, source). Escrito de uma vez so via Lazy
         // (ExecutionAndPublication) — elimina a janela em que outro thread
@@ -44,8 +35,7 @@ namespace FerramentaEMT.Licensing
             NotResolved,
             EnvironmentVariable,
             LocalAppDataFile,
-            AssemblyAdjacentFile,
-            DevOnlyFallback
+            AssemblyAdjacentFile
         }
 
         private readonly struct ResolvedSecret
@@ -56,12 +46,6 @@ namespace FerramentaEMT.Licensing
         }
 
         public static string GetSecret() => _lazy.Value.Secret;
-
-        /// <summary>
-        /// Indica se o segredo atual veio do fallback hardcoded (DEV_ONLY).
-        /// Uso: testes, startup logging e diagnostico.
-        /// </summary>
-        public static bool IsUsingDevOnlyFallback() => _lazy.Value.Source == SecretSource.DevOnlyFallback;
 
         /// <summary>Fonte resolvida do segredo ativo. Util para logs de startup.</summary>
         public static SecretSource GetResolvedSource() => _lazy.Value.Source;
@@ -111,9 +95,11 @@ namespace FerramentaEMT.Licensing
                 return fromAssemblyDir.Trim();
             }
 
-            // 4. fallback DEV_ONLY
-            source = SecretSource.DevOnlyFallback;
-            return DevOnlyFallback;
+            // 4. nenhuma fonte configurada -- erro fatal
+            throw new InvalidOperationException(
+                "HMAC secret not configured. Set the environment variable '"
+                + EnvVarName + "' or place a '" + SecretFileName + "' file in "
+                + "'%LOCALAPPDATA%\\FerramentaEMT\\' or next to the assembly.");
         }
 
         private static string SafeReadEnvVar()
@@ -184,8 +170,8 @@ namespace FerramentaEMT.Licensing
         /// <summary>
         /// Indica se o arquivo de segredo existe mas esta vazio/whitespace-only.
         /// Util para o startup logger distinguir "arquivo nao configurado" de
-        /// "arquivo configurado errado" — quem caiu em DevOnlyFallback por um arquivo
-        /// vazio provavelmente tem um bug de deploy.
+        /// "arquivo configurado errado" — um arquivo vazio resulta em
+        /// InvalidOperationException e provavelmente indica bug de deploy.
         /// </summary>
         public static bool HasMalformedSecretFile(out string offendingPath)
         {

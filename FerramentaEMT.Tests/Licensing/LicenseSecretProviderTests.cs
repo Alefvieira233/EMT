@@ -27,7 +27,6 @@ namespace FerramentaEMT.Tests.Licensing
                 LicenseSecretProvider.GetSecret().Should().Be("from-env-var");
                 LicenseSecretProvider.GetResolvedSource()
                     .Should().Be(LicenseSecretProvider.SecretSource.EnvironmentVariable);
-                LicenseSecretProvider.IsUsingDevOnlyFallback().Should().BeFalse();
             }
             finally
             {
@@ -37,7 +36,7 @@ namespace FerramentaEMT.Tests.Licensing
         }
 
         [Fact]
-        public void Falls_back_to_DevOnly_when_no_source_is_configured()
+        public void Throws_when_no_source_is_configured()
         {
             string original = Environment.GetEnvironmentVariable(LicenseSecretProvider.EnvVarName);
             try
@@ -45,15 +44,25 @@ namespace FerramentaEMT.Tests.Licensing
                 Environment.SetEnvironmentVariable(LicenseSecretProvider.EnvVarName, null);
                 LicenseSecretProvider.ResetCacheForTests();
 
-                string secret = LicenseSecretProvider.GetSecret();
-                // A menos que exista license.secret em LOCALAPPDATA ou ao lado do assembly
-                // (cenario nao esperado em CI), deve cair no fallback DEV_ONLY.
-                LicenseSecretProvider.SecretSource source = LicenseSecretProvider.GetResolvedSource();
-                source.Should().Match(s =>
-                    s == LicenseSecretProvider.SecretSource.DevOnlyFallback ||
-                    s == LicenseSecretProvider.SecretSource.LocalAppDataFile ||
-                    s == LicenseSecretProvider.SecretSource.AssemblyAdjacentFile);
-                secret.Should().NotBeNullOrWhiteSpace();
+                // Se nao houver license.secret em LOCALAPPDATA nem ao lado do assembly,
+                // GetSecret deve lancar InvalidOperationException com mensagem instrutiva.
+                // Em maquinas com license.secret fisico, o teste passa sem exception
+                // (a fonte LocalAppDataFile ou AssemblyAdjacentFile responde antes).
+                try
+                {
+                    string secret = LicenseSecretProvider.GetSecret();
+                    // Se chegou aqui, algum arquivo de secret existe na maquina.
+                    LicenseSecretProvider.SecretSource source = LicenseSecretProvider.GetResolvedSource();
+                    source.Should().Match(s =>
+                        s == LicenseSecretProvider.SecretSource.LocalAppDataFile ||
+                        s == LicenseSecretProvider.SecretSource.AssemblyAdjacentFile);
+                    secret.Should().NotBeNullOrWhiteSpace();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ex.Message.Should().Contain(LicenseSecretProvider.EnvVarName);
+                    ex.Message.Should().Contain(LicenseSecretProvider.SecretFileName);
+                }
             }
             finally
             {
@@ -113,8 +122,18 @@ namespace FerramentaEMT.Tests.Licensing
                 Environment.SetEnvironmentVariable(LicenseSecretProvider.EnvVarName, "   ");
                 LicenseSecretProvider.ResetCacheForTests();
 
-                LicenseSecretProvider.GetResolvedSource()
-                    .Should().NotBe(LicenseSecretProvider.SecretSource.EnvironmentVariable);
+                // Se nenhuma outra fonte existir, lanca InvalidOperationException
+                // (provando que a env var whitespace foi ignorada).
+                // Se houver license.secret na maquina, resolve de outra fonte.
+                try
+                {
+                    LicenseSecretProvider.GetResolvedSource()
+                        .Should().NotBe(LicenseSecretProvider.SecretSource.EnvironmentVariable);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Correto: env var whitespace foi ignorada e nenhuma outra fonte existe.
+                }
             }
             finally
             {

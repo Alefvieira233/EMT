@@ -26,20 +26,11 @@ namespace FerramentaEMT
             try { LicenseService.Initialize(); }
             catch (Exception licEx) { Logger.Error(licEx, "[App] LicenseService.Initialize falhou — continuar mesmo assim"); }
 
-            // 1.3.0: logar fonte do segredo HMAC (alertar se ainda usa fallback DEV_ONLY)
+            // 1.3.0: logar fonte do segredo HMAC
             try
             {
                 LicenseSecretProvider.SecretSource source = LicenseSecretProvider.GetResolvedSource();
-                if (source == LicenseSecretProvider.SecretSource.DevOnlyFallback)
-                {
-                    Logger.Warn("[Licensing] Segredo HMAC nao externalizado — usando fallback DEV_ONLY. " +
-                                "Em producao defina {EnvVar} ou crie {FileName} em %LOCALAPPDATA%\\FerramentaEMT\\.",
-                                LicenseSecretProvider.EnvVarName, LicenseSecretProvider.SecretFileName);
-                }
-                else
-                {
-                    Logger.Info("[Licensing] Segredo HMAC carregado de {Source}", source);
-                }
+                Logger.Info("[Licensing] Segredo HMAC carregado de {Source}", source);
             }
             catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
 
