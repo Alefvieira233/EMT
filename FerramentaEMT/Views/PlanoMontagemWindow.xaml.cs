@@ -27,9 +27,6 @@ namespace FerramentaEMT.Views
             _uidoc = uidoc;
             _service = new PlanoMontagemService();
             _config = new PlanoMontagemConfig();
-
-            btnOk.Click += (_, __) => DialogResult = true;
-            btnCancel.Click += (_, __) => DialogResult = false;
         }
 
         private void BtnAtribuir_Click(object sender, RoutedEventArgs e)

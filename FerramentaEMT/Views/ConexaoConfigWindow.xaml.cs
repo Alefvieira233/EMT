@@ -15,9 +15,6 @@ namespace FerramentaEMT.Views
             RevitWindowThemeService.Attach(this);
 
             cmbTipoConexao.SelectedIndex = 0;
-
-            btnOk.Click += (_, __) => DialogResult = true;
-            btnCancel.Click += (_, __) => DialogResult = false;
         }
 
         private void CmbTipoConexao_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
