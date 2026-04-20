@@ -4,11 +4,11 @@
         Title="Cotagem de Fabricação"
         Width="580"
         MinWidth="500" MinHeight="540"
-        MaxHeight="720"
+        MaxHeight="900"
         SizeToContent="Height"
         Background="{DynamicResource WindowBackgroundBrush}"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -19,9 +19,6 @@
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -34,99 +31,104 @@
                        Style="{StaticResource DialogSubtitleText}"/>
         </StackPanel>
 
-        <!-- Escopo -->
-        <GroupBox Grid.Row="1" Header="Escopo da seleção">
+        <!-- Conteudo com scroll defensivo -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <RadioButton x:Name="rbSelecaoManual" Content="Seleção manual (selecionar após confirmar)"
-                             IsChecked="True" Checked="Configuracao_Changed"/>
-                <RadioButton x:Name="rbVistaAtiva" Content="Todos os elementos estruturais da vista ativa"
-                             Margin="0,6,0,0" Checked="Configuracao_Changed"/>
+                <!-- Escopo -->
+                <GroupBox Header="Escopo da seleção">
+                    <StackPanel>
+                        <RadioButton x:Name="rbSelecaoManual" Content="Seleção manual (selecionar após confirmar)"
+                                     IsChecked="True" Checked="Configuracao_Changed"/>
+                        <RadioButton x:Name="rbVistaAtiva" Content="Todos os elementos estruturais da vista ativa"
+                                     Margin="0,6,0,0" Checked="Configuracao_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Cotas a gerar -->
+                <GroupBox Header="Cotas a gerar">
+                    <StackPanel>
+                        <Border Style="{StaticResource AccentCardBorder}" Margin="0 0 0 6">
+                            <StackPanel>
+                                <CheckBox x:Name="chkComprimento" Content="Comprimento total (entre faces de extremidade)"
+                                          IsChecked="True" FontWeight="SemiBold"
+                                          Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                                <TextBlock Text="Cota principal para fabricação: comprimento de corte da peça."
+                                           Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 6">
+                            <StackPanel>
+                                <CheckBox x:Name="chkAlturaPerfil" Content="Altura do perfil (d)"
+                                          IsChecked="True" FontWeight="SemiBold"
+                                          Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                                <TextBlock Text="Dimensiona entre as mesas superior e inferior do perfil."
+                                           Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 6">
+                            <StackPanel>
+                                <CheckBox x:Name="chkLarguraMesa" Content="Largura da mesa (bf)"
+                                          FontWeight="SemiBold"
+                                          Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                                <TextBlock Text="Dimensiona a largura da mesa (flange) na direção perpendicular."
+                                           Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 6">
+                            <StackPanel>
+                                <CheckBox x:Name="chkFuros" Content="Furos (distância centro a centro)"
+                                          IsChecked="True" FontWeight="SemiBold"
+                                          Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                                <TextBlock Text="Running dimensions entre centros de furos (quando houver furos visíveis)."
+                                           Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SubtleCardBorder}">
+                            <StackPanel>
+                                <CheckBox x:Name="chkDistBorda" Content="Distância de borda ao primeiro furo"
+                                          IsChecked="True" FontWeight="SemiBold"
+                                          Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                                <TextBlock Text="Cota da face da peça ao centro do primeiro furo (verificação de edge distance)."
+                                           Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Configuracoes -->
+                <GroupBox Header="Configurações">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Column="0" Content="Offset (mm):" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtOffset" Grid.Column="1" Text="250" Margin="4,2"
+                                 VerticalContentAlignment="Center"/>
+
+                        <CheckBox x:Name="chkCotasCorridas" Grid.Column="3" Grid.ColumnSpan="2"
+                                  Content="Usar cotas corridas (running dimensions)"
+                                  IsChecked="True" VerticalAlignment="Center"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Previa -->
+                <Border Style="{StaticResource SubtleCardBorder}" Margin="0,8,0,0">
+                    <TextBlock x:Name="txtResumo" TextWrapping="Wrap"/>
+                </Border>
             </StackPanel>
-        </GroupBox>
-
-        <!-- Cotas a gerar -->
-        <GroupBox Grid.Row="2" Header="Cotas a gerar">
-            <StackPanel>
-                <Border Style="{StaticResource AccentCardBorder}" Margin="0 0 0 6">
-                    <StackPanel>
-                        <CheckBox x:Name="chkComprimento" Content="Comprimento total (entre faces de extremidade)"
-                                  IsChecked="True" FontWeight="SemiBold"
-                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                        <TextBlock Text="Cota principal para fabricação: comprimento de corte da peça."
-                                   Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 6">
-                    <StackPanel>
-                        <CheckBox x:Name="chkAlturaPerfil" Content="Altura do perfil (d)"
-                                  IsChecked="True" FontWeight="SemiBold"
-                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                        <TextBlock Text="Dimensiona entre as mesas superior e inferior do perfil."
-                                   Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 6">
-                    <StackPanel>
-                        <CheckBox x:Name="chkLarguraMesa" Content="Largura da mesa (bf)"
-                                  FontWeight="SemiBold"
-                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                        <TextBlock Text="Dimensiona a largura da mesa (flange) na direção perpendicular."
-                                   Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 6">
-                    <StackPanel>
-                        <CheckBox x:Name="chkFuros" Content="Furos (distância centro a centro)"
-                                  IsChecked="True" FontWeight="SemiBold"
-                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                        <TextBlock Text="Running dimensions entre centros de furos (quando houver furos visíveis)."
-                                   Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource SubtleCardBorder}">
-                    <StackPanel>
-                        <CheckBox x:Name="chkDistBorda" Content="Distância de borda ao primeiro furo"
-                                  IsChecked="True" FontWeight="SemiBold"
-                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
-                        <TextBlock Text="Cota da face da peça ao centro do primeiro furo (verificação de edge distance)."
-                                   Style="{StaticResource SectionBodyText}" Margin="20,2,0,0"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </GroupBox>
-
-        <!-- Configuracoes -->
-        <GroupBox Grid.Row="3" Header="Configurações">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="120"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Label Grid.Column="0" Content="Offset (mm):" VerticalAlignment="Center"/>
-                <TextBox x:Name="txtOffset" Grid.Column="1" Text="250" Margin="4,2"
-                         VerticalContentAlignment="Center"/>
-
-                <CheckBox x:Name="chkCotasCorridas" Grid.Column="3" Grid.ColumnSpan="2"
-                          Content="Usar cotas corridas (running dimensions)"
-                          IsChecked="True" VerticalAlignment="Center"/>
-            </Grid>
-        </GroupBox>
-
-        <!-- Previa -->
-        <Border Grid.Row="4" Style="{StaticResource SubtleCardBorder}" Margin="0,8,0,0">
-            <TextBlock x:Name="txtResumo" TextWrapping="Wrap"/>
-        </Border>
+        </ScrollViewer>
 
         <!-- Botoes -->
-        <Border Grid.Row="5" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+        <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="btnCancel" Content="Cancelar" Width="96"
                         Style="{StaticResource SecondaryActionButton}" Margin="0,0,8,0"/>

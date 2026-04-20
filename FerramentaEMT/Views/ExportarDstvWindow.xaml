@@ -4,11 +4,11 @@
         Title="Exportar DSTV/NC1 (CNC)"
         Width="640"
         MinWidth="560" MinHeight="600"
-        MaxHeight="720"
+        MaxHeight="900"
         SizeToContent="Height"
         Background="{DynamicResource WindowBackgroundBrush}"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -19,11 +19,6 @@
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -36,89 +31,94 @@
                        Style="{StaticResource DialogSubtitleText}"/>
         </StackPanel>
 
-        <!-- Escopo -->
-        <GroupBox Grid.Row="1" Header="Escopo da exportação">
+        <!-- Conteudo com scroll defensivo -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <RadioButton x:Name="rbSelecaoManual" Content="Seleção manual (selecionar após confirmar)" IsChecked="True"/>
-                <RadioButton x:Name="rbVistaAtiva" Content="Vista ativa" Margin="0,4,0,0"/>
-                <RadioButton x:Name="rbModelo" Content="Modelo inteiro" Margin="0,4,0,0"/>
+                <!-- Escopo -->
+                <GroupBox Header="Escopo da exportação">
+                    <StackPanel>
+                        <RadioButton x:Name="rbSelecaoManual" Content="Seleção manual (selecionar após confirmar)" IsChecked="True"/>
+                        <RadioButton x:Name="rbVistaAtiva" Content="Vista ativa" Margin="0,4,0,0"/>
+                        <RadioButton x:Name="rbModelo" Content="Modelo inteiro" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Categorias -->
+                <GroupBox Header="Categorias a exportar">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="chkVigas" Content="Vigas" IsChecked="True" Margin="0,0,16,0"/>
+                        <CheckBox x:Name="chkPilares" Content="Pilares" IsChecked="True" Margin="0,0,16,0"/>
+                        <CheckBox x:Name="chkContrav" Content="Contraventamentos" IsChecked="True"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Identificacao do projeto -->
+                <GroupBox Header="Identificação do projeto">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0" Content="Código do projeto:" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="txtCodigoProjeto" Margin="4,2"
+                                 VerticalContentAlignment="Center"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Fase:" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="txtFase" Text="1" Margin="4,2"
+                                 VerticalContentAlignment="Center"/>
+
+                        <Label Grid.Row="2" Grid.Column="0" Content="Param. da marca:" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" x:Name="txtParamMarca" Margin="4,2"
+                                 VerticalContentAlignment="Center"
+                                 ToolTip="Vazio = usar parametro Mark nativo"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Pasta destino -->
+                <GroupBox Header="Pasta de destino">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="txtPasta" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Content="Procurar..." Click="BtnProcurar_Click"
+                                Style="{StaticResource SecondaryActionButton}"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Opcoes -->
+                <GroupBox Header="Opções">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Label Content="Agrupamento:" VerticalAlignment="Center" Width="160"/>
+                            <ComboBox x:Name="cmbAgrupamento" Width="280" SelectedIndex="0" VerticalContentAlignment="Center">
+                                <ComboBoxItem Content="Um arquivo por marca (recomendado)"/>
+                                <ComboBoxItem Content="Um arquivo por instância"/>
+                            </ComboBox>
+                        </StackPanel>
+                        <CheckBox x:Name="chkSobrescrever" Content="Sobrescrever arquivos existentes" IsChecked="True" Margin="0,4,0,0"/>
+                        <CheckBox x:Name="chkRelatorio" Content="Gerar relatório (.txt) na pasta destino" IsChecked="True" Margin="0,4,0,0"/>
+                        <CheckBox x:Name="chkAbrirPasta" Content="Abrir pasta destino ao concluir" IsChecked="True" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Resumo -->
+                <Border Style="{StaticResource SubtleCardBorder}" Margin="0,8,0,0">
+                    <TextBlock x:Name="txtResumo" TextWrapping="Wrap"
+                               Text="Selecione a pasta destino e clique em Exportar."/>
+                </Border>
             </StackPanel>
-        </GroupBox>
-
-        <!-- Categorias -->
-        <GroupBox Grid.Row="2" Header="Categorias a exportar">
-            <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="chkVigas" Content="Vigas" IsChecked="True" Margin="0,0,16,0"/>
-                <CheckBox x:Name="chkPilares" Content="Pilares" IsChecked="True" Margin="0,0,16,0"/>
-                <CheckBox x:Name="chkContrav" Content="Contraventamentos" IsChecked="True"/>
-            </StackPanel>
-        </GroupBox>
-
-        <!-- Identificacao do projeto -->
-        <GroupBox Grid.Row="3" Header="Identificação do projeto">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="160"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <Label Grid.Row="0" Grid.Column="0" Content="Código do projeto:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="txtCodigoProjeto" Margin="4,2"
-                         VerticalContentAlignment="Center"/>
-
-                <Label Grid.Row="1" Grid.Column="0" Content="Fase:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="txtFase" Text="1" Margin="4,2"
-                         VerticalContentAlignment="Center"/>
-
-                <Label Grid.Row="2" Grid.Column="0" Content="Param. da marca:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="2" Grid.Column="1" x:Name="txtParamMarca" Margin="4,2"
-                         VerticalContentAlignment="Center"
-                         ToolTip="Vazio = usar parametro Mark nativo"/>
-            </Grid>
-        </GroupBox>
-
-        <!-- Pasta destino -->
-        <GroupBox Grid.Row="4" Header="Pasta de destino">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="100"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="txtPasta" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
-                <Button Grid.Column="1" Content="Procurar..." Click="BtnProcurar_Click"
-                        Style="{StaticResource SecondaryActionButton}"/>
-            </Grid>
-        </GroupBox>
-
-        <!-- Opcoes -->
-        <GroupBox Grid.Row="5" Header="Opções">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                    <Label Content="Agrupamento:" VerticalAlignment="Center" Width="160"/>
-                    <ComboBox x:Name="cmbAgrupamento" Width="280" SelectedIndex="0" VerticalContentAlignment="Center">
-                        <ComboBoxItem Content="Um arquivo por marca (recomendado)"/>
-                        <ComboBoxItem Content="Um arquivo por instância"/>
-                    </ComboBox>
-                </StackPanel>
-                <CheckBox x:Name="chkSobrescrever" Content="Sobrescrever arquivos existentes" IsChecked="True" Margin="0,4,0,0"/>
-                <CheckBox x:Name="chkRelatorio" Content="Gerar relatório (.txt) na pasta destino" IsChecked="True" Margin="0,4,0,0"/>
-                <CheckBox x:Name="chkAbrirPasta" Content="Abrir pasta destino ao concluir" IsChecked="True" Margin="0,4,0,0"/>
-            </StackPanel>
-        </GroupBox>
-
-        <!-- Resumo -->
-        <Border Grid.Row="6" Style="{StaticResource SubtleCardBorder}" Margin="0,8,0,0">
-            <TextBlock x:Name="txtResumo" TextWrapping="Wrap"
-                       Text="Selecione a pasta destino e clique em Exportar."/>
-        </Border>
+        </ScrollViewer>
 
         <!-- Botoes -->
-        <Border Grid.Row="7" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+        <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="btnCancel" Content="Cancelar" Width="96"
                         Style="{StaticResource SecondaryActionButton}" Margin="0,0,8,0"/>
