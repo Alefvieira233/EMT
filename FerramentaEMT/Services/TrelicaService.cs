@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models;
 using FerramentaEMT.Utils;
 
@@ -27,8 +29,13 @@ namespace FerramentaEMT.Services
             {
                 refs = uidoc.Selection.PickObjects(ObjectType.Element, "Selecione TODAS as TERÇAS em ordem");
             }
-            catch
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
             {
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[Trelica] Erro inesperado na selecao de tercas");
                 return;
             }
 

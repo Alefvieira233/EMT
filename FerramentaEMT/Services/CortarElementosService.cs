@@ -266,7 +266,8 @@ namespace FerramentaEMT.Services
             List<Element> encontrados = new List<Element>();
 
             BoundingBoxXYZ bbox = null;
-            try { bbox = origem?.get_BoundingBox(null); } catch { }
+            try { bbox = origem?.get_BoundingBox(null); }
+            catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel para elemento {Id}: {Msg}", origem?.Id, ex.Message); }
 
             if (origem == null || bbox == null || categorias == null || categorias.Count == 0)
                 return encontrados;
@@ -307,8 +308,10 @@ namespace FerramentaEMT.Services
             BoundingBoxXYZ bb1 = null;
             BoundingBoxXYZ bb2 = null;
 
-            try { bb1 = primeiro?.get_BoundingBox(null); } catch { }
-            try { bb2 = segundo?.get_BoundingBox(null); } catch { }
+            try { bb1 = primeiro?.get_BoundingBox(null); }
+            catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel: {Msg}", ex.Message); }
+            try { bb2 = segundo?.get_BoundingBox(null); }
+            catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel: {Msg}", ex.Message); }
 
             if (bb1 == null || bb2 == null || !BoundingBoxesOverlapSignificantly(bb1, bb2))
                 return false;
@@ -387,7 +390,7 @@ namespace FerramentaEMT.Services
                     IncludeNonVisibleObjects = true
                 });
             }
-            catch { }
+            catch (Exception ex) { Logger.Debug("[CortarElementos] Geometria indisponivel para {Id}: {Msg}", elemento.Id, ex.Message); }
 
             if (geometria == null)
                 yield break;
@@ -413,7 +416,7 @@ namespace FerramentaEMT.Services
                 {
                     GeometryElement geometriaInstancia = null;
                     try { geometriaInstancia = instancia.GetInstanceGeometry(); }
-                    catch { }
+                    catch (Exception ex) { Logger.Debug("[CortarElementos] GetInstanceGeometry falhou: {Msg}", ex.Message); }
 
                     if (geometriaInstancia == null)
                         continue;

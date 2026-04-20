@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI.Selection;
+using FerramentaEMT.Infrastructure;
 
 namespace FerramentaEMT.Services
 {
@@ -237,8 +238,9 @@ namespace FerramentaEMT.Services
                 {
                     return lc.Curve.Evaluate(0.5, true);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Debug("[AjustarEncontro] Evaluate falhou para elemento {Id}: {Msg}", elemento.Id, ex.Message);
                 }
             }
 

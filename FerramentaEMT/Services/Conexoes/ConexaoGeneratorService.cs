@@ -193,9 +193,10 @@ namespace FerramentaEMT.Services.Conexoes
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignorar erros de geometria
+                // ignorar erros de geometria — elemento pode nao ter representacao 3D
+                Logger.Debug("[ConexaoGenerator] Geometria indisponivel para {Id}: {Msg}", elem?.Id, ex.Message);
             }
 
             return null;

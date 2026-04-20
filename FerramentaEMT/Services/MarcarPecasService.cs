@@ -8,6 +8,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models;
 using FerramentaEMT.Utils;
 
@@ -589,9 +590,10 @@ namespace FerramentaEMT.Services
                     {
                         vistaAtiva.SetElementOverrides(id, ogs);
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         // Elemento pode nao ser visivel nesta vista
+                        Logger.Debug("[MarcarPecas] Override falhou para elemento {Id}: {Msg}", id, ex.Message);
                     }
                 }
             }

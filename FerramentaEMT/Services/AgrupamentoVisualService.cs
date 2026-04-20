@@ -685,8 +685,11 @@ namespace FerramentaEMT.Services
                     grupo.UngroupMembers();
                     total++;
                 }
-                catch
+                // TODO M12+: contabilizar falhas e reportar ao usuario ao final
+                //          ("Desagrupados: X. Falhas: Y") para melhor UX
+                catch (Exception ex)
                 {
+                    Logger.Warn(ex, "[AgrupamentoVisual] Falha ao desagrupar {Nome}", grupo.GroupType?.Name);
                 }
             }
 
