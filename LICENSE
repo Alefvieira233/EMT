@@ -1,31 +1,84 @@
-Proprietary License — FerramentaEMT
+Licenca Proprietaria — Ferramenta EMT
 
-Copyright (c) 2026 ALEF — Todos os direitos reservados.
+Copyright (c) 2026 Victor Luis de Oliveira e Alef Christian Gomes Vieira
+Todos os direitos reservados.
 
-Este software e sua documentacao sao propriedade exclusiva de ALEF e estao
-protegidos por leis de direitos autorais e tratados internacionais.
+Este software e sua documentacao sao propriedade conjunta de Victor Luis
+de Oliveira e Alef Christian Gomes Vieira, em regime de co-autoria com
+participacao de 50% (cinquenta por cento) para cada titular.
 
-E EXPRESSAMENTE PROIBIDO, sem autorizacao previa por escrito do titular:
+A presente licenca esta protegida por leis de direitos autorais e tratados
+internacionais.
 
-  1. Copiar, reproduzir ou distribuir este software, no todo ou em parte.
-  2. Modificar, descompilar, desmontar ou fazer engenharia reversa do software.
-  3. Sublicenciar, alugar, emprestar ou transferir o software a terceiros.
-  4. Remover ou alterar avisos de direitos autorais ou marcas do software.
-  5. Utilizar o software para fins nao autorizados pelo contrato de licenca.
+1. DEFINICOES
 
-O uso deste software e condicionado a aquisicao de uma licenca valida.
-Cada licenca e vinculada a uma unica maquina (identificador de hardware +
-usuario Windows) e nao e transferivel sem autorizacao do titular.
+"Titulares" refere-se conjuntamente a Victor Luis de Oliveira e Alef
+Christian Gomes Vieira.
 
-O software e fornecido "como esta" (as-is), sem garantias de qualquer tipo,
-expressas ou implicitas, incluindo, sem limitacao, garantias de comercializacao,
-adequacao a um proposito particular ou nao-violacao.
+"Software" refere-se ao produto Ferramenta EMT, incluindo codigo-fonte,
+documentacao, assets, testes e materiais correlatos.
 
-Em nenhuma hipotese o titular sera responsavel por quaisquer danos diretos,
-indiretos, incidentais, especiais ou consequentes decorrentes do uso ou da
-impossibilidade de uso deste software.
+"Usuario Licenciado" refere-se a pessoa fisica ou juridica que tenha
+obtido, por meios autorizados pelos Titulares, o direito de uso do
+Software.
 
-Para informacoes sobre licenciamento:
+2. DIREITOS DOS TITULARES
+
+Cada Titular tem o direito de:
+  a. Usar o Software livremente em projetos proprios.
+  b. Modificar o Software para fins proprios.
+  c. Participar das decisoes estrategicas sobre o Software (roadmap,
+     preco, publico-alvo) mediante acordo mutuo.
+
+3. RESTRICOES PARA TERCEIROS (Usuarios Licenciados)
+
+E EXPRESSAMENTE PROIBIDO, sem autorizacao previa por escrito dos Titulares:
+
+  a. Copiar, reproduzir ou distribuir este Software, no todo ou em parte.
+  b. Modificar, descompilar, desmontar ou realizar engenharia reversa do
+     Software.
+  c. Sublicenciar, alugar, emprestar ou transferir o Software a terceiros.
+  d. Remover ou alterar avisos de direitos autorais, marcas ou atribuicoes
+     de autoria presentes no Software.
+  e. Utilizar o Software para fins nao autorizados pelo contrato de
+     licenca aplicavel.
+
+4. LICENCIAMENTO A TERCEIROS
+
+O uso comercial do Software por terceiros e condicionado a aquisicao de
+uma licenca valida. Cada licenca sera vinculada a uma unica maquina
+(identificador de hardware + usuario Windows) e nao e transferivel sem
+autorizacao dos Titulares.
+
+As condicoes comerciais, precificacao, distribuicao e suporte ao usuario
+final serao definidas em acordo mutuo entre os Titulares.
+
+5. GARANTIAS
+
+O Software e fornecido "como esta" (as-is), sem garantias de qualquer
+tipo, expressas ou implicitas, incluindo, sem limitacao, garantias de
+comercializacao, adequacao a um proposito particular ou nao-violacao.
+
+6. LIMITACAO DE RESPONSABILIDADE
+
+Em nenhuma hipotese os Titulares, individualmente ou conjuntamente,
+serao responsaveis por quaisquer danos diretos, indiretos, incidentais,
+especiais ou consequentes decorrentes do uso ou da impossibilidade de
+uso deste Software.
+
+7. DISPOSICOES FINAIS
+
+Alteracoes desta licenca ou acordos referentes ao Software exigem
+consentimento de ambos os Titulares, manifestado por escrito.
+
+Em caso de divergencia entre os Titulares nao resolvida amigavelmente,
+sera aplicado o foro competente da comarca de Joao Pessoa, Paraiba,
+Brasil.
+
+Para informacoes sobre licenciamento ou parceria comercial:
   Email: alefchristiangomesvieira@gmail.com
 
-ALEF / EMT — 2026
+---
+
+Victor Luis de Oliveira e Alef Christian Gomes Vieira — 2026
+Joao Pessoa, Paraiba, Brasil
