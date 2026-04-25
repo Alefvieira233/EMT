@@ -2,9 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PM - Acos Pilar"
-        Width="500"
-        MinWidth="420" MinHeight="320"
-        MaxHeight="520"
+        Width="900"
+        MinHeight="520"
         SizeToContent="Height"
         Background="{DynamicResource WindowBackgroundBrush}"
         WindowStartupLocation="CenterScreen"
@@ -30,42 +29,174 @@
                        Style="{StaticResource DialogSubtitleText}"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="1">
-            <GroupBox Header="Configuracao">
-                <Grid Margin="4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="316"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" MaxHeight="620">
+            <StackPanel>
+                <GroupBox Header="Configuracao">
+                    <Grid Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Vergalhao:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                        <ComboBox x:Name="cmbBarType" Grid.Row="0" Grid.Column="1" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Cobrimento (cm):" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                        <TextBox x:Name="txtCover" Grid.Row="1" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="3"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Emenda / traspasse" Margin="0 12 0 0">
+                    <Grid Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <CheckBox x:Name="chkTraspasse"
+                                  Grid.Row="0"
+                                  Grid.Column="0"
+                                  Grid.ColumnSpan="4"
+                                  Margin="0 0 0 8"
+                                  Content="Calcular traspasse NBR 6118"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="fck (MPa):" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                        <ComboBox x:Name="cmbFck" Grid.Row="1" Grid.Column="1" Width="120" HorizontalAlignment="Left" Margin="0 0 8 8"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Aco:" VerticalAlignment="Center" Margin="8 0 8 8"/>
+                        <ComboBox x:Name="cmbSteel" Grid.Row="1" Grid.Column="3" Width="120" HorizontalAlignment="Left" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Zona:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                        <ComboBox x:Name="cmbBondZone" Grid.Row="2" Grid.Column="1" Width="120" HorizontalAlignment="Left" Margin="0 0 8 8"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Ancoragem:" VerticalAlignment="Center" Margin="8 0 8 8"/>
+                        <ComboBox x:Name="cmbAnchorage" Grid.Row="2" Grid.Column="3" Width="120" HorizontalAlignment="Left" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="% emendadas:" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                        <TextBox x:Name="txtSplicePercent" Grid.Row="3" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="50"/>
+                        <StackPanel Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="8 0 0 0">
+                            <TextBlock Text="Barra max. (cm):" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                            <TextBox x:Name="txtMaxBarLength" Width="90" Text="1200"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Esp. barras (cm):" VerticalAlignment="Center" Margin="0 8 8 0"/>
+                        <TextBox x:Name="txtBarSpacing" Grid.Row="4" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="8" Margin="0 8 8 0"/>
+                        <TextBlock x:Name="txtTraspassePreview"
+                                   Grid.Row="4"
+                                   Grid.Column="2"
+                                   Grid.ColumnSpan="2"
+                                   Margin="8 8 0 0"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   TextWrapping="Wrap"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Lancamento" Margin="0 12 0 0">
+                    <TabControl x:Name="tabModo" Margin="4">
+                        <TabItem Header="Automatico">
+                            <Grid Margin="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock x:Name="lblQtdLargura" Grid.Row="0" Grid.Column="0" Text="Qtd na largura:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                                <TextBox x:Name="txtQtdLargura" Grid.Row="0" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="2"/>
+
+                                <TextBlock x:Name="lblQtdProfundidade" Grid.Row="1" Grid.Column="0" Text="Qtd na profundidade:" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                                <TextBox x:Name="txtQtdProfundidade" Grid.Row="1" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="2"/>
+
+                                <TextBlock x:Name="lblQtdCircular" Grid.Row="2" Grid.Column="0" Text="Qtd no contorno:" VerticalAlignment="Center" Margin="0 8 8 0" Visibility="Collapsed"/>
+                                <TextBox x:Name="txtQtdCircular" Grid.Row="2" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="8" Margin="0 8 0 0" Visibility="Collapsed"/>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Por coordenadas">
+                            <Grid Margin="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock TextWrapping="Wrap" Margin="0 0 0 8"
+                                           Text="Uma barra por linha: X(cm); Y(cm). A origem e o canto inferior esquerdo da secao."/>
+                                <TextBox x:Name="txtCoordenadas"
+                                         Grid.Row="1"
+                                         Height="108"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Consolas"/>
+                                <TextBlock Grid.Row="2" Margin="0 8 0 0" Foreground="{DynamicResource SecondaryTextBrush}"
+                                           Text="Exemplo: 15; 10"/>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </GroupBox>
+
+                <Border Margin="0 12 0 0" Padding="12" CornerRadius="8" Background="#11000000">
+                    <StackPanel>
+                        <TextBlock x:Name="txtAmostra" TextWrapping="Wrap" Margin="0 0 0 6"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Text="A ferramenta gera os pontos no corte da secao, respeitando o cobrimento informado."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            </ScrollViewer>
+
+            <GroupBox Grid.Column="1" Header="Corte da secao" Margin="12 0 0 0">
+                <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Vergalhao:" VerticalAlignment="Center" Margin="0 0 8 8"/>
-                    <ComboBox x:Name="cmbBarType" Grid.Row="0" Grid.Column="1" Margin="0 0 0 8"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Cobrimento (cm):" VerticalAlignment="Center" Margin="0 0 8 8"/>
-                    <TextBox x:Name="txtCover" Grid.Row="1" Grid.Column="1" Margin="0 0 0 8" Text="3"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Qtd na largura:" VerticalAlignment="Center" Margin="0 0 8 8"/>
-                    <TextBox x:Name="txtQtdLargura" Grid.Row="2" Grid.Column="1" Margin="0 0 0 8" Text="2"/>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Qtd na profundidade:" VerticalAlignment="Center" Margin="0 0 8 0"/>
-                    <TextBox x:Name="txtQtdProfundidade" Grid.Row="3" Grid.Column="1" Text="2"/>
+                    <Border Grid.Row="0"
+                            Width="284"
+                            Height="284"
+                            HorizontalAlignment="Center"
+                            Background="{DynamicResource InputBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1">
+                        <Canvas x:Name="canvasSecao" Width="282" Height="282" ClipToBounds="True"/>
+                    </Border>
+                    <TextBlock x:Name="txtPreviewBounds"
+                               Grid.Row="1"
+                               Margin="0 10 0 0"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                    <TextBlock x:Name="txtPreviewStatus"
+                               Grid.Row="2"
+                               Margin="0 6 0 0"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
                 </Grid>
             </GroupBox>
-
-            <Border Margin="0 12 0 0" Padding="12" CornerRadius="8" Background="#11000000">
-                <StackPanel>
-                    <TextBlock x:Name="txtAmostra" TextWrapping="Wrap" Margin="0 0 0 6"/>
-                    <TextBlock TextWrapping="Wrap"
-                               Text="A ferramenta gera os pontos automaticamente no perimetro da secao, sempre para dentro do cobrimento informado."/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+        </Grid>
 
         <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

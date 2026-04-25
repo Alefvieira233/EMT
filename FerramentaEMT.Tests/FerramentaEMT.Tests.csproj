@@ -132,6 +132,16 @@
     <Compile Include="..\FerramentaEMT\Models\PF\PfRebarConfigs.cs"
              Link="LinkedSources\Models\PF\PfRebarConfigs.cs" />
 
+    <!-- v1.6.0: Incorporacao Victor Wave 2 (2026-04-24) — PF RebarShape + Bloco 2 Estacas + NBR 6118 -->
+    <Compile Include="..\FerramentaEMT\Models\PF\PfRebarShapeOption.cs"
+             Link="LinkedSources\Models\PF\PfRebarShapeOption.cs" />
+    <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapBarPosition.cs"
+             Link="LinkedSources\Models\PF\PfTwoPileCapBarPosition.cs" />
+    <Compile Include="..\FerramentaEMT\Services\PF\PfNbr6118AnchorageService.cs"
+             Link="LinkedSources\Services\PF\PfNbr6118AnchorageService.cs" />
+    <Compile Include="..\FerramentaEMT\Services\PF\PfTwoPileCapBarCatalog.cs"
+             Link="LinkedSources\Services\PF\PfTwoPileCapBarCatalog.cs" />
+
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
              Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />

@@ -8,7 +8,79 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Nenhuma mudança pendente.
+Follow-up planejado da incorporação Victor Wave 2:
+- Re-wire do zoneamento de estribos (`UsarEspacamentoUnico=false` deve restaurar a lógica NBR 6118 de espaçamento Apoio/Central para viga e Inferior/Central/Superior para pilar). Hoje o `PfRebarService` reconciliado só consome `EspacamentoCm`. Os campos granulares ainda existem em `PfRebarConfigs.cs` mas estão dormentes.
+
+---
+
+## [1.6.0-rc.1] — 2026-04-25 (Incorporação Victor Wave 2 — RebarShape + NBR 6118 + Bloco 2 Estacas)
+
+Segunda onda de incorporação do snapshot do Victor (`FerramentaEMT (3).rar`, 2026-04-24). Foco em PF: catalogo de RebarShape do projeto Revit, preview visual nas janelas, cálculo de ancoragem NBR 6118, lap splice, modo coordenadas manual e rotina dedicada para bloco de duas estacas. Ribbon separado em duas abas para desacoplar o fluxo PF do fluxo metálico.
+
+### Added — Catálogo de RebarShape do projeto Revit (Victor Wave 2)
+- **`Services/PF/PfRebarShapeCatalog`** — varre `FilteredElementCollector(RebarShape)` filtrado por `RebarStyle.StirrupTie`, primeiro item sempre "Automatico" (flag `IsAutomatic=true`), ordena por sufixo numérico.
+- **`Services/PF/PfRebarShapePreviewService`** — gera `BitmapImage` (220 px default) do shape selecionado para exibir na UI; fallback textual quando preview indisponível.
+- **`Models/PF/PfRebarShapeOption`** — DTO (`ElementIdValue`, `Name`, `DisplayName`, `IsAutomatic`). `ToString()` prefere `DisplayName`.
+- **`PfBeamStirrupsWindow` + `PfColumnStirrupsWindow`** — combo box de shape + `<Image>` de preview. Quando o usuário escolhe um shape do projeto, a rotina cria estribo automático primeiro; se o shape selecionado for compatível com a geometria, aplica em cima. Se não for compatível, mantém o automático sem interromper o comando.
+
+### Added — Cálculo NBR 6118 (ancoragem + traspasse)
+- **`Services/PF/PfNbr6118AnchorageService.Calculate(diameterMm, PfLapSpliceConfig)`** → `PfAnchorageResult` com `FbdMpa`, `Eta1`, `Eta2`, `Eta3`, `BasicAnchorageCm`, `RequiredAnchorageCm`, `MinimumAnchorageCm`, `SpliceLengthCm`, `MinimumSpliceLengthCm`, `AnchorageAlpha`, `SpliceAlpha`, `FctkInfMpa`, `FydMpa`. Inputs: fck/fyk (clamps para 12 MPa / 250 MPa), `PfBarSurfaceType` (Lisa=1.0, Entalhada=1.4, Nervurada=2.25), `PfBondZone` (Boa=1.0, Ruim=0.7), `PfAnchorageType` (Reta=α1.0, Gancho*=α0.7), `SplicePercentage` (tabela de α variando com 20%/25%/33%/50%/>50%). `ToDetailText()` gera string padronizada `"EMT NBR 6118:2023 | phi {d} mm | lb {lb} cm | lb,nec {lbNec} cm | traspasse l0 {l0} cm | fbd {fbd} MPa"` para parâmetro Comments do Revit.
+- **`Models/PF/PfLapSpliceConfig`** — configuração de traspasse: `Enabled`, `MaxBarLengthCm` (default 1200), `ConcreteFckMpa` (25), `SteelFykMpa` (500), `BarSurface`, `BondZone`, `AnchorageType`, `SplicePercentage` (50), `BarSpacingCm` (8), `AsCalcCm2`, `AsEfCm2`.
+- Integrado em `PfColumnBarsConfig.Traspasse` e `PfBeamBarsConfig.Traspasse` (quando `Enabled=true` e barra > `MaxBarLengthCm`, serviço insere traspasse).
+
+### Added — Bloco de duas estacas (rotina dedicada)
+- **`Commands/PF/CmdPfInserirAcosBlocoDuasEstacas`** — novo botão em "PF Armaduras" na aba "Ferramenta EMT". Usa `FerramentaCommandBase` (license gate + logging uniformes).
+- **`Services/PF/PfTwoPileCapRebarService.Execute(uidoc, config)` → `Result`** (496 linhas) — análogo ao `PfRebarService.ExecuteBeamBars` em estrutura: coleta hosts, calcula `HostFrame`, lança superior/inferior/lateral.
+- **`Services/PF/PfTwoPileCapBarCatalog`** — catálogo estático `Tipo4` com 14 posições (diâmetros 6.3/8.0/10.0/12.5/16.0 mm, formas `Reta`, `U`, `RetanguloFechado`, `EstriboVertical`, `CaliceVertical`, `FormaEspecial`). `QuantidadePorBloco = QuantidadeTotalPdf / 3` (3 blocos por planta).
+- **`Models/PF/PfTwoPileCapBarPosition`** — DTO com `Posicao`, `DiametroMm`, `QuantidadeTotalPdf`, `QuantidadePorBloco`, `ComprimentoCm`, `EspacamentoCm`, `Forma` (enum `PfTwoPileCapBarShape`), `DescricaoForma`. `ToComment()` gera string padronizada `"N{pos} - POS {pos} - diam. {d} - C/{spacing} - C={length} - {descricao}"` (culture-invariant).
+- **`Views/PfTwoPileCapRebarWindow.xaml(.cs)`** — UI de configuração.
+
+### Added — Modo coordenadas manual (barras de pilar/viga)
+- **`PfRebarPlacementMode`** — enum `Automatico` (default) e `Coordenadas`.
+- Quando `ModoLancamento == Coordenadas`, o serviço usa `Coordenadas` (`List<PfColumnBarCoordinate>` ou `List<PfBeamBarCoordinate>`) em cm local. Para viga, `PfBeamBarCoordinate` inclui `BarTypeName` e `Posicao` (ex.: `"Superior"`, `"Inferior"`, `"Lateral"`).
+- `PfColumnBarsConfig.QuantidadeCircular` — suporta seção circular com N barras igualmente espaçadas.
+
+### Added — Preview de seção nas janelas PF
+- **`PfRebarService.BuildBeamSectionPreview(FamilyInstance)` e `BuildColumnSectionPreview(FamilyInstance)`** (static helpers) — retornam `PfRebarSectionPreview` (shape retangular/circular, dimensões em cm, raio se circular) para renderizar a seção na UI.
+- **`PfRebarService.GetColumnLengthCm(column)` e `GetBeamLengthCm(beam)`** (static helpers) — leitura da dimensão longitudinal.
+- `PfBeamBarsWindow` e `PfColumnBarsWindow` renderizam o preview com indicação das posições das barras.
+
+### Changed — Ribbon dividida em duas abas
+- **Aba "Ferramenta EMT"** — só fluxo PF (painéis `PF Construção`, `PF Documentação`, `PF Armaduras`).
+- **Aba "Ferramentas ECC"** (nova) — fluxo geral (painéis `Modelagem`, `Estrutura`, `Vigas`, `Vista`, `Documentação`, `Fabricação`, `CNC`, `Verificação`, `Montagem`, `Licença`).
+- Motivação: o usuário PF (concreto pré-fabricado) e o usuário metálico têm fluxos muito distintos; separar reduz fricção visual.
+
+### Changed — Commands PF (AcosPilar/Viga, EstribosPilar/Viga)
+- Todos os 4 comandos agora fazem pick de elemento via `PfElementService.GetSelectionOrPick` **antes** de abrir a janela, e passam `hosts[0]` ao construtor novo das windows. Permite que a janela construa o preview da seção na abertura.
+- Mantêm `FerramentaCommandBase` (license gate + logging).
+
+### Changed — `PfRebarConfigs.cs` (API expansion, backward-compatible)
+- Adicionadas 6 enums: `PfRebarPlacementMode`, `PfRebarSectionShape`, `PfStirrupHookAngle`, `PfBarSurfaceType`, `PfBondZone`, `PfAnchorageType` (+ `PfBeamBarEndMode` já existia).
+- Adicionadas 5 sealed classes: `PfColumnBarCoordinate`, `PfBeamBarCoordinate`, `PfRebarSectionPreview`, `PfLapSpliceConfig`, `PfTwoPileCapRebarConfig`.
+- Estribos: adicionados `ShapeName`, `DiametroMm`, `EspacamentoCm` unificado e `Dobra` (`PfStirrupHookAngle`). **Campos granulares de zoneamento preservados** (`EspacamentoInferior/Central/Superior`, `AlturaZonaExtremidade`, `EspacamentoApoio/Central`, `ComprimentoZonaApoio`) atrás da flag `UsarEspacamentoUnico=false` (default) — ver "Regressão conhecida" abaixo.
+- Barras: adicionados `ModoLancamento`, `QuantidadeCircular`, `Traspasse`, `Coordenadas`.
+
+### Preserved — Decisões contra a snapshot Victor
+- **`ModelCheckService`** mantém `Result<ModelCheckReport>` (ADR-003) e `IProgress<ProgressReport>` + `CancellationToken` (ADR-004). **Não adotamos** a versão simplificada do Victor (10.4 KB, sem Result/Progress/Cancel).
+- **`ModelCheckCollector`, `ModelCheckVisualizationService`** e as 9 `ModelCheckRules/*Rule.cs` mantidas nas versões Alef.
+- **`ListaMateriaisExportService`, `AgrupamentoVisualService`, `NumeracaoItensService`, `DstvExportService`** mantidos (todos com terceira/quarta/quinta adoção ADR-003).
+- **`CrashReporter.Initialize()`** no `App.OnStartup` — preservado.
+- **`LicenseSecretProvider.GetResolvedSource()`** logging no `App.OnStartup` — preservado.
+- **`CmdCortarElementos`** (nossa Onda 3 PR-1) — preservado na aba "Ferramentas ECC", painel Estrutura. Victor havia removido dessa snapshot.
+- **UTF-8 com acentos** em `App.cs` e em toda a UI — preservado. Victor havia regredido algumas strings a ASCII.
+
+### Regression — Conhecida, com follow-up planejado
+- `PfRebarService` consome `EspacamentoCm` único em estribos (modo Victor). Os campos granulares de zoneamento NBR 6118 (`EspacamentoInferior/Central/Superior`, `AlturaZonaExtremidadeCm`, `EspacamentoApoio/Central`, `ComprimentoZonaApoioCm`) estão preservados em `PfRebarConfigs.cs` mas o serviço não os lê ainda. A flag `UsarEspacamentoUnico` (default `false`) já existe como ponto de ramificação. Follow-up: PR separado que restaura a lógica de zoneamento no `PfRebarService` quando a flag é `false`. Backup da versão v1.5.0 salvo em `Services/PF/PfRebarService.cs.bak-alef-v1.5` (945 linhas) para referência.
+
+### Tests
+- **+4 arquivos de teste** cobrindo as novas features:
+  - `Models/PF/PfRebarShapeOptionTests` — 5 Facts
+  - `Models/PF/PfTwoPileCapBarPositionTests` — 5 Facts + 1 Theory (6 variants) = 11 casos. Inclui teste de culture-invariant em pt-BR (regressão histórica do projeto).
+  - `Services/PF/PfNbr6118AnchorageServiceTests` — 15 Facts (cenários: zero/null guard, eta1/2/3 corretos para cada combinação, α de ancoragem com gancho, fck<12 clamp, lb mínimo, traspasse α≥1.0, `AreaRatio` reduz `lbNec`, idempotência).
+  - `Services/PF/PfTwoPileCapBarCatalogTests` — 10 Facts (14 posições, sequencialidade, `Get()` por posição existente/inexistente, `QuantidadePorBloco = Total/3`, descrições não vazias, diâmetros/comprimentos válidos, snapshot das posições chave 1/4/13).
+- 4 LinkedSources novos no `FerramentaEMT.Tests.csproj`.
+
+Origem: snapshot do Victor em 2026-04-24. Plano de merge em 8 ondas documentado em `outputs/ANALISE-VICTOR-WAVE2.md`.
 
 ---
 

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -14,7 +16,17 @@ namespace FerramentaEMT.Commands.PF
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
-            PfBeamBarsWindow window = new PfBeamBarsWindow(doc);
+            List<Element> hosts = PfElementService.GetSelectionOrPick(
+                uidoc,
+                PfElementService.IsStructuralBeam,
+                "Selecione as vigas estruturais para configurar e lancar as barras.");
+
+            if (hosts.Count == 0)
+                return Result.Cancelled;
+
+            uidoc.Selection.SetElementIds(hosts.Select(x => x.Id).ToList());
+
+            PfBeamBarsWindow window = new PfBeamBarsWindow(doc, hosts[0]);
             if (window.ShowDialog() != true)
                 return Result.Cancelled;
 

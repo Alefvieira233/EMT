@@ -34,7 +34,11 @@ namespace FerramentaEMT
             }
             catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
 
+            // Incorporacao Victor Wave 2: split em duas abas.
+            //   tabName    = "Ferramenta EMT"  → SO os paineis PF (armadura de concreto pre-fabricado)
+            //   eccTabName = "Ferramentas ECC" → paineis gerais (modelagem, estrutura, fabricacao, QA, montagem, licenca)
             string tabName = "Ferramenta EMT";
+            string eccTabName = "Ferramentas ECC";
             RevitWindowThemeService.Initialize(application);
 
             try
@@ -44,14 +48,26 @@ namespace FerramentaEMT
             catch (Exception ex)
             {
                 // Aba já existe — esperado quando o plugin recarrega
-                Logger.Debug("CreateRibbonTab: aba ja existe ({Msg})", ex.Message);
+                Logger.Debug("CreateRibbonTab (EMT): aba ja existe ({Msg})", ex.Message);
             }
 
-            RibbonPanel panelModelagem = GetOrCreatePanel(application, tabName, "Modelagem");
-            RibbonPanel panelEstrutura = GetOrCreatePanel(application, tabName, "Estrutura");
-            RibbonPanel panelVigas = GetOrCreatePanel(application, tabName, "Vigas");
-            RibbonPanel panelVista = GetOrCreatePanel(application, tabName, "Vista");
-            RibbonPanel panelDocumentacao = GetOrCreatePanel(application, tabName, "Documentação");
+            try
+            {
+                application.CreateRibbonTab(eccTabName);
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("CreateRibbonTab (ECC): aba ja existe ({Msg})", ex.Message);
+            }
+
+            // --- Paineis na aba "Ferramentas ECC" (fluxo geral) ---
+            RibbonPanel panelModelagem = GetOrCreatePanel(application, eccTabName, "Modelagem");
+            RibbonPanel panelEstrutura = GetOrCreatePanel(application, eccTabName, "Estrutura");
+            RibbonPanel panelVigas = GetOrCreatePanel(application, eccTabName, "Vigas");
+            RibbonPanel panelVista = GetOrCreatePanel(application, eccTabName, "Vista");
+            RibbonPanel panelDocumentacao = GetOrCreatePanel(application, eccTabName, "Documentação");
+
+            // --- Paineis na aba "Ferramenta EMT" (so fluxo PF) ---
             RibbonPanel panelPfConstrucao = GetOrCreatePanel(application, tabName, "PF Construção");
             RibbonPanel panelPfDocumentacao = GetOrCreatePanel(application, tabName, "PF Documentação");
             RibbonPanel panelPfArmaduras = GetOrCreatePanel(application, tabName, "PF Armaduras");
@@ -418,8 +434,20 @@ namespace FerramentaEMT
                 "column_line_small.png"
             );
 
+            // Incorporacao Victor Wave 2: novo comando de bloco de duas estacas
+            AddButton(
+                panelPfArmaduras,
+                "btnPfAcosBlocoDuasEstacas",
+                "Aços Bloco\n2 Estacas",
+                assemblyPath,
+                "FerramentaEMT.Commands.PF.CmdPfInserirAcosBlocoDuasEstacas",
+                "Lança barras superiores, inferiores e laterais em blocos de duas estacas com a mesma lógica base usada nas vigas.",
+                "pilar_concreto_large.png",
+                "pilar_concreto_small.png"
+            );
+
             // --- Painel Fabricação (novos módulos) ---
-            RibbonPanel panelFabricacao = GetOrCreatePanel(application, tabName, "Fabricação");
+            RibbonPanel panelFabricacao = GetOrCreatePanel(application, eccTabName, "Fabricação");
 
             AddButton(
                 panelFabricacao,
@@ -455,7 +483,7 @@ namespace FerramentaEMT
             );
 
             // --- Painel CNC (Sprint 5) ---
-            RibbonPanel panelCnc = GetOrCreatePanel(application, tabName, "CNC");
+            RibbonPanel panelCnc = GetOrCreatePanel(application, eccTabName, "CNC");
 
             AddButton(
                 panelCnc,
@@ -469,7 +497,7 @@ namespace FerramentaEMT
             );
 
             // --- Painel QA (Sprint 6) ---
-            RibbonPanel panelQa = GetOrCreatePanel(application, tabName, "Verificação");
+            RibbonPanel panelQa = GetOrCreatePanel(application, eccTabName, "Verificação");
 
             AddButton(
                 panelQa,
@@ -483,7 +511,7 @@ namespace FerramentaEMT
             );
 
             // --- Painel Montagem (Sprint 7) ---
-            RibbonPanel panelMontagem = GetOrCreatePanel(application, tabName, "Montagem");
+            RibbonPanel panelMontagem = GetOrCreatePanel(application, eccTabName, "Montagem");
 
             AddButton(
                 panelMontagem,
@@ -508,7 +536,7 @@ namespace FerramentaEMT
             );
 
             // --- Painel Licença (1.0.0) ---
-            RibbonPanel panelLicenca = GetOrCreatePanel(application, tabName, "Licença");
+            RibbonPanel panelLicenca = GetOrCreatePanel(application, eccTabName, "Licença");
 
             AddStackedButtons(
                 panelLicenca,

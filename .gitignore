@@ -99,3 +99,6 @@ up emt.zip
 FerramentaEMT_Completo.zip
 FerramentaEMT_Patch_DropIn.zip
 *.zip
+
+# Wave 2 (Incorporacao Victor 2026-04-25) — backups locais nao versionados
+*.bak-alef-v1.5

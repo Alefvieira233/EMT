@@ -1,0 +1,103 @@
+<Window x:Class="FerramentaEMT.Views.PfTwoPileCapRebarWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PF - Acos Bloco 2 Estacas"
+        Width="760"
+        MinHeight="420"
+        SizeToContent="Height"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Acos em Bloco 2 Estacas" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Lancamento simplificado do bloco com a mesma logica base das barras em viga: superiores, inferiores e laterais."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <GroupBox Header="Vergalhoes e cobrimento">
+                <Grid Margin="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Vergalhao sup.:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <ComboBox x:Name="cmbBarSup" Grid.Row="0" Grid.Column="1" Margin="0 0 12 8"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Vergalhao inf.:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <ComboBox x:Name="cmbBarInf" Grid.Row="0" Grid.Column="3" Margin="0 0 0 8"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Vergalhao lateral:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <ComboBox x:Name="cmbBarLat" Grid.Row="1" Grid.Column="1" Margin="0 0 12 8"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Dobra ponta:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <ComboBox x:Name="cmbModoPonta" Grid.Row="1" Grid.Column="3" Margin="0 0 0 8"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Cobrimento (cm):" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                    <TextBox x:Name="txtCover" Grid.Row="2" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="5"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Comp. dobra (cm):" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                    <TextBox x:Name="txtGancho" Grid.Row="2" Grid.Column="3" Width="120" HorizontalAlignment="Left" Text="10"/>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Lancamento" Margin="0 12 0 0">
+                <Grid Margin="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Qtd sup.:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <TextBox x:Name="txtQtdSup" Grid.Row="0" Grid.Column="1" Margin="0 0 16 8" Text="4"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Qtd inf.:" VerticalAlignment="Center" Margin="0 0 8 8"/>
+                    <TextBox x:Name="txtQtdInf" Grid.Row="0" Grid.Column="3" Margin="0 0 0 8" Text="4"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Niveis laterais:" VerticalAlignment="Center" Margin="0 0 8 0"/>
+                    <TextBox x:Name="txtQtdLat" Grid.Row="1" Grid.Column="1" Width="120" HorizontalAlignment="Left" Text="0"/>
+                </Grid>
+            </GroupBox>
+
+            <Border Margin="0 12 0 0" Padding="12" CornerRadius="8" Background="#11000000">
+                <StackPanel>
+                    <TextBlock x:Name="txtAmostra" TextWrapping="Wrap" Margin="0 0 0 6"/>
+                    <TextBlock TextWrapping="Wrap"
+                               Text="As barras superiores e inferiores correm no comprimento do bloco. As laterais sao distribuidas nas duas faces longitudinais."/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel" Content="Cancelar" Width="96" Style="{StaticResource SecondaryActionButton}" Margin="0,0,8,0"/>
+                <Button x:Name="btnOk" Content="Aplicar" Width="110" Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

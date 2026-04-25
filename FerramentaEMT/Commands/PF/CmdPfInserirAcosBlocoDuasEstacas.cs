@@ -10,28 +10,28 @@ using FerramentaEMT.Views;
 namespace FerramentaEMT.Commands.PF
 {
     [Transaction(TransactionMode.Manual)]
-    public class CmdPfInserirAcosPilar : FerramentaCommandBase
+    public class CmdPfInserirAcosBlocoDuasEstacas : FerramentaCommandBase
     {
-        protected override string CommandName => "PF - Acos Pilar";
+        protected override string CommandName => "PF - Acos Bloco 2 Estacas";
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
             List<Element> hosts = PfElementService.GetSelectionOrPick(
                 uidoc,
-                PfElementService.IsStructuralColumn,
-                "Selecione os pilares estruturais para configurar e lancar as barras longitudinais.");
+                PfElementService.IsTwoPileCap,
+                "Selecione os blocos de duas estacas para configurar e lancar a armadura.");
 
             if (hosts.Count == 0)
                 return Result.Cancelled;
 
             uidoc.Selection.SetElementIds(hosts.Select(x => x.Id).ToList());
 
-            PfColumnBarsWindow window = new PfColumnBarsWindow(doc, hosts[0]);
+            PfTwoPileCapRebarWindow window = new PfTwoPileCapRebarWindow(doc, hosts[0]);
             if (window.ShowDialog() != true)
                 return Result.Cancelled;
 
-            PfColumnBarsConfig config = window.BuildConfig();
-            return new PfRebarService().ExecuteColumnBars(uidoc, config);
+            PfTwoPileCapRebarConfig config = window.BuildConfig();
+            return new PfTwoPileCapRebarService().Execute(uidoc, config);
         }
     }
 }
