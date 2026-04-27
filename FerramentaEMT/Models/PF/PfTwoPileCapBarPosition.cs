@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace FerramentaEMT.Models.PF
 {
     public enum PfTwoPileCapBarShape
@@ -25,11 +27,26 @@ namespace FerramentaEMT.Models.PF
 
         public string ToComment()
         {
+            // Culture-invariant: o Comment vira parametro do Revit e parser de
+            // schedule/CSV downstream pode interpretar virgula como separador
+            // de campos. Bug descoberto por testes na Wave 2 — em pt-BR sem
+            // CultureInfo.InvariantCulture, "{x:0.##}" gerava "6,3" em vez de
+            // "6.3". Forcar invariante em TODOS os formatadores numericos.
+            CultureInfo c = CultureInfo.InvariantCulture;
+
             string spacing = EspacamentoCm > 0.0
-                ? $" - C/{EspacamentoCm:0.##}"
+                ? string.Format(c, " - C/{0:0.##}", EspacamentoCm)
                 : string.Empty;
 
-            return $"{Nome} - POS {Posicao} - diam. {DiametroMm:0.###}{spacing} - C={ComprimentoCm:0.##} - {DescricaoForma}";
+            return string.Format(
+                c,
+                "{0} - POS {1} - diam. {2:0.###}{3} - C={4:0.##} - {5}",
+                Nome,
+                Posicao,
+                DiametroMm,
+                spacing,
+                ComprimentoCm,
+                DescricaoForma);
         }
     }
 }

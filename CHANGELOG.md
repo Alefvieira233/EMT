@@ -13,9 +13,20 @@ Follow-up planejado da incorporação Victor Wave 2:
 
 ---
 
-## [1.6.0-rc.1] — 2026-04-25 (Incorporação Victor Wave 2 — RebarShape + NBR 6118 + Bloco 2 Estacas)
+## [1.6.0-rc.1] — 2026-04-27 (Incorporação Victor Wave 2 — RebarShape + NBR 6118 + Bloco 2 Estacas)
 
 Segunda onda de incorporação do snapshot do Victor (`FerramentaEMT (3).rar`, 2026-04-24). Foco em PF: catalogo de RebarShape do projeto Revit, preview visual nas janelas, cálculo de ancoragem NBR 6118, lap splice, modo coordenadas manual e rotina dedicada para bloco de duas estacas. Ribbon separado em duas abas para desacoplar o fluxo PF do fluxo metálico.
+
+**Status de validação (2026-04-27):**
+- Build Release: 0 Erro(s), 2 Aviso(s) pre-existentes (RevitAPI/RevitAPIUI references). Tempo: 7s.
+- Plugin carregado e visualizado no Revit 2025 do Alef. Duas abas (`Ferramenta EMT` + `Ferramentas ECC`) renderizadas corretamente.
+- Suite de testes: 460 casos totais, 458 aprovados na primeira rodada. As 2 falhas eram bug REAL no código do Victor (`ToComment` culture-sensitive em pt-BR) — corrigido nesta release como parte do `### Fixed` abaixo. Re-rodar testes pos-fix dá 460/460.
+- Instalador distribuível gerado (`artifacts/installer/FerramentaEMT-Revit2025-Release.zip`, 3.8 MB + `setup-publish/FerramentaEMT.SetupBootstrapper.exe`).
+
+### Fixed — Build + culture-invariant (descoberto pelos testes Wave 2)
+- **`Services/PF/PfElementService.IsTwoPileCap`** — método ausente após Wave 2 (eu adotei o `PfTwoPileCapRebarService` mas esqueci de trazer o helper que ele e o command `CmdPfInserirAcosBlocoDuasEstacas` chamam). Sem isso o build falhava com 2× CS0117. Detecta `FamilyInstance` com `Category.OST_StructuralFoundation`.
+- **`FerramentaEMT.csproj`** — adicionada `<PackageReference Include="System.Drawing.Common" Version="8.0.10" />`. O `PfRebarShapePreviewService` (do Victor) usa `System.Drawing.Bitmap` e `System.Drawing.Imaging.ImageFormat` — esses tipos saíram do BCL no .NET 5+ e exigem package explícita. Sem isso o build falhava com 3× CS0012/CS1069.
+- **`Models/PF/PfTwoPileCapBarPosition.ToComment`** — bug culture-sensitive descoberto pelos testes em pt-BR. O método usava `$"...{x:0.##}"` que respeita `CurrentCulture`, gerando `"diam. 6,3"` em vez de `"diam. 6.3"` quando a máquina está configurada em pt-BR. Como esse `Comment` vai parar no parâmetro Comments do Revit e é consumido por schedules/CSV downstream, vírgula no decimal corromperia parsers terceiros. Forçado `CultureInfo.InvariantCulture` em todos os formatadores numéricos (3 ocorrências). 460/460 testes passam pós-fix.
 
 ### Added — Catálogo de RebarShape do projeto Revit (Victor Wave 2)
 - **`Services/PF/PfRebarShapeCatalog`** — varre `FilteredElementCollector(RebarShape)` filtrado por `RebarStyle.StirrupTie`, primeiro item sempre "Automatico" (flag `IsAutomatic=true`), ordena por sufixo numérico.
