@@ -80,6 +80,22 @@ namespace FerramentaEMT.Services.PF
                    !IsPfModelElement(fi, "consolo");
         }
 
+        /// <summary>
+        /// Detecta blocos de duas estacas (familia de fundacao estrutural).
+        /// Adicionado na incorporacao Victor Wave 2 — usado pelo
+        /// CmdPfInserirAcosBlocoDuasEstacas e PfTwoPileCapRebarService.
+        /// </summary>
+        public static bool IsTwoPileCap(Element element)
+        {
+            if (!(element is FamilyInstance fi))
+                return false;
+
+            if (fi.Category?.BuiltInCategory != BuiltInCategory.OST_StructuralFoundation)
+                return false;
+
+            return true;
+        }
+
         public static bool IsPfLaje(Element element)
         {
             return element?.Category?.BuiltInCategory == BuiltInCategory.OST_Floors ||
