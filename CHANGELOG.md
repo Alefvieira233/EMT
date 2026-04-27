@@ -23,6 +23,12 @@ Roadmap da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`):
 
 Esta release promove `1.6.0-rc.1` (incorporação Victor Wave 2) a versão final, incluindo o follow-up do zoneamento de estribos NBR 6118 e cleanup ADR-003 do `PfTwoPileCapRebarService`. Resolve as 2 regressões conhecidas que ficaram documentadas na rc.1.
 
+### Security — Base64Url canonicalização (defesa-em-profundidade)
+- **`Licensing/Base64Url.Decode`** agora rejeita encodings não-canônicos. O bug foi descoberto pelo teste `KeySigner.Verify_returns_null_when_signature_is_tampered`: a HMAC-SHA256 de 32 bytes em Base64URL ocupa 43 chars × 6 bits = 258 bits, mas apenas 256 são significativos. Os 2 bits sobressalentes do último char eram ignorados pelo `Convert.FromBase64String`, permitindo múltiplas representações do mesmo token.
+- Implicação anterior (não-crítica para forja, mas problemática para licenciamento): um cliente poderia redistribuir a mesma chave em variações cosméticas, quebrando fingerprinting de tokens.
+- Fix: após `Convert.FromBase64String`, re-codificamos os bytes via `Encode` e comparamos com a entrada original; se diferirem, lançamos `FormatException` (e `KeySigner.Verify` retorna null como esperado).
+- HMAC em si nunca esteve comprometido — não é possível forjar assinatura sem o segredo. Esta correção elimina ambiguidade de representação, alinhando o sistema com o comportamento esperado do teste.
+
 ### Added — Zoneamento NBR 6118 de estribos (re-portado da v1.5.0)
 - **`PfRebarService.InsertColumnStirrups`** agora suporta dual-mode:
   - `UsarEspacamentoUnico=true` → modo Victor (1 rebar com `EspacamentoCm` uniforme)

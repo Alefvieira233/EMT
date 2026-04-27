@@ -28,7 +28,24 @@ namespace FerramentaEMT.Licensing
             else if (mod4 == 3) b64 += "=";
             else if (mod4 == 1) throw new FormatException("Base64URL invalido (length % 4 == 1).");
 
-            return Convert.FromBase64String(b64);
+            byte[] bytes = Convert.FromBase64String(b64);
+
+            // Defesa-em-profundidade contra Base64 nao-canonico (descoberto pelo
+            // teste KeySigner.Verify_returns_null_when_signature_is_tampered):
+            // o ultimo char Base64 carrega bits sobressalentes (2 bits nao usados
+            // quando os bytes nao sao multiplos de 3). Convert.FromBase64String
+            // aceita esses bits como zero ou nao-zero indistintamente, permitindo
+            // multiplas representacoes Base64 para o mesmo array de bytes.
+            //
+            // Em sistema de licenciamento isso permite reedicao trivial do mesmo
+            // token (anti-fingerprinting). HMAC continua seguro contra forja, mas
+            // a unicidade do token quebra. Para produto comercial: re-codifica e
+            // compara — entrada nao-canonica e rejeitada explicitamente.
+            string canonical = Encode(bytes);
+            if (!string.Equals(canonical, text, StringComparison.Ordinal))
+                throw new FormatException("Base64URL nao-canonico (bits sobressalentes diferentes de zero).");
+
+            return bytes;
         }
     }
 }
