@@ -15,8 +15,16 @@ namespace FerramentaEMT.Services.PF
     {
         private const double MinSegmentMm = 50.0;
 
-        public Result Execute(UIDocument uidoc, PfTwoPileCapRebarConfig config)
+        /// <summary>
+        /// Executa o lancamento de armaduras em blocos de duas estacas.
+        /// ADR-003: servico mudo — nao mostra dialog. Preenche <paramref name="resultado"/>
+        /// e o caller (Cmd) decide a UX a partir das flags <c>SelecaoVazia</c>,
+        /// <c>HostsComSucesso</c> e <c>Avisos</c>.
+        /// </summary>
+        public Result Execute(UIDocument uidoc, PfTwoPileCapRebarConfig config, out PfTwoPileCapResultado resultado)
         {
+            resultado = new PfTwoPileCapResultado();
+
             List<Element> selecionados = PfElementService.GetSelectionOrPick(
                 uidoc,
                 PfElementService.IsTwoPileCap,
@@ -25,14 +33,14 @@ namespace FerramentaEMT.Services.PF
             List<FamilyInstance> hosts = selecionados.OfType<FamilyInstance>().ToList();
             if (hosts.Count == 0)
             {
-                AppDialogService.ShowWarning("PF - Acos Bloco 2 Estacas", "Nenhum bloco de fundacao elegivel foi selecionado.", "Selecao vazia");
+                resultado.SelecaoVazia = true;
+                Logger.Warn("[PF - Acos Bloco 2 Estacas] selecao vazia (nenhum bloco elegivel)");
                 return Result.Cancelled;
             }
 
+            resultado.HostsProcessados = hosts.Count;
+
             Document doc = uidoc.Document;
-            int hostsOk = 0;
-            int rebarsCriados = 0;
-            List<string> avisos = new List<string>();
 
             using (Transaction transaction = new Transaction(doc, "PF - Acos Bloco 2 Estacas"))
             {
@@ -48,19 +56,19 @@ namespace FerramentaEMT.Services.PF
                             int created = InsertRebars(doc, host, config);
                             if (created <= 0)
                             {
-                                avisos.Add($"Id {host.Id.Value}: nenhuma barra foi gerada.");
+                                resultado.Avisos.Add($"Id {host.Id.Value}: nenhuma barra foi gerada.");
                                 sub.RollBack();
                                 continue;
                             }
 
-                            hostsOk++;
-                            rebarsCriados += created;
+                            resultado.HostsComSucesso++;
+                            resultado.ArmadurasCriadas += created;
                             sub.Commit();
                         }
                         catch (Exception ex)
                         {
                             Logger.Error(ex, "[PF - Acos Bloco 2 Estacas] falha no host {HostId}", host.Id.Value);
-                            avisos.Add($"Id {host.Id.Value}: {CleanMessage(ex.Message)}");
+                            resultado.Avisos.Add($"Id {host.Id.Value}: {CleanMessage(ex.Message)}");
                             sub.RollBack();
                         }
                     }
@@ -71,16 +79,14 @@ namespace FerramentaEMT.Services.PF
 
             uidoc.Selection.SetElementIds(hosts.Select(x => x.Id).ToList());
 
-            string resumo =
-                $"Hospedeiros processados: {hosts.Count}\n" +
-                $"Hospedeiros com sucesso: {hostsOk}\n" +
-                $"Armaduras criadas: {rebarsCriados}";
+            Logger.Info(
+                "[PF - Acos Bloco 2 Estacas] processamento concluido — hosts={Hosts} sucesso={Sucesso} armaduras={Rebars} avisos={Avisos}",
+                resultado.HostsProcessados,
+                resultado.HostsComSucesso,
+                resultado.ArmadurasCriadas,
+                resultado.Avisos.Count);
 
-            if (avisos.Count > 0)
-                resumo += "\n\nOcorrencias:\n- " + string.Join("\n- ", avisos.Take(10));
-
-            AppDialogService.ShowInfo("PF - Acos Bloco 2 Estacas", resumo, "Processamento concluido");
-            return hostsOk > 0 ? Result.Succeeded : Result.Failed;
+            return resultado.HostsComSucesso > 0 ? Result.Succeeded : Result.Failed;
         }
 
         private static int InsertRebars(Document doc, FamilyInstance host, PfTwoPileCapRebarConfig config)

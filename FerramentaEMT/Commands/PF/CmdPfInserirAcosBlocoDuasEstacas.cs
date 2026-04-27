@@ -31,7 +31,23 @@ namespace FerramentaEMT.Commands.PF
                 return Result.Cancelled;
 
             PfTwoPileCapRebarConfig config = window.BuildConfig();
-            return new PfTwoPileCapRebarService().Execute(uidoc, config);
+
+            // ADR-003: service eh mudo. Pegamos o resultado e decidimos a UX aqui no Cmd.
+            PfTwoPileCapResultado resultado;
+            Result revitResult = new PfTwoPileCapRebarService().Execute(uidoc, config, out resultado);
+
+            if (resultado.SelecaoVazia)
+            {
+                ShowWarning("Nenhum bloco de fundacao elegivel foi selecionado.", "Selecao vazia");
+                return revitResult;
+            }
+
+            if (resultado.HostsComSucesso > 0)
+                ShowInfo(resultado.ToResumo(), "Processamento concluido");
+            else
+                ShowWarning(resultado.ToResumo(), "Nenhuma armadura criada");
+
+            return revitResult;
         }
     }
 }

@@ -142,6 +142,10 @@
     <Compile Include="..\FerramentaEMT\Services\PF\PfTwoPileCapBarCatalog.cs"
              Link="LinkedSources\Services\PF\PfTwoPileCapBarCatalog.cs" />
 
+    <!-- v1.6.0 followup: ADR-003 cleanup PfTwoPileCapRebarService (DTO de retorno) -->
+    <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapResultado.cs"
+             Link="LinkedSources\Models\PF\PfTwoPileCapResultado.cs" />
+
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
              Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />

@@ -1,23 +1,33 @@
 // =========================================================================
-// PfRebarService - versao reconciliada (Onda Wave 2, 2026-04-24)
+// PfRebarService - versao DUAL-MODE (Wave 2 + zoneamento NBR 6118 re-portado)
 //
-// ORIGEM: snapshot do Victor em FerramentaEMT (3).rar (2026-04-24).
-// Adotada por completo por conter as seguintes funcionalidades novas:
+// HISTORICO:
+//   - Origem inicial: snapshot do Victor em FerramentaEMT (3).rar (2026-04-24)
+//   - Adotada na Wave 2 com REGRESSAO conhecida (zoneamento dormente)
+//   - Re-port do zoneamento NBR 6118 em 2026-04-27 (Wave 2 followup)
+//
+// FUNCIONALIDADES PRESERVADAS DA Wave 2:
 //   - RebarShape catalog (ShapeName das configs aplica shape do projeto Revit)
 //   - Preview de secao (BuildBeamSectionPreview / BuildColumnSectionPreview)
 //   - Modo Coordenadas (PfRebarPlacementMode.Coordenadas)
 //   - BarRange para lancamento em zonas
 //   - Integracao com PfLapSpliceConfig (NBR 6118)
 //
-// REGRESSAO CONHECIDA (a reverter em follow-up):
-//   Este arquivo usa EspacamentoCm unico em estribos (modo Victor).
-//   Os campos EspacamentoInferior/Central/Superior + AlturaZonaExtremidadeCm
-//   e EspacamentoApoio + ComprimentoZonaApoio + Central ainda existem em
-//   PfRebarConfigs.cs (atras da flag UsarEspacamentoUnico=false), mas o
-//   service nao le esses campos ainda - a logica de zoneamento da nossa
-//   v1.5.0 vai voltar num PR separado (PR-Wave2-FOLLOWUP-zoneamento).
+// FUNCIONALIDADES RESTAURADAS NO RE-PORT:
+//   - InsertColumnStirrups suporta zoneamento NBR (3 rebars: inferior/central/superior)
+//     com EspacamentoInferiorCm + EspacamentoCentralCm + EspacamentoSuperiorCm +
+//     AlturaZonaExtremidadeCm quando UsarEspacamentoUnico=false (default).
+//     Pilares circulares sempre caem no modo simples (zoneamento de pilar circular
+//     nao e padrao da norma na pratica brasileira).
+//   - InsertBeamStirrups suporta zoneamento NBR (3 rebars: apoio_inicio/central/apoio_fim)
+//     com EspacamentoApoioCm + EspacamentoCentralCm + ComprimentoZonaApoioCm
+//     quando UsarEspacamentoUnico=false (default).
 //
-// Backup da versao anterior (945 linhas, com zoneamento NBR 6118):
+// MODO SIMPLES (UsarEspacamentoUnico=true):
+//   Cria 1 rebar com EspacamentoCm uniforme (modo Victor original).
+//   Util quando o usuario quer rapidez sem se preocupar com zoneamento.
+//
+// Backup da versao Alef pre-Wave2 (945 linhas, sem RebarShape/preview):
 //   PfRebarService.cs.bak-alef-v1.5
 // =========================================================================
 using System;
@@ -218,6 +228,12 @@ namespace FerramentaEMT.Services.PF
 
         private int InsertColumnStirrups(Document doc, FamilyInstance column, PfColumnStirrupsConfig config)
         {
+            // Wave 2 followup (re-port zoneamento NBR 6118):
+            // Quando UsarEspacamentoUnico=true → modo simples (1 rebar com EspacamentoCm).
+            // Quando UsarEspacamentoUnico=false (default) → zoneamento NBR 6118:
+            //   3 rebars (inferior/central/superior) com espacamentos distintos.
+            // Pilares circulares sempre caem no modo simples (zoneamento NBR 6118
+            // de pilar circular nao e padrao da norma na pratica brasileira).
             RebarBarType barType = GetBarTypeByDiameter(doc, config.DiametroMm, config.BarTypeName);
             RebarHookType hookType = GetHookTypeByAngle(doc, barType, (int)config.Dobra);
             RebarShape shape = GetRebarShape(doc, config.ShapeName, RebarStyle.StirrupTie);
@@ -234,37 +250,83 @@ namespace FerramentaEMT.Services.PF
             if (clearHeight <= ToFeetMm(100))
                 return 0;
 
-            IList<Curve> loop;
-            if (isCircular)
+            // Helper local para criar o loop horizontal num Z dado.
+            IList<Curve> BuildHorizontalLoopAtZ(double zPos)
             {
-                double centerX = (frame.MinX + frame.MaxX) / 2.0;
-                double centerY = (frame.MinY + frame.MaxY) / 2.0;
-                double radius = (Math.Min(frame.MaxX - frame.MinX, frame.MaxY - frame.MinY) / 2.0) - cover;
-                if (radius <= ToFeetMm(20))
+                if (isCircular)
+                {
+                    double centerX = (frame.MinX + frame.MaxX) / 2.0;
+                    double centerY = (frame.MinY + frame.MaxY) / 2.0;
+                    double radius = (Math.Min(frame.MaxX - frame.MinX, frame.MaxY - frame.MinY) / 2.0) - cover;
+                    if (radius <= ToFeetMm(20))
+                        return null;
+                    return CreateCircleLoopHorizontal(frame, zPos, centerX, centerY, radius);
+                }
+                else
+                {
+                    if (maxX - minX <= ToFeetMm(20) || maxY - minY <= ToFeetMm(20))
+                        return null;
+                    return CreateRectangleLoopHorizontal(frame, zPos, minX, maxX, minY, maxY);
+                }
+            }
+
+            // ---- modo SIMPLES (Victor) ou pilar circular (sem zoneamento NBR) ----
+            if (config.UsarEspacamentoUnico || isCircular)
+            {
+                IList<Curve> loop = BuildHorizontalLoopAtZ(minZ);
+                if (loop == null)
                     return 0;
 
-                loop = CreateCircleLoopHorizontal(frame, minZ, centerX, centerY, radius);
+                Rebar stirrup = CreateClosedRebar(
+                    doc, column, RebarStyle.StirrupTie, barType, frame.ZAxis, loop, hookType, shape);
+                ApplyMaximumSpacingLayout(stirrup, ToFeetCm(config.EspacamentoCm), clearHeight);
+                return 1;
             }
-            else
+
+            // ---- modo ZONEAMENTO NBR 6118 (pilar retangular) ----
+            // zoneHeight = altura da zona de extremidade (inferior/superior)
+            // middleHeight = altura da zona central (corpo do pilar)
+            double zoneHeight = Math.Min(ToFeetCm(config.AlturaZonaExtremidadeCm), clearHeight / 2.0);
+            double middleHeight = Math.Max(ToFeetMm(50), clearHeight - (zoneHeight * 2.0));
+            int created = 0;
+
+            if (config.EspacamentoInferiorCm > 0 && zoneHeight > ToFeetMm(10))
             {
-                if (maxX - minX <= ToFeetMm(20) || maxY - minY <= ToFeetMm(20))
-                    return 0;
-
-                loop = CreateRectangleLoopHorizontal(frame, minZ, minX, maxX, minY, maxY);
+                IList<Curve> lowerLoop = BuildHorizontalLoopAtZ(minZ);
+                if (lowerLoop != null)
+                {
+                    Rebar lower = CreateClosedRebar(
+                        doc, column, RebarStyle.StirrupTie, barType, frame.ZAxis, lowerLoop, hookType, shape);
+                    ApplyMaximumSpacingLayout(lower, ToFeetCm(config.EspacamentoInferiorCm), zoneHeight);
+                    created++;
+                }
             }
 
-            Rebar stirrup = CreateClosedRebar(
-                doc,
-                column,
-                RebarStyle.StirrupTie,
-                barType,
-                frame.ZAxis,
-                loop,
-                hookType,
-                shape);
+            if (config.EspacamentoCentralCm > 0 && middleHeight > ToFeetMm(10))
+            {
+                IList<Curve> middleLoop = BuildHorizontalLoopAtZ(minZ + zoneHeight);
+                if (middleLoop != null)
+                {
+                    Rebar middle = CreateClosedRebar(
+                        doc, column, RebarStyle.StirrupTie, barType, frame.ZAxis, middleLoop, hookType, shape);
+                    ApplyMaximumSpacingLayout(middle, ToFeetCm(config.EspacamentoCentralCm), middleHeight);
+                    created++;
+                }
+            }
 
-            ApplyMaximumSpacingLayout(stirrup, ToFeetCm(config.EspacamentoCm), clearHeight);
-            return 1;
+            if (config.EspacamentoSuperiorCm > 0 && zoneHeight > ToFeetMm(10))
+            {
+                IList<Curve> upperLoop = BuildHorizontalLoopAtZ(maxZ - zoneHeight);
+                if (upperLoop != null)
+                {
+                    Rebar upper = CreateClosedRebar(
+                        doc, column, RebarStyle.StirrupTie, barType, frame.ZAxis, upperLoop, hookType, shape);
+                    ApplyMaximumSpacingLayout(upper, ToFeetCm(config.EspacamentoSuperiorCm), zoneHeight);
+                    created++;
+                }
+            }
+
+            return created;
         }
 
         private int InsertColumnBars(Document doc, FamilyInstance column, PfColumnBarsConfig config)
@@ -429,6 +491,10 @@ namespace FerramentaEMT.Services.PF
 
         private int InsertBeamStirrups(Document doc, FamilyInstance beam, PfBeamStirrupsConfig config)
         {
+            // Wave 2 followup (re-port zoneamento NBR 6118):
+            // Quando UsarEspacamentoUnico=true → modo simples (1 rebar com EspacamentoCm).
+            // Quando UsarEspacamentoUnico=false (default) → zoneamento NBR 6118 por apoio:
+            //   3 rebars (apoio_inicio/centro/apoio_fim) com espacamentos distintos.
             RebarBarType barType = GetBarTypeByDiameter(doc, config.DiametroMm, config.BarTypeName);
             RebarHookType hookType = GetHookTypeByAngle(doc, barType, (int)config.Dobra);
             RebarShape shape = GetRebarShape(doc, config.ShapeName, RebarStyle.StirrupTie);
@@ -444,18 +510,53 @@ namespace FerramentaEMT.Services.PF
             if (maxY - minY <= ToFeetMm(20) || maxZ - minZ <= ToFeetMm(20) || clearLength <= ToFeetMm(150))
                 return 0;
 
-            Rebar stirrup = CreateClosedRebar(
-                doc,
-                beam,
-                RebarStyle.StirrupTie,
-                barType,
-                frame.XAxis,
-                CreateRectangleLoopVertical(frame, minX, minY, maxY, minZ, maxZ),
-                hookType,
-                shape);
+            // ---- modo SIMPLES (Victor) ----
+            if (config.UsarEspacamentoUnico)
+            {
+                Rebar stirrup = CreateClosedRebar(
+                    doc, beam, RebarStyle.StirrupTie, barType, frame.XAxis,
+                    CreateRectangleLoopVertical(frame, minX, minY, maxY, minZ, maxZ),
+                    hookType, shape);
+                ApplyMaximumSpacingLayout(stirrup, ToFeetCm(config.EspacamentoCm), clearLength);
+                return 1;
+            }
 
-            ApplyMaximumSpacingLayout(stirrup, ToFeetCm(config.EspacamentoCm), clearLength);
-            return 1;
+            // ---- modo ZONEAMENTO NBR 6118 (apoio_inicio + central + apoio_fim) ----
+            double supportLength = Math.Min(clearLength / 2.0, ToFeetCm(config.ComprimentoZonaApoioCm));
+            double middleLength = Math.Max(ToFeetMm(50), clearLength - (supportLength * 2.0));
+            int created = 0;
+
+            if (config.EspacamentoApoioCm > 0 && supportLength > ToFeetMm(10))
+            {
+                Rebar startSet = CreateClosedRebar(
+                    doc, beam, RebarStyle.StirrupTie, barType, frame.XAxis,
+                    CreateRectangleLoopVertical(frame, minX, minY, maxY, minZ, maxZ),
+                    hookType, shape);
+                ApplyMaximumSpacingLayout(startSet, ToFeetCm(config.EspacamentoApoioCm), supportLength);
+                created++;
+            }
+
+            if (config.EspacamentoCentralCm > 0 && middleLength > ToFeetMm(10))
+            {
+                Rebar middleSet = CreateClosedRebar(
+                    doc, beam, RebarStyle.StirrupTie, barType, frame.XAxis,
+                    CreateRectangleLoopVertical(frame, minX + supportLength, minY, maxY, minZ, maxZ),
+                    hookType, shape);
+                ApplyMaximumSpacingLayout(middleSet, ToFeetCm(config.EspacamentoCentralCm), middleLength);
+                created++;
+            }
+
+            if (config.EspacamentoApoioCm > 0 && supportLength > ToFeetMm(10))
+            {
+                Rebar endSet = CreateClosedRebar(
+                    doc, beam, RebarStyle.StirrupTie, barType, frame.XAxis,
+                    CreateRectangleLoopVertical(frame, maxX - supportLength, minY, maxY, minZ, maxZ),
+                    hookType, shape);
+                ApplyMaximumSpacingLayout(endSet, ToFeetCm(config.EspacamentoApoioCm), supportLength);
+                created++;
+            }
+
+            return created;
         }
 
         private int InsertBeamBars(Document doc, FamilyInstance beam, PfBeamBarsConfig config)

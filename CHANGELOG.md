@@ -8,8 +8,49 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Follow-up planejado da incorporação Victor Wave 2:
-- Re-wire do zoneamento de estribos (`UsarEspacamentoUnico=false` deve restaurar a lógica NBR 6118 de espaçamento Apoio/Central para viga e Inferior/Central/Superior para pilar). Hoje o `PfRebarService` reconciliado só consome `EspacamentoCm`. Os campos granulares ainda existem em `PfRebarConfigs.cs` mas estão dormentes.
+Roadmap da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`):
+- Code signing (P0.1)
+- Auto-update mechanism (P0.2)
+- Crash reporting remoto via Sentry (P0.3)
+- CI compilando o csproj principal (P0.4)
+- Privacy Policy + EULA (P0.5)
+- Telemetria opt-in (P0.6)
+- Migração ADR-003 dos 7 services restantes que ainda usam AppDialogService
+
+---
+
+## [1.6.0] — 2026-04-27 (Wave 2 + zoneamento NBR 6118 re-portado)
+
+Esta release promove `1.6.0-rc.1` (incorporação Victor Wave 2) a versão final, incluindo o follow-up do zoneamento de estribos NBR 6118 e cleanup ADR-003 do `PfTwoPileCapRebarService`. Resolve as 2 regressões conhecidas que ficaram documentadas na rc.1.
+
+### Added — Zoneamento NBR 6118 de estribos (re-portado da v1.5.0)
+- **`PfRebarService.InsertColumnStirrups`** agora suporta dual-mode:
+  - `UsarEspacamentoUnico=true` → modo Victor (1 rebar com `EspacamentoCm` uniforme)
+  - `UsarEspacamentoUnico=false` (default) → zoneamento NBR 6118 com 3 rebars (inferior + central + superior) usando `EspacamentoInferiorCm`, `EspacamentoCentralCm`, `EspacamentoSuperiorCm` e `AlturaZonaExtremidadeCm`
+  - Pilares circulares sempre caem no modo simples (zoneamento de pilar circular não é prática típica da norma brasileira)
+- **`PfRebarService.InsertBeamStirrups`** análogo:
+  - `UsarEspacamentoUnico=true` → modo Victor
+  - `UsarEspacamentoUnico=false` (default) → zoneamento por apoio (inicio + central + fim) com `EspacamentoApoioCm`, `EspacamentoCentralCm`, `ComprimentoZonaApoioCm`
+- Implementação preserva todas features Wave 2: `RebarShape`, `RebarHookType`, `RebarStyle.StirrupTie`. Cada zona aplica o shape/hook escolhido, mantendo rastreabilidade visual no Revit.
+- `PfRebarService.cs` cresceu de 1.768 → 1.891 linhas. Backup `PfRebarService.cs.bak-alef-v1.5` mantido como referência histórica do código v1.5.0.
+
+### Fixed — Regressão "zoneamento dormente" da rc.1
+- Configurações de zoneamento (`EspacamentoInferior/Central/Superior`, `AlturaZonaExtremidade`, `EspacamentoApoio`, `ComprimentoZonaApoio`) estavam preservadas em `PfRebarConfigs.cs` mas o serviço não as lia. Bug arquitetural resolvido com a implementação dual-mode acima.
+
+### Refactored — ADR-003 cleanup do `PfTwoPileCapRebarService` (Wave 2 followup)
+- **Service mudo agora**: removidas 2 chamadas `AppDialogService.ShowWarning/ShowInfo` (linhas 28 e 82). Em conformidade com ADR-003.
+- **Nova assinatura**: `Result Execute(uidoc, config, out PfTwoPileCapResultado resultado)`. Caller (`CmdPfInserirAcosBlocoDuasEstacas`) decide UX a partir do DTO populado.
+- **Novo DTO `Models/PF/PfTwoPileCapResultado`** com `SelecaoVazia`, `HostsProcessados`, `HostsComSucesso`, `ArmadurasCriadas`, `Avisos` (limitados a 10 na UI), `ToResumo()`.
+- **Logger.Info** estruturado adicionado ao final do `Execute` com métricas (hosts, sucesso, armaduras, avisos) — facilita troubleshooting em produção.
+- Caller `CmdPfInserirAcosBlocoDuasEstacas` consome `resultado` e usa `ShowWarning`/`ShowInfo` herdados de `FerramentaCommandBase`.
+
+### Tests
+- **+1 arquivo**: `Models/PF/PfTwoPileCapResultadoTests` — 5 Facts cobrindo defaults, formato sem avisos, formato com avisos, limite de 10 ocorrências na UI, flag `SelecaoVazia`.
+- 1 LinkedSource novo no `FerramentaEMT.Tests.csproj`.
+- Total acumulado v1.6.0: **465 casos** (eram 460 na rc.1).
+
+### Known issues
+- Os outros 7 services que ainda usam `AppDialogService` (`PfRebarService`, `AutoVistaService`, `AgrupamentoVisualService`, `AjustarEncontroService`, `ListaMateriaisExportService`, `CotarPecaFabricacaoService`, `MarcarPecasService`) continuam com o padrão antigo. Migração planejada como dívida arquitetural (P1.1 da auditoria de mercado).
 
 ---
 
