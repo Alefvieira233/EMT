@@ -8,9 +8,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build (Release) + Test
+  build-main:
+    name: Build FerramentaEMT (Release)
     runs-on: windows-latest
+    env:
+      # Sinaliza pro csproj usar PackageReference Nice3point em vez do
+      # HintPath local do Revit 2025. Ver docs/ADR/ADR-005-ci-revit-stubs.md.
+      CI: 'true'
 
     steps:
       - name: Checkout
@@ -24,18 +28,28 @@ jobs:
       - name: Show .NET info
         run: dotnet --info
 
-      # Mock RevitAPI/RevitAPIUI - CI doesn't have Revit installed.
-      # We compile against shim assemblies; tests do NOT depend on Revit.
-      - name: Create RevitAPI shims (CI only)
-        shell: pwsh
-        run: |
-          $shimDir = "$env:GITHUB_WORKSPACE\ci-shims"
-          New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
-          # We don't actually compile against shims - we just skip the main project on CI
-          # and only build the test project, which should not depend on RevitAPI.
-          Write-Host "CI shim directory: $shimDir"
+      - name: Restore FerramentaEMT
+        working-directory: FerramentaEMT
+        run: dotnet restore FerramentaEMT.csproj
 
-      - name: Restore dependencies (Tests project only)
+      - name: Build FerramentaEMT (Release)
+        working-directory: FerramentaEMT
+        run: dotnet build FerramentaEMT.csproj --configuration Release --no-restore
+
+  build-tests:
+    name: Build & Test FerramentaEMT.Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Tests
         working-directory: FerramentaEMT.Tests
         run: dotnet restore
 

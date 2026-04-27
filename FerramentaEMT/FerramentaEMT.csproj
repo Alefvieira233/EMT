@@ -20,7 +20,14 @@
 		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<!--
+		Revit API references.
+		Local (Alef): aponta direto pros DLLs instalados pelo Revit 2025.
+		CI (GitHub Actions, env var CI=true): usa pacotes da Nice3point — stubs
+		reference-only que satisfazem o type-checker, NUNCA carregam em runtime.
+		Decisao documentada em docs/ADR/ADR-005-ci-revit-stubs.md.
+	-->
+	<ItemGroup Condition="'$(CI)' != 'true'">
 		<Reference Include="RevitAPI">
 			<HintPath>C:\Program Files\Autodesk\Revit 2025\RevitAPI.dll</HintPath>
 			<Private>false</Private>
@@ -29,6 +36,17 @@
 			<HintPath>C:\Program Files\Autodesk\Revit 2025\RevitAPIUI.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(CI)' == 'true'">
+		<PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="2025.4.41">
+			<PrivateAssets>all</PrivateAssets>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="2025.4.41">
+			<PrivateAssets>all</PrivateAssets>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>
