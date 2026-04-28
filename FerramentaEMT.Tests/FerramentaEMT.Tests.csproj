@@ -189,6 +189,8 @@
     <!-- v1.7.0 PR-3: Crash reporting via Sentry — helpers puros (sem Revit, sem rede) -->
     <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryDsnProvider.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryDsnProvider.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\PiiScrubber.cs"
+             Link="LinkedSources\Infrastructure\CrashReporting\PiiScrubber.cs" />
 
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
