@@ -88,7 +88,11 @@ appsettings.Local.json
 license.secret
 *.license.secret
 # DSN do Sentry — carregado em runtime, nao deve ficar no repo.
+# Match em qualquer profundidade. *.sentry.dsn cobre backups/variantes
+# (ex.: dev.sentry.dsn, prod.sentry.dsn) por paranoia, mesmo padrao do
+# license.secret. Ver ADR-007 §Operational Runbook.
 sentry.dsn
+*.sentry.dsn
 
 # --- Relatorios de comparacao (apoio local) ---
 comparacao-victor/

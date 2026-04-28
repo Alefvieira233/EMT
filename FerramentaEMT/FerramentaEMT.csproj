@@ -97,5 +97,10 @@
 	       usa System.Drawing.Bitmap + System.Drawing.Imaging.ImageFormat. Em
 	       .NET 8 esses tipos saem do BCL e precisam de package explicito. -->
 	  <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
+	  <!-- v1.7.0 PR-3 (P0.3): crash reporting remoto via Sentry. Pin exato
+	       (sem range) — atualizacao manual + ADR-007 quando bumpar. NAO usar
+	       Sentry.AspNetCore / Sentry.Serilog / Sentry.Profiling: nosso plugin
+	       nao eh web e o Logger continua desacoplado. -->
+	  <PackageReference Include="Sentry" Version="5.6.0" />
 	</ItemGroup>
 </Project>
