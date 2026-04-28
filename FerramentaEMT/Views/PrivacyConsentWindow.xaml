@@ -65,9 +65,9 @@
                     </StackPanel>
                 </CheckBox>
 
-                <!--
-                    PR-4 (FUTURO): telemetria de uso via PostHog. CheckBox dormente.
-
+                <!-- PR-4 (P0.6): telemetria de uso via PostHog. Ativo a partir
+                     da v1.7.0. ConsentVersion bumpa de 2 → 3 — usuarios da PR-3
+                     reabrem o dialog na primeira utilizacao pos-upgrade. -->
                 <CheckBox x:Name="cbTelemetry"
                           Margin="0 6 0 6"
                           IsChecked="False">
@@ -79,7 +79,6 @@
                                    TextWrapping="Wrap" Margin="0 2 0 0"/>
                     </StackPanel>
                 </CheckBox>
-                -->
             </StackPanel>
         </GroupBox>
 

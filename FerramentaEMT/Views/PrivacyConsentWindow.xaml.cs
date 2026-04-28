@@ -22,15 +22,16 @@ namespace FerramentaEMT.Views
         /// <summary>
         /// Versao do modelo de consentimento desta release.
         /// PR-2: 1 (auto-update apenas).
-        /// PR-3: 2 (auto-update + crash reports).  ← atual
-        /// PR-4: 3 (auto-update + crash + telemetry).
+        /// PR-3: 2 (auto-update + crash reports).
+        /// PR-4: 3 (auto-update + crash + telemetry).  ← atual
         ///
         /// Quando incrementar, PrivacyConsentWindow eh reaberta no proximo
         /// boot (ConsentVersion persistido &lt; CurrentConsentVersion do codigo).
-        /// Em v1.7.0 todos os usuarios da PR-2 (ConsentVersion=1) veem o
-        /// dialog uma vez no primeiro Idling do Revit pos-upgrade.
+        /// Em v1.7.0 todos os usuarios da PR-3 (ConsentVersion=2) veem o
+        /// dialog uma vez no primeiro Idling do Revit pos-upgrade pra escolher
+        /// se aceitam telemetria de uso.
         /// </summary>
-        public const int CurrentConsentVersion = 2;
+        public const int CurrentConsentVersion = 3;
 
         /// <summary>
         /// Settings escolhidos pelo usuario, ou null se ele fechou o dialog
@@ -47,6 +48,7 @@ namespace FerramentaEMT.Views
             {
                 cbAutoUpdate.IsChecked = (current.AutoUpdate == ConsentState.Granted);
                 cbCrashReports.IsChecked = (current.CrashReports == ConsentState.Granted);
+                cbTelemetry.IsChecked = (current.Telemetry == ConsentState.Granted);
             }
 
             btnSalvar.Click += BtnSalvar_Click;
@@ -60,8 +62,7 @@ namespace FerramentaEMT.Views
                 ConsentVersion = CurrentConsentVersion,
                 AutoUpdate = (cbAutoUpdate.IsChecked == true) ? ConsentState.Granted : ConsentState.Denied,
                 CrashReports = (cbCrashReports.IsChecked == true) ? ConsentState.Granted : ConsentState.Denied,
-                // PR-4 (Telemetry) ainda Unset: fica pra proxima ConsentVersion
-                Telemetry = ConsentState.Unset,
+                Telemetry = (cbTelemetry.IsChecked == true) ? ConsentState.Granted : ConsentState.Denied,
                 LastUpdateCheckUtc = DateTime.MinValue,
                 SkippedUpdateVersion = string.Empty,
             };
