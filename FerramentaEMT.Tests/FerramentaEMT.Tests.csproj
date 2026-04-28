@@ -216,6 +216,8 @@
              Link="LinkedSources\Infrastructure\Telemetry\PostHogApiKeyProvider.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogHostProvider.cs"
              Link="LinkedSources\Infrastructure\Telemetry\PostHogHostProvider.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\SessionIdProvider.cs"
+             Link="LinkedSources\Infrastructure\Telemetry\SessionIdProvider.cs" />
 
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
