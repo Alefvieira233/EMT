@@ -18,6 +18,7 @@ namespace FerramentaEMT.Infrastructure.Update
         public static Action<string, object[]> Info { get; set; } = NoOp;
         public static Action<string, object[]> Warn { get; set; } = NoOp;
         public static Action<Exception, string, object[]> WarnException { get; set; } = NoOpEx;
+        public static Action<Exception, string, object[]> ErrorException { get; set; } = NoOpEx;
 
         private static void NoOp(string template, object[] args) { }
         private static void NoOpEx(Exception ex, string template, object[] args) { }
@@ -32,6 +33,7 @@ namespace FerramentaEMT.Infrastructure.Update
             Info = NoOp;
             Warn = NoOp;
             WarnException = NoOpEx;
+            ErrorException = NoOpEx;
         }
     }
 }

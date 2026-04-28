@@ -165,6 +165,12 @@
              Link="LinkedSources\Infrastructure\Update\ZipSlipValidator.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\Sha256Calculator.cs"
              Link="LinkedSources\Infrastructure\Update\Sha256Calculator.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateMarker.cs"
+             Link="LinkedSources\Infrastructure\Update\UpdateMarker.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\ApplyResult.cs"
+             Link="LinkedSources\Infrastructure\Update\ApplyResult.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateApplier.cs"
+             Link="LinkedSources\Infrastructure\Update\UpdateApplier.cs" />
     <Compile Include="..\FerramentaEMT\Models\Privacy\ConsentState.cs"
              Link="LinkedSources\Models\Privacy\ConsentState.cs" />
     <Compile Include="..\FerramentaEMT\Models\Privacy\PrivacySettings.cs"
