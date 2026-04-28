@@ -22,7 +22,7 @@ namespace FerramentaEMT.Tests.Infrastructure.CrashReporting
     ///
     /// Nao testa SDK real — usa ISentryHubFacade mockado via Moq.
     /// </summary>
-    [Collection("SentryReporterSerial")]
+    [Collection("SentryDsnSerial")]
     public class SentryReporterTests : IDisposable
     {
         private readonly string _origDsnEnv;

@@ -50,11 +50,9 @@
                     </StackPanel>
                 </CheckBox>
 
-                <!--
-                    PR-3 (FUTURO): relatorio de erros via Sentry. CheckBox dormente,
-                    sera ativado em release v1.8.0+. Estrutura ja pronta para nao
-                    refazer XAML.
-
+                <!-- PR-3 (P0.3): relatorio de erros via Sentry. Ativo a partir
+                     da v1.7.0. ConsentVersion bumpa de 1 → 2 — usuarios da PR-2
+                     reabrem o dialog na primeira utilizacao pos-upgrade. -->
                 <CheckBox x:Name="cbCrashReports"
                           Margin="0 6 0 6"
                           IsChecked="False">
@@ -66,7 +64,6 @@
                                    TextWrapping="Wrap" Margin="0 2 0 0"/>
                     </StackPanel>
                 </CheckBox>
-                -->
 
                 <!--
                     PR-4 (FUTURO): telemetria de uso via PostHog. CheckBox dormente.
