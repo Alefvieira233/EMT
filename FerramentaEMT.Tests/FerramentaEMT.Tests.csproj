@@ -23,10 +23,8 @@
          testar SentryOptionsBuilder, BeforeSend hook e o ISentryHubFacade
          mockavel. Mesmo pin que o csproj principal (ADR-007 §6). -->
     <PackageReference Include="Sentry" Version="5.6.0" />
-    <!-- v1.7.0 PR-4: precisamos do tipo PostHogClient e Capture options
-         para testar TelemetryOptionsBuilder + ITelemetryClient mockavel.
-         Mesmo pin que o csproj principal (ADR-008 §6). -->
-    <PackageReference Include="PostHog" Version="2.5.0" />
+    <!-- PR-4 nao usa NuGet PostHog — implementacao HTTP-direct via
+         HttpClient + System.Text.Json (BCL). Ver ADR-008. -->
   </ItemGroup>
 
   <!--
