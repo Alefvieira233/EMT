@@ -1,13 +1,14 @@
-using FerramentaEMT.Infrastructure.CrashReporting;
+using FerramentaEMT.Infrastructure;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.CrashReporting
+namespace FerramentaEMT.Tests.Infrastructure
 {
     /// <summary>
     /// Cobre os 2 padroes que o PiiScrubber tem que remover antes de qualquer
-    /// evento ir pro Sentry: email e path Windows com username. Tambem cobre
-    /// o invariante de NAO mexer no que nao deve (paths Linux, stack frames).
+    /// evento ir pro Sentry ou pra telemetria PostHog: email e path Windows
+    /// com username. Tambem cobre o invariante de NAO mexer no que nao deve
+    /// (paths Linux, stack frames).
     /// </summary>
     public class PiiScrubberTests
     {

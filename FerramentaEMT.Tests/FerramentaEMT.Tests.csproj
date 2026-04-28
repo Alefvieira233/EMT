@@ -186,11 +186,14 @@
     <Compile Include="..\FerramentaEMT\Infrastructure\Privacy\PrivacyJson.cs"
              Link="LinkedSources\Infrastructure\Privacy\PrivacyJson.cs" />
 
+    <!-- v1.7.0 PR-4: PiiScrubber promovido pro namespace Infrastructure
+         (cross-cutting entre crash reporting + telemetry). Ver ADR-008 §"Reuso". -->
+    <Compile Include="..\FerramentaEMT\Infrastructure\PiiScrubber.cs"
+             Link="LinkedSources\Infrastructure\PiiScrubber.cs" />
+
     <!-- v1.7.0 PR-3: Crash reporting via Sentry — helpers puros (sem Revit, sem rede) -->
     <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryDsnProvider.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryDsnProvider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\PiiScrubber.cs"
-             Link="LinkedSources\Infrastructure\CrashReporting\PiiScrubber.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\ISentryHubFacade.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\ISentryHubFacade.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryOptionsBuilder.cs"

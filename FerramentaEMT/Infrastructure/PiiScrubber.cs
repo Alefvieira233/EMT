@@ -1,10 +1,16 @@
 using System.Text.RegularExpressions;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace FerramentaEMT.Infrastructure
 {
     /// <summary>
-    /// Sanitizador de PII para mensagens / stack traces / breadcrumbs antes
-    /// de enviar ao Sentry. Puro, deterministic, sem deps de Revit.
+    /// Sanitizador de PII cross-cutting. Aplicado por:
+    ///   - SentryOptionsBuilder.ScrubAndTag (PR-3, BeforeSend hook).
+    ///   - TelemetryOptionsBuilder.ApplySuperProperties (PR-4, evento PostHog).
+    /// Puro, deterministic, sem deps de Revit.
+    ///
+    /// Movido em PR-4 de Infrastructure/CrashReporting/ pra o namespace pai
+    /// porque o scope passou a ser cross-cutting (crash + telemetry + futuras).
+    /// Ver ADR-008 §"Reuso do PiiScrubber".
     ///
     /// O QUE REMOVE:
     ///   1. Email — qualquer 'foo@bar.tld' (com subdominio, '+' tag, '.', '-')
@@ -20,7 +26,7 @@ namespace FerramentaEMT.Infrastructure.CrashReporting
     ///   - Paths Linux/Mac (/home/joao/) — explicitamente fora do escopo.
     ///   - UNC paths (\\server\share\joao\) — diferente de drive letter.
     ///
-    /// Decisao registrada no ADR-007 §PII Scrubbing.
+    /// Decisao registrada no ADR-007 §PII Scrubbing + ADR-008 §Reuso.
     /// </summary>
     public static class PiiScrubber
     {

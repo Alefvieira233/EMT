@@ -51,15 +51,22 @@ PR-2.
 
 ### Layout das classes
 
+> **Nota PR-4 (2026-04-28):** `PiiScrubber.cs` foi promovido em PR-4 para
+> `Infrastructure/PiiScrubber.cs` (namespace `FerramentaEMT.Infrastructure`)
+> porque o scope passou a ser cross-cutting (crash + telemetria). Ver
+> ADR-008 §"Reuso do PiiScrubber". O comportamento eh identico — apenas
+> mudanca de localizacao + namespace + um `using` em SentryOptionsBuilder.
+
 ```
-FerramentaEMT/Infrastructure/CrashReporting/
-├── SentryDsnProvider.cs         (puro, 4-source resolution + Lazy snapshot)
-├── PiiScrubber.cs                (puro, regex email + Windows path)
-├── SentryOptionsBuilder.cs       (puro, monta SentryOptions + ScrubAndTag)
-├── ISentryHubFacade.cs           (interface mockavel)
-├── SentryHubFacade.cs            (impl real, delega pro SentrySdk)
-├── SentryReporter.cs             (facade estatico idempotente)
-└── SentryStartupWiring.cs        (cola App.OnStartup ↔ SentryReporter)
+FerramentaEMT/Infrastructure/
+├── PiiScrubber.cs                (movido em PR-4 — era em CrashReporting/)
+└── CrashReporting/
+    ├── SentryDsnProvider.cs         (puro, 4-source resolution + Lazy snapshot)
+    ├── SentryOptionsBuilder.cs       (puro, monta SentryOptions + ScrubAndTag)
+    ├── ISentryHubFacade.cs           (interface mockavel)
+    ├── SentryHubFacade.cs            (impl real, delega pro SentrySdk)
+    ├── SentryReporter.cs             (facade estatico idempotente)
+    └── SentryStartupWiring.cs        (cola App.OnStartup ↔ SentryReporter)
 
 FerramentaEMT.Tests/Infrastructure/CrashReporting/
 ├── SentryDsnProviderTests.cs     (10 testes)
