@@ -159,6 +159,7 @@ namespace FerramentaEMT.Infrastructure.Update
             catch (Exception ex)
             {
                 UpdateLog.WarnException(ex, "[Update] falha ao re-validar SHA256", EmptyArgs);
+                if (ex is IOException) UpdateSession.RecordIoFailure("apply-revalidate-hash");
                 TryDelete(chosenPath);
                 return ApplyResult.InvalidMarker;
             }
@@ -190,6 +191,7 @@ namespace FerramentaEMT.Infrastructure.Update
             catch (Exception ex)
             {
                 UpdateLog.WarnException(ex, "[Update] falha ao fazer backup do install dir", EmptyArgs);
+                if (ex is IOException) UpdateSession.RecordIoFailure("apply-backup");
                 TryDelete(chosenPath);
                 return ApplyResult.InvalidMarker;
             }
@@ -207,6 +209,7 @@ namespace FerramentaEMT.Infrastructure.Update
             catch (Exception ex)
             {
                 UpdateLog.WarnException(ex, "[Update] falha ao extrair .zip — restaurando backup", EmptyArgs);
+                if (ex is IOException) UpdateSession.RecordIoFailure("apply-extract");
                 RestoreBackup(backupDir);
                 TryDelete(chosenPath);
                 return ApplyResult.InvalidMarker;
@@ -217,6 +220,7 @@ namespace FerramentaEMT.Infrastructure.Update
             TryDelete(chosen.ZipPath);
             TryDelete(chosenPath);
 
+            UpdateSession.RecordIoSuccess();
             UpdateLog.Info("[Update] aplicado com sucesso para versao {0}",
                 new object[] { chosen.Version });
             return ApplyResult.Applied;

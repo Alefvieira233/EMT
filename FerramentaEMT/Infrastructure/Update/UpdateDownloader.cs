@@ -196,12 +196,14 @@ namespace FerramentaEMT.Infrastructure.Update
             {
                 TryDelete(zipPath);
                 Logger.Warn(ex, "[Update] falha de rede durante download");
+                // HttpRequestException nao conta como IO local — nao registrar em UpdateSession
                 return DownloadResult.IoError;
             }
             catch (IOException ex)
             {
                 TryDelete(zipPath);
                 Logger.Warn(ex, "[Update] falha de IO durante download");
+                UpdateSession.RecordIoFailure("download-write");
                 return DownloadResult.IoError;
             }
             catch (Exception ex)

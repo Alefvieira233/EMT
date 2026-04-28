@@ -150,6 +150,38 @@ o checksums.txt no `gh release upload`.
 | Pre-release publicado como `latest` | `release.PreRelease == true` ignorado por padrao em `UpdateCheckService`. Usuario interessado em rc.X precisa baixar manualmente. |
 | Downgrade malicioso (versao remota < local) | `UpdateCheckService` retorna `NoUpdate` + log warn quando comparacao SemVer eh negativa. |
 | Multiplos markers em pending/ (race com download anterior) | `UpdateApplier` aplica o de maior versao, deleta os outros. |
+| Antivirus/disco cheio bloqueia extracao/swap/escrita | Try/catch em cada IO em `UpdateDownloader` e `UpdateApplier`; cada falha de `IOException` registra em <c>UpdateSession.RecordIoFailure(context)</c>. Apos N=2 falhas consecutivas na mesma sessao, marca <c>UpdateSession.IsDisabledForSession=true</c> (in-memory, nao persistido). `UpdateCheckService` respeita esse flag e retorna `Unknown` direto, evitando spam de log e gasto de rate limit. Reset apenas via reboot do Revit (intencional — forca usuario a resolver o problema antes de re-tentar). Log com mensagem acionavel orientando whitelist em antivirus / liberar disco. |
+
+## Decisoes adicionais registradas
+
+### Sem rollback em v1.7.x
+
+Apos swap bem-sucedido, `.bak\` eh deletado. Usuarios sempre na versao N
+mais recente — nao mantemos o backup nem na sessao corrente, nem persistido
+em disco para "voltar pra versao anterior". Razoes:
+
+- Cobertura: o caminho de rollback teria que lidar com migracao de schema
+  de privacy.json, license.json e settings.json (os 3 arquivos do
+  `%LocalAppData%\FerramentaEMT\` que evoluem entre versoes). Esforco
+  desproporcional ao caso de uso.
+- Mitigacao: usuario insatisfeito desinstala via Painel de Controle e
+  baixa a versao anterior manualmente em github.com/.../releases. Verbose
+  mas resolve. Re-avaliar em v2.0.0 se houver demanda real (multiplos
+  bugs reportados de "regressao quebrou meu workflow").
+
+### `checksums.txt` vale a partir de v1.7.0
+
+`Build-SetupExe.ps1` so passou a gerar `checksums.txt` neste PR (v1.7.0
+em diante). **Nao retroagir** para v1.6.0 — re-publicar release antiga
+com asset novo eh mais arriscado que o ganho. Update check
+`v1.6.0 -> v1.7.0` funciona porque v1.7.0 publica o asset; o caminho
+`v1.7.x -> v1.7.y` em diante sempre tera o asset disponivel.
+
+Trade-off: usuarios em v1.6.0 que clicarem "Verificar atualizacoes" vao
+funcionar (porque a versao **remota**, v1.7.0, tem o checksums.txt).
+Mas se aparecer uma demanda hipotetica de "v1.6.1 emergencial" antes
+de v1.7.0 sair, a release tem que ser feita manualmente sem suporte
+a auto-update — caso pouco provavel; quando surgir, decidir caso-a-caso.
 
 ## Validacao
 

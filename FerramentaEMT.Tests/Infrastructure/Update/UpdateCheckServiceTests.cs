@@ -10,8 +10,16 @@ using Xunit;
 
 namespace FerramentaEMT.Tests.Infrastructure.Update
 {
+    [Collection("UpdateSession")]
     public class UpdateCheckServiceTests
     {
+        public UpdateCheckServiceTests()
+        {
+            // UpdateSession eh estatica — garantir limpeza antes de cada teste
+            UpdateSession.Reset();
+        }
+
+
         private static readonly DateTime FixedNow = new DateTime(2026, 4, 27, 12, 0, 0, DateTimeKind.Utc);
 
         private static UpdateCheckService BuildService(
@@ -70,6 +78,23 @@ namespace FerramentaEMT.Tests.Infrastructure.Update
 
             result.Outcome.Should().Be(UpdateCheckOutcome.ConsentRequired);
             provider.Verify(p => p.GetLatestReleaseAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SessionDisabled_retorna_Unknown_sem_chamar_provider_nem_store()
+        {
+            // Simula 2 falhas previas de IO nesta sessao
+            UpdateSession.RecordIoFailure("test");
+            UpdateSession.RecordIoFailure("test");
+
+            Mock<IGitHubReleaseProvider> provider = new Mock<IGitHubReleaseProvider>();
+            Mock<IPrivacySettingsStore> store = new Mock<IPrivacySettingsStore>();
+
+            UpdateCheckResult result = await BuildService(provider, store).CheckAsync(CancellationToken.None);
+
+            result.Outcome.Should().Be(UpdateCheckOutcome.Unknown);
+            provider.Verify(p => p.GetLatestReleaseAsync(It.IsAny<CancellationToken>()), Times.Never);
+            store.Verify(s => s.Load(), Times.Never);
         }
 
         [Fact]

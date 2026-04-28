@@ -56,6 +56,13 @@ namespace FerramentaEMT.Infrastructure.Update
         /// </summary>
         public async Task<UpdateCheckResult> CheckAsync(CancellationToken ct)
         {
+            // Sessao desabilitada por falhas consecutivas de IO (antivirus, disco cheio)
+            // — pula tudo. Reset so via reboot.
+            if (UpdateSession.IsDisabledForSession)
+            {
+                return UpdateCheckResult.Unknown();
+            }
+
             PrivacySettings settings = _settingsStore.Load();
 
             if (settings.AutoUpdate == ConsentState.Unset)

@@ -151,6 +151,8 @@
              Link="LinkedSources\Infrastructure\Update\SemVerComparer.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateLog.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateLog.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateSession.cs"
+             Link="LinkedSources\Infrastructure\Update\UpdateSession.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateState.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateState.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\GitHubRelease.cs"
