@@ -89,17 +89,32 @@
 
         <!-- Botoes -->
         <Border Grid.Row="4" Style="{StaticResource ActionBarBorder}" Margin="-20,16,-20,-20">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="btnFechar"
-                        Content="Fechar"
-                        Width="100"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        x:Name="btnVerificarAtualizacoes"
+                        Content="Verificar atualizacoes"
+                        Width="180"
                         Style="{StaticResource SecondaryActionButton}"
-                        Margin="0,0,8,0"/>
-                <Button x:Name="btnAtivar"
-                        Content="Ativar"
-                        Width="120"
-                        Style="{StaticResource PrimaryActionButton}"/>
-            </StackPanel>
+                        HorizontalAlignment="Left"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="btnFechar"
+                            Content="Fechar"
+                            Width="100"
+                            Style="{StaticResource SecondaryActionButton}"
+                            Margin="0,0,8,0"/>
+                    <Button x:Name="btnAtivar"
+                            Content="Ativar"
+                            Width="120"
+                            Style="{StaticResource PrimaryActionButton}"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
