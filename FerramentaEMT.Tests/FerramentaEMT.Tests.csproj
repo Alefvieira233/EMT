@@ -186,6 +186,10 @@
     <Compile Include="..\FerramentaEMT\Infrastructure\Privacy\PrivacyJson.cs"
              Link="LinkedSources\Infrastructure\Privacy\PrivacyJson.cs" />
 
+    <!-- v1.7.0 PR-3: Crash reporting via Sentry — helpers puros (sem Revit, sem rede) -->
+    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryDsnProvider.cs"
+             Link="LinkedSources\Infrastructure\CrashReporting\SentryDsnProvider.cs" />
+
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
              Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />
