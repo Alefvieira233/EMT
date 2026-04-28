@@ -102,5 +102,12 @@
 	       Sentry.AspNetCore / Sentry.Serilog / Sentry.Profiling: nosso plugin
 	       nao eh web e o Logger continua desacoplado. -->
 	  <PackageReference Include="Sentry" Version="5.6.0" />
+	  <!-- v1.7.0 PR-4 (P0.6): telemetria de uso via PostHog. Pin exato
+	       (sem range). Default endpoint eu.posthog.com (LGPD-friendly,
+	       override via EMT_POSTHOG_HOST). NAO usar PostHog.AspNetCore:
+	       nosso plugin nao eh web. NAO usar feature flags / A/B testing
+	       nesta release (escopo creep). Ver ADR-008 §6 para versao final
+	       e regra de fallback. -->
+	  <PackageReference Include="PostHog" Version="2.5.0" />
 	</ItemGroup>
 </Project>

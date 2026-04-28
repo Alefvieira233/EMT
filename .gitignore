@@ -93,6 +93,14 @@ license.secret
 # license.secret. Ver ADR-007 §Operational Runbook.
 sentry.dsn
 *.sentry.dsn
+# API key do PostHog — mesmo padrao do sentry.dsn. Carregada em runtime
+# via env var EMT_POSTHOG_API_KEY ou arquivo em %LocalAppData%. Ver
+# ADR-008 §Operational Runbook.
+posthog.apikey
+*.posthog.apikey
+# Session ID anonimo da telemetria — UUID v4 persistido por instalacao.
+# Local-only, nao deve ser versionado.
+session-id.json
 
 # --- Relatorios de comparacao (apoio local) ---
 comparacao-victor/
