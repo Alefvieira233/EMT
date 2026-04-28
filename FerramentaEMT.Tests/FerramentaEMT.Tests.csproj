@@ -146,9 +146,29 @@
     <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapResultado.cs"
              Link="LinkedSources\Models\PF\PfTwoPileCapResultado.cs" />
 
-    <!-- v1.7.0: Auto-update (PR-2) — helpers puros (sem Revit, sem rede) -->
+    <!-- v1.7.0: Auto-update (PR-2) — helpers puros (sem Revit, sem rede, sem Logger) -->
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\SemVerComparer.cs"
              Link="LinkedSources\Infrastructure\Update\SemVerComparer.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateLog.cs"
+             Link="LinkedSources\Infrastructure\Update\UpdateLog.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateState.cs"
+             Link="LinkedSources\Infrastructure\Update\UpdateState.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\GitHubRelease.cs"
+             Link="LinkedSources\Infrastructure\Update\GitHubRelease.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\GitHubAsset.cs"
+             Link="LinkedSources\Infrastructure\Update\GitHubAsset.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\IGitHubReleaseProvider.cs"
+             Link="LinkedSources\Infrastructure\Update\IGitHubReleaseProvider.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateCheckService.cs"
+             Link="LinkedSources\Infrastructure\Update\UpdateCheckService.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Privacy\ConsentState.cs"
+             Link="LinkedSources\Models\Privacy\ConsentState.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Privacy\PrivacySettings.cs"
+             Link="LinkedSources\Models\Privacy\PrivacySettings.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Privacy\IPrivacySettingsStore.cs"
+             Link="LinkedSources\Infrastructure\Privacy\IPrivacySettingsStore.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Privacy\PrivacyJson.cs"
+             Link="LinkedSources\Infrastructure\Privacy\PrivacyJson.cs" />
 
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
