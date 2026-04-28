@@ -211,6 +211,12 @@
          testavel via xUnit. SentryReporter usa ISentryHubFacade mockado
          via Moq nos testes. -->
 
+    <!-- v1.7.0 PR-4: Telemetry via PostHog — helpers puros (sem Revit, sem rede) -->
+    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogApiKeyProvider.cs"
+             Link="LinkedSources\Infrastructure\Telemetry\PostHogApiKeyProvider.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogHostProvider.cs"
+             Link="LinkedSources\Infrastructure\Telemetry\PostHogHostProvider.cs" />
+
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
              Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />
