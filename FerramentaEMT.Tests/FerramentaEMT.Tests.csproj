@@ -146,6 +146,10 @@
     <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapResultado.cs"
              Link="LinkedSources\Models\PF\PfTwoPileCapResultado.cs" />
 
+    <!-- v1.7.0: Auto-update (PR-2) — helpers puros (sem Revit, sem rede) -->
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\SemVerComparer.cs"
+             Link="LinkedSources\Infrastructure\Update\SemVerComparer.cs" />
+
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
              Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />
