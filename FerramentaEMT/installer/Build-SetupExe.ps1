@@ -103,6 +103,87 @@ if (-not (Test-Path -LiteralPath $publishedExePath)) {
 
 Copy-Item -LiteralPath $publishedExePath -Destination $setupExePath -Force
 
+# ===========================================================================
+# v1.7.0 (PR-5 P0.1): code signing parametrizado via signtool.
+# Comportamento:
+#   - Se EMT_CODESIGN_CERT_PFX estiver setado E o arquivo existir, assina.
+#   - Senao, gera setup.exe NAO-assinado com warning visivel (modo dev).
+# Variaveis suportadas (env):
+#   - EMT_CODESIGN_CERT_PFX        : caminho do .pfx
+#   - EMT_CODESIGN_CERT_PASSWORD   : senha do .pfx (NUNCA logada)
+#   - EMT_CODESIGN_TIMESTAMP_URL   : timestamp server (default DigiCert)
+#   - EMT_CODESIGN_SIGNTOOL        : caminho explicito do signtool.exe
+#                                    (auto-discovery se ausente)
+# Documentacao: docs/CODE-SIGNING.md + docs/ADR/009-code-signing.md.
+# ===========================================================================
+
+function Resolve-Signtool {
+    param([string]$ExplicitPath)
+
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitPath) -and (Test-Path -LiteralPath $ExplicitPath)) {
+        return $ExplicitPath
+    }
+
+    # Auto-discovery em Windows Kits 10. Procura a versao mais recente
+    # do signtool.exe em x64 (preferido) ou x86 (fallback).
+    $kitsRoots = @(
+        "${env:ProgramFiles(x86)}\Windows Kits\10\bin",
+        "${env:ProgramFiles}\Windows Kits\10\bin"
+    )
+    foreach ($root in $kitsRoots) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        $candidates = Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending
+        foreach ($dir in $candidates) {
+            foreach ($arch in @("x64", "x86")) {
+                $candidate = Join-Path $dir.FullName "$arch\signtool.exe"
+                if (Test-Path -LiteralPath $candidate) { return $candidate }
+            }
+        }
+    }
+    return $null
+}
+
+$certPath = $env:EMT_CODESIGN_CERT_PFX
+$certPassword = $env:EMT_CODESIGN_CERT_PASSWORD
+$timestampUrl = $env:EMT_CODESIGN_TIMESTAMP_URL
+if ([string]::IsNullOrWhiteSpace($timestampUrl)) {
+    $timestampUrl = "http://timestamp.digicert.com"
+}
+
+if (-not [string]::IsNullOrWhiteSpace($certPath) -and (Test-Path -LiteralPath $certPath)) {
+    $signtool = Resolve-Signtool -ExplicitPath $env:EMT_CODESIGN_SIGNTOOL
+    if (-not $signtool) {
+        Write-Warning "[Signing] signtool.exe nao encontrado. Instale Windows SDK ou defina EMT_CODESIGN_SIGNTOOL."
+        Write-Warning "[Signing] setup.exe ficara NAO-ASSINADO."
+    } else {
+        Write-Host "[Signing] Certificate found at $certPath. Signing setup.exe via $signtool..."
+        $signArgs = @(
+            "sign",
+            "/f", $certPath,
+            "/tr", $timestampUrl,
+            "/td", "sha256",
+            "/fd", "sha256",
+            "/v",
+            $setupExePath
+        )
+        if (-not [string]::IsNullOrWhiteSpace($certPassword)) {
+            # Senha eh inserida ANTES de /tr na lista de args para evitar log
+            # acidental por shell tracing. Nao logamos $signArgs em hipotese alguma.
+            $signArgs = @("sign", "/f", $certPath, "/p", $certPassword, "/tr", $timestampUrl, "/td", "sha256", "/fd", "sha256", "/v", $setupExePath)
+        }
+        & $signtool @signArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "signtool falhou com codigo $LASTEXITCODE"
+        }
+        Write-Host "[Signing] OK — setup.exe assinado com timestamp $timestampUrl"
+    }
+} else {
+    Write-Warning "[Signing] EMT_CODESIGN_CERT_PFX nao definido ou arquivo ausente."
+    Write-Warning "[Signing] setup.exe sera gerado NAO-ASSINADO (modo dev)."
+    Write-Warning "[Signing] SmartScreen vai bloquear em PCs novos. Ver docs/CODE-SIGNING.md."
+}
+
 # v1.7.0 (PR-2 auto-update): gerar checksums.txt no formato sha256sum
 # (canonico: <hex64>  <filename>). Asset consumido pelo UpdateDownloader
 # para validar SHA256 do .zip baixado antes de extrair.
