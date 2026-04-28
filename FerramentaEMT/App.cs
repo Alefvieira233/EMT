@@ -2,9 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Autodesk.Revit.UI;
 using System.Windows.Media.Imaging;
 using FerramentaEMT.Infrastructure;
+using FerramentaEMT.Infrastructure.Privacy;
+using FerramentaEMT.Infrastructure.Update;
 using FerramentaEMT.Licensing;
 using FerramentaEMT.Utils;
 
@@ -12,6 +16,10 @@ namespace FerramentaEMT
 {
     public class App : IExternalApplication
     {
+        // PR-2 (auto-update): expoe o resultado da ultima verificacao em background
+        // para a UI consumir quando usuario clicar num comando.
+        internal static UpdateCheckResult LastUpdateCheckResult { get; set; }
+
         public Result OnStartup(UIControlledApplication application)
         {
             // Sprint 1: inicializar logging estruturado ANTES de qualquer coisa
@@ -19,12 +27,37 @@ namespace FerramentaEMT
             Logger.Initialize();
             Logger.Info("App.OnStartup — registrando ribbon");
 
+            // PR-2: wirar UpdateLog facade para o Logger real (subsistema de Update
+            // foi escrito sem dep de Serilog para ser testavel em xUnit)
+            WireUpdateLog();
+
+            // PR-2 (auto-update): aplicar update pendente ANTES de carregar qualquer
+            // componente do plugin (CLR ainda nao carregou Services, Commands, etc).
+            // Falha aqui nao impede boot — apenas marca retry para o proximo startup.
+            try
+            {
+                ApplyResult applyResult = new UpdateApplier().ApplyPendingIfAny();
+                if (applyResult == ApplyResult.Applied)
+                {
+                    Logger.Info("[Update] aplicado no boot — recarregando do disco");
+                }
+            }
+            catch (Exception updEx)
+            {
+                Logger.Warn(updEx, "[Update] falha ao aplicar pending — boot continua");
+            }
+
             // 1.3.0: captura crashes nao-observados em arquivo local (futuro: Sentry)
             CrashReporter.Initialize();
 
             // 1.0.0: inicializar sistema de licenca (cria trial na primeira execucao)
             try { LicenseService.Initialize(); }
             catch (Exception licEx) { Logger.Error(licEx, "[App] LicenseService.Initialize falhou — continuar mesmo assim"); }
+
+            // PR-2: disparar verificacao de update em background. NAO bloqueia o boot.
+            // Resultado fica em LastUpdateCheckResult; UI consome quando usuario
+            // interage com o plugin pela primeira vez.
+            StartUpdateCheckBackground();
 
             // 1.3.0: logar fonte do segredo HMAC
             try
@@ -697,6 +730,55 @@ namespace FerramentaEMT
             }
 
             return null;
+        }
+
+        // ===========================================================
+        // PR-2 — Auto-update helpers
+        // ===========================================================
+
+        /// <summary>
+        /// Conecta o UpdateLog facade (puro, no test csproj) ao Logger real
+        /// (Serilog). Chamado uma vez no boot.
+        /// </summary>
+        private static void WireUpdateLog()
+        {
+            UpdateLog.Debug = (template, args) => Logger.Debug(template, args);
+            UpdateLog.Info = (template, args) => Logger.Info(template, args);
+            UpdateLog.Warn = (template, args) => Logger.Warn(template, args);
+            UpdateLog.WarnException = (ex, template, args) => Logger.Warn(ex, template, args);
+            UpdateLog.ErrorException = (ex, template, args) => Logger.Error(ex, template, args);
+        }
+
+        /// <summary>
+        /// Dispara <see cref="UpdateCheckService.CheckAsync"/> em thread separada
+        /// (Task.Run). NAO toca Revit API — checagem eh pura HTTP+JSON+filesystem.
+        /// Falha NUNCA pode impedir boot do plugin: try/catch raiz na thread.
+        /// </summary>
+        private static void StartUpdateCheckBackground()
+        {
+            string version = typeof(App).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+
+            // Fire-and-forget; resultado fica em App.LastUpdateCheckResult
+            Task.Run(async () =>
+            {
+                try
+                {
+                    GitHubReleaseProvider provider = new GitHubReleaseProvider("Alefvieira233", "EMT");
+                    PrivacySettingsStore store = new PrivacySettingsStore();
+                    UpdateCheckService service = new UpdateCheckService(provider, store, version);
+
+                    using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
+                    {
+                        UpdateCheckResult result = await service.CheckAsync(cts.Token).ConfigureAwait(false);
+                        LastUpdateCheckResult = result;
+                        Logger.Info("[Update] verificacao em background concluida: {Outcome}", result.Outcome);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "[Update] excecao na thread de verificacao — boot nao afetado");
+                }
+            });
         }
     }
 }

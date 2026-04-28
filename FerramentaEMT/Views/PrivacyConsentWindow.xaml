@@ -1,0 +1,111 @@
+<Window x:Class="FerramentaEMT.Views.PrivacyConsentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Privacidade - FerramentaEMT"
+        Width="640"
+        MinWidth="560" MinHeight="380"
+        MaxHeight="600"
+        SizeToContent="Height"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Privacidade e coleta de dados"
+                       Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Para melhorar o produto, a FerramentaEMT pode realizar as seguintes acoes. Voce escolhe o que permitir."
+                       Style="{StaticResource DialogSubtitleText}"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Lista de toggles -->
+        <GroupBox Grid.Row="1" Header="Permissoes">
+            <StackPanel>
+                <!-- PR-2: AUTO-UPDATE (ativo nesta versao) -->
+                <CheckBox x:Name="cbAutoUpdate"
+                          Margin="0 6 0 6"
+                          IsChecked="True">
+                    <StackPanel>
+                        <TextBlock Text="Verificar atualizacoes automaticamente"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Consulta api.github.com 1x/dia para detectar novas versoes. Voce confirma manualmente antes de baixar e aplicar."
+                                   Style="{StaticResource SectionBodyText}"
+                                   TextWrapping="Wrap" Margin="0 2 0 0"/>
+                    </StackPanel>
+                </CheckBox>
+
+                <!--
+                    PR-3 (FUTURO): relatorio de erros via Sentry. CheckBox dormente,
+                    sera ativado em release v1.8.0+. Estrutura ja pronta para nao
+                    refazer XAML.
+
+                <CheckBox x:Name="cbCrashReports"
+                          Margin="0 6 0 6"
+                          IsChecked="False">
+                    <StackPanel>
+                        <TextBlock Text="Enviar relatorios anonimos de erros (Sentry)"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Stack traces de crashes do plugin sao enviados ao Sentry. NUNCA inclui email, nome de arquivo do projeto ou dados pessoais."
+                                   Style="{StaticResource SectionBodyText}"
+                                   TextWrapping="Wrap" Margin="0 2 0 0"/>
+                    </StackPanel>
+                </CheckBox>
+                -->
+
+                <!--
+                    PR-4 (FUTURO): telemetria de uso via PostHog. CheckBox dormente.
+
+                <CheckBox x:Name="cbTelemetry"
+                          Margin="0 6 0 6"
+                          IsChecked="False">
+                    <StackPanel>
+                        <TextBlock Text="Enviar uso anonimo de comandos (PostHog)"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Quais botoes voce usa, com que frequencia, quanto tempo levam. Sem identificacao pessoal."
+                                   Style="{StaticResource SectionBodyText}"
+                                   TextWrapping="Wrap" Margin="0 2 0 0"/>
+                    </StackPanel>
+                </CheckBox>
+                -->
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Disclaimer -->
+        <TextBlock Grid.Row="2"
+                   Margin="0 12 0 0"
+                   TextWrapping="Wrap"
+                   Style="{StaticResource SectionBodyText}"
+                   Text="Voce pode mudar essas escolhas a qualquer momento na janela de Licenca. Nenhum dado pessoal (nome, email, projetos) eh coletado por estas opcoes."/>
+
+        <!-- Botoes -->
+        <Border Grid.Row="3" Style="{StaticResource ActionBarBorder}" Margin="-20,16,-20,-20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnNegarTudo"
+                        Content="Negar tudo"
+                        Width="120"
+                        Style="{StaticResource SecondaryActionButton}"
+                        Margin="0,0,8,0"/>
+                <Button x:Name="btnSalvar"
+                        Content="Salvar"
+                        Width="100"
+                        Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
