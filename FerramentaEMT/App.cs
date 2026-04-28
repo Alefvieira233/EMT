@@ -5,12 +5,17 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Events;
+using System.Windows;
 using System.Windows.Media.Imaging;
 using FerramentaEMT.Infrastructure;
+using FerramentaEMT.Infrastructure.CrashReporting;
 using FerramentaEMT.Infrastructure.Privacy;
 using FerramentaEMT.Infrastructure.Update;
 using FerramentaEMT.Licensing;
+using FerramentaEMT.Models.Privacy;
 using FerramentaEMT.Utils;
+using FerramentaEMT.Views;
 
 namespace FerramentaEMT
 {
@@ -47,8 +52,22 @@ namespace FerramentaEMT
                 Logger.Warn(updEx, "[Update] falha ao aplicar pending — boot continua");
             }
 
-            // 1.3.0: captura crashes nao-observados em arquivo local (futuro: Sentry)
+            // 1.3.0: captura crashes nao-observados em arquivo local
             CrashReporter.Initialize();
+
+            // PR-3 (P0.3): crash reporting REMOTO via Sentry. DEPOIS do
+            // CrashReporter (que ja escreveu o handler de unhandled), e
+            // ANTES de LicenseService — assim crashes do proprio License
+            // tambem sao capturados. SentryReporter eh idempotente e
+            // silently no-op em DSN ausente / consent denied / falha de Init.
+            SentryStartupWiring.InitializeServices(
+                privacyStore: new PrivacySettingsStore(),
+                hubFactory: () => new SentryHubFacade(),
+                licenseStateResolver: ResolveLicenseStateForSentry,
+                logInfo: msg => Logger.Info(msg),
+                logInfoTemplate: (template, args) => Logger.Info(template, args),
+                logWarn: (ex, msg) => Logger.Warn(ex, msg),
+                releaseResolver: () => typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown");
 
             // 1.0.0: inicializar sistema de licenca (cria trial na primeira execucao)
             try { LicenseService.Initialize(); }
@@ -58,6 +77,14 @@ namespace FerramentaEMT
             // Resultado fica em LastUpdateCheckResult; UI consome quando usuario
             // interage com o plugin pela primeira vez.
             StartUpdateCheckBackground();
+
+            // PR-3 (P0.3): se a versao do consent persistido for menor que a
+            // do codigo (PR-2 → 1, PR-3 → 2), reabrir PrivacyConsentWindow no
+            // primeiro Idling — NAO bloqueia o boot do Revit (modal em
+            // OnStartup teria esse risco). Self-detach atomic: o handler
+            // se desinscreve PRIMEIRO, sem flag externa.
+            try { application.Idling += OnFirstIdling; }
+            catch (Exception idlEx) { Logger.Warn(idlEx, "[Privacy] falha ao registrar Idling handler"); }
 
             // 1.3.0: logar fonte do segredo HMAC
             try
@@ -594,6 +621,12 @@ namespace FerramentaEMT
         public Result OnShutdown(UIControlledApplication application)
         {
             Logger.Info("App.OnShutdown");
+
+            // PR-3: drena eventos pendentes do Sentry antes de fechar (max 2s).
+            // No-op silencioso se Sentry nao foi inicializado.
+            try { SentryReporter.Flush(2000); }
+            catch (Exception flushEx) { Logger.Warn(flushEx, "[Sentry] Flush em OnShutdown falhou"); }
+
             RevitWindowThemeService.Shutdown();
             Logger.Shutdown();
             return Result.Succeeded;
@@ -730,6 +763,74 @@ namespace FerramentaEMT
             }
 
             return null;
+        }
+
+        // ===========================================================
+        // PR-3 — Crash reporting helpers
+        // ===========================================================
+
+        /// <summary>
+        /// Resolve o license state para o Sentry. Chamado lazy a CADA evento
+        /// (em SentryOptionsBuilder.BeforeSend), entao reflete o estado
+        /// corrente da licenca, nao o de boot. Try/catch raiz: nunca lanca.
+        /// </summary>
+        private static string ResolveLicenseStateForSentry()
+        {
+            try { return LicenseService.GetCurrentState().Status.ToString(); }
+            catch { return "Unknown"; }
+        }
+
+        /// <summary>
+        /// Handler do primeiro Idling event. Auto-desinscreve PRIMEIRO
+        /// (idempotencia atomica — sem flag externa) e entao verifica se
+        /// PrivacyConsentWindow precisa reabrir. Erros isolados em try/catch
+        /// pra nao deixar Revit num estado ruim.
+        /// </summary>
+        private void OnFirstIdling(object sender, IdlingEventArgs e)
+        {
+            UIApplication uiApp = sender as UIApplication;
+            if (uiApp != null)
+            {
+                uiApp.Idling -= OnFirstIdling;
+            }
+
+            try { EnsureConsentIfNeeded(); }
+            catch (Exception ex) { Logger.Warn(ex, "[Privacy] consent dialog falhou"); }
+        }
+
+        /// <summary>
+        /// Reabre a PrivacyConsentWindow se ConsentVersion persistido for
+        /// menor que CurrentConsentVersion do codigo. Preserva fields
+        /// transientes do PR-2 (LastUpdateCheckUtc, SkippedUpdateVersion).
+        /// </summary>
+        private static void EnsureConsentIfNeeded()
+        {
+            PrivacySettingsStore store = new PrivacySettingsStore();
+            PrivacySettings current = store.Load();
+
+            if (current.ConsentVersion >= PrivacyConsentWindow.CurrentConsentVersion)
+                return;
+
+            Logger.Info(
+                "[Privacy] reabrindo consent via Idling event (consent version: {Persisted} -> {Current})",
+                current.ConsentVersion, PrivacyConsentWindow.CurrentConsentVersion);
+
+            PrivacyConsentWindow consent = new PrivacyConsentWindow(current);
+            bool? result = consent.ShowDialog();
+            if (result == true && consent.Result != null)
+            {
+                // Preserva campos do PR-2 que a janela nao toca.
+                consent.Result.LastUpdateCheckUtc = current.LastUpdateCheckUtc;
+                consent.Result.SkippedUpdateVersion = current.SkippedUpdateVersion ?? string.Empty;
+                store.Save(consent.Result);
+                Logger.Info(
+                    "[Privacy] consent salvo (CrashReports={Crash}, AutoUpdate={Update})",
+                    consent.Result.CrashReports, consent.Result.AutoUpdate);
+                // Trade-off documentado no ADR-007: se usuario consentiu agora
+                // e Sentry ja inicializou como IsEnabled=false, ele fica desligado
+                // ate o proximo restart do Revit. SentryReporter eh idempotente
+                // e re-init nao eh suportado pra evitar state inconsistente do SDK.
+            }
         }
 
         // ===========================================================

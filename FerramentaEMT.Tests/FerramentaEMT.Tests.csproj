@@ -197,6 +197,8 @@
              Link="LinkedSources\Infrastructure\CrashReporting\SentryOptionsBuilder.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryReporter.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryReporter.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryStartupWiring.cs"
+             Link="LinkedSources\Infrastructure\CrashReporting\SentryStartupWiring.cs" />
     <!-- SentryHubFacade.cs (impl real do Sentry SDK) NAO eh linkado:
          depende de SentrySdk estatico que tem state global e nao eh
          testavel via xUnit. SentryReporter usa ISentryHubFacade mockado

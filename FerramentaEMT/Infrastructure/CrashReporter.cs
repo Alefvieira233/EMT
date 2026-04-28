@@ -2,16 +2,16 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using FerramentaEMT.Infrastructure.CrashReporting;
 
 namespace FerramentaEMT.Infrastructure
 {
     /// <summary>
     /// Captura excecoes nao observadas no plugin e as dumpa em arquivo local.
-    ///
-    /// Fase 4 do plano 100/100 preve integracao com Sentry.NET (remote crash
-    /// reporting). Esta classe e o skeleton: hoje ela ja capta crashes e
-    /// escreve em %LOCALAPPDATA%\FerramentaEMT\crashes\ — util para o usuario
-    /// anexar ao bug report mesmo sem backend remoto.
+    /// PR-3 (P0.3): apos gravar o dump local, encaminha o crash para o
+    /// SentryReporter (no-op silencioso se DSN ausente, consent denied,
+    /// ou Sentry indisponivel). Local crash dump continua sendo a fonte
+    /// primaria — Sentry eh COMPLEMENTO, nao substituto.
     ///
     /// Zero custo quando nao ha crashes. Inicializar em App.OnStartup apos
     /// o Logger.
@@ -26,11 +26,10 @@ namespace FerramentaEMT.Infrastructure
 
         /// <summary>
         /// Registra handlers globais de excecao. Idempotente.
-        ///
-        /// TODO (fase 4): se SENTRY_DSN estiver presente (env var ou
-        /// %LOCALAPPDATA%\FerramentaEMT\sentry.dsn), inicializar SentrySdk
-        /// e encaminhar os crashes. Package Sentry.NET nao esta referenciado
-        /// hoje — adicionar quando comecar a fase 4.
+        /// PR-3: SentryReporter eh ativado separadamente em
+        /// App.OnStartup (apos CrashReporter.Initialize). DumpCrash
+        /// encaminha o crash via SentryReporter.CaptureCrash quando
+        /// disponivel.
         /// </summary>
         public static void Initialize()
         {
@@ -115,6 +114,11 @@ namespace FerramentaEMT.Infrastructure
 
                 try { Logger.Error(ex, "[CrashReporter] crash ({Kind}) dump em {Path}", kind, path); }
                 catch { /* ignore */ }
+
+                // PR-3: forward para Sentry. No-op silencioso se DSN ausente,
+                // consent denied, ou Sentry indisponivel. NUNCA lanca.
+                try { SentryReporter.CaptureCrash(ex, kind); }
+                catch { /* defensivo: SentryReporter ja eh try/catch raiz */ }
             }
             catch
             {
