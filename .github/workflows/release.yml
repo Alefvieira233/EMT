@@ -1,0 +1,143 @@
+name: Release
+
+# Workflow de release v1.7.0+ (PR-5 P0.1):
+# Gera setup.exe assinado quando os secrets estao configurados;
+# senao, falha rapido com mensagem clara (NAO publicamos setup nao-assinado
+# em release oficial — apenas em build dev local).
+#
+# Disparo:
+#   - workflow_dispatch (manual via gh workflow run / UI)
+#   - tag push (v*.*.*) — quando Alef bumpar versao
+#
+# Pre-requisitos (configurar em repo Settings → Secrets and variables → Actions):
+#   - CODESIGN_CERT_BASE64        : .pfx convertido para base64 (`base64 -w0 cert.pfx`)
+#   - CODESIGN_CERT_PASSWORD      : senha do .pfx
+# Opcional:
+#   - CODESIGN_TIMESTAMP_URL      : timestamp server (default DigiCert)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: 'Build configuration'
+        required: false
+        default: 'Release'
+        type: choice
+        options:
+          - Release
+
+jobs:
+  build-signed-setup:
+    name: Build & Sign setup.exe
+    runs-on: windows-latest
+
+    permissions:
+      contents: read
+
+    env:
+      CI: 'true'
+      EMT_CODESIGN_TIMESTAMP_URL: ${{ secrets.CODESIGN_TIMESTAMP_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Validate signing secrets are configured
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CODESIGN_CERT_BASE64)) {
+            throw "CODESIGN_CERT_BASE64 secret not configured. Cannot sign setup.exe."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:CODESIGN_CERT_PASSWORD)) {
+            throw "CODESIGN_CERT_PASSWORD secret not configured. Cannot sign setup.exe."
+          }
+          Write-Host "[Release] Signing secrets present."
+        env:
+          CODESIGN_CERT_BASE64: ${{ secrets.CODESIGN_CERT_BASE64 }}
+          CODESIGN_CERT_PASSWORD: ${{ secrets.CODESIGN_CERT_PASSWORD }}
+
+      - name: Decode certificate to runner-local file
+        id: decode-cert
+        shell: pwsh
+        run: |
+          # Grava .pfx fora do workspace pra evitar inclusao em artifact por
+          # engano. Diretorio runner-local eh limpo apos o job.
+          $pfxPath = Join-Path $env:RUNNER_TEMP "emt-codesign.pfx"
+          $bytes = [Convert]::FromBase64String($env:CODESIGN_CERT_BASE64)
+          [System.IO.File]::WriteAllBytes($pfxPath, $bytes)
+          # Sanity check: o arquivo deve ser parseavel como certificado.
+          # ImportPfx lanca se a senha estiver errada — falha rapido aqui
+          # em vez de propagar pro signtool.
+          $certPwd = ConvertTo-SecureString -String $env:CODESIGN_CERT_PASSWORD -AsPlainText -Force
+          try {
+              $cert = Get-PfxCertificate -FilePath $pfxPath -Password $certPwd -ErrorAction Stop
+              Write-Host "[Release] Certificate parsed OK. Subject: $($cert.Subject)"
+              Write-Host "[Release] Expires: $($cert.NotAfter)"
+          } catch {
+              throw "Failed to parse .pfx with provided password: $_"
+          }
+          # Expoe path pro proximo step via env var (NAO output, que poderia
+          # vazar em log se conteudo fosse impresso).
+          "EMT_CODESIGN_CERT_PFX=$pfxPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+        env:
+          CODESIGN_CERT_BASE64: ${{ secrets.CODESIGN_CERT_BASE64 }}
+          CODESIGN_CERT_PASSWORD: ${{ secrets.CODESIGN_CERT_PASSWORD }}
+
+      - name: Build setup.exe (signed)
+        shell: pwsh
+        working-directory: FerramentaEMT
+        run: |
+          .\Gerar-Setup.bat
+          if ($LASTEXITCODE -ne 0) { throw "Gerar-Setup.bat exit $LASTEXITCODE" }
+        env:
+          # PFX path injetado no step anterior; senha via secret ainda.
+          # signtool.exe auto-discovery em Windows Kits 10 (já presente no runner).
+          EMT_CODESIGN_CERT_PASSWORD: ${{ secrets.CODESIGN_CERT_PASSWORD }}
+
+      - name: Verify signature
+        shell: pwsh
+        working-directory: FerramentaEMT
+        run: |
+          $setupExe = Get-ChildItem -LiteralPath "artifacts\installer" -Filter "*Setup.exe" |
+              Select-Object -First 1
+          if (-not $setupExe) { throw "setup.exe not found in artifacts/installer/" }
+          # signtool verify: /pa = use Authenticode policy; /v = verbose.
+          # Falha se nao-assinado, hash quebrado, cert root nao confiavel,
+          # ou timestamp invalido.
+          $signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+              Where-Object { $_.FullName -like "*x64*" } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found on runner" }
+          & $signtool.FullName verify /pa /v $setupExe.FullName
+          if ($LASTEXITCODE -ne 0) { throw "signtool verify exit $LASTEXITCODE — assinatura invalida" }
+          Write-Host "[Release] Signature OK on $($setupExe.Name)"
+
+      - name: Cleanup PFX
+        if: always()
+        shell: pwsh
+        run: |
+          # Remove .pfx mesmo em failure pra nao deixar credencial em runner
+          # (runners GitHub-hosted sao destruidos apos o job, mas paranoia
+          # ajuda em self-hosted future).
+          if (Test-Path -LiteralPath $env:EMT_CODESIGN_CERT_PFX) {
+              Remove-Item -LiteralPath $env:EMT_CODESIGN_CERT_PFX -Force
+              Write-Host "[Release] PFX removed from runner."
+          }
+
+      - name: Upload signed setup as artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: signed-setup
+          path: |
+            FerramentaEMT/artifacts/installer/*Setup.exe
+            FerramentaEMT/artifacts/installer/checksums.txt
+          if-no-files-found: error
