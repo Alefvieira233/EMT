@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using System.Windows.Media.Imaging;
 using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Infrastructure.CrashReporting;
 using FerramentaEMT.Infrastructure.Privacy;
+using FerramentaEMT.Infrastructure.Telemetry;
 using FerramentaEMT.Infrastructure.Update;
 using FerramentaEMT.Licensing;
 using FerramentaEMT.Models.Privacy;
@@ -24,6 +26,17 @@ namespace FerramentaEMT
         // PR-2 (auto-update): expoe o resultado da ultima verificacao em background
         // para a UI consumir quando usuario clicar num comando.
         internal static UpdateCheckResult LastUpdateCheckResult { get; set; }
+
+        // PR-4: HttpClient compartilhado pelo TelemetryReporter. Lazy + singleton
+        // pra evitar socket exhaustion (DefaultConnectionLimit gerenciado pelo CLR).
+        private static readonly Lazy<HttpClient> _telemetryHttp = new Lazy<HttpClient>(
+            () =>
+            {
+                HttpClient client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(10);
+                return client;
+            },
+            LazyThreadSafetyMode.ExecutionAndPublication);
 
         public Result OnStartup(UIControlledApplication application)
         {
@@ -39,12 +52,21 @@ namespace FerramentaEMT
             // PR-2 (auto-update): aplicar update pendente ANTES de carregar qualquer
             // componente do plugin (CLR ainda nao carregou Services, Commands, etc).
             // Falha aqui nao impede boot — apenas marca retry para o proximo startup.
+            // PR-4: ao detectar Applied, agendamos a emissao do evento
+            // 'update.applied' para depois que TelemetryReporter inicializar.
+            string updateAppliedFromVersion = null;
+            string updateAppliedToVersion = null;
+            int updateAppliedAttempts = 0;
             try
             {
-                ApplyResult applyResult = new UpdateApplier().ApplyPendingIfAny();
+                UpdateApplier applier = new UpdateApplier();
+                ApplyResult applyResult = applier.ApplyPendingIfAny();
                 if (applyResult == ApplyResult.Applied)
                 {
                     Logger.Info("[Update] aplicado no boot — recarregando do disco");
+                    updateAppliedFromVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown";
+                    updateAppliedToVersion = applier.LastVersionAttempted ?? "unknown";
+                    updateAppliedAttempts = applier.LastAttemptCount;
                 }
             }
             catch (Exception updEx)
@@ -63,7 +85,7 @@ namespace FerramentaEMT
             SentryStartupWiring.InitializeServices(
                 privacyStore: new PrivacySettingsStore(),
                 hubFactory: () => new SentryHubFacade(),
-                licenseStateResolver: ResolveLicenseStateForSentry,
+                licenseStateResolver: ResolveLicenseStateForReporting,
                 logInfo: msg => Logger.Info(msg),
                 logInfoTemplate: (template, args) => Logger.Info(template, args),
                 logWarn: (ex, msg) => Logger.Warn(ex, msg),
@@ -72,6 +94,35 @@ namespace FerramentaEMT
             // 1.0.0: inicializar sistema de licenca (cria trial na primeira execucao)
             try { LicenseService.Initialize(); }
             catch (Exception licEx) { Logger.Error(licEx, "[App] LicenseService.Initialize falhou — continuar mesmo assim"); }
+
+            // PR-4 (P0.6): telemetria de uso via PostHog (HTTP-direct).
+            // DEPOIS de LicenseService.Initialize porque license.state_checked
+            // emitido pelo proprio Init precisa do status real da licenca como
+            // super property. Idempotente; silently no-op em DSN ausente,
+            // consent denied, ou SDK falha.
+            TelemetryStartupWiring.InitializeServices(
+                privacyStore: new PrivacySettingsStore(),
+                clientFactory: BuildPostHogTelemetryClient,
+                licenseStateResolver: ResolveLicenseStateForReporting,
+                logInfo: msg => Logger.Info(msg),
+                logInfoTemplate: (template, args) => Logger.Info(template, args),
+                logWarn: (ex, msg) => Logger.Warn(ex, msg),
+                releaseResolver: () => typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown");
+
+            // PR-4: emite update.applied se um update foi aplicado neste boot.
+            // Telemetry ja inicializou (no-op silencioso se consent/api key
+            // ausente).
+            if (!string.IsNullOrEmpty(updateAppliedToVersion))
+            {
+                TelemetryReporter.Track(new TelemetryEvent(
+                    SamplingDecider.EventUpdateApplied,
+                    new Dictionary<string, object>
+                    {
+                        { "from_version", updateAppliedFromVersion ?? "unknown" },
+                        { "to_version", updateAppliedToVersion },
+                        { "attempts", updateAppliedAttempts },
+                    }));
+            }
 
             // PR-2: disparar verificacao de update em background. NAO bloqueia o boot.
             // Resultado fica em LastUpdateCheckResult; UI consome quando usuario
@@ -622,6 +673,11 @@ namespace FerramentaEMT
         {
             Logger.Info("App.OnShutdown");
 
+            // PR-4: drena eventos pendentes da telemetria. PostHogHttpTelemetryClient
+            // usa fire-and-forget sem batch buffer, entao Flush eh no-op imediato.
+            try { TelemetryReporter.Flush(2000); }
+            catch (Exception flushEx) { Logger.Warn(flushEx, "[Telemetry] Flush em OnShutdown falhou"); }
+
             // PR-3: drena eventos pendentes do Sentry antes de fechar (max 2s).
             // No-op silencioso se Sentry nao foi inicializado.
             try { SentryReporter.Flush(2000); }
@@ -766,18 +822,41 @@ namespace FerramentaEMT
         }
 
         // ===========================================================
-        // PR-3 — Crash reporting helpers
+        // PR-3 / PR-4 — Reporting helpers (compartilhados Sentry+Telemetry)
         // ===========================================================
 
         /// <summary>
-        /// Resolve o license state para o Sentry. Chamado lazy a CADA evento
-        /// (em SentryOptionsBuilder.BeforeSend), entao reflete o estado
-        /// corrente da licenca, nao o de boot. Try/catch raiz: nunca lanca.
+        /// Resolve o license state para Sentry e Telemetria. Chamado lazy a
+        /// CADA evento — reflete o estado corrente da licenca, nao o de boot.
+        /// Try/catch raiz: nunca lanca.
         /// </summary>
-        private static string ResolveLicenseStateForSentry()
+        private static string ResolveLicenseStateForReporting()
         {
             try { return LicenseService.GetCurrentState().Status.ToString(); }
             catch { return "Unknown"; }
+        }
+
+        /// <summary>
+        /// Constroi o cliente HTTP-direct do PostHog. Chamado uma vez por
+        /// boot (TelemetryReporter eh idempotente). Resolve api key + host
+        /// + session id no momento do build.
+        /// </summary>
+        private static ITelemetryClient BuildPostHogTelemetryClient()
+        {
+            string apiKey = PostHogApiKeyProvider.GetApiKey();
+            string host = PostHogHostProvider.GetHost();
+            string sessionId = SessionIdProvider.GetOrCreate();
+            string release = typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown";
+
+            return new PostHogHttpTelemetryClient(
+                _telemetryHttp.Value,
+                apiKey,
+                host,
+                sessionId,
+                release,
+                ResolveLicenseStateForReporting,
+                logWarnException: (ex, msg) => Logger.Warn(ex, msg),
+                logWarnTemplate: (template, args) => Logger.Warn(template, args));
         }
 
         /// <summary>
@@ -873,6 +952,26 @@ namespace FerramentaEMT
                         UpdateCheckResult result = await service.CheckAsync(cts.Token).ConfigureAwait(false);
                         LastUpdateCheckResult = result;
                         Logger.Info("[Update] verificacao em background concluida: {Outcome}", result.Outcome);
+
+                        // PR-4: emite update.detected quando ha versao nova.
+                        // No-op silencioso se TelemetryReporter desabilitado.
+                        if (result != null && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
+                        {
+                            try
+                            {
+                                TelemetryReporter.Track(new TelemetryEvent(
+                                    SamplingDecider.EventUpdateDetected,
+                                    new Dictionary<string, object>
+                                    {
+                                        { "current_version", version },
+                                        { "available_version", result.LatestVersion ?? "unknown" },
+                                    }));
+                            }
+                            catch (Exception trackEx)
+                            {
+                                Logger.Warn(trackEx, "[Telemetry] falha ao emitir update.detected");
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)

@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using FerramentaEMT.Infrastructure;
+using FerramentaEMT.Infrastructure.Telemetry;
 using FerramentaEMT.Licensing;
 using FerramentaEMT.Utils;
 using FerramentaEMT.Views;
@@ -127,6 +129,11 @@ namespace FerramentaEMT.Commands
                 Logger.Info("[{Cmd}] concluido em {Elapsed}ms — {Result}",
                     commandName, sw.ElapsedMilliseconds, result);
 
+                // PR-4: telemetria — command.executed (sucesso ou Failed/Cancelled
+                // retornado pelo proprio command sem excecao). Sample rate 10% se
+                // sucesso, 100% se falha (SamplingDecider).
+                TrackCommandExecuted(commandName, sw.ElapsedMilliseconds, result == Result.Succeeded);
+
                 return result;
             }
             catch (Autodesk.Revit.Exceptions.OperationCanceledException)
@@ -134,6 +141,8 @@ namespace FerramentaEMT.Commands
                 sw.Stop();
                 Logger.Info("[{Cmd}] cancelado pelo usuario apos {Elapsed}ms",
                     commandName, sw.ElapsedMilliseconds);
+                // Cancelado eh "success path" — nao conta como falha.
+                TrackCommandExecuted(commandName, sw.ElapsedMilliseconds, true);
                 return Result.Cancelled;
             }
             catch (Autodesk.Revit.Exceptions.InvalidOperationException revitEx)
@@ -146,6 +155,7 @@ namespace FerramentaEMT.Commands
                     commandName,
                     "Operacao invalida no Revit:\n\n" + revitEx.Message,
                     "Falha de operacao Revit");
+                TrackCommandFailed(commandName, sw.ElapsedMilliseconds, revitEx);
                 return Result.Failed;
             }
             catch (Exception ex)
@@ -159,8 +169,43 @@ namespace FerramentaEMT.Commands
                     "Erro inesperado:\n\n" + ex.Message +
                     "\n\nDetalhes foram salvos no log:\n" + Logger.LogDirectory,
                     "Falha");
+                TrackCommandFailed(commandName, sw.ElapsedMilliseconds, ex);
                 return Result.Failed;
             }
+        }
+
+        // ============== PR-4: telemetry hooks ==============
+
+        private static void TrackCommandExecuted(string commandName, long durationMs, bool success)
+        {
+            try
+            {
+                TelemetryReporter.Track(new TelemetryEvent(
+                    SamplingDecider.EventCommandExecuted,
+                    new Dictionary<string, object>
+                    {
+                        { "command_name", commandName ?? "unknown" },
+                        { "duration_ms", durationMs },
+                        { "success", success },
+                    }));
+            }
+            catch { /* defensivo: TelemetryReporter ja eh try/catch raiz */ }
+        }
+
+        private static void TrackCommandFailed(string commandName, long durationMs, Exception ex)
+        {
+            try
+            {
+                TelemetryReporter.Track(new TelemetryEvent(
+                    SamplingDecider.EventCommandFailed,
+                    new Dictionary<string, object>
+                    {
+                        { "command_name", commandName ?? "unknown" },
+                        { "exception_type", ex?.GetType().Name ?? "unknown" },
+                        { "duration_ms", durationMs },
+                    }));
+            }
+            catch { /* defensivo */ }
         }
 
         // =====================================================================
