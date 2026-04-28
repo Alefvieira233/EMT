@@ -224,6 +224,8 @@
              Link="LinkedSources\Infrastructure\Telemetry\SamplingDecider.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\TelemetryOptionsBuilder.cs"
              Link="LinkedSources\Infrastructure\Telemetry\TelemetryOptionsBuilder.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogHttpTelemetryClient.cs"
+             Link="LinkedSources\Infrastructure\Telemetry\PostHogHttpTelemetryClient.cs" />
 
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
