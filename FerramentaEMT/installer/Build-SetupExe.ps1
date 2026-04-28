@@ -103,6 +103,26 @@ if (-not (Test-Path -LiteralPath $publishedExePath)) {
 
 Copy-Item -LiteralPath $publishedExePath -Destination $setupExePath -Force
 
+# v1.7.0 (PR-2 auto-update): gerar checksums.txt no formato sha256sum
+# (canonico: <hex64>  <filename>). Asset consumido pelo UpdateDownloader
+# para validar SHA256 do .zip baixado antes de extrair.
+$checksumsPath = Join-Path $outputRootFull "checksums.txt"
+$artifactsToHash = @(
+    @{ Path = $distributionZipPath; Name = (Split-Path -Leaf $distributionZipPath) },
+    @{ Path = $setupExePath;        Name = (Split-Path -Leaf $setupExePath) }
+)
+
+$lines = @()
+foreach ($item in $artifactsToHash) {
+    if (Test-Path -LiteralPath $item.Path) {
+        $hashHex = (Get-FileHash -Algorithm SHA256 -LiteralPath $item.Path).Hash.ToLowerInvariant()
+        # Dois espacos entre hash e nome (compat sha256sum + Sha256Calculator.FindHashForFile)
+        $lines += "$hashHex  $($item.Name)"
+    }
+}
+[System.IO.File]::WriteAllText($checksumsPath, ($lines -join "`n") + "`n", [System.Text.Encoding]::UTF8)
+
 Write-Host ""
 Write-Host "Setup gerado com sucesso."
-Write-Host "Arquivo: $setupExePath"
+Write-Host "Arquivo:    $setupExePath"
+Write-Host "Checksums:  $checksumsPath"
