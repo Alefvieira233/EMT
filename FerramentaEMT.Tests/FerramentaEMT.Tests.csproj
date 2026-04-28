@@ -161,6 +161,10 @@
              Link="LinkedSources\Infrastructure\Update\IGitHubReleaseProvider.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateCheckService.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateCheckService.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\ZipSlipValidator.cs"
+             Link="LinkedSources\Infrastructure\Update\ZipSlipValidator.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\Update\Sha256Calculator.cs"
+             Link="LinkedSources\Infrastructure\Update\Sha256Calculator.cs" />
     <Compile Include="..\FerramentaEMT\Models\Privacy\ConsentState.cs"
              Link="LinkedSources\Models\Privacy\ConsentState.cs" />
     <Compile Include="..\FerramentaEMT\Models\Privacy\PrivacySettings.cs"
