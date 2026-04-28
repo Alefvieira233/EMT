@@ -191,6 +191,14 @@
              Link="LinkedSources\Infrastructure\CrashReporting\SentryDsnProvider.cs" />
     <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\PiiScrubber.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\PiiScrubber.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\ISentryHubFacade.cs"
+             Link="LinkedSources\Infrastructure\CrashReporting\ISentryHubFacade.cs" />
+    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryOptionsBuilder.cs"
+             Link="LinkedSources\Infrastructure\CrashReporting\SentryOptionsBuilder.cs" />
+    <!-- SentryHubFacade.cs (impl real do Sentry SDK) NAO eh linkado:
+         depende de SentrySdk estatico que tem state global e nao eh
+         testavel via xUnit. Comportamento validado via SentryReporterTests
+         (commit 5) usando ISentryHubFacade mockado via Moq. -->
 
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
     <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
