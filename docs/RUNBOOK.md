@@ -115,3 +115,22 @@ Após enviar ao suporte, pode apagar com segurança.
 - Logs são escritos via Serilog wrapper (`FerramentaEMT/Infrastructure/Logger.cs`).
   Nível padrão: `Information`. Para debug, editar `Logger.Initialize` e subir
   para `Debug` ou `Verbose`.
+
+---
+
+## Histórico de artefatos arquivados
+
+Itens removidos do working tree mas preservados fora dele para histórico:
+
+- `backup-victor-pre-merge.zip` (302 MB) — snapshot do fork do Victor antes do
+  merge da v1.2.0 (PF — Pré-Fabricado de Concreto). Movido em 2026-04-28 de
+  `C:\Users\User\Downloads\FerramentaEMT\` para
+  `C:\Users\User\Downloads\FerramentaEMT-archive\`.
+- `pending-push/` (~717 KB, 6 patches da onda v1.4.0-rc.1: refactor LDM/agrupamento/numeracao
+  + corte onda 3) — patches gerados em 2026-04-18 que ficaram fora de qualquer
+  branch local. Movido em 2026-04-28 para
+  `C:\Users\User\Downloads\FerramentaEMT-archive\pending-push\`. Reaplicar
+  manualmente se ainda relevante.
+
+Para restaurar qualquer um, basta `mv` de volta. Não estão sob versionamento
+git (raiz `Downloads\FerramentaEMT\` nunca foi um repo).
