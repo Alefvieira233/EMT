@@ -132,6 +132,10 @@
     <Compile Include="..\FerramentaEMT\Models\TagearTrelicaConfig.cs"
              Link="LinkedSources\Models\TagearTrelicaConfig.cs" />
 
+    <!-- P1.4 (2026-04-29): resumo de cotagem (POCO sem Revit) -->
+    <Compile Include="..\FerramentaEMT\Models\CotagemResumo.cs"
+             Link="LinkedSources\Models\CotagemResumo.cs" />
+
     <!-- v1.2.0: PF (Pre-Fabricado de Concreto) — helpers puros -->
     <Compile Include="..\FerramentaEMT\Services\PF\PfNamingFormatter.cs"
              Link="LinkedSources\Services\PF\PfNamingFormatter.cs" />
