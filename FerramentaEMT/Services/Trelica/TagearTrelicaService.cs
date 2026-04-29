@@ -149,6 +149,10 @@ namespace FerramentaEMT.Services.Trelica
                 try
                 {
                     t.Start();
+                    // P1.1 (2026-04-28): tags em lote sobre dezenas de barras —
+                    // swallow warnings comuns ("tag without leader", "duplicate tag
+                    // location") sem perder erros reais. Helper central em Utils.
+                    FerramentaEMT.Utils.FailureHandlingHelper.SwallowWarnings(t);
 
                     // Agrupar banzos para criar rotulos (opcional)
                     HashSet<string> perfisBanzoSuperior = new();

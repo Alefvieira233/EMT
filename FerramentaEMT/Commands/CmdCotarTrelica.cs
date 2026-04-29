@@ -73,6 +73,10 @@ namespace FerramentaEMT.Commands
             using (var t = new Transaction(doc, "EMT - Cotar Treliça"))
             {
                 t.Start();
+                // P1.1 (2026-04-28): pipeline de 10 etapas cria muitas Dimensions/Tags/TextNotes;
+                // sem swallow warnings comuns ("dimension outside view", "joined geometry...")
+                // bloqueiam o commit com dialogo modal. Erros (Severity != Warning) seguem normais.
+                FerramentaEMT.Utils.FailureHandlingHelper.SwallowWarnings(t);
                 try
                 {
                     Logger.Info("[{Cmd}] chamando service com {N} barras", CommandName, barras.Count);

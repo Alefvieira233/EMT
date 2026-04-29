@@ -94,6 +94,10 @@ namespace FerramentaEMT.Services
                     using (Transaction t = new Transaction(doc, "Gerar Vista de Peça"))
                     {
                         t.Start();
+                        // P1.1 (2026-04-28): operacao em lote sobre N elementos — suprimir
+                        // warnings comuns (vista cortando geometria fora dos limites, etc.)
+                        // que de outro modo abrem dialogo modal a cada elemento.
+                        FerramentaEMT.Utils.FailureHandlingHelper.SwallowWarnings(t);
 
                         // Vista longitudinal (elevacao lateral)
                         if (config.CriarVistaLongitudinal)
