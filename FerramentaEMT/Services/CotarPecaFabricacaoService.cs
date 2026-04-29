@@ -62,10 +62,8 @@ namespace FerramentaEMT.Services
             {
                 t.Start();
 
-                // Suprimir warnings para operações em lote
-                var opts = t.GetFailureHandlingOptions();
-                opts.SetFailuresPreprocessor(new WarningSwallower());
-                t.SetFailureHandlingOptions(opts);
+                // Suprimir warnings para operações em lote (P1.1 — helper central)
+                FerramentaEMT.Utils.FailureHandlingHelper.SwallowWarnings(t);
 
                 foreach (FamilyInstance elem in elementos)
                 {
@@ -712,18 +710,6 @@ namespace FerramentaEMT.Services
             }
         }
 
-        private class WarningSwallower : IFailuresPreprocessor
-        {
-            public FailureProcessingResult PreprocessFailures(FailuresAccessor failuresAccessor)
-            {
-                var failures = failuresAccessor.GetFailureMessages();
-                foreach (var f in failures)
-                {
-                    if (f.GetSeverity() == FailureSeverity.Warning)
-                        failuresAccessor.DeleteWarning(f);
-                }
-                return FailureProcessingResult.Continue;
-            }
-        }
+        // WarningSwallower extraido para FerramentaEMT.Utils.FailureHandlingHelper (P1.1, 2026-04-28).
     }
 }
