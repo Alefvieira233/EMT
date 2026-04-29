@@ -5,8 +5,9 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using FerramentaEMT.Core;
 using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Utils;
+using FerramentaEMT.Models;
 using FerramentaEMT.Views;
 
 namespace FerramentaEMT.Services
@@ -31,77 +32,81 @@ namespace FerramentaEMT.Services
         private static readonly double ToleranciaSeparacaoGrupos =
             UnitUtils.ConvertToInternalUnits(100, UnitTypeId.Millimeters);
 
-        public void Executar(UIDocument uidoc)
+        /// <summary>
+        /// Entry-point chamado por <c>CmdGerarCotasPorAlinhamento</c>.
+        /// </summary>
+        /// <remarks>
+        /// NB (2026-04-29): hoje delega para <see cref="ExecutarCotagemAutomatica"/>,
+        /// nao para <see cref="ExecutarCotagemAlinhada"/> — comportamento herdado, possivel
+        /// dead-code em <c>ExecutarCotagemAlinhada</c>. Issue separada para revisar.
+        /// </remarks>
+        public Result<CotagemResumo> Executar(UIDocument uidoc)
         {
-            ExecutarCotagemAutomatica(uidoc);
+            return ExecutarCotagemAutomatica(uidoc);
         }
 
-        public void ExecutarAutomatico(UIDocument uidoc)
+        /// <summary>Entry-point chamado por <c>CmdGerarCotasPorEixo</c>.</summary>
+        public Result<CotagemResumo> ExecutarAutomatico(UIDocument uidoc)
         {
-            ExecutarCotagemAutomatica(uidoc);
+            return ExecutarCotagemAutomatica(uidoc);
         }
 
-        private void ExecutarCotagemAlinhada(UIDocument uidoc)
+        private Result<CotagemResumo> ExecutarCotagemAlinhada(UIDocument uidoc)
         {
-            if (uidoc is null) { AppDialogService.ShowError("Cotas por Linha", "UIDocument nulo."); return; }
+            if (uidoc is null)
+                return Result<CotagemResumo>.Fail("UIDocument nulo.");
 
             Document doc = uidoc.Document;
             View view = doc.ActiveView;
 
             if (!VistaSuportada(view))
-            {
-                AppDialogService.ShowWarning("Cotas por Linha", "Este comando funciona em plantas, cortes e elevacoes.", "Vista nao suportada");
-                return;
-            }
+                return Result<CotagemResumo>.Fail("Este comando funciona em plantas, cortes e elevacoes.");
 
             List<Element> elementos = ObterElementosSelecionados(uidoc, doc);
             if (elementos.Count == 0)
                 elementos = PedirSelecaoDeElementos(uidoc, doc);
 
             if (elementos.Count == 0)
-            {
-                AppDialogService.ShowWarning("Cotas por Linha", "Nenhum elemento valido selecionado.", "Selecao vazia");
-                return;
-            }
+                return Result<CotagemResumo>.Fail("Nenhum elemento valido selecionado.");
 
-            if (!TentarObterLinhaDeCota(uidoc, elementos, view, out DadosLinhaCota? dadosLinha) || dadosLinha is null)
-                return;
+            if (!TentarObterLinhaDeCota(uidoc, elementos, view, out DadosLinhaCota? dadosLinha, out string? erroLinha) || dadosLinha is null)
+            {
+                // user cancelou (Esc) -> erroLinha == null; trecho invalido -> erroLinha preenchido
+                return string.IsNullOrEmpty(erroLinha)
+                    ? Result<CotagemResumo>.Ok(CotagemResumo.CanceladoPeloUsuario())
+                    : Result<CotagemResumo>.Fail(erroLinha);
+            }
 
             ModoCota? modo = PedirModoCota();
             if (modo is null)
-                return;
+                return Result<CotagemResumo>.Ok(CotagemResumo.CanceladoPeloUsuario());
 
-            CriarCotaAlinhada(uidoc, doc, view, elementos, dadosLinha, "Cotas por Linha", true, modo.Value);
+            return CriarCotaAlinhada(uidoc, doc, view, elementos, dadosLinha, "Cotas por Linha", true, modo.Value);
         }
 
         // ---------------------------------------------------------
         // Versão automática (não exposta pelo comando principal, mas mantida para reutilização)
         // ---------------------------------------------------------
-        private void ExecutarCotagemAutomatica(UIDocument uidoc)
+        private Result<CotagemResumo> ExecutarCotagemAutomatica(UIDocument uidoc)
         {
-            if (uidoc is null) { AppDialogService.ShowError("Cotas", "UIDocument nulo."); return; }
+            if (uidoc is null)
+                return Result<CotagemResumo>.Fail("UIDocument nulo.");
 
             Document doc = uidoc.Document;
             View view = doc.ActiveView;
 
             if (!VistaSuportada(view))
-            {
-                AppDialogService.ShowWarning("Cotas", "Este comando funciona em plantas, cortes e elevacoes.", "Vista nao suportada");
-                return;
-            }
+                return Result<CotagemResumo>.Fail("Este comando funciona em plantas, cortes e elevacoes.");
 
             List<Element> elementos = ObterElementosSelecionados(uidoc, doc);
             if (elementos.Count == 0)
                 elementos = PedirSelecaoDeElementos(uidoc, doc);
 
             if (elementos.Count == 0)
-            {
-                AppDialogService.ShowWarning("Cotas", "Nenhum elemento valido selecionado.", "Selecao vazia");
-                return;
-            }
+                return Result<CotagemResumo>.Fail("Nenhum elemento valido selecionado.");
 
             if (!TentarObterPontoDeLado(uidoc, out XYZ? pontoLado) || pontoLado is null)
-                return;
+                return Result<CotagemResumo>.Ok(CotagemResumo.CanceladoPeloUsuario());
 
             List<Dimension> dimensoesCriadas = new();
             List<string> falhas = new();
@@ -128,8 +133,7 @@ namespace FerramentaEMT.Services
                 if (falhas.Count > 0)
                     mensagem += "\n\nDetalhes:\n• " + string.Join("\n• ", falhas);
 
-                AppDialogService.ShowWarning("Cotas", mensagem, "Nao foi possivel criar cotas automaticas");
-                return;
+                return Result<CotagemResumo>.Fail(mensagem);
             }
 
             uidoc.Selection.SetElementIds(dimensoesCriadas.Select(d => d.Id).ToList());
@@ -141,10 +145,16 @@ namespace FerramentaEMT.Services
             if (falhas.Count > 0)
                 resumo += "\n\nObservações:\n• " + string.Join("\n• ", falhas);
 
-            AppDialogService.ShowInfo("Cotas", resumo, "Cotas criadas com sucesso");
+            return Result<CotagemResumo>.Ok(new CotagemResumo
+            {
+                CotasCriadas = dimensoesCriadas.Count,
+                ElementosCotados = elementos.Count,
+                Avisos = falhas,
+                MensagemSucessoFormatada = resumo,
+            });
         }
 
-        private void CriarCotaAlinhada(
+        private Result<CotagemResumo> CriarCotaAlinhada(
             UIDocument uidoc,
             Document doc,
             View view,
@@ -170,8 +180,7 @@ namespace FerramentaEMT.Services
                     ? "\n• Clique nos dois extremos do trecho, alinhado com a direção da cota."
                     : "\n• Se a seleção tiver mais de um alinhamento, rode o comando por grupos.";
 
-                AppDialogService.ShowWarning(titulo, mensagem, "Referencias insuficientes");
-                return;
+                return Result<CotagemResumo>.Fail(mensagem);
             }
 
             Dimension? dimensaoCriada = null;
@@ -206,23 +215,25 @@ namespace FerramentaEMT.Services
 
             if (dimensaoCriada is null || referenciasUsadas is null)
             {
-                AppDialogService.ShowError(
-                    titulo,
-                    $"Falha ao criar a cota:\n{ultimoErro ?? "nenhuma combinacao de referencias foi aceita pela API."}",
-                    "Falha ao criar a cota");
-                return;
+                return Result<CotagemResumo>.Fail(
+                    $"Falha ao criar a cota:\n{ultimoErro ?? "nenhuma combinacao de referencias foi aceita pela API."}");
             }
 
             uidoc.Selection.SetElementIds(new List<ElementId> { dimensaoCriada.Id });
 
             string modoStr = modoCota == ModoCota.Faces ? "Faces" : "Eixos";
-            AppDialogService.ShowInfo(
-                titulo,
+            string resumoSucesso =
                 $"Cota criada com sucesso!\n" +
                 $"Modo              : {modoStr}\n" +
                 $"Elementos cotados : {elementos.Count}\n" +
-                $"Referencias usadas: {referenciasUsadas.Count}",
-                "Cota criada com sucesso");
+                $"Referencias usadas: {referenciasUsadas.Count}";
+
+            return Result<CotagemResumo>.Ok(new CotagemResumo
+            {
+                CotasCriadas = 1,
+                ElementosCotados = elementos.Count,
+                MensagemSucessoFormatada = resumoSucesso,
+            });
         }
 
         private ModoCota? PedirModoCota()
@@ -266,13 +277,21 @@ namespace FerramentaEMT.Services
             }
         }
 
+        /// <summary>
+        /// Coleta dois pontos do usuario e devolve a linha de cota correspondente.
+        /// Retorno: <c>true</c> = linha valida; <c>false</c> = (a) user cancelou via Esc
+        /// (<paramref name="erro"/> = null) ou (b) trecho invalido (<paramref name="erro"/>
+        /// com mensagem amigavel). O caller distingue cancel vs erro pela flag de mensagem.
+        /// </summary>
         private bool TentarObterLinhaDeCota(
             UIDocument uidoc,
             List<Element> elementos,
             View view,
-            out DadosLinhaCota? dadosLinha)
+            out DadosLinhaCota? dadosLinha,
+            out string? erro)
         {
             dadosLinha = null;
+            erro = null;
 
             try
             {
@@ -292,7 +311,7 @@ namespace FerramentaEMT.Services
 
                 if (Math.Abs(deltaHorizontal) < 1e-9 && Math.Abs(deltaVertical) < 1e-9)
                 {
-                    AppDialogService.ShowWarning("Cotas por Linha", "Os pontos informados sao coincidentes.", "Trecho invalido");
+                    erro = "Os pontos informados sao coincidentes.";
                     return false;
                 }
 
@@ -328,7 +347,7 @@ namespace FerramentaEMT.Services
 
                 if (pontoInicial.DistanceTo(pontoFinal) < 1e-6)
                 {
-                    AppDialogService.ShowWarning("Cotas por Linha", "O trecho definido e pequeno demais para criar uma cota.", "Trecho invalido");
+                    erro = "O trecho definido e pequeno demais para criar uma cota.";
                     return false;
                 }
 
