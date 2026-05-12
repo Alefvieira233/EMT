@@ -262,6 +262,29 @@ namespace FerramentaEMT
                 "viga_dividida_small.png"
             );
 
+            // Incorporacao Victor Final (Onda 5): Contraventamento e Placas de Base
+            AddButton(
+                panelEstrutura,
+                "btnGerarContraventamentoPlano",
+                "Contraven-\ntamento",
+                assemblyPath,
+                "FerramentaEMT.Commands.CmdGerarContraventamentoPlano",
+                "Cria um contraventamento em X no plano de trabalho ativo a partir de dois pontos opostos do painel.",
+                "travamentos_large.png",
+                "travamentos_small.png"
+            );
+
+            AddButton(
+                panelEstrutura,
+                "btnLancarPlacasBase",
+                "Placas\nde Base",
+                assemblyPath,
+                "FerramentaEMT.Commands.CmdLancarPlacasBase",
+                "Lanca automaticamente placas de base face-based sobre o topo do concreto encontrado abaixo dos pilares metalicos.",
+                "column_line_large.png",
+                "column_line_small.png"
+            );
+
             AddButton(
                 panelVigas,
                 "btnAjustarEncontroVigas",
@@ -468,6 +491,18 @@ namespace FerramentaEMT
                 "beam_isolar_small.png"
             );
 
+            // Incorporacao Victor Final (Onda 5): Lancamento de fundacoes em massa
+            AddButton(
+                panelPfConstrucao,
+                "btnPfLancarFundacoes",
+                "Lancar\nFundacao",
+                assemblyPath,
+                "FerramentaEMT.Commands.PF.CmdPfLancarFundacoes",
+                "Localiza a base dos pilares e lanca a fundacao estrutural selecionada no centro dos pilares da selecao atual ou de todos os pilares visiveis na vista.",
+                "foundation_piles_large.png",
+                "foundation_piles_small.png"
+            );
+
             AddButton(
                 panelPfDocumentacao,
                 "btnPfElevacaoPilares",
@@ -545,16 +580,30 @@ namespace FerramentaEMT
                 "column_line_small.png"
             );
 
-            // Incorporacao Victor Wave 2: novo comando de bloco de duas estacas
+            // Incorporacao Victor Final (Onda 5): editor unificado de armaduras de bloco
+            // Substitui o antigo btnPfAcosBlocoDuasEstacas (que ficava limitado a 2 estacas).
+            // O comando CmdPfInserirAcosBlocoDuasEstacas continua no codebase, apenas o botao saiu
+            // do ribbon — atalhos personalizados do usuario continuam funcionando.
             AddButton(
                 panelPfArmaduras,
-                "btnPfAcosBlocoDuasEstacas",
-                "Aços Bloco\n2 Estacas",
+                "btnBlocoFundacaoArmaduras",
+                "Armaduras\nBloco",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirAcosBlocoDuasEstacas",
-                "Lança barras superiores, inferiores e laterais em blocos de duas estacas com a mesma lógica base usada nas vigas.",
-                "pilar_concreto_large.png",
-                "pilar_concreto_small.png"
+                "FerramentaEMT.Commands.PF.CmdBlocoFundacaoArmaduras",
+                "Editor manual completo de armaduras para blocos de fundacao: inferior, superior, lateral, estribos verticais/horizontais e faixa transversal.",
+                "armadura_grid_large.png",
+                "armadura_grid_small.png"
+            );
+
+            AddButton(
+                panelPfArmaduras,
+                "btnPfInserirAcosEstaca",
+                "Armadura\nEstacas",
+                assemblyPath,
+                "FerramentaEMT.Commands.PF.CmdPfInserirAcosEstaca",
+                "Lanca barras longitudinais em estacas com distribuicao polar, cobrimento e quantidade configuraveis.",
+                "armadura_grid_large.png",
+                "armadura_grid_small.png"
             );
 
             // --- Painel Fabricação (novos módulos) ---
