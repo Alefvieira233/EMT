@@ -81,9 +81,44 @@ namespace FerramentaEMT.Services.PF
         }
 
         /// <summary>
+        /// Detecta estaca individual (nao bloco). Heuristica por geometria: bbox alongado
+        /// verticalmente — altura (dz) e pelo menos 3x maior que a maior dimensao horizontal
+        /// (max(dx, dy)). Sem essa heuristica, qualquer OST_StructuralFoundation seria
+        /// detectado como pile, colidindo com IsTwoPileCap.
+        /// </summary>
+        public static bool IsStructuralPile(Element element)
+        {
+            if (!(element is FamilyInstance fi))
+                return false;
+
+            if (fi.Category?.BuiltInCategory != BuiltInCategory.OST_StructuralFoundation)
+                return false;
+
+            BoundingBoxXYZ bbox = element.get_BoundingBox(null);
+            if (bbox == null)
+                return false;
+
+            double dx = Math.Abs(bbox.Max.X - bbox.Min.X);
+            double dy = Math.Abs(bbox.Max.Y - bbox.Min.Y);
+            double dz = Math.Abs(bbox.Max.Z - bbox.Min.Z);
+
+            double horizontalMax = Math.Max(dx, dy);
+            if (horizontalMax <= 1e-6)
+                return false;
+
+            // Estaca: altura >= 3x a maior dimensao horizontal (alongada vertical)
+            return (dz / horizontalMax) >= 3.0;
+        }
+
+        /// <summary>
         /// Detecta blocos de duas estacas (familia de fundacao estrutural).
         /// Adicionado na incorporacao Victor Wave 2 — usado pelo
         /// CmdPfInserirAcosBlocoDuasEstacas e PfTwoPileCapRebarService.
+        ///
+        /// Onda 1 (Victor Final): bloco e qualquer fundacao que NAO seja
+        /// estaca alongada vertical. Antes desta refinacao, IsTwoPileCap aceitava
+        /// estacas individuais — o que fazia o CmdPfInserirAcosBlocoDuasEstacas
+        /// tentar lancar barras de bloco em estaca, comportamento indesejado.
         /// </summary>
         public static bool IsTwoPileCap(Element element)
         {
@@ -93,7 +128,7 @@ namespace FerramentaEMT.Services.PF
             if (fi.Category?.BuiltInCategory != BuiltInCategory.OST_StructuralFoundation)
                 return false;
 
-            return true;
+            return !IsStructuralPile(element);
         }
 
         public static bool IsPfLaje(Element element)
@@ -172,6 +207,47 @@ namespace FerramentaEMT.Services.PF
             XYZ origin = view?.Origin ?? XYZ.Zero;
             XYZ up = view?.UpDirection ?? XYZ.BasisY;
             return (point - origin).DotProduct(up);
+        }
+
+        /// <summary>
+        /// Arredonda um valor de ordenacao (horizontal ou vertical, em pes do Revit)
+        /// para o multiplo mais proximo da toleranica dada. Usado pelo
+        /// PfFoundationPlacementService para agrupar fundacoes em "linhas" e "colunas"
+        /// quando o usuario tem grids fora do snap perfeito do Revit.
+        /// </summary>
+        public static double GetSnappedOrder(double rawOrder, double toleranceFt)
+        {
+            if (toleranceFt <= 0.0)
+                return rawOrder;
+
+            return Math.Round(rawOrder / toleranceFt) * toleranceFt;
+        }
+
+        /// <summary>
+        /// Retorna os extents (Min/Max) das coordenadas horizontal e vertical do elemento
+        /// projetadas no plano da vista. Usado pelo PfFoundationPlacementService para
+        /// detectar a "caixa" ocupada por cada fundacao na vista (e agrupar por linhas).
+        /// </summary>
+        public static (double MinHorizontal, double MaxHorizontal, double MinVertical, double MaxVertical) GetViewOrderExtents(
+            Element element,
+            View view)
+        {
+            List<XYZ> points = GetOrderingPoints(element, view);
+            if (points.Count == 0)
+            {
+                double horizontal = GetHorizontalOrder(view, XYZ.Zero);
+                double vertical = GetVerticalOrder(view, XYZ.Zero);
+                return (horizontal, horizontal, vertical, vertical);
+            }
+
+            List<double> horizontals = points.Select(pt => GetHorizontalOrder(view, pt)).ToList();
+            List<double> verticals = points.Select(pt => GetVerticalOrder(view, pt)).ToList();
+
+            return (
+                horizontals.Min(),
+                horizontals.Max(),
+                verticals.Min(),
+                verticals.Max());
         }
 
         public static int GetBeamAxisGroup(Element element, View view)
@@ -261,6 +337,43 @@ namespace FerramentaEMT.Services.PF
         private static double ToCentimeters(double value)
         {
             return UnitUtils.ConvertFromInternalUnits(value, UnitTypeId.Centimeters);
+        }
+
+        private static List<XYZ> GetOrderingPoints(Element element, View view)
+        {
+            List<XYZ> points = new List<XYZ>();
+
+            if (element?.Location is LocationPoint lp)
+                points.Add(lp.Point);
+
+            if (element?.Location is LocationCurve lc && lc.Curve != null)
+            {
+                points.Add(lc.Curve.GetEndPoint(0));
+                points.Add(lc.Curve.GetEndPoint(1));
+            }
+
+            BoundingBoxXYZ bbox = element?.get_BoundingBox(view) ?? element?.get_BoundingBox(null);
+            if (bbox != null)
+            {
+                points.AddRange(GetBoundingBoxCorners(bbox));
+            }
+
+            if (points.Count == 0 && element != null)
+                points.Add(GetRepresentativePoint(element, view));
+
+            return points;
+        }
+
+        private static IEnumerable<XYZ> GetBoundingBoxCorners(BoundingBoxXYZ bbox)
+        {
+            yield return new XYZ(bbox.Min.X, bbox.Min.Y, bbox.Min.Z);
+            yield return new XYZ(bbox.Min.X, bbox.Min.Y, bbox.Max.Z);
+            yield return new XYZ(bbox.Min.X, bbox.Max.Y, bbox.Min.Z);
+            yield return new XYZ(bbox.Min.X, bbox.Max.Y, bbox.Max.Z);
+            yield return new XYZ(bbox.Max.X, bbox.Min.Y, bbox.Min.Z);
+            yield return new XYZ(bbox.Max.X, bbox.Min.Y, bbox.Max.Z);
+            yield return new XYZ(bbox.Max.X, bbox.Max.Y, bbox.Min.Z);
+            yield return new XYZ(bbox.Max.X, bbox.Max.Y, bbox.Max.Z);
         }
 
         private sealed class PredicateSelectionFilter : ISelectionFilter
