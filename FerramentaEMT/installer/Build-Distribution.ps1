@@ -33,7 +33,7 @@ function Reset-Directory {
     $pathFull = [System.IO.Path]::GetFullPath($Path).TrimEnd('\')
 
     if (-not $pathFull.StartsWith($allowedRootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "Recusa em limpar diretório fora da raiz permitida: $pathFull"
+        throw "Recusa em limpar diretorio fora da raiz permitida: $pathFull"
     }
 
     if (Test-Path -LiteralPath $pathFull) {

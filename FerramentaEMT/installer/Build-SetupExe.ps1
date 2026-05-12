@@ -176,7 +176,7 @@ if (-not [string]::IsNullOrWhiteSpace($certPath) -and (Test-Path -LiteralPath $c
         if ($LASTEXITCODE -ne 0) {
             throw "signtool falhou com codigo $LASTEXITCODE"
         }
-        Write-Host "[Signing] OK — setup.exe assinado com timestamp $timestampUrl"
+        Write-Host "[Signing] OK - setup.exe assinado com timestamp $timestampUrl"
     }
 } else {
     Write-Warning "[Signing] EMT_CODESIGN_CERT_PFX nao definido ou arquivo ausente."
