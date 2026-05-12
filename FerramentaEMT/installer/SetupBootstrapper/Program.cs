@@ -82,6 +82,15 @@ internal static class Program
                     throw new OperationCanceledException();
             }
 
+            // EULA prompt antes da instalacao (ativado em v1.7.0).
+            // EULA.md eh embutido como recurso e carregado pelo dialog.
+            // Em modo quiet, RequestAcceptance retorna true automaticamente —
+            // caller eh responsavel pelo aceite legal.
+            if (!EulaConfirmation.RequestAcceptance(_quiet))
+            {
+                throw new OperationCanceledException();
+            }
+
             ExtractPackageToTemp();
 
             PackageMetadata metadata = LoadMetadata();

@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="EmbeddedPackage\FerramentaEMT-Package.zip" LogicalName="FerramentaEMT.SetupBootstrapper.Package.zip" />
+    <EmbeddedResource Include="..\..\..\docs\legal\EULA.md" LogicalName="FerramentaEMT.SetupBootstrapper.EULA.md" />
   </ItemGroup>
 
 </Project>
