@@ -82,15 +82,10 @@ internal static class Program
                     throw new OperationCanceledException();
             }
 
-            // PR-6 (P0.5 da auditoria): EULA prompt antes da instalacao.
-            // Atualmente DESABILITADO (ShowEulaPrompt = false em
-            // EulaConfirmationForm.cs) porque os documentos legais
-            // (EULA.draft.md, PRIVACY.draft.md, TOS.draft.md) ainda estao
-            // em revisao juridica. Quando advogado aprovar, basta flipar
-            // a const ShowEulaPrompt para true.
-            // Em modo quiet (instalacao silenciosa por script corporativo),
-            // RequestAcceptance retorna true automaticamente — caller eh
-            // responsavel pelo aceite legal.
+            // EULA prompt antes da instalacao (ativado em v1.7.0).
+            // EULA.md eh embutido como recurso e carregado pelo dialog.
+            // Em modo quiet, RequestAcceptance retorna true automaticamente —
+            // caller eh responsavel pelo aceite legal.
             if (!EulaConfirmation.RequestAcceptance(_quiet))
             {
                 throw new OperationCanceledException();
