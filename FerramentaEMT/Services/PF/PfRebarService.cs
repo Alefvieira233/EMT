@@ -38,6 +38,7 @@ using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using FerramentaEMT.Infrastructure;
 using FerramentaEMT.Models.PF;
 using FerramentaEMT.Utils;
 
@@ -97,6 +98,16 @@ namespace FerramentaEMT.Services.PF
                 PfElementService.IsPfConsolo,
                 "Selecione os consolos PF para lançar a armadura base.",
                 host => InsertConsoloBars(uidoc.Document, host, config));
+        }
+
+        public Result ExecuteEstacaBars(UIDocument uidoc, PfEstacaRebarConfig config)
+        {
+            return ExecuteForHosts(
+                uidoc,
+                "PF - Acos Estaca",
+                PfElementService.IsStructuralPile,
+                "Selecione as estacas para lançar as barras longitudinais.",
+                host => InsertEstacaBars(uidoc.Document, host, config));
         }
 
         public static PfRebarSectionPreview BuildBeamSectionPreview(FamilyInstance beam)
@@ -926,9 +937,191 @@ namespace FerramentaEMT.Services.PF
             return created;
         }
 
+        private int InsertEstacaBars(Document doc, FamilyInstance estaca, PfEstacaRebarConfig config)
+        {
+            RebarBarType barType = GetBarType(doc, config.BarTypeName);
+            HostFrame frame = BuildPileFrame(estaca);
+            double stirrupDiameterMm = config.InserirEstribos ? config.Estribos.DiametroMm : 0.0;
+            double barRadiusFt = barType.BarNominalDiameter / 2.0;
+            double cover = GetCover(GetEffectiveCoverCm(config.CobrimentoCm, stirrupDiameterMm)) + barRadiusFt;
+            double z0 = frame.MinZ + cover;
+            double z1 = frame.MaxZ - cover;
+            double frameRadius = Math.Min(frame.MaxX - frame.MinX, frame.MaxY - frame.MinY) / 2.0;
+            double radius = frameRadius - cover;
+
+            int total = 0;
+            if (config.InserirEstribos)
+            {
+                config.Estribos.CobrimentoCm = config.CobrimentoCm;
+                try
+                {
+                    total += InsertEstacaStirrups(doc, estaca, config.Estribos);
+                }
+                catch (Exception exEstribo)
+                {
+                    Logger.Warn(exEstribo, "Estribos nao criados para estaca {HostId}", estaca.Id.Value);
+                    throw;
+                }
+            }
+
+            if (z1 - z0 <= ToFeetMm(100) || radius <= ToFeetMm(20))
+                return total;
+
+            int count = Math.Max(1, config.QuantidadeBarras);
+            double centerX = (frame.MinX + frame.MaxX) / 2.0;
+            double centerY = (frame.MinY + frame.MaxY) / 2.0;
+            List<XYZ> positions = new List<XYZ>();
+
+            for (int i = 0; i < count; i++)
+            {
+                double angle = (Math.PI * 2.0 * i) / count;
+                positions.Add(new XYZ(
+                    centerX + (Math.Cos(angle) * radius),
+                    centerY + (Math.Sin(angle) * radius),
+                    0.0));
+            }
+
+            ValidateMinimumBarSpacing("estaca", positions, barType);
+
+            int created = 0;
+            foreach (XYZ position in positions)
+            {
+                created += CreateVerticalBarsWithLap(
+                    doc, estaca, barType, frame,
+                    position.Y, position.X,
+                    z0, z1,
+                    config.Traspasse,
+                    created);
+            }
+
+            return total + created;
+        }
+
+        private int InsertEstacaStirrups(Document doc, FamilyInstance estaca, PfColumnStirrupsConfig config)
+        {
+            RebarBarType barType = GetBarTypeByDiameter(doc, config.DiametroMm, config.BarTypeName);
+            HostFrame frame = BuildPileFrame(estaca);
+
+            double cover = GetCover(config.CobrimentoCm);
+            double barRadiusFt = ToFeetMm(config.DiametroMm / 2.0);
+            double spacingFt = ToFeetCm(config.EspacamentoCm);
+
+            double minZ = frame.MinZ + cover;
+            double maxZ = frame.MaxZ - cover;
+            double clearHeight = maxZ - minZ;
+            double centerX = (frame.MinX + frame.MaxX) / 2.0;
+            double centerY = (frame.MinY + frame.MaxY) / 2.0;
+            double pileRadius = Math.Min(frame.MaxX - frame.MinX, frame.MaxY - frame.MinY) / 2.0;
+            double stirrupRadius = pileRadius - cover - barRadiusFt;
+
+            if (clearHeight <= ToFeetMm(100) || stirrupRadius <= ToFeetMm(20))
+                return 0;
+
+            Rebar rebar = CreateEstacaCircularStirrupSet(
+                doc, estaca, barType, frame,
+                centerX, centerY, minZ, maxZ,
+                stirrupRadius, spacingFt,
+                config.ShapeName);
+
+            if (rebar == null)
+                throw new InvalidOperationException(
+                    $"Nao foi possivel criar estribos circulares para a estaca. " +
+                    $"raio={ToCentimeters(stirrupRadius):0.#}cm, " +
+                    $"alturaLivre={ToCentimeters(clearHeight):0.#}cm, " +
+                    $"diametro={config.DiametroMm:0.#}mm. " +
+                    "Verifique o arquivo de log em %LocalAppData%\\FerramentaEMT\\logs\\");
+
+            return 1;
+        }
+
+        private static Rebar CreateEstacaCircularStirrupSet(
+            Document doc,
+            Element host,
+            RebarBarType barType,
+            HostFrame frame,
+            double centerX,
+            double centerY,
+            double minZ,
+            double maxZ,
+            double radius,
+            double spacingFt,
+            string shapeName = null)
+        {
+            double clearHeight = maxZ - minZ;
+            if (clearHeight <= 0 || radius <= ToFeetMm(20))
+                return null;
+
+            int count = Math.Max(2, (int)Math.Floor(clearHeight / spacingFt) + 1);
+
+            // Para estacas, priorizamos a geometria real do host.
+            // CreateFromRebarShape usa o bounding box padrao da shape e pode deslocar
+            // o anel quando a forma nativa nao coincide com o raio efetivo calculado.
+            // Aqui tambem nao reaplicamos RebarShape depois de criar a geometria:
+            // o objetivo eh travar a posicao do estribo dentro da estaca.
+            double actualSpacing = clearHeight / Math.Max(1, count - 1);
+            Rebar last = null;
+            for (int i = 0; i < count; i++)
+            {
+                double zLocal = minZ + (i * actualSpacing);
+                IList<Curve> arcCurves = CreateCircleLoopHorizontal(frame, zLocal, centerX, centerY, radius);
+                Rebar r = null;
+                try
+                {
+                    r = Rebar.CreateFromCurves(
+                        doc, RebarStyle.StirrupTie, barType, null, null,
+                        host, frame.ZAxis, arcCurves,
+                        RebarHookOrientation.Left, RebarHookOrientation.Left,
+                        true, true);
+                }
+                catch { }
+                if (r == null)
+                {
+                    try
+                    {
+                        r = Rebar.CreateFromCurves(
+                            doc, RebarStyle.Standard, barType, null, null,
+                            host, frame.ZAxis, arcCurves,
+                            RebarHookOrientation.Left, RebarHookOrientation.Right,
+                            true, true);
+                    }
+                    catch { }
+                }
+
+                // Fallback: alguns hosts de fundacao aceitam melhor um poligono fechado.
+                if (r == null)
+                {
+                    try
+                    {
+                        IList<Curve> polyLines = CreatePolygonLoopHorizontal(frame, zLocal, centerX, centerY, radius);
+                        r = Rebar.CreateFromCurves(
+                            doc, RebarStyle.Standard, barType, null, null,
+                            host, frame.ZAxis, polyLines,
+                            RebarHookOrientation.Left, RebarHookOrientation.Right,
+                            true, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Todas tentativas falharam para estribo estaca i={I} z={Z:F4} raio={R:F4}", i, zLocal, radius);
+                    }
+                }
+
+                if (r != null)
+                {
+                    last = r;
+                }
+            }
+
+            return last;
+        }
+
         private static double GetCover(double coverCm)
         {
             return ToFeetCm(Math.Max(1.0, coverCm));
+        }
+
+        private static double GetEffectiveCoverCm(double coverCm, double stirrupDiameterMm)
+        {
+            return Math.Max(0.0, coverCm) + Math.Max(0.0, stirrupDiameterMm / 10.0);
         }
 
         private static Rebar CreateClosedRebar(
@@ -1272,6 +1465,35 @@ namespace FerramentaEMT.Services.PF
             }
         }
 
+        private static HostFrame BuildPileFrame(FamilyInstance pile)
+        {
+            if (pile == null)
+                throw new InvalidOperationException("A estaca precisa ser uma instância válida.");
+
+            Transform baseTransform = pile.GetTransform();
+            XYZ zAxis = Normalize(baseTransform.BasisZ, XYZ.BasisZ);
+            if (Math.Abs(zAxis.DotProduct(XYZ.BasisZ)) < 0.5)
+                zAxis = XYZ.BasisZ;
+
+            XYZ xAxis = NormalizeHorizontal(baseTransform.BasisX);
+            if (xAxis.IsZeroLength())
+                xAxis = XYZ.BasisX;
+
+            XYZ yAxis = NormalizeHorizontal(baseTransform.BasisY);
+            if (yAxis.IsZeroLength() || Math.Abs(yAxis.DotProduct(xAxis)) > 0.95)
+                yAxis = zAxis.CrossProduct(xAxis);
+            if (yAxis.IsZeroLength())
+                yAxis = XYZ.BasisY;
+
+            XYZ origin = pile.Location is LocationPoint lp
+                ? lp.Point
+                : baseTransform.Origin;
+
+            Transform localToWorld = CreateTransform(origin, xAxis, yAxis, zAxis);
+            LocalBounds bounds = ComputeBounds(pile, localToWorld.Inverse);
+            return new HostFrame(localToWorld, bounds);
+        }
+
         private static HostFrame BuildColumnFrame(FamilyInstance column)
         {
             XYZ zAxis = XYZ.BasisZ;
@@ -1612,6 +1834,29 @@ namespace FerramentaEMT.Services.PF
                 curves.Add(Arc.Create(p0, p1, pm));
             }
 
+            return curves;
+        }
+
+        private static IList<Curve> CreatePolygonLoopHorizontal(HostFrame frame, double z, double centerX, double centerY, double radius, int segments = 20)
+        {
+            XYZ center = frame.LocalToWorld.OfPoint(new XYZ(centerX, centerY, z));
+            XYZ xAxis = frame.XAxis;
+            XYZ yAxis = frame.YAxis;
+            double gap = UnitUtils.ConvertToInternalUnits(20.0, UnitTypeId.Millimeters);
+            double gapAngle = radius > 0 ? gap / radius : 0.0;
+            double startAngle = gapAngle / 2.0;
+            double totalAngle = (Math.PI * 2.0) - gapAngle;
+            double step = totalAngle / segments;
+            List<Curve> curves = new List<Curve>();
+            for (int i = 0; i < segments; i++)
+            {
+                double a0 = startAngle + (i * step);
+                double a1 = startAngle + ((i + 1) * step);
+                XYZ p0 = center + ((Math.Cos(a0) * xAxis) + (Math.Sin(a0) * yAxis)) * radius;
+                XYZ p1 = center + ((Math.Cos(a1) * xAxis) + (Math.Sin(a1) * yAxis)) * radius;
+                if (p0.DistanceTo(p1) > ToFeetMm(1.0))
+                    curves.Add(Line.CreateBound(p0, p1));
+            }
             return curves;
         }
 

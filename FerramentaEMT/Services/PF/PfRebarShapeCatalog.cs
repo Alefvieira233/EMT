@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Windows.Controls;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using FerramentaEMT.Models.PF;
@@ -39,6 +40,30 @@ namespace FerramentaEMT.Services.PF
                 .ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase));
 
             return items;
+        }
+
+        /// <summary>
+        /// Seleciona no ComboBox o item cujo Name bate (case-insensitive) com o
+        /// preferredName. Retorna true se encontrou e selecionou, false caso contrário.
+        /// Usado pela PfEstacaRebarWindow pra pré-selecionar a shape salva nas
+        /// configurações do usuário.
+        /// </summary>
+        public static bool TrySelect(ComboBox combo, string preferredName)
+        {
+            if (combo == null || string.IsNullOrWhiteSpace(preferredName))
+                return false;
+
+            foreach (object item in combo.Items)
+            {
+                if (item is PfRebarShapeOption option &&
+                    string.Equals(option.Name, preferredName, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    combo.SelectedItem = item;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string BuildDisplayName(string name)
