@@ -8,14 +8,41 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Roadmap da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`):
-- Code signing (P0.1)
-- Auto-update mechanism (P0.2)
-- Crash reporting remoto via Sentry (P0.3)
-- CI compilando o csproj principal (P0.4)
-- Privacy Policy + EULA (P0.5)
-- Telemetria opt-in (P0.6)
+Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`):
+- Code signing efetivamente assinado (esqueleto já mergeado em v1.7.0; falta certificado)
+- Revisão jurídica formal dos documentos legais (EULA + PRIVACY + TOS)
 - Migração ADR-003 dos 7 services restantes que ainda usam AppDialogService
+
+---
+
+## [1.7.0] — 2026-05-XX — Pre-release commercial readiness
+
+**Release type:** Pre-release / Soft launch (distribuição privada para alunos selecionados).
+
+### Added — Fase 1 commercial readiness
+- CI compila o csproj principal (PR-1)
+- GitHub Actions bumped para versões mais recentes (PR-1.1)
+- Auto-update via GitHub Releases API com SHA-256 validation e fallback de 3 tentativas (PR-2)
+- Crash reporting via Sentry com scrubbing de PII (PR-3)
+- Telemetria de uso opt-in via PostHog HTTP-direct (PR-4)
+- `PrivacyConsentWindow` com 3 toggles (auto-update, crash reports, telemetria), versão de consent 3
+- `FailureHandlingHelper` centralizado (P1.1)
+- `CotasService` refatorado para retornar `Result<CotagemResumo>` (P1.4, ADR-003)
+- Documentos legais EULA + Privacy Policy + Termos de Compra (LGPD-compliant draft)
+- Esqueleto de code signing parametrizado (ativará quando certificado for adquirido)
+- EULA prompt pré-instalação ativado no `SetupBootstrapper` (EULA.md embutido como recurso)
+
+### Changed
+- `AssemblyInformationalVersion`: 1.6.0 → 1.7.0
+
+### Known limitations (intencionais para pre-release)
+- Instalador NÃO digitalmente assinado (Windows SmartScreen mostrará aviso "Aplicativo não reconhecido"). Será corrigido em v1.7.1 após aquisição de certificado Authenticode.
+- Documentos legais redigidos pelo desenvolvedor, pendentes de revisão jurídica formal. Versões finais em v1.7.1.
+
+### Distribution
+- GitHub Release marcado como **pre-release** (badge "Pre-release" no GitHub).
+- Soft launch privado para lista de alunos.
+- Não publicado em marketplaces (Autodesk App Store) até documentação legal final.
 
 ---
 
