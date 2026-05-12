@@ -28,6 +28,8 @@ namespace FerramentaEMT.Utils
         public string LastSelectedTrelicaMontanteFamilyName { get; set; } = string.Empty;
         public string LastSelectedTrelicaDiagonalName { get; set; } = string.Empty;
         public string LastSelectedTrelicaDiagonalFamilyName { get; set; } = string.Empty;
+        public string LastSelectedContraventamentoPlanoName { get; set; } = string.Empty;
+        public string LastSelectedContraventamentoPlanoFamilyName { get; set; } = string.Empty;
 
         // ---------- Guarda-corpo ----------
         public string LastSelectedGuardaCorpoProfileName { get; set; } = string.Empty;
