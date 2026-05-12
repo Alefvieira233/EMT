@@ -1,0 +1,138 @@
+<Window x:Class="FerramentaEMT.Views.PlacaBaseConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lançar Placas de Base"
+        Width="560"
+        Height="720"
+        MinWidth="520"
+        MinHeight="620"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Placas de Base" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Seleciona um tipo face-based carregado no modelo e lança automaticamente a placa no topo do concreto abaixo de cada pilar metálico."
+                       Style="{StaticResource DialogSubtitleText}"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox Header="Família de placa" Margin="0 0 0 12">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Família" Style="{StaticResource LabelText}"/>
+                        <ComboBox x:Name="cmbFamilia"
+                                  Grid.Row="1"
+                                  Height="32"
+                                  Padding="8"
+                                  Margin="0 0 0 8"
+                                  DisplayMemberPath="FamilyName"
+                                  SelectionChanged="CmbFamilia_SelectionChanged"/>
+
+                        <TextBlock Grid.Row="2" Text="Tipo" Style="{StaticResource LabelText}"/>
+                        <ComboBox x:Name="cmbTipo"
+                                  Grid.Row="3"
+                                  Height="32"
+                                  Padding="8"
+                                  DisplayMemberPath="TypeName"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Parâmetros" Margin="0 0 0 12">
+                    <Grid Margin="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Comprimento (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtComprimento" Grid.Row="1" Grid.Column="0" Height="28" Padding="6" Text="300" Margin="0 0 0 8"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Largura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtLargura" Grid.Row="1" Grid.Column="2" Height="28" Padding="6" Text="300" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Espessura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtEspessura" Grid.Row="3" Grid.Column="0" Height="28" Padding="6" Text="20" Margin="0 0 0 8"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Furo Diâmetro (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtFuroDiametro" Grid.Row="3" Grid.Column="2" Height="28" Padding="6" Text="22" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Furo Offset X (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtFuroOffsetX" Grid.Row="5" Grid.Column="0" Height="28" Padding="6" Text="80" Margin="0 0 0 8"/>
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="Furo Offset Y (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtFuroOffsetY" Grid.Row="5" Grid.Column="2" Height="28" Padding="6" Text="80" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Chumbador Diâmetro (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtChumbadorDiametro" Grid.Row="7" Grid.Column="0" Height="28" Padding="6" Text="19" Margin="0 0 0 8"/>
+                        <TextBlock Grid.Row="6" Grid.Column="2" Text="Graute Espessura (mm)" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtGrauteEspessura" Grid.Row="7" Grid.Column="2" Height="28" Padding="6" Text="30" Margin="0 0 0 8"/>
+
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Solda" Style="{StaticResource LabelText}"/>
+                        <TextBox x:Name="txtSolda" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="3" Height="28" Padding="6" Text="6 mm"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Opções">
+                    <Grid Margin="8">
+                        <CheckBox x:Name="chkSobrescreverParametros"
+                                  Content="Aplicar os valores acima nos parâmetros da família após inserir"
+                                  IsChecked="True"/>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" Margin="0 12 0 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="1"
+                    Width="90"
+                    Height="32"
+                    Margin="0 0 8 0"
+                    Content="Lançar"
+                    Click="BtnOk_Click"/>
+            <Button Grid.Column="2"
+                    Width="90"
+                    Height="32"
+                    Content="Cancelar"
+                    Click="BtnCancel_Click"/>
+        </Grid>
+    </Grid>
+</Window>

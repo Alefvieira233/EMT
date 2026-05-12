@@ -1,0 +1,109 @@
+<Window x:Class="FerramentaEMT.Views.CortarElementosWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cortar Elementos"
+        Width="420"
+        Height="460"
+        MinWidth="400"
+        MinHeight="420"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Titulo -->
+        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+            <TextBlock Text="Cortar Elementos" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Detecta interferencias e aplica cortes entre hosts e cortadores estruturais."
+                       Style="{StaticResource DialogSubtitleText}"/>
+        </StackPanel>
+
+        <!-- Conteudo -->
+        <StackPanel Grid.Row="1">
+
+            <!-- Escopo -->
+            <GroupBox Header="Escopo">
+                <StackPanel Margin="4 6 4 4">
+                    <RadioButton x:Name="rbSelecao"
+                                 Content="Selecao atual"
+                                 GroupName="Escopo"
+                                 Margin="0 0 0 6"/>
+                    <RadioButton x:Name="rbVista"
+                                 Content="Vista ativa  (recomendado)"
+                                 GroupName="Escopo"
+                                 IsChecked="True"
+                                 Margin="0 0 0 6"/>
+                    <RadioButton x:Name="rbModelo"
+                                 Content="Modelo completo"
+                                 GroupName="Escopo"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Hosts -->
+            <GroupBox Header="Hosts  (recebem o corte)" Margin="0 10 0 0">
+                <StackPanel Margin="4 6 4 4">
+                    <CheckBox x:Name="chkPisos"
+                              Content="Pisos"
+                              IsChecked="True"
+                              Margin="0 0 0 6"/>
+                    <CheckBox x:Name="chkQuadro"
+                              Content="Quadro Estrutural  (vigas / treliças)"
+                              IsChecked="True"
+                              Margin="0 0 0 6"/>
+                    <CheckBox x:Name="chkParedes"
+                              Content="Paredes"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Cortadores -->
+            <GroupBox Header="Cortadores  (fazem o corte)" Margin="0 10 0 0">
+                <StackPanel Margin="4 6 4 4">
+                    <CheckBox x:Name="chkPilares"
+                              Content="Pilares Estruturais"
+                              IsChecked="True"
+                              Margin="0 0 0 6"/>
+                    <CheckBox x:Name="chkColunas"
+                              Content="Colunas Genericas"
+                              IsChecked="True"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Dica contextual -->
+            <Border Margin="0 12 0 0" Padding="10" CornerRadius="6" Background="#11000000">
+                <TextBlock x:Name="txtDica"
+                           TextWrapping="Wrap"
+                           FontSize="11.5"/>
+            </Border>
+
+        </StackPanel>
+
+        <!-- Botoes -->
+        <Border Grid.Row="2" Style="{StaticResource ActionBarBorder}" Margin="-16,12,-16,-16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancelar"
+                        Content="Cancelar"
+                        Width="90"
+                        Style="{StaticResource SecondaryActionButton}"
+                        Margin="0 0 8 0"/>
+                <Button x:Name="btnCortar"
+                        Content="Cortar"
+                        Width="100"
+                        Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
+
