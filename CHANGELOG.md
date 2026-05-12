@@ -15,6 +15,46 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [1.8.0] — 2026-05-12 — Incorporacao Wave Victor Versao Final
+
+**Release type:** Pre-release / Soft launch (distribuição privada para alunos selecionados).
+
+### Added (Incorporacao Wave Victor Versao Final)
+- F1: Contraventamento Plano automatico (Comando + Window) — panel "Estrutura" aba ECC
+- F2: Lancar Placas Base em pilares selecionados — panel "Estrutura" aba ECC
+- F3: Bloco Fundacao com armaduras parametrizadas — panel "PF Armaduras" aba EMT
+- F4: Inserir Acos em Estaca (barras + estribos circulares) — panel "PF Armaduras" aba EMT
+- F5: Lancar Fundacoes (pilares para fundacoes) — panel "PF Construcao" aba EMT
+- 156 imagens em `Resources/` (icones novos para os comandos Victor)
+- 6 documentos em `docs/victor/` (especificacoes originais do Victor)
+
+### Changed
+- `CmdCortarElementos`: agora abre `CortarElementosWindow` com selecao de escopo (Selecao/VistaAtiva/Modelo) e filtro de categorias antes de coletar elementos
+- `PfElementService.IsStructuralPile`: distincao geometrica (dz/max(dx,dy) >= 3.0) vs `IsTwoPileCap`
+- `PfRebarShapeCatalog`: novo helper `TrySelect(ComboBox, string)` para pre-selecionar shape salva
+- `PfRebarService`: 7 novos metodos para Estaca (`ExecuteEstacaBars` publico + 6 privados: `InsertEstacaBars`, `InsertEstacaStirrups`, `CreateEstacaCircularStirrupSet`, `GetEffectiveCoverCm`, `BuildPileFrame`, `CreatePolygonLoopHorizontal`)
+- `AssemblyVersion`: 1.7.0 → 1.8.0
+
+### Refactored (ADR-003)
+- `ContraventamentoPlanoService`: agora "mudo", retorna `ContraventamentoPlanoResultado` com 9 flags + `Func<bool> confirmarPreview` callback (8 chamadas `AppDialogService.Show*` no snapshot Victor → 0 no nosso)
+
+### Tests
+- +~50 novos testes unitarios para DTOs puros (`CortarElementosConfig`, `PlacaBaseLancamentoResultado`, `BlocoFundacaoRebarConfig` e nested types, `PfEstacaRebarConfig`)
+- LinkedSources adicionados em `FerramentaEMT.Tests.csproj`
+- Total acumulado v1.8.0: ~770 testes (vs 721 em v1.7.0)
+
+### Known limitations (intencionais para pre-release)
+- Instalador NAO digitalmente assinado (Windows SmartScreen mostrara aviso "Aplicativo nao reconhecido"). Sera corrigido em release pos-aquisicao de certificado Authenticode.
+- Documentos legais (`docs/legal/{EULA,PRIVACY,TOS}.md`) redigidos pelo desenvolvedor, pendentes de revisao juridica formal.
+- DTOs com dependencia de Revit API (`ContraventamentoPlanoConfig`, `ContraventamentoPlanoResultado`, `PlacaBaseConfig`, `PfFoundationPlacementConfig`) nao testados unitariamente; cobertos por smoke test manual no Revit.
+
+### Distribution
+- GitHub Release marcado como **pre-release** (badge "Pre-release" no GitHub)
+- Soft launch privado para lista de alunos
+- Nao publicado em marketplaces (Autodesk App Store) ate documentacao legal final
+
+---
+
 ## [1.7.0] — 2026-05-XX — Pre-release commercial readiness
 
 **Release type:** Pre-release / Soft launch (distribuição privada para alunos selecionados).

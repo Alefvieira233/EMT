@@ -156,6 +156,16 @@
     <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapResultado.cs"
              Link="LinkedSources\Models\PF\PfTwoPileCapResultado.cs" />
 
+    <!-- v1.8.0 — Onda 6 (Wave Victor Final): DTOs puros das Ondas 3, 3.5 e 5 -->
+    <Compile Include="..\FerramentaEMT\Models\CortarElementosConfig.cs"
+             Link="LinkedSources\Models\CortarElementosConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Conexoes\PlacaBaseLancamentoResultado.cs"
+             Link="LinkedSources\Models\Conexoes\PlacaBaseLancamentoResultado.cs" />
+    <Compile Include="..\FerramentaEMT\Models\Bloco\BlocoFundacaoRebarConfig.cs"
+             Link="LinkedSources\Models\Bloco\BlocoFundacaoRebarConfig.cs" />
+    <Compile Include="..\FerramentaEMT\Models\PF\PfEstacaRebarConfig.cs"
+             Link="LinkedSources\Models\PF\PfEstacaRebarConfig.cs" />
+
     <!-- v1.7.0: Auto-update (PR-2) — helpers puros (sem Revit, sem rede, sem Logger) -->
     <Compile Include="..\FerramentaEMT\Infrastructure\Update\SemVerComparer.cs"
              Link="LinkedSources\Infrastructure\Update\SemVerComparer.cs" />
