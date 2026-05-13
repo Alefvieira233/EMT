@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 chcp 65001 >nul
 
 REM ============================================================
-REM   FerramentaEMT - Compilar e Instalar no Revit 2025
+REM   SteelBIM - Compilar e Instalar no Revit 2025
 REM   Criado para o ALEF compilar sem depender do Victor
 REM ============================================================
 
@@ -11,7 +11,7 @@ cd /d "%~dp0"
 
 echo.
 echo ============================================================
-echo   FerramentaEMT - Build ^& Deploy
+echo   SteelBIM - Build ^& Deploy
 echo ============================================================
 echo.
 echo Pasta do projeto: %CD%
@@ -49,9 +49,9 @@ if exist "artifacts"  rd /s /q "artifacts"  2>nul
 echo.
 
 REM --- 4. Compilar -------------------------------------------
-echo [2/4] Compilando FerramentaEMT (Release)...
+echo [2/4] Compilando SteelBIM (Release)...
 echo.
-dotnet build "FerramentaEMT.csproj" -c Release --nologo
+dotnet build "SteelBIM.csproj" -c Release --nologo
 if errorlevel 1 (
     echo.
     echo [ERRO] Build falhou. Veja as mensagens acima.
@@ -61,7 +61,7 @@ if errorlevel 1 (
 echo.
 
 REM --- 5. Localizar a DLL gerada -----------------------------
-set "DLL_SRC=%CD%\bin\Release\net8.0-windows\FerramentaEMT.dll"
+set "DLL_SRC=%CD%\bin\Release\net8.0-windows\SteelBIM.dll"
 if not exist "%DLL_SRC%" (
     echo [ERRO] DLL nao encontrada em: %DLL_SRC%
     pause
@@ -74,27 +74,27 @@ if not exist "%ADDIN_DIR%" mkdir "%ADDIN_DIR%"
 
 REM --- 7. Gerar .addin apontando pro DLL local ---------------
 echo [3/4] Gerando manifesto .addin para Revit 2025...
-set "DLL_DEST=%ADDIN_DIR%\FerramentaEMT\FerramentaEMT.dll"
-if not exist "%ADDIN_DIR%\FerramentaEMT" mkdir "%ADDIN_DIR%\FerramentaEMT"
+set "DLL_DEST=%ADDIN_DIR%\SteelBIM\SteelBIM.dll"
+if not exist "%ADDIN_DIR%\SteelBIM" mkdir "%ADDIN_DIR%\SteelBIM"
 
 (
 echo ^<?xml version="1.0" encoding="utf-8" standalone="no"?^>
 echo ^<RevitAddIns^>
 echo 	^<AddIn Type="Application"^>
-echo 		^<Name^>FerramentaEMT^</Name^>
+echo 		^<Name^>SteelBIM^</Name^>
 echo 		^<Assembly^>%DLL_DEST%^</Assembly^>
 echo 		^<AddInId^>610FE337-F95D-4813-8BF8-2CE11C9948C1^</AddInId^>
-echo 		^<FullClassName^>FerramentaEMT.App^</FullClassName^>
+echo 		^<FullClassName^>SteelBIM.App^</FullClassName^>
 echo 		^<VendorId^>EMT^</VendorId^>
 echo 		^<VendorDescription^>Ferramenta EMT^</VendorDescription^>
 echo 	^</AddIn^>
 echo ^</RevitAddIns^>
-) > "%ADDIN_DIR%\FerramentaEMT.addin"
+) > "%ADDIN_DIR%\SteelBIM.addin"
 echo.
 
 REM --- 8. Copiar binarios pro AppData ------------------------
 echo [4/4] Copiando binarios para o Revit...
-xcopy /Y /E /I /Q "bin\Release\net8.0-windows\*" "%ADDIN_DIR%\FerramentaEMT\" >nul
+xcopy /Y /E /I /Q "bin\Release\net8.0-windows\*" "%ADDIN_DIR%\SteelBIM\" >nul
 if errorlevel 1 (
     echo [ERRO] Falha ao copiar arquivos.
     pause
@@ -103,13 +103,13 @@ if errorlevel 1 (
 echo.
 
 echo ============================================================
-echo   SUCESSO! FerramentaEMT instalado para Revit 2025
+echo   SUCESSO! SteelBIM instalado para Revit 2025
 echo ============================================================
 echo.
-echo Manifesto: %ADDIN_DIR%\FerramentaEMT.addin
+echo Manifesto: %ADDIN_DIR%\SteelBIM.addin
 echo DLL:       %DLL_DEST%
 echo.
 echo Agora abra o Revit 2025 e a aba "Fabricacao" deve aparecer
-echo com os botoes da FerramentaEMT.
+echo com os botoes da SteelBIM.
 echo.
 pause

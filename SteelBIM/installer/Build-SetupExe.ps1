@@ -59,13 +59,13 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
 
 $outputRootFull = [System.IO.Path]::GetFullPath($OutputRoot)
 $distributionScript = Join-Path $scriptRoot "Build-Distribution.ps1"
-$distributionZipPath = Join-Path $outputRootFull ("FerramentaEMT-Revit{0}-{1}.zip" -f $RevitYear, $Configuration)
+$distributionZipPath = Join-Path $outputRootFull ("SteelBIM-Revit{0}-{1}.zip" -f $RevitYear, $Configuration)
 $bootstrapProject = Join-Path $scriptRoot "SetupBootstrapper\SetupBootstrapper.csproj"
 $embeddedPackageDir = Join-Path $scriptRoot "SetupBootstrapper\EmbeddedPackage"
-$embeddedPackagePath = Join-Path $embeddedPackageDir "FerramentaEMT-Package.zip"
+$embeddedPackagePath = Join-Path $embeddedPackageDir "SteelBIM-Package.zip"
 $publishDir = Join-Path $outputRootFull "setup-publish"
-$setupExePath = Join-Path $outputRootFull ("FerramentaEMT-Revit{0}-Setup.exe" -f $RevitYear)
-$publishedExePath = Join-Path $publishDir "FerramentaEMT.SetupBootstrapper.exe"
+$setupExePath = Join-Path $outputRootFull ("SteelBIM-Revit{0}-Setup.exe" -f $RevitYear)
+$publishedExePath = Join-Path $publishDir "SteelBIM.SetupBootstrapper.exe"
 
 New-Item -ItemType Directory -Path $outputRootFull -Force | Out-Null
 New-Item -ItemType Directory -Path $embeddedPackageDir -Force | Out-Null

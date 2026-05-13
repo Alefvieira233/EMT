@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 chcp 65001 >nul
 
 REM ============================================================
-REM  FerramentaEMT - Limpar Tudo
+REM  SteelBIM - Limpar Tudo
 REM ============================================================
 REM  Remove:
 REM   - Pastas bin/, obj/, artifacts/ do projeto
@@ -13,7 +13,7 @@ REM ============================================================
 
 echo.
 echo ============================================================
-echo   FerramentaEMT - LIMPEZA COMPLETA
+echo   SteelBIM - LIMPEZA COMPLETA
 echo ============================================================
 echo.
 echo Esta operacao vai REMOVER:
@@ -47,19 +47,19 @@ echo   OK
 echo.
 echo [2/3] Removendo instalacao do Revit...
 set "ADDIN_DIR=%AppData%\Autodesk\Revit\Addins\2025"
-if exist "%ADDIN_DIR%\FerramentaEMT" (
-    rmdir /S /Q "%ADDIN_DIR%\FerramentaEMT"
+if exist "%ADDIN_DIR%\SteelBIM" (
+    rmdir /S /Q "%ADDIN_DIR%\SteelBIM"
     echo   Pasta removida.
 )
-if exist "%ADDIN_DIR%\FerramentaEMT.addin" (
-    del /F /Q "%ADDIN_DIR%\FerramentaEMT.addin"
+if exist "%ADDIN_DIR%\SteelBIM.addin" (
+    del /F /Q "%ADDIN_DIR%\SteelBIM.addin"
     echo   .addin removido.
 )
 echo   OK
 
 echo.
 echo [3/3] Limpando logs antigos...
-set "LOG_DIR=%LocalAppData%\FerramentaEMT\logs"
+set "LOG_DIR=%LocalAppData%\SteelBIM\logs"
 if exist "%LOG_DIR%" (
     rmdir /S /Q "%LOG_DIR%"
     echo   Logs removidos.

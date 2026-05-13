@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ============================================================
-echo   Diagnostico de SDKs/Build para FerramentaEMT
+echo   Diagnostico de SDKs/Build para SteelBIM
 echo ============================================================
 echo.
 

@@ -43,7 +43,7 @@ internal static class Program
         {
             MessageBox.Show(
                 mensagem,
-                "FerramentaEMT Setup",
+                "SteelBIM Setup",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         }
@@ -65,7 +65,7 @@ internal static class Program
         public InstallerSession(bool quiet)
         {
             _quiet = quiet;
-            _tempRoot = Path.Combine(Path.GetTempPath(), "FerramentaEMT-Setup-" + Guid.NewGuid().ToString("N"));
+            _tempRoot = Path.Combine(Path.GetTempPath(), "SteelBIM-Setup-" + Guid.NewGuid().ToString("N"));
         }
 
         public void Run()
@@ -73,8 +73,8 @@ internal static class Program
             if (!_quiet)
             {
                 DialogResult resposta = MessageBox.Show(
-                    "Deseja instalar o add-in FerramentaEMT para o Revit?",
-                    "FerramentaEMT Setup",
+                    "Deseja instalar o add-in SteelBIM para o Revit?",
+                    "SteelBIM Setup",
                     MessageBoxButtons.OKCancel,
                     MessageBoxIcon.Question);
 
@@ -94,10 +94,10 @@ internal static class Program
             ExtractPackageToTemp();
 
             PackageMetadata metadata = LoadMetadata();
-            string revitYear = GetOverride("FERRAMENTAEMT_REVITYEAR") ?? metadata.RevitYear;
+            string revitYear = GetOverride("STEELBIM_REVITYEAR") ?? metadata.RevitYear;
             string addinsRoot = ResolveAddinsRoot(revitYear);
             string installRoot = ResolveInstallRoot(addinsRoot, metadata.InstallFolderName);
-            string manifestName = GetOverride("FERRAMENTAEMT_MANIFESTNAME") ?? metadata.ManifestFileName;
+            string manifestName = GetOverride("STEELBIM_MANIFESTNAME") ?? metadata.ManifestFileName;
             string manifestPath = Path.Combine(addinsRoot, manifestName);
             string payloadRoot = Path.Combine(_tempRoot, "payload", metadata.InstallFolderName);
 
@@ -165,7 +165,7 @@ internal static class Program
 
         private string ResolveAddinsRoot(string revitYear)
         {
-            string? overridePath = GetOverride("FERRAMENTAEMT_ADDINSROOT");
+            string? overridePath = GetOverride("STEELBIM_ADDINSROOT");
             if (!string.IsNullOrWhiteSpace(overridePath))
                 return Path.GetFullPath(overridePath);
 
@@ -175,7 +175,7 @@ internal static class Program
 
         private string ResolveInstallRoot(string addinsRoot, string defaultFolderName)
         {
-            string? overridePath = GetOverride("FERRAMENTAEMT_INSTALLROOT");
+            string? overridePath = GetOverride("STEELBIM_INSTALLROOT");
             if (!string.IsNullOrWhiteSpace(overridePath))
                 return Path.GetFullPath(overridePath);
 
@@ -282,7 +282,7 @@ internal static class Program
 
             MessageBox.Show(
                 mensagem.ToString(),
-                "FerramentaEMT Setup",
+                "SteelBIM Setup",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }

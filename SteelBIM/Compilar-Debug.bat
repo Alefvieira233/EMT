@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 chcp 65001 >nul
 
 REM ============================================================
-REM  FerramentaEMT - Compilar Debug (com PDB para debugging)
+REM  SteelBIM - Compilar Debug (com PDB para debugging)
 REM ============================================================
 REM  Compila em modo Debug com símbolos PDB completos.
 REM  Use este script quando precisar anexar o debugger do Visual
@@ -12,7 +12,7 @@ REM ============================================================
 
 echo.
 echo ============================================================
-echo   FerramentaEMT - Compilacao DEBUG
+echo   SteelBIM - Compilacao DEBUG
 echo ============================================================
 echo.
 
@@ -56,13 +56,13 @@ echo [3/3] Gerando .addin e copiando para AppData...
 
 set "ADDIN_DIR=%AppData%\Autodesk\Revit\Addins\2025"
 set "DEPLOY_DIR=%~dp0artifacts\deploy\Debug\net8.0-windows"
-set "DLL_PATH=%ADDIN_DIR%\FerramentaEMT\FerramentaEMT.dll"
+set "DLL_PATH=%ADDIN_DIR%\SteelBIM\SteelBIM.dll"
 
 if not exist "%ADDIN_DIR%" mkdir "%ADDIN_DIR%"
-if not exist "%ADDIN_DIR%\FerramentaEMT" mkdir "%ADDIN_DIR%\FerramentaEMT"
+if not exist "%ADDIN_DIR%\SteelBIM" mkdir "%ADDIN_DIR%\SteelBIM"
 
 REM Copiar binarios DEBUG
-xcopy "%DEPLOY_DIR%\*" "%ADDIN_DIR%\FerramentaEMT\" /E /Y /Q >nul
+xcopy "%DEPLOY_DIR%\*" "%ADDIN_DIR%\SteelBIM\" /E /Y /Q >nul
 if errorlevel 1 (
     echo [ERRO] Falha ao copiar binarios.
     pause
@@ -74,15 +74,15 @@ REM Gerar .addin
 echo ^<?xml version="1.0" encoding="utf-8" standalone="no"?^>
 echo ^<RevitAddIns^>
 echo   ^<AddIn Type="Application"^>
-echo     ^<Name^>FerramentaEMT [DEBUG]^</Name^>
+echo     ^<Name^>SteelBIM [DEBUG]^</Name^>
 echo     ^<Assembly^>%DLL_PATH%^</Assembly^>
 echo     ^<AddInId^>4F1C4FBE-DEBE-4DEB-DEBE-DEBE4F1C4FBE^</AddInId^>
-echo     ^<FullClassName^>FerramentaEMT.App^</FullClassName^>
+echo     ^<FullClassName^>SteelBIM.App^</FullClassName^>
 echo     ^<VendorId^>EMT^</VendorId^>
 echo     ^<VendorDescription^>EMT Estruturas Metalicas - DEBUG BUILD^</VendorDescription^>
 echo   ^</AddIn^>
 echo ^</RevitAddIns^>
-) > "%ADDIN_DIR%\FerramentaEMT.addin"
+) > "%ADDIN_DIR%\SteelBIM.addin"
 
 echo.
 echo ============================================================
@@ -91,7 +91,7 @@ echo ============================================================
 echo.
 echo Para anexar o debugger:
 echo   1. Abra o Visual Studio
-echo   2. Abra o projeto FerramentaEMT.sln
+echo   2. Abra o projeto SteelBIM.sln
 echo   3. Inicie o Revit 2025
 echo   4. No VS: Debug ^> Attach to Process ^> Revit.exe
 echo   5. Coloque breakpoints no codigo

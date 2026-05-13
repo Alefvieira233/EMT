@@ -53,13 +53,13 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
 }
 
 $outputRootFull = [System.IO.Path]::GetFullPath($OutputRoot)
-$projectPath = Join-Path $repoRoot "FerramentaEMT.csproj"
-$sourceAddinPath = Join-Path $repoRoot "FerramentaEMT.addin"
+$projectPath = Join-Path $repoRoot "SteelBIM.csproj"
+$sourceAddinPath = Join-Path $repoRoot "SteelBIM.addin"
 $deployDir = Join-Path $repoRoot ("artifacts\deploy\{0}\net8.0-windows" -f $Configuration)
 $packageRoot = Join-Path $outputRootFull "package"
-$payloadFolderName = "FerramentaEMT"
+$payloadFolderName = "SteelBIM"
 $payloadRoot = Join-Path $packageRoot ("payload\{0}" -f $payloadFolderName)
-$zipPath = Join-Path $outputRootFull ("FerramentaEMT-Revit{0}-{1}.zip" -f $RevitYear, $Configuration)
+$zipPath = Join-Path $outputRootFull ("SteelBIM-Revit{0}-{1}.zip" -f $RevitYear, $Configuration)
 $metadataPath = Join-Path $packageRoot "package-metadata.json"
 
 New-Item -ItemType Directory -Path $outputRootFull -Force | Out-Null
@@ -85,8 +85,8 @@ New-Item -ItemType Directory -Path $payloadRoot -Force | Out-Null
 
 Write-Host "Copiando arquivos do add-in para o pacote..."
 Copy-Item -Path (Join-Path $deployDir "*") -Destination $payloadRoot -Recurse -Force
-Copy-Item -LiteralPath (Join-Path $scriptRoot "Install-FerramentaEMT.ps1") -Destination (Join-Path $packageRoot "Install-FerramentaEMT.ps1") -Force
-Copy-Item -LiteralPath (Join-Path $scriptRoot "Uninstall-FerramentaEMT.ps1") -Destination (Join-Path $packageRoot "Uninstall-FerramentaEMT.ps1") -Force
+Copy-Item -LiteralPath (Join-Path $scriptRoot "Install-SteelBIM.ps1") -Destination (Join-Path $packageRoot "Install-SteelBIM.ps1") -Force
+Copy-Item -LiteralPath (Join-Path $scriptRoot "Uninstall-SteelBIM.ps1") -Destination (Join-Path $packageRoot "Uninstall-SteelBIM.ps1") -Force
 Copy-Item -LiteralPath (Join-Path $scriptRoot "README.md") -Destination (Join-Path $packageRoot "README.md") -Force
 
 $metadata = [ordered]@{
@@ -96,9 +96,9 @@ $metadata = [ordered]@{
     fullClassName = [string]$addinNode.FullClassName
     vendorId = [string]$addinNode.VendorId
     vendorDescription = [string]$addinNode.VendorDescription
-    assemblyFile = "FerramentaEMT.dll"
+    assemblyFile = "SteelBIM.dll"
     installFolderName = $payloadFolderName
-    manifestFileName = "FerramentaEMT.Distribuicao.addin"
+    manifestFileName = "SteelBIM.Distribuicao.addin"
     revitYear = $RevitYear
     configuration = $Configuration
     packageCreatedAtUtc = [DateTime]::UtcNow.ToString("o")

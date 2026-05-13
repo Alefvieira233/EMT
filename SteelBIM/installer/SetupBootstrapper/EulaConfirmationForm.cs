@@ -66,7 +66,7 @@ internal static class EulaConfirmation
 
         public EulaForm()
         {
-            Text = "FerramentaEMT — Contrato de Licenca de Usuario Final";
+            Text = "SteelBIM — Contrato de Licenca de Usuario Final";
             Width = 720;
             Height = 560;
             StartPosition = FormStartPosition.CenterScreen;
@@ -172,7 +172,7 @@ internal static class EulaConfirmation
         private static string FallbackEulaText()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("FerramentaEMT — Contrato de Licenca de Usuario Final");
+            sb.AppendLine("SteelBIM — Contrato de Licenca de Usuario Final");
             sb.AppendLine("====================================================");
             sb.AppendLine();
             sb.AppendLine("O texto completo do EULA esta disponivel no repositorio publico:");

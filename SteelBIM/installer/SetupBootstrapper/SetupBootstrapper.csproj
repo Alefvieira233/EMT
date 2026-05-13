@@ -6,14 +6,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWindowsForms>true</UseWindowsForms>
-    <AssemblyName>FerramentaEMT.SetupBootstrapper</AssemblyName>
-    <RootNamespace>FerramentaEMT.SetupBootstrapper</RootNamespace>
+    <AssemblyName>SteelBIM.SetupBootstrapper</AssemblyName>
+    <RootNamespace>SteelBIM.SetupBootstrapper</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="EmbeddedPackage\FerramentaEMT-Package.zip" LogicalName="FerramentaEMT.SetupBootstrapper.Package.zip" />
-    <EmbeddedResource Include="..\..\..\docs\legal\EULA.md" LogicalName="FerramentaEMT.SetupBootstrapper.EULA.md" />
+    <EmbeddedResource Include="EmbeddedPackage\SteelBIM-Package.zip" LogicalName="SteelBIM.SetupBootstrapper.Package.zip" />
+    <EmbeddedResource Include="..\..\..\docs\legal\EULA.md" LogicalName="SteelBIM.SetupBootstrapper.EULA.md" />
   </ItemGroup>
 
 </Project>

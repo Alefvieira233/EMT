@@ -18,18 +18,18 @@ function Get-OptionalArgument {
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$archivePath = Join-Path $scriptRoot "FerramentaEMT-Package.zip"
+$archivePath = Join-Path $scriptRoot "SteelBIM-Package.zip"
 if (-not (Test-Path -LiteralPath $archivePath)) {
     throw "Arquivo de pacote nao encontrado: $archivePath"
 }
 
-$expandedRoot = Join-Path $env:TEMP ("FerramentaEMT-Setup-" + [Guid]::NewGuid().ToString("N"))
+$expandedRoot = Join-Path $env:TEMP ("SteelBIM-Setup-" + [Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $expandedRoot -Force | Out-Null
 
 try {
     Expand-Archive -LiteralPath $archivePath -DestinationPath $expandedRoot -Force
 
-    $installScript = Join-Path $expandedRoot "Install-FerramentaEMT.ps1"
+    $installScript = Join-Path $expandedRoot "Install-SteelBIM.ps1"
     if (-not (Test-Path -LiteralPath $installScript)) {
         throw "Script de instalacao nao encontrado apos extrair o pacote: $installScript"
     }
@@ -41,10 +41,10 @@ try {
         "-PackageRoot", $expandedRoot
     )
 
-    $argumentos += Get-OptionalArgument -Name "-RevitYear" -Value $env:FERRAMENTAEMT_REVITYEAR
-    $argumentos += Get-OptionalArgument -Name "-AddinsRoot" -Value $env:FERRAMENTAEMT_ADDINSROOT
-    $argumentos += Get-OptionalArgument -Name "-InstallRoot" -Value $env:FERRAMENTAEMT_INSTALLROOT
-    $argumentos += Get-OptionalArgument -Name "-ManifestName" -Value $env:FERRAMENTAEMT_MANIFESTNAME
+    $argumentos += Get-OptionalArgument -Name "-RevitYear" -Value $env:STEELBIM_REVITYEAR
+    $argumentos += Get-OptionalArgument -Name "-AddinsRoot" -Value $env:STEELBIM_ADDINSROOT
+    $argumentos += Get-OptionalArgument -Name "-InstallRoot" -Value $env:STEELBIM_INSTALLROOT
+    $argumentos += Get-OptionalArgument -Name "-ManifestName" -Value $env:STEELBIM_MANIFESTNAME
 
     & powershell.exe @argumentos
     if ($LASTEXITCODE -ne 0) {

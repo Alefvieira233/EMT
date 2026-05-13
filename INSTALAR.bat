@@ -2,20 +2,20 @@
 setlocal EnableDelayedExpansion
 
 rem ============================================================
-rem INSTALAR.bat - Compila e instala FerramentaEMT no Revit 2025
+rem INSTALAR.bat - Compila e instala SteelBIM no Revit 2025
 rem ============================================================
 
 set "REPO_DIR=%~dp0"
-set "PROJ_DIR=%REPO_DIR%FerramentaEMT"
+set "PROJ_DIR=%REPO_DIR%SteelBIM"
 set "BUILD_OUT=%PROJ_DIR%\bin\Release\net8.0-windows"
-set "DLL_SRC=%BUILD_OUT%\FerramentaEMT.dll"
+set "DLL_SRC=%BUILD_OUT%\SteelBIM.dll"
 set "ADDIN_DIR=%APPDATA%\Autodesk\Revit\Addins\2025"
-set "ADDIN_SUBDIR=%ADDIN_DIR%\FerramentaEMT"
-set "ADDIN_MANIFEST=%ADDIN_DIR%\FerramentaEMT.addin"
+set "ADDIN_SUBDIR=%ADDIN_DIR%\SteelBIM"
+set "ADDIN_MANIFEST=%ADDIN_DIR%\SteelBIM.addin"
 
 echo.
 echo ============================================================
-echo   FerramentaEMT - Compilar e Instalar no Revit 2025
+echo   SteelBIM - Compilar e Instalar no Revit 2025
 echo ============================================================
 echo.
 echo [DEBUG] REPO_DIR  = [%REPO_DIR%]
@@ -51,9 +51,9 @@ if exist "%PROJ_DIR%\obj" rd /s /q "%PROJ_DIR%\obj"
 echo.
 
 rem ---- 4. Compilar ------------------------------------------
-echo [2/4] Compilando FerramentaEMT (Release)...
+echo [2/4] Compilando SteelBIM (Release)...
 echo.
-dotnet build "%PROJ_DIR%\FerramentaEMT.csproj" -c Release --nologo
+dotnet build "%PROJ_DIR%\SteelBIM.csproj" -c Release --nologo
 if errorlevel 1 (
     echo.
     echo [ERRO] Build falhou.
@@ -64,7 +64,7 @@ echo.
 
 rem ---- 5. Conferir se a DLL foi gerada ----------------------
 if not exist "%DLL_SRC%" (
-    echo [ERRO] FerramentaEMT.dll nao encontrada em:
+    echo [ERRO] SteelBIM.dll nao encontrada em:
     echo %DLL_SRC%
     pause
     exit /b 1
@@ -83,10 +83,10 @@ echo [4/4] Gerando manifest e copiando binarios...
 > "%ADDIN_MANIFEST%" echo ^<?xml version="1.0" encoding="utf-8" standalone="no"?^>
 >> "%ADDIN_MANIFEST%" echo ^<RevitAddIns^>
 >> "%ADDIN_MANIFEST%" echo   ^<AddIn Type="Application"^>
->> "%ADDIN_MANIFEST%" echo     ^<Name^>FerramentaEMT^</Name^>
->> "%ADDIN_MANIFEST%" echo     ^<Assembly^>%ADDIN_SUBDIR%\FerramentaEMT.dll^</Assembly^>
+>> "%ADDIN_MANIFEST%" echo     ^<Name^>SteelBIM^</Name^>
+>> "%ADDIN_MANIFEST%" echo     ^<Assembly^>%ADDIN_SUBDIR%\SteelBIM.dll^</Assembly^>
 >> "%ADDIN_MANIFEST%" echo     ^<AddInId^>610FE337-F95D-4813-8BF8-2CE11C9948C1^</AddInId^>
->> "%ADDIN_MANIFEST%" echo     ^<FullClassName^>FerramentaEMT.App^</FullClassName^>
+>> "%ADDIN_MANIFEST%" echo     ^<FullClassName^>SteelBIM.App^</FullClassName^>
 >> "%ADDIN_MANIFEST%" echo     ^<VendorId^>EMT^</VendorId^>
 >> "%ADDIN_MANIFEST%" echo     ^<VendorDescription^>Ferramenta EMT^</VendorDescription^>
 >> "%ADDIN_MANIFEST%" echo   ^</AddIn^>
@@ -107,10 +107,10 @@ echo.
 
 rem ---- 9. Resumo final --------------------------------------
 echo ============================================================
-echo   SUCESSO! FerramentaEMT instalado para Revit 2025
+echo   SUCESSO! SteelBIM instalado para Revit 2025
 echo ============================================================
 echo.
-echo   DLL:      %ADDIN_SUBDIR%\FerramentaEMT.dll
+echo   DLL:      %ADDIN_SUBDIR%\SteelBIM.dll
 echo   Manifest: %ADDIN_MANIFEST%
 echo.
 echo   Abra o Revit 2025. Se pedir autorizacao, permita.
