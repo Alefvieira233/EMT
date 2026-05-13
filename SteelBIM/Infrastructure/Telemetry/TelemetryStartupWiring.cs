@@ -1,7 +1,7 @@
 using System;
-using FerramentaEMT.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Privacy;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Cola entre App.OnStartup e TelemetryReporter — concentra o wiring

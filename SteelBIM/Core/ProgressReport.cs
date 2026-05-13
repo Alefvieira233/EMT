@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Core
+namespace SteelBIM.Core
 {
     /// <summary>
     /// Evento de progresso de uma operacao longa, reportado via <see cref="IProgress{T}"/>.

@@ -5,9 +5,9 @@ using System.Globalization;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
+namespace SteelBIM.Services.ModelCheck.ModelCheckRules
 {
     /// <summary>
     /// Verifica elementos estruturais (vigas/pilares) com comprimento zero ou menor que 1mm.

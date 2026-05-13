@@ -1,12 +1,12 @@
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models;
-using FerramentaEMT.Services;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Models;
+using SteelBIM.Services;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdGerarVistaPeca : FerramentaCommandBase

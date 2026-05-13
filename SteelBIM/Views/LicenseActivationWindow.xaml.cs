@@ -5,14 +5,14 @@ using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Infrastructure.Update;
-using FerramentaEMT.Licensing;
-using FerramentaEMT.Models.Privacy;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Update;
+using SteelBIM.Licensing;
+using SteelBIM.Models.Privacy;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     /// <summary>
     /// Janela de ativacao de licenca. Usuario cola a chave, clica Ativar.

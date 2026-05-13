@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Models.Montagem
+namespace SteelBIM.Models.Montagem
 {
     /// <summary>Escopo de elementos para o plano de montagem.</summary>
     public enum EscopoMontagem

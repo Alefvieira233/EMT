@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Win32;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Gera um identificador estavel da maquina para amarrar a licenca a um PC especifico.

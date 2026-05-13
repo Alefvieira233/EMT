@@ -1,14 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Infrastructure.Update;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Update;
+using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Update
+namespace SteelBIM.Tests.Infrastructure.Update
 {
     [Collection("UpdateSession")]
     public class UpdateCheckServiceTests

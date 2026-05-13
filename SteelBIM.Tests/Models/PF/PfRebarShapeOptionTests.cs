@@ -1,8 +1,8 @@
-using FerramentaEMT.Models.PF;
+using SteelBIM.Models.PF;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Models.PF
+namespace SteelBIM.Tests.Models.PF
 {
     /// <summary>
     /// Testes da DTO <see cref="PfRebarShapeOption"/> usada pelo catalogo de RebarShape

@@ -1,14 +1,14 @@
 using System;
 using System.Linq;
-using FerramentaEMT.Infrastructure.CrashReporting;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Sentry;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.CrashReporting
+namespace SteelBIM.Tests.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Smoke test end-to-end (Ajuste 1 do plano): exercita o pipeline

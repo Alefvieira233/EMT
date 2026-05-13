@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FerramentaEMT.Services.Trelica
+namespace SteelBIM.Services.Trelica
 {
     /// <summary>
     /// Helper puro (sem dependencia Revit) para calculos geometricos sobre

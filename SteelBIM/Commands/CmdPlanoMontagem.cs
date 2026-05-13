@@ -2,9 +2,9 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Views;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     /// <summary>
     /// Comando para abrir a janela de Plano de Montagem (Erection Plan).

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.Montagem;
+using SteelBIM.Models.Montagem;
 
-namespace FerramentaEMT.Tests.Services.Montagem
+namespace SteelBIM.Tests.Services.Montagem
 {
     public class PlanoMontagemReportTests
     {

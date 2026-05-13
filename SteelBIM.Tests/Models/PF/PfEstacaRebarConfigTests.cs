@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Xunit;
-using FerramentaEMT.Models.PF;
+using SteelBIM.Models.PF;
 
-namespace FerramentaEMT.Tests.Models.PF
+namespace SteelBIM.Tests.Models.PF
 {
     /// <summary>
     /// Cobertura do DTO da F4 Acos de Estaca (Onda 3.5).

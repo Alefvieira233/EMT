@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.CrashReporting;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.CrashReporting
+namespace SteelBIM.Tests.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Cobre a resolucao de DSN do Sentry — espelha a estrutura dos

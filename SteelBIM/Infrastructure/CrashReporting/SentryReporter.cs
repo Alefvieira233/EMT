@@ -1,9 +1,9 @@
 using System;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 using Sentry;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace SteelBIM.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Facade estatico para crash reporting remoto via Sentry.

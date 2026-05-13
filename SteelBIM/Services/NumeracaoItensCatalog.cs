@@ -4,9 +4,9 @@ using System.Globalization;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models;
+using SteelBIM.Models;
 
-namespace FerramentaEMT.Services
+namespace SteelBIM.Services
 {
     internal sealed class NumeracaoElementoInfo
     {

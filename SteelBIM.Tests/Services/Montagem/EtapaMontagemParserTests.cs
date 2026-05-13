@@ -1,9 +1,9 @@
 #nullable enable
-using FerramentaEMT.Services.Montagem;
+using SteelBIM.Services.Montagem;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.Montagem
+namespace SteelBIM.Tests.Services.Montagem
 {
     public class EtapaMontagemParserTests
     {

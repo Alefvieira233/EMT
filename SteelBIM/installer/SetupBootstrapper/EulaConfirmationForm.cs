@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
-namespace FerramentaEMT.SetupBootstrapper;
+namespace SteelBIM.SetupBootstrapper;
 
 /// <summary>
 /// Dialogo modal de aceitacao do EULA antes da instalacao.

@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace FerramentaEMT.Utils
+namespace SteelBIM.Utils
 {
     /// <summary>
     /// Sprint 4: helpers de inicializacao padrao para janelas WPF do FerramentaEMT.

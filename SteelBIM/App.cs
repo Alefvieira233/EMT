@@ -9,17 +9,17 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Infrastructure.CrashReporting;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Infrastructure.Telemetry;
-using FerramentaEMT.Infrastructure.Update;
-using FerramentaEMT.Licensing;
-using FerramentaEMT.Models.Privacy;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Infrastructure;
+using SteelBIM.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Telemetry;
+using SteelBIM.Infrastructure.Update;
+using SteelBIM.Licensing;
+using SteelBIM.Models.Privacy;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT
+namespace SteelBIM
 {
     public class App : IExternalApplication
     {

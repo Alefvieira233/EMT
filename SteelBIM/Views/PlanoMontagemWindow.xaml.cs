@@ -5,13 +5,13 @@ using System.Windows;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.Montagem;
-using FerramentaEMT.Services.Montagem;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.Montagem;
+using SteelBIM.Services.Montagem;
+using SteelBIM.Utils;
 using Microsoft.Win32;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class PlanoMontagemWindow : Window
     {

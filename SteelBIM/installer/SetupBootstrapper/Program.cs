@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace FerramentaEMT.SetupBootstrapper;
+namespace SteelBIM.SetupBootstrapper;
 
 internal static class Program
 {

@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     public enum EscopoMarcacao
     {

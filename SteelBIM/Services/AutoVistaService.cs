@@ -6,11 +6,11 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Services
+namespace SteelBIM.Services
 {
     /// <summary>
     /// Gera vistas de detalhe (longitudinal e transversal) para pecas estruturais,

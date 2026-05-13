@@ -5,12 +5,12 @@ using System.Linq;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     /// <summary>
     /// Comando "Cotar Treliça" — aplica o padrao de cotagem EMT em 5 faixas

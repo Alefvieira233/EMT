@@ -1,11 +1,11 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using FerramentaEMT.Infrastructure.Update;
+using SteelBIM.Infrastructure.Update;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Update
+namespace SteelBIM.Tests.Infrastructure.Update
 {
     public class ZipSlipValidatorTests
     {

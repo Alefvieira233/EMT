@@ -2,10 +2,10 @@ using System;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
-using FerramentaEMT.Core;
-using FerramentaEMT.Views;
+using SteelBIM.Core;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Utils
+namespace SteelBIM.Utils
 {
     /// <summary>
     /// Host para executar operacoes longas dentro do Revit com feedback visual

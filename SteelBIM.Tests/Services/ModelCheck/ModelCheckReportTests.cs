@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Tests.Services.ModelCheck
+namespace SteelBIM.Tests.Services.ModelCheck
 {
     public class ModelCheckReportTests
     {

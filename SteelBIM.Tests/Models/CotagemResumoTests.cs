@@ -1,9 +1,9 @@
 using System.Reflection;
-using FerramentaEMT.Models;
+using SteelBIM.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Models
+namespace SteelBIM.Tests.Models
 {
     /// <summary>
     /// Cobertura do POCO retornado pelos entry-points de <c>CotasService</c>

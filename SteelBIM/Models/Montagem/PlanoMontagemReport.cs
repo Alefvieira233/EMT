@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models.Montagem
+namespace SteelBIM.Models.Montagem
 {
     /// <summary>
     /// Relatório de um plano de montagem gerado, contendo a sequência de etapas

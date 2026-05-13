@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Decide se um evento de telemetria deve ser enviado, em funcao

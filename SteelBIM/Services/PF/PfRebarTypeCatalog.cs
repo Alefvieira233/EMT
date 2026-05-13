@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 
-namespace FerramentaEMT.Services.PF
+namespace SteelBIM.Services.PF
 {
     internal sealed class PfRebarBarTypeOption
     {

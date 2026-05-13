@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// DTO puro de evento de telemetria. Properties eh um dictionary

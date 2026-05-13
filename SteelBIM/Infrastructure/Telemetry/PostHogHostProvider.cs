@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Resolve o endpoint do PostHog em runtime. Default eh

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using FerramentaEMT.Licensing;
+using SteelBIM.Licensing;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Licensing
+namespace SteelBIM.Tests.Licensing
 {
     /// <summary>
     /// Cobre a resolucao de prioridades do segredo HMAC.

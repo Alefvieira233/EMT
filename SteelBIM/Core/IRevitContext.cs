@@ -2,7 +2,7 @@ using System;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 
-namespace FerramentaEMT.Core
+namespace SteelBIM.Core
 {
     /// <summary>
     /// Abstrai o acesso ao Revit para os servicos do plugin.

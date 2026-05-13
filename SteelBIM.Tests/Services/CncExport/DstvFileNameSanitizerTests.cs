@@ -1,9 +1,9 @@
 #nullable enable
-using FerramentaEMT.Services.CncExport;
+using SteelBIM.Services.CncExport;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.CncExport
+namespace SteelBIM.Tests.Services.CncExport
 {
     public class DstvFileNameSanitizerTests
     {

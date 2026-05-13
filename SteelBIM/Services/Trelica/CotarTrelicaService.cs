@@ -5,11 +5,11 @@ using System.Diagnostics;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Services.Trelica
+namespace SteelBIM.Services.Trelica
 {
     /// <summary>
     /// Orquestrador principal da funcao "Cotar Treliça". Implementa o pipeline

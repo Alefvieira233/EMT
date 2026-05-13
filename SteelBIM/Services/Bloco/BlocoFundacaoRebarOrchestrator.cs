@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.Bloco;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.Bloco;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Services.Bloco
+namespace SteelBIM.Services.Bloco
 {
     internal sealed class BlocoFundacaoRebarOrchestrator
     {

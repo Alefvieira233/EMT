@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Telemetry;
+using SteelBIM.Infrastructure.Telemetry;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Telemetry
+namespace SteelBIM.Tests.Infrastructure.Telemetry
 {
     /// <summary>
     /// Cobre o SessionIdProvider — UUID v4 anonimo, persistencia,

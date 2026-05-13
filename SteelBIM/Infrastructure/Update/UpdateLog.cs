@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Logging facade puro para o subsistema de auto-update.

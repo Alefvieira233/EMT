@@ -3,10 +3,10 @@ using System.IO;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 using Microsoft.Win32;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Persiste o estado de licenca/trial em disco, criptografado com DPAPI (CurrentUser).

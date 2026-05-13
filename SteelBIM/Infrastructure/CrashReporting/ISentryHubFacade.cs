@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Sentry;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace SteelBIM.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Abstracao mockavel sobre o subset do Sentry SDK que o

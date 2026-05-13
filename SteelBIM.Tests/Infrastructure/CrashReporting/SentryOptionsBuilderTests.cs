@@ -1,10 +1,10 @@
 using System;
-using FerramentaEMT.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.CrashReporting;
 using FluentAssertions;
 using Sentry;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.CrashReporting
+namespace SteelBIM.Tests.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Cobre o builder de SentryOptions:

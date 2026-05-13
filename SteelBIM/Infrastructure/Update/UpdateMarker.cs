@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Marker JSON gravado em

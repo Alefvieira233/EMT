@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Resolve o segredo HMAC usado pelo KeySigner em tempo de execucao.

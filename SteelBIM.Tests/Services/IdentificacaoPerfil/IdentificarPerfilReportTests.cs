@@ -1,9 +1,9 @@
 #nullable enable
 using System.Collections.Generic;
 using Xunit;
-using FerramentaEMT.Services.IdentificacaoPerfil;
+using SteelBIM.Services.IdentificacaoPerfil;
 
-namespace FerramentaEMT.Tests.Services.IdentificacaoPerfil
+namespace SteelBIM.Tests.Services.IdentificacaoPerfil
 {
     /// <summary>
     /// Testes unitarios do relatorio de identificacao de perfil.

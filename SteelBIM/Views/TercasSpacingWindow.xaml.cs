@@ -1,11 +1,11 @@
-using FerramentaEMT.Utils;
+using SteelBIM.Utils;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class TercasSpacingWindow : Window
     {

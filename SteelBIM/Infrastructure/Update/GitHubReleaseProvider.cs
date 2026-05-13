@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Implementacao real do <see cref="IGitHubReleaseProvider"/> usando HttpClient.

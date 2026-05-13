@@ -2,10 +2,10 @@ using System.Linq;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models;
-using FerramentaEMT.Services;
+using SteelBIM.Models;
+using SteelBIM.Services;
 
-namespace FerramentaEMT.Commands.PF
+namespace SteelBIM.Commands.PF
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdPfElevacaoFormaVigas : FerramentaCommandBase

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// DTO mapeado da resposta de GET /repos/{owner}/{repo}/releases/latest

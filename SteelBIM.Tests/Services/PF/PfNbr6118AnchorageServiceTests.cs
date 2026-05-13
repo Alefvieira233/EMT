@@ -1,10 +1,10 @@
 using System;
-using FerramentaEMT.Models.PF;
-using FerramentaEMT.Services.PF;
+using SteelBIM.Models.PF;
+using SteelBIM.Services.PF;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.PF
+namespace SteelBIM.Tests.Services.PF
 {
     /// <summary>
     /// Testes do calculo de ancoragem e traspasse NBR 6118 (Victor Wave 2).

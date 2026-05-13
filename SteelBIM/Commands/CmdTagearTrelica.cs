@@ -2,13 +2,13 @@
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Services.Trelica;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Services.Trelica;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     /// <summary>
     /// Comando para identificacao leve de treliça (tagging sem cotas).

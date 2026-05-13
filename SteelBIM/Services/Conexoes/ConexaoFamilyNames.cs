@@ -1,6 +1,6 @@
-using FerramentaEMT.Models.Conexoes;
+using SteelBIM.Models.Conexoes;
 
-namespace FerramentaEMT.Services.Conexoes
+namespace SteelBIM.Services.Conexoes
 {
     /// <summary>
     /// Nomes canonicos das familias Revit utilizadas por cada <see cref="TipoConexao"/>.

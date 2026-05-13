@@ -1,9 +1,9 @@
 #nullable enable
 using System.Collections.Generic;
 using Xunit;
-using FerramentaEMT.Services.Trelica;
+using SteelBIM.Services.Trelica;
 
-namespace FerramentaEMT.Tests.Services.Trelica
+namespace SteelBIM.Tests.Services.Trelica
 {
     /// <summary>
     /// Testes unitarios do relatorio de tagging de trelica.

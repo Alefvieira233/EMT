@@ -2,10 +2,10 @@
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Services.Conexoes;
-using FerramentaEMT.Views;
+using SteelBIM.Services.Conexoes;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdLancarPlacasBase : FerramentaCommandBase

@@ -1,10 +1,10 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
-using FerramentaEMT.Services;
-using FerramentaEMT.Utils;
+using SteelBIM.Services;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class NumeracaoItensControleWindow : Window
     {

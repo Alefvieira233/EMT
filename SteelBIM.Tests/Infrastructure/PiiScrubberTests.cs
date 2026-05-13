@@ -1,8 +1,8 @@
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure
+namespace SteelBIM.Tests.Infrastructure
 {
     /// <summary>
     /// Cobre os 2 padroes que o PiiScrubber tem que remover antes de qualquer

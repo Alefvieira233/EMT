@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace SteelBIM.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Resolve o Sentry DSN em tempo de execucao.

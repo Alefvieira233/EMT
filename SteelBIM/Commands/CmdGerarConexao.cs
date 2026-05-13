@@ -4,12 +4,12 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Services.Conexoes;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Infrastructure;
+using SteelBIM.Services.Conexoes;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     /// <summary>
     /// Comando para gerar conexões estruturais (Chapa de Ponta, Dupla Cantoneira, Chapa Gusset)

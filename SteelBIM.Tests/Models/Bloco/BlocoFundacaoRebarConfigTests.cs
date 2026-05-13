@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Xunit;
-using FerramentaEMT.Models.Bloco;
+using SteelBIM.Models.Bloco;
 
-namespace FerramentaEMT.Tests.Models.Bloco
+namespace SteelBIM.Tests.Models.Bloco
 {
     /// <summary>
     /// Cobertura dos DTOs da F3 Bloco Fundacao Armaduras (Onda 3).

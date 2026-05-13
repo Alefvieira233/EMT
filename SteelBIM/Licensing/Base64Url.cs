@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Codificacao Base64URL (variante segura para URL: usa '-' '_' no lugar de '+' '/' e

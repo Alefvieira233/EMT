@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Xunit;
-using FerramentaEMT.Models.Conexoes;
+using SteelBIM.Models.Conexoes;
 
-namespace FerramentaEMT.Tests.Models.Conexoes
+namespace SteelBIM.Tests.Models.Conexoes
 {
     /// <summary>
     /// Cobertura do shape do resultado retornado pelo PlacaBaseLancamentoService.

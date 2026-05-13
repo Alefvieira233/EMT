@@ -4,12 +4,12 @@ using System.Linq;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models.Bloco;
-using FerramentaEMT.Services.Bloco;
-using FerramentaEMT.Services.PF;
-using FerramentaEMT.Views;
+using SteelBIM.Models.Bloco;
+using SteelBIM.Services.Bloco;
+using SteelBIM.Services.PF;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands.PF
+namespace SteelBIM.Commands.PF
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdBlocoFundacaoArmaduras : FerramentaCommandBase

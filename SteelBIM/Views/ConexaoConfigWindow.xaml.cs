@@ -1,11 +1,11 @@
 #nullable enable
 using System;
 using System.Windows;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.Conexoes;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.Conexoes;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class ConexaoConfigWindow : Window
     {

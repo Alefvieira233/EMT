@@ -2,7 +2,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Assina e valida chaves de licenca usando HMAC-SHA256.

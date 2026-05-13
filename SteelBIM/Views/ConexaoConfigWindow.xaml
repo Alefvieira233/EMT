@@ -1,4 +1,4 @@
-<Window x:Class="FerramentaEMT.Views.ConexaoConfigWindow"
+<Window x:Class="SteelBIM.Views.ConexaoConfigWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Configurar Conexão"
@@ -13,7 +13,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+                <ResourceDictionary Source="/SteelBIM;component/Views/Themes/AppTheme.Base.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>

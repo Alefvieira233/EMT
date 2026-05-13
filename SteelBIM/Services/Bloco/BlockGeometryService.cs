@@ -5,7 +5,7 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 
-namespace FerramentaEMT.Services.Bloco
+namespace SteelBIM.Services.Bloco
 {
     internal static class BlockGeometryService
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Conteudo de uma chave de licenca (parte "publica" — vai serializada no arquivo

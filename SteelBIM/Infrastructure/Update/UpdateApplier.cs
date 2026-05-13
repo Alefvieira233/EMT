@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Aplica updates pendentes no proximo App.OnStartup.

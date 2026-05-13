@@ -1,9 +1,9 @@
 using System;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Models.Privacy;
 
-namespace FerramentaEMT.Infrastructure.Privacy
+namespace SteelBIM.Infrastructure.Privacy
 {
     /// <summary>
     /// Serializacao/desserializacao pura de <see cref="PrivacySettings"/>

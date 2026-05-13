@@ -5,14 +5,14 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Infrastructure.Telemetry;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Telemetry;
+using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Telemetry
+namespace SteelBIM.Tests.Infrastructure.Telemetry
 {
     /// <summary>
     /// Smoke test end-to-end (espelha o SentryEndToEndTests da PR-3):

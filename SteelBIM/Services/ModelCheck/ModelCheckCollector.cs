@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 
-namespace FerramentaEMT.Services.ModelCheck
+namespace SteelBIM.Services.ModelCheck
 {
     /// <summary>
     /// Utilitario estatico para coleta centralizada de elementos estruturais

@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Identificador anonimo de instalacao para telemetria PostHog.

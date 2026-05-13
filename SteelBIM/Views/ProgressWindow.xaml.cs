@@ -1,9 +1,9 @@
 using System;
 using System.Windows;
-using FerramentaEMT.Core;
-using FerramentaEMT.Utils;
+using SteelBIM.Core;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     /// <summary>
     /// Dialogo reutilizavel de progresso para operacoes longas.

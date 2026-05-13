@@ -1,12 +1,12 @@
 #nullable enable
 
 using Autodesk.Revit.DB;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FerramentaEMT.Services.Trelica
+namespace SteelBIM.Services.Trelica
 {
     /// <summary>
     /// Helper estatico que centraliza todas as chamadas de API Revit necessarias

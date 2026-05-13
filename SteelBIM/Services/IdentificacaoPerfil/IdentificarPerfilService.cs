@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Services.Trelica;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Services.Trelica;
 
-namespace FerramentaEMT.Services.IdentificacaoPerfil
+namespace SteelBIM.Services.IdentificacaoPerfil
 {
     /// <summary>
     /// Servico para identificacao em massa de perfis metalicos em qualquer vista

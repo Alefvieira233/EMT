@@ -1,10 +1,10 @@
 using System.Globalization;
 using System.Threading;
-using FerramentaEMT.Models.PF;
+using SteelBIM.Models.PF;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Models.PF
+namespace SteelBIM.Tests.Models.PF
 {
     /// <summary>
     /// Testes de <see cref="PfTwoPileCapBarPosition.ToComment"/> — o formato gerado

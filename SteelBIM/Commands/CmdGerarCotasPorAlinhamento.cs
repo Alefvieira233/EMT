@@ -1,11 +1,11 @@
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models;
-using FerramentaEMT.Services;
-using FerramentaEMT.Utils;
+using SteelBIM.Models;
+using SteelBIM.Services;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdGerarCotasPorAlinhamento : FerramentaCommandBase

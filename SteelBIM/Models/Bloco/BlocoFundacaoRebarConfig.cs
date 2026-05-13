@@ -1,7 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models.Bloco
+namespace SteelBIM.Models.Bloco
 {
     public enum BlocoDirecao
     {

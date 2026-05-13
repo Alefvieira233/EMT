@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Autodesk.Revit.DB;
-using FerramentaEMT.Models.Conexoes;
-using FerramentaEMT.Services.Conexoes;
-using FerramentaEMT.Utils;
+using SteelBIM.Models.Conexoes;
+using SteelBIM.Services.Conexoes;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class PlacaBaseConfigWindow : Window
     {

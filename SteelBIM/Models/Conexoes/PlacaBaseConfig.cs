@@ -1,6 +1,6 @@
 using Autodesk.Revit.DB;
 
-namespace FerramentaEMT.Models.Conexoes
+namespace SteelBIM.Models.Conexoes
 {
     public sealed class PlacaBaseConfig
     {

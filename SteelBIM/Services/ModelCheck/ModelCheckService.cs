@@ -8,12 +8,12 @@ using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using ClosedXML.Excel;
-using FerramentaEMT.Core;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.ModelCheck;
-using FerramentaEMT.Services.ModelCheck.ModelCheckRules;
+using SteelBIM.Core;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.ModelCheck;
+using SteelBIM.Services.ModelCheck.ModelCheckRules;
 
-namespace FerramentaEMT.Services.ModelCheck
+namespace SteelBIM.Services.ModelCheck
 {
     /// <summary>
     /// Orquestrador de verificacao de modelo.

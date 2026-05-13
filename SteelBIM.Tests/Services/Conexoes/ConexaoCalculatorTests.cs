@@ -1,10 +1,10 @@
 using System;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.Conexoes;
-using FerramentaEMT.Services.Conexoes;
+using SteelBIM.Models.Conexoes;
+using SteelBIM.Services.Conexoes;
 
-namespace FerramentaEMT.Tests.Services.Conexoes
+namespace SteelBIM.Tests.Services.Conexoes
 {
     public class ConexaoCalculatorTests
     {

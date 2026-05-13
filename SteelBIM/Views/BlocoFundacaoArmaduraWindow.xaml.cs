@@ -4,11 +4,11 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using Autodesk.Revit.DB;
-using FerramentaEMT.Models.Bloco;
-using FerramentaEMT.Services.PF;
-using FerramentaEMT.Utils;
+using SteelBIM.Models.Bloco;
+using SteelBIM.Services.PF;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class BlocoFundacaoArmaduraWindow : Window
     {

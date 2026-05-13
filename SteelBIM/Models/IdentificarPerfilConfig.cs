@@ -1,5 +1,5 @@
 #nullable enable
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     /// <summary>
     /// Configuracao para comando "Identificar Perfil em Massa".

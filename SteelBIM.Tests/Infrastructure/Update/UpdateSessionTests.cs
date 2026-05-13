@@ -1,8 +1,8 @@
-using FerramentaEMT.Infrastructure.Update;
+using SteelBIM.Infrastructure.Update;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Update
+namespace SteelBIM.Tests.Infrastructure.Update
 {
     /// <summary>
     /// UpdateSession eh estatica — usamos uma collection xUnit para

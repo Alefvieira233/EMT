@@ -1,10 +1,10 @@
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 using Sentry;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace SteelBIM.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Constroi as <see cref="SentryOptions"/> usadas pelo SentryReporter.

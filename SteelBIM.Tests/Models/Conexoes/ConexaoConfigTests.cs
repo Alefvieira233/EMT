@@ -1,9 +1,9 @@
 using System;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.Conexoes;
+using SteelBIM.Models.Conexoes;
 
-namespace FerramentaEMT.Tests.Models.Conexoes
+namespace SteelBIM.Tests.Models.Conexoes
 {
     public class ConexaoConfigTests
     {

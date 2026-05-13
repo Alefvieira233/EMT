@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using Xunit;
-using FerramentaEMT.Models;
+using SteelBIM.Models;
 
-namespace FerramentaEMT.Tests.Models
+namespace SteelBIM.Tests.Models
 {
     /// <summary>
     /// Cobertura do shape do resultado retornado pelo <c>CortarElementosService</c>.

@@ -1,8 +1,8 @@
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.CncExport;
+using SteelBIM.Models.CncExport;
 
-namespace FerramentaEMT.Tests.Models.CncExport
+namespace SteelBIM.Tests.Models.CncExport
 {
     public class ExportarDstvConfigTests
     {

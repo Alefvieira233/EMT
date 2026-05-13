@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Comparador SemVer 2.0.0 simplificado para uso interno do auto-update.

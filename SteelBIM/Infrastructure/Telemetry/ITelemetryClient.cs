@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Abstracao mockavel sobre o cliente de telemetria. PR-4 implementa

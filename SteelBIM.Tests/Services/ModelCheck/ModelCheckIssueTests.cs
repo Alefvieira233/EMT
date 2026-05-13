@@ -1,7 +1,7 @@
 using Xunit;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Tests.Services.ModelCheck
+namespace SteelBIM.Tests.Services.ModelCheck
 {
     public class ModelCheckIssueTests
     {

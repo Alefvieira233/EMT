@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Orquestrador da verificacao de atualizacoes. Combina:

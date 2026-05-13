@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 
-namespace FerramentaEMT.Services.Montagem
+namespace SteelBIM.Services.Montagem
 {
     /// <summary>
     /// Parser puro (sem dependencia Revit) para extrair numero da etapa de

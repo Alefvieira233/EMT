@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace FerramentaEMT.Core
+namespace SteelBIM.Core
 {
     /// <summary>
     /// Wrapper thread-safe sobre <see cref="IProgress{T}"/> com throttle por tempo e

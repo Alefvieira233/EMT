@@ -1,9 +1,9 @@
 using System;
-using FerramentaEMT.Core;
+using SteelBIM.Core;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Core
+namespace SteelBIM.Tests.Core
 {
     public class ResultTTests
     {

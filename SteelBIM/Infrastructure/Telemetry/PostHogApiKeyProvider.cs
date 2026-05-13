@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Resolve a API key do PostHog em tempo de execucao.

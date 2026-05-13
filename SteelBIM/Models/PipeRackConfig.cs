@@ -1,7 +1,7 @@
 using Autodesk.Revit.DB;
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     public class PipeRackConfig
     {

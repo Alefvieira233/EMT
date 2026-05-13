@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models.CncExport
+namespace SteelBIM.Models.CncExport
 {
     /// <summary>
     /// Representacao em memoria de um arquivo NC1 (DSTV) para uma peca.

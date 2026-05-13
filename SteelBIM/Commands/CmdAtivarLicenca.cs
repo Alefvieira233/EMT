@@ -2,11 +2,11 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Infrastructure;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     /// <summary>
     /// Comando do ribbon "Licença → Ativar". Abre a janela de ativacao.

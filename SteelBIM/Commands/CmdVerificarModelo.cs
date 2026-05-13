@@ -2,12 +2,12 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models.ModelCheck;
-using FerramentaEMT.Services.ModelCheck;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Models.ModelCheck;
+using SteelBIM.Services.ModelCheck;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdVerificarModelo : FerramentaCommandBase

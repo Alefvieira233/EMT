@@ -11,11 +11,11 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using FerramentaEMT.Core;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.CncExport;
+using SteelBIM.Core;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.CncExport;
 
-namespace FerramentaEMT.Services.CncExport
+namespace SteelBIM.Services.CncExport
 {
     /// <summary>
     /// Servico orquestrador: coleta elementos, monta os DstvFile e grava arquivos .nc1 na pasta destino.

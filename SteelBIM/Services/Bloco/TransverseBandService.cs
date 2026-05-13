@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
-using FerramentaEMT.Models.Bloco;
+using SteelBIM.Models.Bloco;
 using static FerramentaEMT.Services.Bloco.RebarCreationService;
 
-namespace FerramentaEMT.Services.Bloco
+namespace SteelBIM.Services.Bloco
 {
     internal static class TransverseBandService
     {

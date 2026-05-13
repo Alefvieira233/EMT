@@ -1,10 +1,10 @@
 using System;
 using System.Runtime.Versioning;
 using System.Windows;
-using FerramentaEMT.Models.Privacy;
-using FerramentaEMT.Utils;
+using SteelBIM.Models.Privacy;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     /// <summary>
     /// Janela generica de consentimento de privacidade.

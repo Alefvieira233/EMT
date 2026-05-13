@@ -1,6 +1,6 @@
 using Autodesk.Revit.DB;
 
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     public class TrelicaConfig
     {

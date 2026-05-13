@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.Versioning;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Resultado consolidado do estado atual de licenciamento.

@@ -2,11 +2,11 @@ using System;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Windows;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Licensing;
-using FerramentaEMT.Utils;
+using SteelBIM.Infrastructure;
+using SteelBIM.Licensing;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     /// <summary>
     /// Janela "Sobre". Mostra versao, estado de licenca, dados tecnicos.

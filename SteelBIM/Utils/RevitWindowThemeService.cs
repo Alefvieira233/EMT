@@ -6,7 +6,7 @@ using System.Windows.Input;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 
-namespace FerramentaEMT.Utils
+namespace SteelBIM.Utils
 {
     internal static class RevitWindowThemeService
     {

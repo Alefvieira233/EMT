@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models.Montagem
+namespace SteelBIM.Models.Montagem
 {
     /// <summary>
     /// Representa uma etapa de montagem (sequência de erection).

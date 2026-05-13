@@ -6,9 +6,9 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Resultado de uma tentativa de download de update.

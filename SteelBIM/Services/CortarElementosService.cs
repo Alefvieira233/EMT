@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
-using FerramentaEMT.Core;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Utils;
+using SteelBIM.Core;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Services
+namespace SteelBIM.Services
 {
     /// <summary>
     /// Detecta interferencias entre hosts (pisos, quadros estruturais) e cortadores

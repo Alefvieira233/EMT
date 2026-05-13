@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
-using FerramentaEMT.Models.Bloco;
+using SteelBIM.Models.Bloco;
 
-namespace FerramentaEMT.Services.Bloco
+namespace SteelBIM.Services.Bloco
 {
     internal static class RebarCreationService
     {

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace FerramentaEMT.Services.PF
+namespace SteelBIM.Services.PF
 {
     /// <summary>
     /// Formatador puro (sem Revit) para montagem de valores de nomeacao PF.

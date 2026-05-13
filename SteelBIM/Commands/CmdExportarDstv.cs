@@ -2,12 +2,12 @@ using System;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models.CncExport;
-using FerramentaEMT.Services.CncExport;
-using FerramentaEMT.Utils;
-using FerramentaEMT.Views;
+using SteelBIM.Models.CncExport;
+using SteelBIM.Services.CncExport;
+using SteelBIM.Utils;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     [Transaction(TransactionMode.Manual)]
     public class CmdExportarDstv : FerramentaCommandBase

@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Licensing
+namespace SteelBIM.Licensing
 {
     /// <summary>
     /// Estado atual da licenca.

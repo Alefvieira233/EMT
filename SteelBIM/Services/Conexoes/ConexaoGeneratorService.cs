@@ -2,10 +2,10 @@
 using System;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.Conexoes;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.Conexoes;
 
-namespace FerramentaEMT.Services.Conexoes
+namespace SteelBIM.Services.Conexoes
 {
     /// <summary>
     /// Serviço de geração de conexões estruturais (Chapa de Ponta, Dupla Cantoneira, Chapa Gusset).

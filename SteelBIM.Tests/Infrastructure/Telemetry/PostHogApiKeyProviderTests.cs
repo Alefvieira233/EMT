@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Telemetry;
+using SteelBIM.Infrastructure.Telemetry;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Telemetry
+namespace SteelBIM.Tests.Infrastructure.Telemetry
 {
     /// <summary>
     /// Cobre a resolucao de API key — espelho dos SentryDsnProviderTests

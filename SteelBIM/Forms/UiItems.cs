@@ -1,6 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 
-namespace FerramentaEMT.Forms
+namespace SteelBIM.Forms
 {
     public class SymbolItem
     {

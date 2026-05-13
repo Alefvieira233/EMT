@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.CrashReporting;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Sentry;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.CrashReporting
+namespace SteelBIM.Tests.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Cobre os contratos do SentryReporter:

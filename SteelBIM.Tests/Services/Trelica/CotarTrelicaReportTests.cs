@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Services.Trelica;
+using SteelBIM.Services.Trelica;
 
-namespace FerramentaEMT.Tests.Services.Trelica
+namespace SteelBIM.Tests.Services.Trelica
 {
     public class CotarTrelicaReportTests
     {

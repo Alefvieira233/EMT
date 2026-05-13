@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     /// <summary>
     /// Resumo do desfecho de uma operacao de cotagem (CotasService.Executar* e

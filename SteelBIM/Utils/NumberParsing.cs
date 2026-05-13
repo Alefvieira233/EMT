@@ -1,7 +1,7 @@
 #nullable enable
 using System.Globalization;
 
-namespace FerramentaEMT.Utils
+namespace SteelBIM.Utils
 {
     /// <summary>
     /// Helpers para leitura de numeros a partir de <see cref="System.Windows.Controls.TextBox"/>

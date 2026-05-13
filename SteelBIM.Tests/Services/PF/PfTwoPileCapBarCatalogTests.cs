@@ -1,10 +1,10 @@
 using System.Linq;
-using FerramentaEMT.Models.PF;
-using FerramentaEMT.Services.PF;
+using SteelBIM.Models.PF;
+using SteelBIM.Services.PF;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.PF
+namespace SteelBIM.Tests.Services.PF
 {
     /// <summary>
     /// Testes do catalogo estatico de 14 barras de bloco de 2 estacas

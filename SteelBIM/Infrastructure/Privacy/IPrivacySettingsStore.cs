@@ -1,6 +1,6 @@
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Models.Privacy;
 
-namespace FerramentaEMT.Infrastructure.Privacy
+namespace SteelBIM.Infrastructure.Privacy
 {
     /// <summary>
     /// Abstracao sobre a persistencia de PrivacySettings em privacy.json.

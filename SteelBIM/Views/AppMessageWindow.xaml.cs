@@ -1,8 +1,8 @@
-using FerramentaEMT.Utils;
+using SteelBIM.Utils;
 using System.Windows;
 using System.Windows.Media;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class AppMessageWindow : Window
     {

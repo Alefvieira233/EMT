@@ -1,9 +1,9 @@
 #nullable enable
-using FerramentaEMT.Services.Trelica;
+using SteelBIM.Services.Trelica;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.Trelica
+namespace SteelBIM.Tests.Services.Trelica
 {
     public class TrelicaPerfilFormatterTests
     {

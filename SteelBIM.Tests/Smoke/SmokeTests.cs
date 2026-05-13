@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Smoke
+namespace SteelBIM.Tests.Smoke
 {
     /// <summary>
     /// Testes de smoke garantem que a infraestrutura de teste funciona.

@@ -4,11 +4,11 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Models.ModelCheck;
-using FerramentaEMT.Utils;
+using SteelBIM.Models.ModelCheck;
+using SteelBIM.Utils;
 using Microsoft.Win32;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class VerificarModeloWindow : Window
     {

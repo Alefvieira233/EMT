@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models.ModelCheck
+namespace SteelBIM.Models.ModelCheck
 {
     /// <summary>
     /// Configuracao para a verificacao de modelo.

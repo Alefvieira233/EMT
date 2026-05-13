@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.Privacy;
 
-namespace FerramentaEMT.Infrastructure.Privacy
+namespace SteelBIM.Infrastructure.Privacy
 {
     /// <summary>
     /// Persiste <see cref="PrivacySettings"/> em

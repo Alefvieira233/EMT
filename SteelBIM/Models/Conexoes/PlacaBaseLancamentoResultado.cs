@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Models.Conexoes
+namespace SteelBIM.Models.Conexoes
 {
     public sealed class PlacaBaseLancamentoResultado
     {

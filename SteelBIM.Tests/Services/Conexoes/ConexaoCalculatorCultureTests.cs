@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Threading;
-using FerramentaEMT.Models.Conexoes;
-using FerramentaEMT.Services.Conexoes;
+using SteelBIM.Models.Conexoes;
+using SteelBIM.Services.Conexoes;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.Conexoes
+namespace SteelBIM.Tests.Services.Conexoes
 {
     /// <summary>
     /// Regression tests: marcadores de conexao PRECISAM ser culture-invariant

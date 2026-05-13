@@ -1,9 +1,9 @@
 using System;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.Montagem;
+using SteelBIM.Models.Montagem;
 
-namespace FerramentaEMT.Tests.Models.Montagem
+namespace SteelBIM.Tests.Models.Montagem
 {
     public class EtapaMontagemTests
     {

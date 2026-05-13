@@ -1,5 +1,5 @@
 #nullable enable
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     /// <summary>
     /// Configuracao da funcao Cotar Trelica (ver docs/PLANO-LAPIDACAO.md secao 6.1).

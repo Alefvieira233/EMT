@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Sentry;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace SteelBIM.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Implementacao real da ISentryHubFacade — delega para o SentrySdk

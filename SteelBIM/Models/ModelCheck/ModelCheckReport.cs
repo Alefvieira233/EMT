@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FerramentaEMT.Models.ModelCheck
+namespace SteelBIM.Models.ModelCheck
 {
     /// <summary>
     /// Relatorio consolidado da verificacao de modelo.

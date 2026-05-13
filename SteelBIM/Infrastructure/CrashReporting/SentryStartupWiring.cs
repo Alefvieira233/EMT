@@ -1,7 +1,7 @@
 using System;
-using FerramentaEMT.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Privacy;
 
-namespace FerramentaEMT.Infrastructure.CrashReporting
+namespace SteelBIM.Infrastructure.CrashReporting
 {
     /// <summary>
     /// Cola entre App.OnStartup e SentryReporter — concentra todo o

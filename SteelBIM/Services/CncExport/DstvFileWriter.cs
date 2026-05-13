@@ -2,9 +2,9 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using FerramentaEMT.Models.CncExport;
+using SteelBIM.Models.CncExport;
 
-namespace FerramentaEMT.Services.CncExport
+namespace SteelBIM.Services.CncExport
 {
     /// <summary>
     /// Serializa um <see cref="DstvFile"/> em texto NC1 (formato DSTV ASCII).

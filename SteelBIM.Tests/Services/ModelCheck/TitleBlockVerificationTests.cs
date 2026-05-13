@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Tests.Services.ModelCheck
+namespace SteelBIM.Tests.Services.ModelCheck
 {
     /// <summary>
     /// Testes de logica pura para a verificacao de carimbo (TitleBlock) do Miniciclo 4.

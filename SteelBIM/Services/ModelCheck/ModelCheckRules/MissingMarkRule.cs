@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Services.ModelCheck.ModelCheckRules
+namespace SteelBIM.Services.ModelCheck.ModelCheckRules
 {
     /// <summary>
     /// Verifica elementos estruturais sem marca de fabricacao (ALL_MODEL_MARK vazio).

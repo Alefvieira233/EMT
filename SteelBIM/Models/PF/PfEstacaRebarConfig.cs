@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Models.PF
+namespace SteelBIM.Models.PF
 {
     /// <summary>
     /// Config para o comando "PF - Aços Estaca": lança barras longitudinais

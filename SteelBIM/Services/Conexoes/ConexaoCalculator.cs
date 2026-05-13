@@ -1,8 +1,8 @@
 using System;
 using System.Globalization;
-using FerramentaEMT.Models.Conexoes;
+using SteelBIM.Models.Conexoes;
 
-namespace FerramentaEMT.Services.Conexoes
+namespace SteelBIM.Services.Conexoes
 {
     /// <summary>
     /// Classe pura (sem Revit) com lógica matemática e de cálculo para conexões.

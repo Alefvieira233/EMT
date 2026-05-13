@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using Xunit;
 using FluentAssertions;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Tests.Models.ModelCheck
+namespace SteelBIM.Tests.Models.ModelCheck
 {
     public class ModelCheckConfigTests
     {

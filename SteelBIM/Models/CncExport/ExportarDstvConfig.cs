@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Models.CncExport
+namespace SteelBIM.Models.CncExport
 {
     public enum EscopoExportacaoDstv
     {

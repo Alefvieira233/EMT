@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Models.Privacy
+namespace SteelBIM.Models.Privacy
 {
     /// <summary>
     /// Persistencia de consentimento do usuario para 3 features:

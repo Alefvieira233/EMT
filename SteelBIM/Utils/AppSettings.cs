@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 
-namespace FerramentaEMT.Utils
+namespace SteelBIM.Utils
 {
     /// <summary>
     /// Persistencia de preferencias do usuario (perfil padrao, niveis ultima sessao, etc).

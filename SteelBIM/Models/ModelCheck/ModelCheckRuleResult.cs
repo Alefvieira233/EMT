@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models.ModelCheck
+namespace SteelBIM.Models.ModelCheck
 {
     /// <summary>
     /// Resultado da execucao de uma regra de verificacao individual.

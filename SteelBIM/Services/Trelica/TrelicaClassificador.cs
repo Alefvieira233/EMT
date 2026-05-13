@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 
-namespace FerramentaEMT.Services.Trelica
+namespace SteelBIM.Services.Trelica
 {
     /// <summary>
     /// Helper puro (sem dependencia Revit) para classificar barras de uma trelica

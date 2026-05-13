@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 
-namespace FerramentaEMT.Infrastructure.Telemetry
+namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Facade estatico para telemetria de uso via PostHog.

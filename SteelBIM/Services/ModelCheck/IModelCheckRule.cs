@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
-using FerramentaEMT.Models.ModelCheck;
+using SteelBIM.Models.ModelCheck;
 
-namespace FerramentaEMT.Services.ModelCheck
+namespace SteelBIM.Services.ModelCheck
 {
     /// <summary>
     /// Interface para uma regra de verificacao de modelo.

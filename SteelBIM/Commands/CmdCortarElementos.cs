@@ -4,12 +4,12 @@ using System.Linq;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
-using FerramentaEMT.Services;
-using FerramentaEMT.Views;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
+using SteelBIM.Services;
+using SteelBIM.Views;
 
-namespace FerramentaEMT.Commands
+namespace SteelBIM.Commands
 {
     /// <summary>
     /// Detecta e aplica automaticamente corte (JoinGeometry ou SolidSolidCut)

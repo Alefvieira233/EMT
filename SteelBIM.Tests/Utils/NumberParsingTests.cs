@@ -1,10 +1,10 @@
 using System.Globalization;
 using System.Threading;
-using FerramentaEMT.Utils;
+using SteelBIM.Utils;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Utils
+namespace SteelBIM.Tests.Utils
 {
     public class NumberParsingTests
     {

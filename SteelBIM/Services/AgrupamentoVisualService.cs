@@ -7,10 +7,10 @@ using System.Text;
 using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Core;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Core;
+using SteelBIM.Infrastructure;
 
-namespace FerramentaEMT.Services
+namespace SteelBIM.Services
 {
     /// <summary>
     /// Quarta adocao do ADR-003 + ADR-004 (Onda 2).

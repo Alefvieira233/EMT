@@ -1,9 +1,9 @@
 using System.Text;
-using FerramentaEMT.Licensing;
+using SteelBIM.Licensing;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Licensing
+namespace SteelBIM.Tests.Licensing
 {
     public class Base64UrlTests
     {

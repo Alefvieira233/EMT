@@ -5,11 +5,11 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Telemetry;
+using SteelBIM.Infrastructure.Telemetry;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Telemetry
+namespace SteelBIM.Tests.Infrastructure.Telemetry
 {
     /// <summary>
     /// Cobre o cliente HTTP-direct: serializacao JSON no formato esperado

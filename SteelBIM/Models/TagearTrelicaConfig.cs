@@ -1,5 +1,5 @@
 #nullable enable
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     /// <summary>
     /// Configuracao para comando "Tagear Treliça" (identificacao leve de perfis).

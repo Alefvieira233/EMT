@@ -3,7 +3,7 @@ using System.IO;
 using Serilog;
 using Serilog.Events;
 
-namespace FerramentaEMT.Infrastructure
+namespace SteelBIM.Infrastructure
 {
     /// <summary>
     /// Wrapper estatico do Serilog para uso em todo o projeto.

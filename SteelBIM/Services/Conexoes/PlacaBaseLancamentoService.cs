@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models.Conexoes;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models.Conexoes;
 
-namespace FerramentaEMT.Services.Conexoes
+namespace SteelBIM.Services.Conexoes
 {
     public sealed class PlacaBaseLancamentoService
     {

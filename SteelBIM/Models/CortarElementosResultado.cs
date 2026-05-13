@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Models
+namespace SteelBIM.Models
 {
     /// <summary>
     /// Resultado consolidado de uma rodada de <c>Services.CortarElementosService</c>.

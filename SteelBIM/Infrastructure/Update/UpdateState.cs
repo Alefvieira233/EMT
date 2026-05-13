@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Resultado de uma verificacao de update.

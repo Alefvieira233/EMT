@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.CrashReporting;
 
-namespace FerramentaEMT.Infrastructure
+namespace SteelBIM.Infrastructure
 {
     /// <summary>
     /// Captura excecoes nao observadas no plugin e as dumpa em arquivo local.

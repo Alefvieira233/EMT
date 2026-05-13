@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace FerramentaEMT.Infrastructure
+namespace SteelBIM.Infrastructure
 {
     /// <summary>
     /// Sanitizador de PII cross-cutting. Aplicado por:

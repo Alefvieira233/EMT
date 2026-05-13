@@ -1,4 +1,4 @@
-namespace FerramentaEMT.Models.Privacy
+namespace SteelBIM.Models.Privacy
 {
     /// <summary>
     /// Estado de consentimento de uma feature individual de coleta/envio de dados.

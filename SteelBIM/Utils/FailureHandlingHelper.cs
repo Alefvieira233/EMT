@@ -2,7 +2,7 @@
 using System;
 using Autodesk.Revit.DB;
 
-namespace FerramentaEMT.Utils
+namespace SteelBIM.Utils
 {
     /// <summary>
     /// Helper centralizado para configurar <see cref="IFailuresPreprocessor"/> em transacoes

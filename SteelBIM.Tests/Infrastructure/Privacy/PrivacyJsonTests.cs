@@ -1,10 +1,10 @@
 using System;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Privacy
+namespace SteelBIM.Tests.Infrastructure.Privacy
 {
     public class PrivacyJsonTests
     {

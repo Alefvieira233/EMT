@@ -3,7 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Helper puro para calcular SHA256 (hex lowercase) e parsear arquivos

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using FerramentaEMT.Core;
+using SteelBIM.Core;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Core
+namespace SteelBIM.Tests.Core
 {
     public class ProgressReportTests
     {

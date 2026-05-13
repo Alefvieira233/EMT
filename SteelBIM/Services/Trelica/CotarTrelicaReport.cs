@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FerramentaEMT.Services.Trelica
+namespace SteelBIM.Services.Trelica
 {
     /// <summary>
     /// Record imutavel com os resultados da execucao de CotarTrelicaService.

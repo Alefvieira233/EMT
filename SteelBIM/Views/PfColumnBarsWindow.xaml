@@ -1,4 +1,4 @@
-<Window x:Class="FerramentaEMT.Views.PfColumnBarsWindow"
+<Window x:Class="SteelBIM.Views.PfColumnBarsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PM - Acos Pilar"
@@ -11,7 +11,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/FerramentaEMT;component/Views/Themes/AppTheme.Base.xaml"/>
+                <ResourceDictionary Source="/SteelBIM;component/Views/Themes/AppTheme.Base.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>

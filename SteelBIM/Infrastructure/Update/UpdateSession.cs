@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 
-namespace FerramentaEMT.Infrastructure.Update
+namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Estado in-memory do subsistema de update durante UMA sessao do Revit.

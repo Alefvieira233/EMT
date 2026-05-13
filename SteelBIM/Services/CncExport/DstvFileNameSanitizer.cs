@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace FerramentaEMT.Services.CncExport
+namespace SteelBIM.Services.CncExport
 {
     /// <summary>
     /// Sanitiza nomes de peca para uso em nomes de arquivo DSTV/NC1.

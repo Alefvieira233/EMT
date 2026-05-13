@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
+using SteelBIM.Infrastructure;
 
-namespace FerramentaEMT.Services.ModelCheck
+namespace SteelBIM.Services.ModelCheck
 {
     /// <summary>
     /// Servico de visualizacao para resultados do ModelCheck.

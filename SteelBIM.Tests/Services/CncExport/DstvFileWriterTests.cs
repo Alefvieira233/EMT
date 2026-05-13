@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Threading;
-using FerramentaEMT.Models.CncExport;
-using FerramentaEMT.Services.CncExport;
+using SteelBIM.Models.CncExport;
+using SteelBIM.Services.CncExport;
 using FluentAssertions;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Services.CncExport
+namespace SteelBIM.Tests.Services.CncExport
 {
     public class DstvFileWriterTests
     {

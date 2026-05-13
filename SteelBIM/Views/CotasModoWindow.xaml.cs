@@ -1,7 +1,7 @@
-using FerramentaEMT.Utils;
+using SteelBIM.Utils;
 using System.Windows;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     public partial class CotasModoWindow : Window
     {

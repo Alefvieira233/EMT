@@ -1,9 +1,9 @@
 #nullable enable
 using System.Windows;
-using FerramentaEMT.Models;
-using FerramentaEMT.Utils;
+using SteelBIM.Models;
+using SteelBIM.Utils;
 
-namespace FerramentaEMT.Views
+namespace SteelBIM.Views
 {
     /// <summary>
     /// Dialogo simples de opcoes do comando "Cotar Treliça".

@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using FerramentaEMT.Infrastructure.Privacy;
-using FerramentaEMT.Infrastructure.Telemetry;
-using FerramentaEMT.Models.Privacy;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Infrastructure.Telemetry;
+using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace FerramentaEMT.Tests.Infrastructure.Telemetry
+namespace SteelBIM.Tests.Infrastructure.Telemetry
 {
     /// <summary>
     /// Cobre os contratos do TelemetryReporter — mesmo padrao dos

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using FerramentaEMT.Infrastructure;
-using FerramentaEMT.Models;
+using SteelBIM.Infrastructure;
+using SteelBIM.Models;
 
-namespace FerramentaEMT.Services.Trelica
+namespace SteelBIM.Services.Trelica
 {
     /// <summary>
     /// Servico para tagging leve de treliças — so identifica perfis na elevacao,

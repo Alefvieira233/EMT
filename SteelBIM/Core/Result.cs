@@ -1,6 +1,6 @@
 using System;
 
-namespace FerramentaEMT.Core
+namespace SteelBIM.Core
 {
     /// <summary>
     /// Result&lt;T&gt; — representa o desfecho de uma operacao sem recorrer a excecoes para
