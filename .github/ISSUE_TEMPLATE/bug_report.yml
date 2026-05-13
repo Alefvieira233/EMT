@@ -63,7 +63,7 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Log (%LOCALAPPDATA%\FerramentaEMT\logs)
+      label: Log (%LOCALAPPDATA%\SteelBIM\logs)
       description: Cole as ultimas ~50 linhas do log do dia do erro. Remova qualquer info sensivel.
       render: text
 

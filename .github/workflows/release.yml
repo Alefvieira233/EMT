@@ -39,7 +39,7 @@ jobs:
 
     env:
       CI: 'true'
-      EMT_CODESIGN_TIMESTAMP_URL: ${{ secrets.CODESIGN_TIMESTAMP_URL }}
+      STEELBIM_CODESIGN_TIMESTAMP_URL: ${{ secrets.CODESIGN_TIMESTAMP_URL }}
 
     steps:
       - name: Checkout
@@ -86,25 +86,25 @@ jobs:
           }
           # Expoe path pro proximo step via env var (NAO output, que poderia
           # vazar em log se conteudo fosse impresso).
-          "EMT_CODESIGN_CERT_PFX=$pfxPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "STEELBIM_CODESIGN_CERT_PFX=$pfxPath" | Out-File -FilePath $env:GITHUB_ENV -Append
         env:
           CODESIGN_CERT_BASE64: ${{ secrets.CODESIGN_CERT_BASE64 }}
           CODESIGN_CERT_PASSWORD: ${{ secrets.CODESIGN_CERT_PASSWORD }}
 
       - name: Build setup.exe (signed)
         shell: pwsh
-        working-directory: FerramentaEMT
+        working-directory: SteelBIM
         run: |
           .\Gerar-Setup.bat
           if ($LASTEXITCODE -ne 0) { throw "Gerar-Setup.bat exit $LASTEXITCODE" }
         env:
           # PFX path injetado no step anterior; senha via secret ainda.
           # signtool.exe auto-discovery em Windows Kits 10 (já presente no runner).
-          EMT_CODESIGN_CERT_PASSWORD: ${{ secrets.CODESIGN_CERT_PASSWORD }}
+          STEELBIM_CODESIGN_CERT_PASSWORD: ${{ secrets.CODESIGN_CERT_PASSWORD }}
 
       - name: Verify signature
         shell: pwsh
-        working-directory: FerramentaEMT
+        working-directory: SteelBIM
         run: |
           $setupExe = Get-ChildItem -LiteralPath "artifacts\installer" -Filter "*Setup.exe" |
               Select-Object -First 1
@@ -128,8 +128,8 @@ jobs:
           # Remove .pfx mesmo em failure pra nao deixar credencial em runner
           # (runners GitHub-hosted sao destruidos apos o job, mas paranoia
           # ajuda em self-hosted future).
-          if (Test-Path -LiteralPath $env:EMT_CODESIGN_CERT_PFX) {
-              Remove-Item -LiteralPath $env:EMT_CODESIGN_CERT_PFX -Force
+          if (Test-Path -LiteralPath $env:STEELBIM_CODESIGN_CERT_PFX) {
+              Remove-Item -LiteralPath $env:STEELBIM_CODESIGN_CERT_PFX -Force
               Write-Host "[Release] PFX removed from runner."
           }
 
@@ -138,6 +138,6 @@ jobs:
         with:
           name: signed-setup
           path: |
-            FerramentaEMT/artifacts/installer/*Setup.exe
-            FerramentaEMT/artifacts/installer/checksums.txt
+            SteelBIM/artifacts/installer/*Setup.exe
+            SteelBIM/artifacts/installer/checksums.txt
           if-no-files-found: error

@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-main:
-    name: Build FerramentaEMT (Release)
+    name: Build SteelBIM (Release)
     runs-on: windows-latest
     env:
       # Sinaliza pro csproj usar PackageReference Nice3point em vez do
@@ -28,16 +28,16 @@ jobs:
       - name: Show .NET info
         run: dotnet --info
 
-      - name: Restore FerramentaEMT
-        working-directory: FerramentaEMT
-        run: dotnet restore FerramentaEMT.csproj
+      - name: Restore SteelBIM
+        working-directory: SteelBIM
+        run: dotnet restore SteelBIM.csproj
 
-      - name: Build FerramentaEMT (Release)
-        working-directory: FerramentaEMT
-        run: dotnet build FerramentaEMT.csproj --configuration Release --no-restore
+      - name: Build SteelBIM (Release)
+        working-directory: SteelBIM
+        run: dotnet build SteelBIM.csproj --configuration Release --no-restore
 
   build-tests:
-    name: Build & Test FerramentaEMT.Tests
+    name: Build & Test SteelBIM.Tests
     runs-on: windows-latest
 
     steps:
@@ -50,15 +50,15 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore Tests
-        working-directory: FerramentaEMT.Tests
+        working-directory: SteelBIM.Tests
         run: dotnet restore
 
       - name: Build Tests
-        working-directory: FerramentaEMT.Tests
+        working-directory: SteelBIM.Tests
         run: dotnet build --configuration Release --no-restore
 
       - name: Run Tests
-        working-directory: FerramentaEMT.Tests
+        working-directory: SteelBIM.Tests
         run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
 
       - name: Upload test results
@@ -66,7 +66,7 @@ jobs:
         if: always()
         with:
           name: test-results
-          path: FerramentaEMT.Tests/TestResults/
+          path: SteelBIM.Tests/TestResults/
 
   lint:
     name: Code Quality (dotnet format)
@@ -78,6 +78,6 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Verify formatting (Tests project)
-        working-directory: FerramentaEMT.Tests
+        working-directory: SteelBIM.Tests
         run: dotnet format --verify-no-changes --verbosity diagnostic
         continue-on-error: true   # WARNING ONLY for now; flip to fail later

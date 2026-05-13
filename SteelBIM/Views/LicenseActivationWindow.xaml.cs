@@ -136,7 +136,7 @@ namespace SteelBIM.Views
                 }
                 else if (current.AutoUpdate == ConsentState.Denied)
                 {
-                    ExibirInfoUpdate("Verificacao de atualizacoes desativada. Edite privacy.json em %LocalAppData%\\FerramentaEMT\\ para ativar.");
+                    ExibirInfoUpdate("Verificacao de atualizacoes desativada. Edite privacy.json em %LocalAppData%\\SteelBIM\\ para ativar.");
                     return;
                 }
 
@@ -145,7 +145,7 @@ namespace SteelBIM.Views
                 store.Save(current);
 
                 string version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
-                GitHubReleaseProvider provider = new GitHubReleaseProvider("Alefvieira233", "EMT");
+                GitHubReleaseProvider provider = new GitHubReleaseProvider("Alefvieira233", "SteelBIM");
                 UpdateCheckService service = new UpdateCheckService(provider, store, version);
 
                 UpdateCheckResult result;
