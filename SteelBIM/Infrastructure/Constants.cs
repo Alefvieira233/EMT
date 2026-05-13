@@ -119,22 +119,8 @@ namespace SteelBIM.Infrastructure
             public const int AlturaMaximaListaPx = 600;
         }
 
-        /// <summary>
-        /// Identificadores GUID do plugin (fixos — nao mudar entre versoes!).
-        /// </summary>
-        public static class Identificadores
-        {
-            /// <summary>GUID Application Id do FerramentaEMT.</summary>
-            public const string AddInApplicationId = "4F1C4FBE-1234-5678-90AB-CDEF12345678";
-
-            /// <summary>VendorId no .addin manifest.</summary>
-            public const string VendorId = "EMT";
-
-            /// <summary>Descricao do vendor.</summary>
-            public const string VendorDescription = "EMT Estruturas Metalicas";
-
-            /// <summary>Nome do tab no ribbon do Revit.</summary>
-            public const string RibbonTabName = "EMT";
-        }
+        // Rebrand v2.0.0: classe estatica Identificadores removida — auditoria
+        // confirmou zero leitores no codigo e valores dessincronizados do .addin.
+        // Fonte de verdade unica agora eh SteelBIM.addin para AddInId/VendorId/etc.
     }
 }

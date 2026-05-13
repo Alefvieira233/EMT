@@ -15,6 +15,33 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.0.0] — 2026-05-13 — Rebranding completo FerramentaEMT -> SteelBIM
+
+### BREAKING — Rebranding completo FerramentaEMT -> SteelBIM
+- Pasta de instalacao: `%AppData%\Autodesk\Revit\Addins\2025\SteelBIM\`
+- Storage paths: `%LocalAppData%\SteelBIM\` (migracao automatica do legado)
+- Env vars renomeadas: `EMT_*` -> `STEELBIM_*` (LICENSE_SECRET, SENTRY_DSN, POSTHOG_API_KEY, POSTHOG_HOST, SESSION_ID_PATH, CODESIGN_*)
+- Registry: `HKCU\Software\SteelBIM\` (migracao automatica)
+- Aba do ribbon: "SteelBIM" + "Ferramentas ECC" (mantida)
+- Backward-compat: licencas/trial/settings sao migrados automaticamente do path antigo na primeira execucao. Nenhuma chave precisa ser reemitida.
+
+### Mantido por compatibilidade com modelos .rvt existentes
+- Prefixo `EMT_` em parametros/familias/groups dentro do modelo Revit (EMT_Chapa_Ponta, EMT_Viga_Conectada, etc)
+- Sentinel `DirectShape.ApplicationId = "FerramentaEMT"` em `EscadaService.cs:303`
+- `AssemblyCompany("EMT")` (vendor legal)
+- `<VendorId>EMT</VendorId>` no `.addin`
+- `AddInId` GUID preservado (610FE337-F95D-4813-8BF8-2CE11C9948C1)
+
+### Cleanup
+- Removida classe dead code `Constants.Identificadores` (zero leitores confirmado por auditoria; valores estavam dessincronizados do .addin). Outras classes em `Constants` (Tolerancia, Cotas, Vistas, Fabricacao, ListaMateriais, Ui) mantidas.
+
+### Migrations automaticas no primeiro start
+- `LicenseStore`: copia `%LocalAppData%\FerramentaEMT\license\emt.lic` e `emt.trl` para path SteelBIM, deleta legados; migra registro `Software\FerramentaEMT\Trial` para `Software\SteelBIM\Trial`.
+- `PrivacySettingsStore`: copia `privacy.json` legado, deleta antigo.
+- `LicenseSecretProvider`: fallback de leitura para path legado com `Logger.Warn` (sem migracao automatica — secret eh deploy-managed).
+
+---
+
 ## [1.8.0] — 2026-05-12 — Incorporacao Wave Victor Versao Final
 
 **Release type:** Pre-release / Soft launch (distribuição privada para alunos selecionados).
