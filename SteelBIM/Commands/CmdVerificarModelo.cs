@@ -28,7 +28,7 @@ namespace SteelBIM.Commands
             // eventos de IProgress para a UI atualizar e o botao Cancelar chegar ao CTS.
             ModelCheckService service = new ModelCheckService();
 
-            FerramentaEMT.Core.Result<ModelCheckReport> outcome;
+            SteelBIM.Core.Result<ModelCheckReport> outcome;
             try
             {
                 outcome = RevitProgressHost.Run(

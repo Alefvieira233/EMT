@@ -13,7 +13,7 @@ namespace SteelBIM.Infrastructure.Telemetry
     ///   2. NUNCA derivado de Environment.MachineName, MAC address,
     ///      BIOS, fingerprint, username, ou qualquer outra fonte que
     ///      identifique o usuario ou a maquina.
-    ///   3. Persistido em %LocalAppData%\FerramentaEMT\session-id.json
+    ///   3. Persistido em %LocalAppData%\SteelBIM\session-id.json
     ///      pelo lifetime daquela instalacao. Reset = deletar o arquivo
     ///      manualmente.
     ///
@@ -21,12 +21,12 @@ namespace SteelBIM.Infrastructure.Telemetry
     /// quantos usuarios ativos tem, NAO sabe QUEM. Documentado em
     /// ADR-008 + Privacy Policy (PR-6).
     ///
-    /// Override de path para tests: env var EMT_SESSION_ID_PATH.
+    /// Override de path para tests: env var STEELBIM_SESSION_ID_PATH.
     /// </summary>
     public static class SessionIdProvider
     {
         public const string FileName = "session-id.json";
-        public const string TestPathOverrideEnvVar = "EMT_SESSION_ID_PATH";
+        public const string TestPathOverrideEnvVar = "STEELBIM_SESSION_ID_PATH";
 
         private static readonly object _lock = new object();
         private static string _cachedSessionId;
@@ -93,7 +93,7 @@ namespace SteelBIM.Infrastructure.Telemetry
             {
                 string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 if (string.IsNullOrWhiteSpace(root)) return null;
-                return Path.Combine(root, "FerramentaEMT", FileName);
+                return Path.Combine(root, "SteelBIM", FileName);
             }
             catch { return null; }
         }

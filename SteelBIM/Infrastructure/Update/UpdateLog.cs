@@ -6,7 +6,7 @@ namespace SteelBIM.Infrastructure.Update
     /// Logging facade puro para o subsistema de auto-update.
     /// Defaults sao no-op (testes nao precisam configurar).
     /// App.OnStartup configura os delegates para encaminhar ao Serilog
-    /// via FerramentaEMT.Infrastructure.Logger.
+    /// via SteelBIM.Infrastructure.Logger.
     ///
     /// Existe porque UpdateCheckService eh testado em xUnit, e o test csproj
     /// nao referencia Serilog (incluir Logger.cs quebraria a compilacao do

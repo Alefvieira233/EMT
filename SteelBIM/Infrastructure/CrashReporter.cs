@@ -43,7 +43,7 @@ namespace SteelBIM.Infrastructure
                     // sera registrado e um futuro Initialize() pode tentar de novo
                     // sem risco de duplicar subscricao (regressao do audit 2026-04).
                     string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    CrashDirectory = Path.Combine(localAppData, "FerramentaEMT", "crashes");
+                    CrashDirectory = Path.Combine(localAppData, "SteelBIM", "crashes");
                     Directory.CreateDirectory(CrashDirectory);
 
                     // Commit do estado ANTES de registrar handlers OU logar. Se Logger.Info
@@ -91,7 +91,7 @@ namespace SteelBIM.Infrastructure
                     $"crash-{kind}-{stamp}.txt");
 
                 var sb = new StringBuilder();
-                sb.AppendLine($"=== FerramentaEMT crash dump ({kind}) ===");
+                sb.AppendLine($"=== SteelBIM crash dump ({kind}) ===");
                 sb.AppendLine($"UTC:          {DateTime.UtcNow:O}");
                 sb.AppendLine($"Local:        {DateTime.Now:O}");
                 sb.AppendLine($"Extra:        {extraInfo}");

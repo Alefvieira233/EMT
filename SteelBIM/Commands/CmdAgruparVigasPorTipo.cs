@@ -18,7 +18,7 @@ namespace SteelBIM.Commands
             // quando migrarmos para o host completo. Por enquanto, apenas Result<T>
             // com progress=null — o cancelamento ainda funciona via ct caso um caller
             // externo decida passar um token (testes, por exemplo).
-            FerramentaEMT.Core.Result<AgrupamentoVisualService.ResultadoAgrupamento> outcome =
+            SteelBIM.Core.Result<AgrupamentoVisualService.ResultadoAgrupamento> outcome =
                 AgrupamentoVisualService.AgruparVigas(uidoc);
 
             if (outcome.IsFailure)

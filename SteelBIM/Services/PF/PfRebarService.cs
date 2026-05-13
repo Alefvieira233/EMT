@@ -1029,7 +1029,7 @@ namespace SteelBIM.Services.PF
                     $"raio={ToCentimeters(stirrupRadius):0.#}cm, " +
                     $"alturaLivre={ToCentimeters(clearHeight):0.#}cm, " +
                     $"diametro={config.DiametroMm:0.#}mm. " +
-                    "Verifique o arquivo de log em %LocalAppData%\\FerramentaEMT\\logs\\");
+                    "Verifique o arquivo de log em %LocalAppData%\\SteelBIM\\logs\\");
 
             return 1;
         }

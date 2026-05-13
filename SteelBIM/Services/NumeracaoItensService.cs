@@ -687,7 +687,7 @@ namespace SteelBIM.Services
 
             public string GetName()
             {
-                return "FerramentaEMT.NumeracaoItens";
+                return "SteelBIM.NumeracaoItens";
             }
         }
 

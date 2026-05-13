@@ -11,7 +11,7 @@ namespace SteelBIM.Infrastructure
     /// </summary>
     /// <remarks>
     /// Logs sao salvos em:
-    ///   %LocalAppData%\FerramentaEMT\logs\emt-YYYYMMDD.log
+    ///   %LocalAppData%\SteelBIM\logs\emt-YYYYMMDD.log
     /// Rotacao diaria, retencao de 30 dias.
     /// </remarks>
     public static class Logger
@@ -46,14 +46,14 @@ namespace SteelBIM.Infrastructure
                 try
                 {
                     var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    LogDirectory = Path.Combine(localAppData, "FerramentaEMT", "logs");
+                    LogDirectory = Path.Combine(localAppData, "SteelBIM", "logs");
                     Directory.CreateDirectory(LogDirectory);
 
                     CurrentLogFile = Path.Combine(LogDirectory, "emt-.log");
 
                     Log.Logger = new LoggerConfiguration()
                         .MinimumLevel.Is(minimumLevel)
-                        .Enrich.WithProperty("Application", "FerramentaEMT")
+                        .Enrich.WithProperty("Application", "SteelBIM")
                         .Enrich.WithProperty("Version", typeof(Logger).Assembly.GetName().Version?.ToString() ?? "unknown")
                         .Enrich.WithProperty("MachineName", Environment.MachineName)
                         .Enrich.WithProperty("UserName", Environment.UserName)
@@ -67,14 +67,14 @@ namespace SteelBIM.Infrastructure
 
                     _initialized = true;
 
-                    Log.Information("=== FerramentaEMT iniciado ===");
+                    Log.Information("=== SteelBIM iniciado ===");
                     Log.Information("Log dir: {LogDirectory}", LogDirectory);
                 }
                 catch (Exception ex)
                 {
                     // Logging deve ser silencioso em caso de falha de inicializacao.
                     // O ultimo recurso e o Debug.WriteLine.
-                    System.Diagnostics.Debug.WriteLine($"[FerramentaEMT.Logger] Falha ao inicializar: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[SteelBIM.Logger] Falha ao inicializar: {ex.Message}");
                 }
             }
         }
@@ -87,7 +87,7 @@ namespace SteelBIM.Infrastructure
             lock (_lock)
             {
                 if (!_initialized) return;
-                Log.Information("=== FerramentaEMT encerrado ===");
+                Log.Information("=== SteelBIM encerrado ===");
                 Log.CloseAndFlush();
                 _initialized = false;
             }

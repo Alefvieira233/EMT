@@ -8,8 +8,8 @@ namespace SteelBIM.Licensing
     /// Resolve o segredo HMAC usado pelo KeySigner em tempo de execucao.
     ///
     /// Ordem de prioridade (primeiro que responder ganha):
-    ///   1. Variavel de ambiente EMT_LICENSE_SECRET
-    ///   2. Arquivo local %LOCALAPPDATA%\FerramentaEMT\license.secret
+    ///   1. Variavel de ambiente STEELBIM_LICENSE_SECRET
+    ///   2. Arquivo local %LOCALAPPDATA%\SteelBIM\license.secret
     ///   3. Arquivo local junto ao assembly: license.secret (ao lado do DLL)
     ///   4. InvalidOperationException (nenhuma fonte configurada).
     ///
@@ -18,7 +18,7 @@ namespace SteelBIM.Licensing
     /// </summary>
     public static class LicenseSecretProvider
     {
-        public const string EnvVarName = "EMT_LICENSE_SECRET";
+        public const string EnvVarName = "STEELBIM_LICENSE_SECRET";
         public const string SecretFileName = "license.secret";
 
         // Snapshot atomico (secret, source). Escrito de uma vez so via Lazy
@@ -35,7 +35,8 @@ namespace SteelBIM.Licensing
             NotResolved,
             EnvironmentVariable,
             LocalAppDataFile,
-            AssemblyAdjacentFile
+            AssemblyAdjacentFile,
+            LegacyLocalAppDataFile // Migration v1.x -> v2.0: %LocalAppData%\FerramentaEMT\license.secret
         }
 
         private readonly struct ResolvedSecret
@@ -77,7 +78,7 @@ namespace SteelBIM.Licensing
                 return envValue.Trim();
             }
 
-            // 2. arquivo em %LOCALAPPDATA%\FerramentaEMT
+            // 2. arquivo em %LOCALAPPDATA%\SteelBIM
             string localAppDataPath = TryBuildLocalAppDataPath();
             string fromLocalAppData = SafeReadFile(localAppDataPath);
             if (!string.IsNullOrWhiteSpace(fromLocalAppData))
@@ -95,11 +96,25 @@ namespace SteelBIM.Licensing
                 return fromAssemblyDir.Trim();
             }
 
-            // 4. nenhuma fonte configurada -- erro fatal
+            // 4. Migration v1.x -> v2.0: fallback para %LOCALAPPDATA%\FerramentaEMT\license.secret
+            //    Log warning para o usuario re-deployar no path novo. Nao migra automaticamente
+            //    (poderia esconder problema de deploy futuro do operador).
+            string legacyPath = TryBuildLegacyLocalAppDataPath();
+            string fromLegacy = SafeReadFile(legacyPath);
+            if (!string.IsNullOrWhiteSpace(fromLegacy))
+            {
+                Infrastructure.Logger.Warn(
+                    "[License] HMAC secret resolvido do path legado FerramentaEMT. " +
+                    "Mover para %LOCALAPPDATA%\\SteelBIM\\license.secret na proxima oportunidade.");
+                source = SecretSource.LegacyLocalAppDataFile;
+                return fromLegacy.Trim();
+            }
+
+            // 5. nenhuma fonte configurada -- erro fatal
             throw new InvalidOperationException(
                 "HMAC secret not configured. Set the environment variable '"
                 + EnvVarName + "' or place a '" + SecretFileName + "' file in "
-                + "'%LOCALAPPDATA%\\FerramentaEMT\\' or next to the assembly.");
+                + "'%LOCALAPPDATA%\\SteelBIM\\' or next to the assembly.");
         }
 
         private static string SafeReadEnvVar()
@@ -115,6 +130,21 @@ namespace SteelBIM.Licensing
         }
 
         private static string TryBuildLocalAppDataPath()
+        {
+            try
+            {
+                string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                if (string.IsNullOrWhiteSpace(root))
+                    return null;
+                return Path.Combine(root, "SteelBIM", SecretFileName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string TryBuildLegacyLocalAppDataPath()
         {
             try
             {

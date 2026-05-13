@@ -36,10 +36,10 @@ namespace SteelBIM.Infrastructure.Update
         /// <summary>Zip-slip detectado: entry com .. ou path absoluto.</summary>
         ZipSlipDetected = 6,
 
-        /// <summary>.zip nao contem FerramentaEMT.dll no top-level.</summary>
+        /// <summary>.zip nao contem SteelBIM.dll no top-level.</summary>
         DllMissing = 7,
 
-        /// <summary>FerramentaEMT.dll extraido tem versao diferente da tag_name do release.</summary>
+        /// <summary>SteelBIM.dll extraido tem versao diferente da tag_name do release.</summary>
         VersionMismatch = 8,
 
         /// <summary>Falha de rede / IO durante download.</summary>
@@ -51,21 +51,21 @@ namespace SteelBIM.Infrastructure.Update
 
     /// <summary>
     /// Baixa o asset .zip de um GitHubRelease, valida 6 invariantes,
-    /// e grava em <c>%LocalAppData%\FerramentaEMT\Updates\{version}.zip</c>.
+    /// e grava em <c>%LocalAppData%\SteelBIM\Updates\{version}.zip</c>.
     ///
     /// As 6 validacoes (rejeicao = abort + delete + log):
     ///   1. Tamanho do .zip em (1 MB, 50 MB) — sanity check
     ///   2. ZipArchive abre sem excecao
     ///   3. Nenhuma entry com .. ou path absoluto (zip-slip)
     ///   4. SHA256 bate com o asset checksums.txt
-    ///   5. Top-level contem FerramentaEMT.dll
+    ///   5. Top-level contem SteelBIM.dll
     ///   6. AssemblyInformationalVersion do .dll == tag_name do release
     /// </summary>
     public sealed class UpdateDownloader
     {
         private const long MinSizeBytes = 1L * 1024 * 1024;       // 1 MB
         private const long MaxSizeBytes = 50L * 1024 * 1024;      // 50 MB
-        private const string DllAssetName = "FerramentaEMT.dll";
+        private const string DllAssetName = "SteelBIM.dll";
         private const string ChecksumsFileName = "checksums.txt";
 
         private readonly HttpClient _http;
@@ -90,7 +90,7 @@ namespace SteelBIM.Infrastructure.Update
         public static string GetDefaultUpdatesDirectory()
         {
             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(localAppData, "FerramentaEMT", "Updates");
+            return Path.Combine(localAppData, "SteelBIM", "Updates");
         }
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace SteelBIM.Infrastructure.Update
                     return DownloadResult.ZipSlipDetected;
                 }
 
-                // Validacao 5: top-level contem FerramentaEMT.dll
+                // Validacao 5: top-level contem SteelBIM.dll
                 ZipArchiveEntry dllEntry = archive.Entries.FirstOrDefault(e =>
                     string.Equals(e.FullName, DllAssetName, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(Path.GetFileName(e.FullName), DllAssetName, StringComparison.OrdinalIgnoreCase));

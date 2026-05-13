@@ -7,7 +7,7 @@ namespace SteelBIM.Infrastructure.Telemetry
 {
     /// <summary>
     /// Facade estatico para telemetria de uso via PostHog.
-    /// Mesmo padrao do <see cref="FerramentaEMT.Infrastructure.CrashReporting.SentryReporter"/>:
+    /// Mesmo padrao do <see cref="SteelBIM.Infrastructure.CrashReporting.SentryReporter"/>:
     ///   - Idempotente.
     ///   - Try/catch raiz em todo entry point — NUNCA propaga.
     ///   - Wiring por delegates (callbacks publicos substituidos em

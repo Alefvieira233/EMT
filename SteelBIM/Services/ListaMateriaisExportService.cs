@@ -24,10 +24,10 @@ namespace SteelBIM.Services
     /// <para>
     /// Arquitetura ADR-003 + ADR-004 (terceira adocao, pos-DstvExport e ModelCheck):
     /// <list type="bullet">
-    ///   <item>Retorna <see cref="FerramentaEMT.Core.Result{T}"/> — falhas de dominio sao valores,
+    ///   <item>Retorna <see cref="SteelBIM.Core.Result{T}"/> — falhas de dominio sao valores,
     ///   nao excecoes. Excecoes ficam para bugs/falhas de infra (IO, Revit API).</item>
     ///   <item>Aceita <see cref="IProgress{T}"/> + <see cref="CancellationToken"/>. O comando
-    ///   wrappa em <see cref="FerramentaEMT.Utils.RevitProgressHost"/> para UI de progresso.</item>
+    ///   wrappa em <see cref="SteelBIM.Utils.RevitProgressHost"/> para UI de progresso.</item>
     ///   <item>Servico e "mudo": sem AppDialogService — so <see cref="Logger"/>. Dialogos ficam
     ///   no comando para manter separacao UI vs logica.</item>
     /// </list>
@@ -37,7 +37,7 @@ namespace SteelBIM.Services
     {
         /// <summary>
         /// Envelope de resultado da exportacao LDM. Valores somados durante o processamento.
-        /// Transportado via <see cref="FerramentaEMT.Core.Result{T}"/> de volta ao comando,
+        /// Transportado via <see cref="SteelBIM.Core.Result{T}"/> de volta ao comando,
         /// que monta o dialogo de resumo (ADR-003 — service mudo).
         /// </summary>
         public sealed class ResultadoExport
@@ -131,7 +131,7 @@ namespace SteelBIM.Services
         ///   <item>Nao abre dialogos — apenas <see cref="Logger"/>.</item>
         ///   <item>Excecoes de IO/Revit sao capturadas e viram <c>Result.Fail</c> com mensagem amigavel.</item>
         ///   <item><see cref="OperationCanceledException"/> propaga sem ser tratada — callsite
-        ///   (comando + <see cref="FerramentaEMT.Utils.RevitProgressHost"/>) decide.</item>
+        ///   (comando + <see cref="SteelBIM.Utils.RevitProgressHost"/>) decide.</item>
         /// </list>
         /// </para>
         /// </summary>

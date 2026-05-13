@@ -14,7 +14,7 @@ namespace SteelBIM.Commands
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
             // Limpeza e rapida (so overrides + UngroupMembers). Sem progress bar.
-            FerramentaEMT.Core.Result<AgrupamentoVisualService.ResultadoLimpeza> outcome =
+            SteelBIM.Core.Result<AgrupamentoVisualService.ResultadoLimpeza> outcome =
                 AgrupamentoVisualService.LimparAgrupamentos(uidoc);
 
             if (outcome.IsFailure)

@@ -8,7 +8,7 @@ namespace SteelBIM.Utils
 {
     /// <summary>
     /// Persistencia de preferencias do usuario (perfil padrao, niveis ultima sessao, etc).
-    /// Salvo em JSON em %AppData%\FerramentaEMT\settings.json.
+    /// Salvo em JSON em %AppData%\SteelBIM\settings.json.
     /// </summary>
     /// <remarks>
     /// THREAD-SAFE (Sprint 1):
@@ -90,7 +90,7 @@ namespace SteelBIM.Utils
 
         private static string SettingsFilePath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "FerramentaEMT",
+            "SteelBIM",
             "settings.json");
 
         /// <summary>

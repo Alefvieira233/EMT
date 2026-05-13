@@ -32,7 +32,7 @@ namespace SteelBIM.Commands
             // Comando decide a UX (warning, info, etc). O ShowInfo final de sucesso
             // fica dentro da sessao porque pertence ao lifecycle da janela persistente.
             NumeracaoItensService service = new NumeracaoItensService();
-            FerramentaEMT.Core.Result<NumeracaoItensService.InicioResultado> outcome =
+            SteelBIM.Core.Result<NumeracaoItensService.InicioResultado> outcome =
                 service.IniciarSessao(uidoc.Application, uidoc, config);
 
             if (outcome.IsFailure)

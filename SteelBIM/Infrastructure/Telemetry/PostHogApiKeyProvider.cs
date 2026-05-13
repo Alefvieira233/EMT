@@ -13,9 +13,9 @@ namespace SteelBIM.Infrastructure.Telemetry
     /// Modo silencioso valido (TelemetryReporter vira no-op).
     ///
     /// Ordem de prioridade:
-    ///   1. Variavel de ambiente EMT_POSTHOG_API_KEY (CI / dev local).
-    ///   2. Arquivo %LOCALAPPDATA%\FerramentaEMT\posthog.apikey (deploy).
-    ///   3. Arquivo posthog.apikey ao lado do FerramentaEMT.dll (portable).
+    ///   1. Variavel de ambiente STEELBIM_POSTHOG_API_KEY (CI / dev local).
+    ///   2. Arquivo %LOCALAPPDATA%\SteelBIM\posthog.apikey (deploy).
+    ///   3. Arquivo posthog.apikey ao lado do SteelBIM.dll (portable).
     ///   4. DevFallbackEmpty: retorna "" e TelemetryReporter loga
     ///      "Telemetry disabled (no API key configured)".
     ///
@@ -25,7 +25,7 @@ namespace SteelBIM.Infrastructure.Telemetry
     /// </summary>
     public static class PostHogApiKeyProvider
     {
-        public const string EnvVarName = "EMT_POSTHOG_API_KEY";
+        public const string EnvVarName = "STEELBIM_POSTHOG_API_KEY";
         public const string ApiKeyFileName = "posthog.apikey";
 
         private static Lazy<ResolvedApiKey> _lazy = NewLazy();
@@ -109,7 +109,7 @@ namespace SteelBIM.Infrastructure.Telemetry
             {
                 string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 if (string.IsNullOrWhiteSpace(root)) return null;
-                return Path.Combine(root, "FerramentaEMT", ApiKeyFileName);
+                return Path.Combine(root, "SteelBIM", ApiKeyFileName);
             }
             catch { return null; }
         }

@@ -76,7 +76,7 @@ namespace SteelBIM.Commands
                 // P1.1 (2026-04-28): pipeline de 10 etapas cria muitas Dimensions/Tags/TextNotes;
                 // sem swallow warnings comuns ("dimension outside view", "joined geometry...")
                 // bloqueiam o commit com dialogo modal. Erros (Severity != Warning) seguem normais.
-                FerramentaEMT.Utils.FailureHandlingHelper.SwallowWarnings(t);
+                SteelBIM.Utils.FailureHandlingHelper.SwallowWarnings(t);
                 try
                 {
                     Logger.Info("[{Cmd}] chamando service com {N} barras", CommandName, barras.Count);

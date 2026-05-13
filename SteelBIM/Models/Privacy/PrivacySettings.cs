@@ -6,7 +6,7 @@ namespace SteelBIM.Models.Privacy
     /// Persistencia de consentimento do usuario para 3 features:
     /// auto-update (PR-2), crash reporting (PR-3), telemetria (PR-4).
     ///
-    /// Persistido em %LocalAppData%\FerramentaEMT\privacy.json — machine-local
+    /// Persistido em %LocalAppData%\SteelBIM\privacy.json — machine-local
     /// (nao-roaming), compartilhado entre as 3 features.
     ///
     /// Pure DTO — sem dependencia de Revit, IO ou WPF.

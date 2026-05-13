@@ -116,11 +116,11 @@ namespace SteelBIM.Tests.Infrastructure
         public void Preserves_class_and_method_names_in_stack_frame()
         {
             string input =
-                "FerramentaEMT.Services.PfRebarService.GerarEstribosPilar() " +
+                "SteelBIM.Services.PfRebarService.GerarEstribosPilar() " +
                 "in C:\\Users\\joao\\dev\\FerramentaEMT\\Services\\PF\\PfRebarService.cs:line 312";
             string output = PiiScrubber.Scrub(input);
 
-            output.Should().Contain("FerramentaEMT.Services.PfRebarService.GerarEstribosPilar()");
+            output.Should().Contain("SteelBIM.Services.PfRebarService.GerarEstribosPilar()");
             output.Should().Contain("PfRebarService.cs:line 312");
             output.Should().NotContain("joao");
         }

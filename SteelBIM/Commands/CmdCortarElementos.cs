@@ -62,7 +62,7 @@ namespace SteelBIM.Commands
             }
 
             CortarElementosService service = new CortarElementosService();
-            FerramentaEMT.Core.Result<CortarElementosResultado> retorno;
+            SteelBIM.Core.Result<CortarElementosResultado> retorno;
             bool comitou = false;
 
             using (Transaction t = new Transaction(doc, CommandName))

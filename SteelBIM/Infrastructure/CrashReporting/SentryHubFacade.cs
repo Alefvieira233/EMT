@@ -9,7 +9,7 @@ namespace SteelBIM.Infrastructure.CrashReporting
     /// estatico. Esta classe NAO eh testavel via xUnit (o SentrySdk
     /// estatico tem state global e lanca quando re-Init em sequencia
     /// rapida nos cenarios CI). Por isso ela NAO entra no test csproj
-    /// (o linker em FerramentaEMT.Tests.csproj omite este arquivo).
+    /// (o linker em SteelBIM.Tests.csproj omite este arquivo).
     /// Toda a logica testavel mora no SentryOptionsBuilder + PiiScrubber +
     /// SentryReporter (que recebe ISentryHubFacade injetado).
     /// </summary>

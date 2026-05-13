@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using SteelBIM.Models.Bloco;
-using static FerramentaEMT.Services.Bloco.RebarCreationService;
+using static SteelBIM.Services.Bloco.RebarCreationService;
 
 namespace SteelBIM.Services.Bloco
 {

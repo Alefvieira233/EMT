@@ -26,7 +26,7 @@ namespace SteelBIM.Services.CncExport
     ///   <item><see cref="ColetarElementos"/> — pode abrir PickObjects (modal nativo do Revit).
     ///   Nao aceita progress/CT porque e interacao sincrona curta com o usuario.</item>
     ///   <item><see cref="Executar"/> — processa e grava, aceita progress+CT. Nao interage
-    ///   com selecao — recebe a lista pronta. Compativel com <see cref="FerramentaEMT.Utils.RevitProgressHost"/>.</item>
+    ///   com selecao — recebe a lista pronta. Compativel com <see cref="SteelBIM.Utils.RevitProgressHost"/>.</item>
     /// </list>
     /// Servico e "mudo" (so loga). Dialogos de resumo sao responsabilidade do comando.
     /// </para>
@@ -86,7 +86,7 @@ namespace SteelBIM.Services.CncExport
 
         /// <summary>
         /// Fase 2: processar a lista pre-selecionada e gravar arquivos DSTV.
-        /// Wrapper-friendly do ADR-004: callsite deve envolver em <see cref="FerramentaEMT.Utils.RevitProgressHost.Run"/>.
+        /// Wrapper-friendly do ADR-004: callsite deve envolver em <see cref="SteelBIM.Utils.RevitProgressHost.Run"/>.
         ///
         /// Falhas de dominio (pasta invalida, elementos vazios) retornam Result.Fail.
         /// OperationCanceledException via CT propaga — o callsite mapeia para Result.Cancelled.

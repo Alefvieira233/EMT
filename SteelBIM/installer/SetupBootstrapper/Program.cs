@@ -8,7 +8,7 @@ namespace SteelBIM.SetupBootstrapper;
 
 internal static class Program
 {
-    private const string ResourceName = "FerramentaEMT.SetupBootstrapper.Package.zip";
+    private const string ResourceName = "SteelBIM.SetupBootstrapper.Package.zip";
 
     [STAThread]
     private static int Main(string[] args)

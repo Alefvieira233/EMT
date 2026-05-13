@@ -13,9 +13,9 @@ namespace SteelBIM.Infrastructure.CrashReporting
     /// ausente eh modo silencioso valido (SentryReporter vira no-op).
     ///
     /// Ordem de prioridade:
-    ///   1. Variavel de ambiente EMT_SENTRY_DSN (CI / dev local).
-    ///   2. Arquivo %LOCALAPPDATA%\FerramentaEMT\sentry.dsn (deploy production).
-    ///   3. Arquivo sentry.dsn ao lado do FerramentaEMT.dll (alternativa portable).
+    ///   1. Variavel de ambiente STEELBIM_SENTRY_DSN (CI / dev local).
+    ///   2. Arquivo %LOCALAPPDATA%\SteelBIM\sentry.dsn (deploy production).
+    ///   3. Arquivo sentry.dsn ao lado do SteelBIM.dll (alternativa portable).
     ///   4. DevFallbackEmpty: retorna "" e SentryReporter loga
     ///      "Sentry disabled (no DSN configured)".
     ///
@@ -25,7 +25,7 @@ namespace SteelBIM.Infrastructure.CrashReporting
     /// </summary>
     public static class SentryDsnProvider
     {
-        public const string EnvVarName = "EMT_SENTRY_DSN";
+        public const string EnvVarName = "STEELBIM_SENTRY_DSN";
         public const string DsnFileName = "sentry.dsn";
 
         // Snapshot atomico (dsn, source). Mesma tecnica do LicenseSecretProvider:
@@ -88,7 +88,7 @@ namespace SteelBIM.Infrastructure.CrashReporting
                 return envValue.Trim();
             }
 
-            // 2. arquivo em %LOCALAPPDATA%\FerramentaEMT
+            // 2. arquivo em %LOCALAPPDATA%\SteelBIM
             string localAppDataPath = TryBuildLocalAppDataPath();
             string fromLocalAppData = SafeReadFile(localAppDataPath);
             if (!string.IsNullOrWhiteSpace(fromLocalAppData))
@@ -133,7 +133,7 @@ namespace SteelBIM.Infrastructure.CrashReporting
                 string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 if (string.IsNullOrWhiteSpace(root))
                     return null;
-                return Path.Combine(root, "FerramentaEMT", DsnFileName);
+                return Path.Combine(root, "SteelBIM", DsnFileName);
             }
             catch
             {

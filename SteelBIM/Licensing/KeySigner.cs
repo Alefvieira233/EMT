@@ -30,8 +30,8 @@ namespace SteelBIM.Licensing
         // SEGREDO HMAC — resolvido dinamicamente pelo LicenseSecretProvider.
         // ---------------------------------------------------------------------
         // O segredo e resolvido nesta ordem:
-        //   1. variavel de ambiente EMT_LICENSE_SECRET
-        //   2. %LOCALAPPDATA%\FerramentaEMT\license.secret
+        //   1. variavel de ambiente STEELBIM_LICENSE_SECRET
+        //   2. %LOCALAPPDATA%\SteelBIM\license.secret
         //   3. arquivo license.secret ao lado do assembly
         //   4. fallback DEV_ONLY hardcoded (logga warning)
         //

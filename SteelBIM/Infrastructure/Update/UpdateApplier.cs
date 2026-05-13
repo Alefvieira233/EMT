@@ -51,13 +51,13 @@ namespace SteelBIM.Infrastructure.Update
         public static string GetDefaultPendingDirectory()
         {
             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(localAppData, "FerramentaEMT", "Updates", "pending");
+            return Path.Combine(localAppData, "SteelBIM", "Updates", "pending");
         }
 
         public static string GetDefaultInstallDirectory()
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(appData, "Autodesk", "Revit", "Addins", "2025", "FerramentaEMT");
+            return Path.Combine(appData, "Autodesk", "Revit", "Addins", "2025", "SteelBIM");
         }
 
         /// <summary>Versao aplicada/tentada na ultima chamada (vazia se NoPending).</summary>

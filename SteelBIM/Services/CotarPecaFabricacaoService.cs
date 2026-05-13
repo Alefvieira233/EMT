@@ -63,7 +63,7 @@ namespace SteelBIM.Services
                 t.Start();
 
                 // Suprimir warnings para operações em lote (P1.1 — helper central)
-                FerramentaEMT.Utils.FailureHandlingHelper.SwallowWarnings(t);
+                SteelBIM.Utils.FailureHandlingHelper.SwallowWarnings(t);
 
                 foreach (FamilyInstance elem in elementos)
                 {
@@ -710,6 +710,6 @@ namespace SteelBIM.Services
             }
         }
 
-        // WarningSwallower extraido para FerramentaEMT.Utils.FailureHandlingHelper (P1.1, 2026-04-28).
+        // WarningSwallower extraido para SteelBIM.Utils.FailureHandlingHelper (P1.1, 2026-04-28).
     }
 }

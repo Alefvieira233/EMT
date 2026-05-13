@@ -52,7 +52,7 @@ namespace SteelBIM.Infrastructure.Update
                 Interlocked.Exchange(ref _disabledForSession, 1);
                 UpdateLog.Warn(
                     "[Update] {0} falhas de IO consecutivas em '{1}' — desabilitando update por esta sessao. " +
-                    "Verifique antivirus (whitelist em %LocalAppData%\\FerramentaEMT\\) " +
+                    "Verifique antivirus (whitelist em %LocalAppData%\\SteelBIM\\) " +
                     "ou disco cheio. Reinicie o Revit apos resolver.",
                     new object[] { n, context ?? string.Empty });
             }

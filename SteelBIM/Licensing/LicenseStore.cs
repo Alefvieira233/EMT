@@ -17,7 +17,7 @@ namespace SteelBIM.Licensing
     /// Isso evita que o usuario simplesmente edite o arquivo para "estender" a licenca:
     /// alterar o conteudo invalida a descriptografia.
     ///
-    /// Local: %LocalAppData%\FerramentaEMT\license\
+    /// Local: %LocalAppData%\SteelBIM\license\
     ///   - emt.lic   = token assinado + fingerprint (apenas se ATIVADO)
     ///   - emt.trl   = data de inicio do trial (apenas se TRIAL nunca foi convertido)
     /// </remarks>
@@ -32,13 +32,46 @@ namespace SteelBIM.Licensing
         private static string FolderPath()
         {
             string baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string folder = Path.Combine(baseDir, "FerramentaEMT", FolderName);
+            string folder = Path.Combine(baseDir, "SteelBIM", FolderName);
             Directory.CreateDirectory(folder);
             return folder;
         }
 
         private static string LicensePath() => Path.Combine(FolderPath(), LicenseFileName);
         private static string TrialPath() => Path.Combine(FolderPath(), TrialFileName);
+
+        // ===== Migration v1.x -> v2.0 rebrand (FerramentaEMT -> SteelBIM) =====
+        // Antes do rebrand, license/trial ficavam em %LocalAppData%\FerramentaEMT\license\
+        // e em HKCU\Software\FerramentaEMT\Trial. Em v2.0 mudamos para "SteelBIM".
+        // Para nao quebrar usuarios existentes, lemos do path antigo quando o novo
+        // estiver vazio e migramos no primeiro acesso (copia + delete do legado).
+        private const string LegacyTrialRegPath = @"Software\FerramentaEMT\Trial";
+
+        private static string LegacyFolderPath()
+        {
+            string baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return Path.Combine(baseDir, "FerramentaEMT", FolderName);
+        }
+
+        private static string LegacyLicensePath() => Path.Combine(LegacyFolderPath(), LicenseFileName);
+        private static string LegacyTrialPath() => Path.Combine(LegacyFolderPath(), TrialFileName);
+
+        private static void TryMigrateFile(string legacyPath, string newPath, string what)
+        {
+            try
+            {
+                if (!File.Exists(legacyPath) || File.Exists(newPath))
+                    return;
+                Directory.CreateDirectory(Path.GetDirectoryName(newPath) ?? ".");
+                File.Copy(legacyPath, newPath, overwrite: false);
+                try { File.Delete(legacyPath); } catch { /* nao fatal */ }
+                Logger.Info("[License] Migrated {What} from FerramentaEMT legacy path", what);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[License] Migration falhou para {What} (mantendo legado)", what);
+            }
+        }
 
         // ===== Licenca paga =====
 
@@ -61,6 +94,8 @@ namespace SteelBIM.Licensing
         public static (string Token, string Fingerprint)? LoadLicense()
         {
             string path = LicensePath();
+            if (!File.Exists(path))
+                TryMigrateFile(LegacyLicensePath(), path, "license");
             if (!File.Exists(path)) return null;
 
             try
@@ -107,14 +142,14 @@ namespace SteelBIM.Licensing
         // ===== Trial =====
         //
         // Estrategia anti-reset: gravamos o timestamp do trial em DOIS lugares:
-        //   (a) %LocalAppData%\FerramentaEMT\license\emt.trl  (DPAPI)
-        //   (b) HKCU\Software\FerramentaEMT\Trial             (DPAPI)
+        //   (a) %LocalAppData%\SteelBIM\license\emt.trl  (DPAPI)
+        //   (b) HKCU\Software\SteelBIM\Trial             (DPAPI)
         // Sempre lemos o MAIS ANTIGO entre os dois (MIN). Se o usuario apaga 1
         // dos lados, o outro lembra a data verdadeira. Se apagar os dois,
         // perde tambem o historico de comandos no log e isso fica obvio em suporte.
         // ====================================================================
 
-        private const string TrialRegPath = @"Software\FerramentaEMT\Trial";
+        private const string TrialRegPath = @"Software\SteelBIM\Trial";
         private const string TrialRegValueName = "InitialUnix";
 
         /// <summary>
@@ -147,6 +182,8 @@ namespace SteelBIM.Licensing
         private static DateTime? ReadTrialFromFile()
         {
             string path = TrialPath();
+            if (!File.Exists(path))
+                TryMigrateFile(LegacyTrialPath(), path, "trial");
             if (!File.Exists(path)) return null;
 
             try
@@ -193,10 +230,29 @@ namespace SteelBIM.Licensing
             try
             {
                 using RegistryKey key = Registry.CurrentUser.OpenSubKey(TrialRegPath);
-                if (key == null) return null;
+                byte[] encrypted = key?.GetValue(TrialRegValueName) as byte[];
 
-                if (key.GetValue(TrialRegValueName) is not byte[] encrypted || encrypted.Length == 0)
-                    return null;
+                if (encrypted == null || encrypted.Length == 0)
+                {
+                    // Migration v1.x -> v2.0: tenta ler do Software\FerramentaEMT\Trial e migra.
+                    using RegistryKey legacy = Registry.CurrentUser.OpenSubKey(LegacyTrialRegPath);
+                    byte[] legacyEncrypted = legacy?.GetValue(TrialRegValueName) as byte[];
+                    if (legacyEncrypted == null || legacyEncrypted.Length == 0)
+                        return null;
+
+                    try
+                    {
+                        using RegistryKey newKey = Registry.CurrentUser.CreateSubKey(TrialRegPath, writable: true);
+                        newKey?.SetValue(TrialRegValueName, legacyEncrypted, RegistryValueKind.Binary);
+                        try { Registry.CurrentUser.DeleteSubKeyTree(LegacyTrialRegPath, throwOnMissingSubKey: false); } catch { }
+                        Logger.Info("[License] Migrated trial registry from Software\\FerramentaEMT\\Trial");
+                    }
+                    catch (Exception migEx)
+                    {
+                        Logger.Warn(migEx, "[License] Falha ao migrar trial do registro (mantendo legado)");
+                    }
+                    encrypted = legacyEncrypted;
+                }
 
                 byte[] data = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
                 string raw = Encoding.UTF8.GetString(data);

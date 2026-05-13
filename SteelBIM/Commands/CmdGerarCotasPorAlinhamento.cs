@@ -18,7 +18,7 @@ namespace SteelBIM.Commands
             // nunca exibe dialog. Toda a UX (warning, info de sucesso, cancel silencioso)
             // mora aqui no command.
             var service = new CotasService();
-            FerramentaEMT.Core.Result<CotagemResumo> outcome = service.Executar(uidoc);
+            SteelBIM.Core.Result<CotagemResumo> outcome = service.Executar(uidoc);
 
             if (outcome.IsFailure)
             {

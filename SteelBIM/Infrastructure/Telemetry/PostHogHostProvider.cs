@@ -7,7 +7,7 @@ namespace SteelBIM.Infrastructure.Telemetry
     /// Resolve o endpoint do PostHog em runtime. Default eh
     /// <c>eu.posthog.com</c> (LGPD-friendly: dados na Uniao Europeia,
     /// jurisdicao mais alinhada com clientes brasileiros que us.posthog.com).
-    /// Override via env var EMT_POSTHOG_HOST (CI/dev override; clientes
+    /// Override via env var STEELBIM_POSTHOG_HOST (CI/dev override; clientes
     /// self-hosted PostHog).
     ///
     /// Lazy + ResetCacheForTests, mesmo padrao do PostHogApiKeyProvider.
@@ -15,7 +15,7 @@ namespace SteelBIM.Infrastructure.Telemetry
     /// </summary>
     public static class PostHogHostProvider
     {
-        public const string EnvVarName = "EMT_POSTHOG_HOST";
+        public const string EnvVarName = "STEELBIM_POSTHOG_HOST";
         public const string DefaultHost = "https://eu.posthog.com";
 
         public enum HostSource

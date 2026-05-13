@@ -5,7 +5,7 @@ namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Marker JSON gravado em
-    /// <c>%LocalAppData%\FerramentaEMT\Updates\pending\{version}.marker</c>
+    /// <c>%LocalAppData%\SteelBIM\Updates\pending\{version}.marker</c>
     /// quando o download passa nas 6 validacoes. Sera consumido no proximo
     /// App.OnStartup pelo <see cref="UpdateApplier"/>.
     ///

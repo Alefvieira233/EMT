@@ -190,7 +190,7 @@ namespace SteelBIM
                 "btnLancarPipeRack",
                 "Pipe\nRack",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdLancarPipeRack",
+                "SteelBIM.Commands.CmdLancarPipeRack",
                 "Gera a Fase 1 do pipe rack com pilares, vigas, treliça superior, pentes e contraventamento básico.",
                 "piperack_large.png",
                 "piperack_small.png"
@@ -201,7 +201,7 @@ namespace SteelBIM
                 "btnLancarEscada",
                 "Escada",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdLancarEscada",
+                "SteelBIM.Commands.CmdLancarEscada",
                 "Gera longarinas inclinadas e degraus horizontais de uma escada convencional entre dois pontos.",
                 "escada_large.png",
                 "escada_small.png"
@@ -212,7 +212,7 @@ namespace SteelBIM
                 "btnLancarGuardaCorpo",
                 "Guarda-\nCorpo",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdLancarGuardaCorpo",
+                "SteelBIM.Commands.CmdLancarGuardaCorpo",
                 "Lança guarda-corpo por dois pontos com altura configurável e postes automáticos.",
                 "guardaropo_large.png",
                 "guardaropo_small.png"
@@ -223,7 +223,7 @@ namespace SteelBIM
                 "btnGerarTercasPlano",
                 "Terças",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarTercasPlano",
+                "SteelBIM.Commands.CmdGerarTercasPlano",
                 "Permite definir o plano pelo plano de trabalho atual da vista ou por face plana e gera as terças com opção de divisão nos banzos.",
                 "tercas_large.png",
                 "tercas_small.png"
@@ -234,7 +234,7 @@ namespace SteelBIM
                 "btnGerarTravamentos",
                 "Travamentos",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarTravamentos",
+                "SteelBIM.Commands.CmdGerarTravamentos",
                 "Gera tirantes e frechais a partir das terças selecionadas.",
                 "travamentos_large.png",
                 "travamentos_small.png"
@@ -245,7 +245,7 @@ namespace SteelBIM
                 "btnGerarTrelica",
                 "Treliça",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarTrelica",
+                "SteelBIM.Commands.CmdGerarTrelica",
                 "Gera uma treliça entre as terças selecionadas, com montantes em todos os vãos e diagonais opcionais.",
                 "trelica_large.png",
                 "trelica_small.png"
@@ -256,7 +256,7 @@ namespace SteelBIM
                 "btnCortarElementos",
                 "Cortar\nElementos",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdCortarElementos",
+                "SteelBIM.Commands.CmdCortarElementos",
                 "Seleciona pisos, quadros estruturais e colunas/pilares; localiza interferencias e aplica corte automatico (JoinGeometry ou SolidSolidCut).",
                 "viga_dividida_large.png",
                 "viga_dividida_small.png"
@@ -268,7 +268,7 @@ namespace SteelBIM
                 "btnGerarContraventamentoPlano",
                 "Contraven-\ntamento",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarContraventamentoPlano",
+                "SteelBIM.Commands.CmdGerarContraventamentoPlano",
                 "Cria um contraventamento em X no plano de trabalho ativo a partir de dois pontos opostos do painel.",
                 "travamentos_large.png",
                 "travamentos_small.png"
@@ -279,7 +279,7 @@ namespace SteelBIM
                 "btnLancarPlacasBase",
                 "Placas\nde Base",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdLancarPlacasBase",
+                "SteelBIM.Commands.CmdLancarPlacasBase",
                 "Lanca automaticamente placas de base face-based sobre o topo do concreto encontrado abaixo dos pilares metalicos.",
                 "column_line_large.png",
                 "column_line_small.png"
@@ -290,7 +290,7 @@ namespace SteelBIM
                 "btnAjustarEncontroVigas",
                 "Encontro",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdAjustarEncontroVigas",
+                "SteelBIM.Commands.CmdAjustarEncontroVigas",
                 "Ajusta encontros entre viga principal e viga ou pilar a partir do ponto clicado, priorizando uniao, referencia de extremidade e coping.",
                 "viga_encontro_large.png",
                 "viga_encontro_small.png"
@@ -301,7 +301,7 @@ namespace SteelBIM
                 "btnCortarPerfilInterferencia",
                 "Seccionar\nViga",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdCortarPerfilPorInterferencia",
+                "SteelBIM.Commands.CmdCortarPerfilPorInterferencia",
                 "Seleciona uma viga e varios elementos de referencia para gerar multiplos cortes de uma vez.",
                 "viga_dividida_large.png",
                 "viga_dividida_small.png"
@@ -312,13 +312,13 @@ namespace SteelBIM
                 "btnDesabilitarUniaoVigasSelecao",
                 "Sem União\nSeleção",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdDesabilitarUniaoVigasSelecao",
+                "SteelBIM.Commands.CmdDesabilitarUniaoVigasSelecao",
                 "Desabilita a união nos dois extremos das vigas selecionadas.",
                 "viga_sem_uniao_selecao_large.png",
                 "viga_sem_uniao_selecao_small.png",
                 "btnDesabilitarUniaoVigasVista",
                 "Sem União\nVista",
-                "FerramentaEMT.Commands.CmdDesabilitarUniaoVigasVista",
+                "SteelBIM.Commands.CmdDesabilitarUniaoVigasVista",
                 "Desabilita a união nos dois extremos de todas as vigas da vista ativa.",
                 "viga_sem_uniao_vista_large.png",
                 "viga_sem_uniao_vista_small.png"
@@ -329,7 +329,7 @@ namespace SteelBIM
                 "btnIsolarVigasEstruturais",
                 "Isolar\nVigas",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdIsolarVigasEstruturais",
+                "SteelBIM.Commands.CmdIsolarVigasEstruturais",
                 "Isola temporariamente apenas as vigas estruturais na vista ativa.",
                 "beam_isolar_large.png",
                 "beam_isolar_small.png"
@@ -340,7 +340,7 @@ namespace SteelBIM
                 "btnIsolarPilaresEstruturais",
                 "Isolar\nPilares",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdIsolarPilaresEstruturais",
+                "SteelBIM.Commands.CmdIsolarPilaresEstruturais",
                 "Isola temporariamente apenas os pilares estruturais na vista ativa.",
                 "column_line_large.png",
                 "column_line_small.png"
@@ -351,7 +351,7 @@ namespace SteelBIM
                 "btnAgruparPilaresPorTipo",
                 "Agrupar\nPilares",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdAgruparPilaresPorTipo",
+                "SteelBIM.Commands.CmdAgruparPilaresPorTipo",
                 "Agrupa pilares iguais por tipo com destaque visual por conjunto, evitando grupos nativos que possam conflitar com eixos.",
                 "agruparpilares_large.png",
                 "agruparpilares_small.png"
@@ -362,7 +362,7 @@ namespace SteelBIM
                 "btnAgruparVigasPorTipo",
                 "Agrupar\nVigas",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdAgruparVigasPorTipo",
+                "SteelBIM.Commands.CmdAgruparVigasPorTipo",
                 "Agrupa vigas iguais por tipo, colore cada conjunto e cria grupos EMT.",
                 "agruparvigas_large.png",
                 "agruparvigas_small.png"
@@ -373,7 +373,7 @@ namespace SteelBIM
                 "btnLimparAgrupamentosVisuais",
                 "Limpar",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdLimparAgrupamentosVisuais",
+                "SteelBIM.Commands.CmdLimparAgrupamentosVisuais",
                 "Remove as cores aplicadas na vista ativa e desfaz os grupos EMT criados para pilares e vigas.",
                 "broom_large.png",
                 "broom_small.png"
@@ -384,7 +384,7 @@ namespace SteelBIM
                 "btnNumerarItens",
                 "Numerar",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdNumerarItens",
+                "SteelBIM.Commands.CmdNumerarItens",
                 "Numera elementos manualmente por ordem de clique com filtros, avanço/retrocesso e destaque visual dos itens já processados.",
                 "tag_large.png",
                 "tag_small.png"
@@ -395,7 +395,7 @@ namespace SteelBIM
                 "btnExportarListaMateriais",
                 "Exportar",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdExportarListaMateriais",
+                "SteelBIM.Commands.CmdExportarListaMateriais",
                 "Exporta uma lista de materiais estruturais para Excel com abas de perfis lineares, chapas/conexões e resumo consolidado.",
                 "sheets_large.png",
                 "sheets_small.png"
@@ -406,7 +406,7 @@ namespace SteelBIM
                 "btnGerarCotasAlinhamento",
                 "Cotas\nAlinhamento",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarCotasPorAlinhamento",
+                "SteelBIM.Commands.CmdGerarCotasPorAlinhamento",
                 "Selecione os elementos e clique no lado onde a cota deve ficar. A ferramenta agrupa os alinhamentos automaticamente e gera as cotas na vista ativa.",
                 "ruler_large.png",
                 "ruler_small.png"
@@ -418,7 +418,7 @@ namespace SteelBIM
                 "btnGerarCotasEixo",
                 "Cotas\npor Eixo",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarCotasPorEixo",
+                "SteelBIM.Commands.CmdGerarCotasPorEixo",
                 "Gera cotas automaticas perpendiculares aos eixos do projeto. Detecta interseccoes com vigas e pilares na vista ativa.",
                 "ruler_large.png",
                 "ruler_small.png"
@@ -429,7 +429,7 @@ namespace SteelBIM
                 "btnCotarTrelica",
                 "Cotar\nTreliça",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdCotarTrelica",
+                "SteelBIM.Commands.CmdCotarTrelica",
                 "Aplica cotagem EMT em 5 faixas (painéis superior/inferior, vão total, vãos parciais, alturas) sobre elevação/corte de treliça selecionada.",
                 "ruler_large.png",
                 "ruler_small.png"
@@ -440,7 +440,7 @@ namespace SteelBIM
                 "btnTagearTrelica",
                 "Tagear\nTreliça",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdTagearTrelica",
+                "SteelBIM.Commands.CmdTagearTrelica",
                 "Identifica perfis (banzos, montantes, diagonais) diretamente sobre a elevação da treliça com tags padronizadas EMT.",
                 "tag_large.png",
                 "tag_small.png"
@@ -451,7 +451,7 @@ namespace SteelBIM
                 "btnIdentificarPerfil",
                 "Identificar\nPerfil",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdIdentificarPerfil",
+                "SteelBIM.Commands.CmdIdentificarPerfil",
                 "Identifica perfis estruturais selecionados com tag ou TextNote contendo nome do perfil, comprimento e quantidade agrupada.",
                 "tag_large.png",
                 "tag_small.png"
@@ -463,7 +463,7 @@ namespace SteelBIM
                 "btnPfNomearElementos",
                 "Nomear\nPF",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfNomearElementos",
+                "SteelBIM.Commands.PF.CmdPfNomearElementos",
                 "Nomeia pilares, vigas e lajes PF com filtros por família, tipo e parâmetro, no mesmo padrão da rotina Numerar Itens.",
                 "numeracao_large.png",
                 "numeracao_small.png"
@@ -474,7 +474,7 @@ namespace SteelBIM
                 "btnPfIsolarPilaresConsolos",
                 "Isolar\nP+Cons.",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfIsolarPilaresConsolos",
+                "SteelBIM.Commands.PF.CmdPfIsolarPilaresConsolos",
                 "Isola na vista ativa os pilares estruturais e as famílias PF com modelo Consolo.",
                 "column_line_large.png",
                 "column_line_small.png"
@@ -485,7 +485,7 @@ namespace SteelBIM
                 "btnPfIsolarLajes",
                 "Isolar\nLajes",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfIsolarLajes",
+                "SteelBIM.Commands.PF.CmdPfIsolarLajes",
                 "Isola famílias PF cuja tipagem esteja marcada com Modelo = Laje.",
                 "beam_isolar_large.png",
                 "beam_isolar_small.png"
@@ -497,7 +497,7 @@ namespace SteelBIM
                 "btnPfLancarFundacoes",
                 "Lancar\nFundacao",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfLancarFundacoes",
+                "SteelBIM.Commands.PF.CmdPfLancarFundacoes",
                 "Localiza a base dos pilares e lanca a fundacao estrutural selecionada no centro dos pilares da selecao atual ou de todos os pilares visiveis na vista.",
                 "foundation_piles_large.png",
                 "foundation_piles_small.png"
@@ -508,7 +508,7 @@ namespace SteelBIM
                 "btnPfElevacaoPilares",
                 "Elevação\nPilar",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfElevacaoFormaPilares",
+                "SteelBIM.Commands.PF.CmdPfElevacaoFormaPilares",
                 "Gera elevação e corte transversal para pilares estruturais, sem depender do Dynamo.",
                 "vista_peca_large.png",
                 "vista_peca_small.png"
@@ -519,7 +519,7 @@ namespace SteelBIM
                 "btnPfElevacaoVigas",
                 "Elevação\nVigas",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfElevacaoFormaVigas",
+                "SteelBIM.Commands.PF.CmdPfElevacaoFormaVigas",
                 "Gera elevação e corte transversal para vigas estruturais, sem depender do Dynamo.",
                 "vista_peca_large.png",
                 "vista_peca_small.png"
@@ -530,7 +530,7 @@ namespace SteelBIM
                 "btnPfEstribosPilar",
                 "Estribos\nPilar",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirEstribosPilar",
+                "SteelBIM.Commands.PF.CmdPfInserirEstribosPilar",
                 "Lança estribos em pilares estruturais com cobrimento, espaçamento e quantidade definidos na interface.",
                 "column_line_large.png",
                 "column_line_small.png"
@@ -541,7 +541,7 @@ namespace SteelBIM
                 "btnPfAcosPilar",
                 "Acos\nPilar",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirAcosPilar",
+                "SteelBIM.Commands.PF.CmdPfInserirAcosPilar",
                 "Lança barras longitudinais em pilares estruturais com escolha do tipo de vergalhão e posições.",
                 "pilar_concreto_large.png",
                 "pilar_concreto_small.png"
@@ -552,7 +552,7 @@ namespace SteelBIM
                 "btnPfEstribosViga",
                 "Estribos\nViga",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirEstribosViga",
+                "SteelBIM.Commands.PF.CmdPfInserirEstribosViga",
                 "Lança estribos em vigas com zonas de apoio e corpo central usando a Revit API.",
                 "viga_w_large.png",
                 "viga_w_small.png"
@@ -563,7 +563,7 @@ namespace SteelBIM
                 "btnPfAcosViga",
                 "Acos\nViga",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirAcosViga",
+                "SteelBIM.Commands.PF.CmdPfInserirAcosViga",
                 "Lança barras superiores, inferiores e laterais em vigas estruturais sem usar Dynamo.",
                 "viga_w_large.png",
                 "viga_w_small.png"
@@ -574,7 +574,7 @@ namespace SteelBIM
                 "btnPfAcosConsolo",
                 "Acos\nConsolo",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirAcosConsolo",
+                "SteelBIM.Commands.PF.CmdPfInserirAcosConsolo",
                 "Lança a armadura base de consolos PF com tirantes, suspensões e estribos no fluxo C#.",
                 "column_line_large.png",
                 "column_line_small.png"
@@ -589,7 +589,7 @@ namespace SteelBIM
                 "btnBlocoFundacaoArmaduras",
                 "Armaduras\nBloco",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdBlocoFundacaoArmaduras",
+                "SteelBIM.Commands.PF.CmdBlocoFundacaoArmaduras",
                 "Editor manual completo de armaduras para blocos de fundacao: inferior, superior, lateral, estribos verticais/horizontais e faixa transversal.",
                 "armadura_grid_large.png",
                 "armadura_grid_small.png"
@@ -600,7 +600,7 @@ namespace SteelBIM
                 "btnPfInserirAcosEstaca",
                 "Armadura\nEstacas",
                 assemblyPath,
-                "FerramentaEMT.Commands.PF.CmdPfInserirAcosEstaca",
+                "SteelBIM.Commands.PF.CmdPfInserirAcosEstaca",
                 "Lanca barras longitudinais em estacas com distribuicao polar, cobrimento e quantidade configuraveis.",
                 "armadura_grid_large.png",
                 "armadura_grid_small.png"
@@ -614,7 +614,7 @@ namespace SteelBIM
                 "btnGerarVistaPeca",
                 "Vista de\nPeça",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarVistaPeca",
+                "SteelBIM.Commands.CmdGerarVistaPeca",
                 "Gera vistas de detalhe (longitudinal e transversal) para peças estruturais, voltadas para shop drawings de fabricação metálica.",
                 "vista_peca_large.png",
                 "vista_peca_small.png"
@@ -625,7 +625,7 @@ namespace SteelBIM
                 "btnCotarPecaFabricacao",
                 "Cotar\nFabricação",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdCotarPecaFabricacao",
+                "SteelBIM.Commands.CmdCotarPecaFabricacao",
                 "Adiciona cotas automáticas de fabricação: comprimento total, altura do perfil, largura da mesa, furos e distâncias de borda.",
                 "cotar_fabricacao_large.png",
                 "cotar_fabricacao_small.png"
@@ -636,7 +636,7 @@ namespace SteelBIM
                 "btnMarcarPecas",
                 "Marcar\nPeças",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdMarcarPecas",
+                "SteelBIM.Commands.CmdMarcarPecas",
                 "Agrupa peças idênticas por assinatura de fabricação (tipo + perfil + material + comprimento) e atribui marcas únicas automaticamente.",
                 "marca_peca_large.png",
                 "marca_peca_small.png"
@@ -650,7 +650,7 @@ namespace SteelBIM
                 "btnExportarDstv",
                 "Exportar\nDSTV/NC1",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdExportarDstv",
+                "SteelBIM.Commands.CmdExportarDstv",
                 "Gera arquivos .nc1 (formato DSTV) compatíveis com máquinas CNC de corte de aço estrutural. Suporta agrupamento por marca de peça.",
                 "sheets_large.png",
                 "sheets_small.png"
@@ -664,7 +664,7 @@ namespace SteelBIM
                 "btnVerificarModelo",
                 "Verificar\nModelo",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdVerificarModelo",
+                "SteelBIM.Commands.CmdVerificarModelo",
                 "Roda múltiplas regras de validação no modelo (peças sem marca, sem material, perfis sobrepostos, etc.) e gera relatório consolidado.",
                 "broom_large.png",
                 "broom_small.png"
@@ -678,7 +678,7 @@ namespace SteelBIM
                 "btnPlanoMontagem",
                 "Plano de\nMontagem",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdPlanoMontagem",
+                "SteelBIM.Commands.CmdPlanoMontagem",
                 "Atribui etapas de montagem a peças estruturais e aplica destaque visual por etapa para gerar planos de erection sequence.",
                 "agruparvigas_large.png",
                 "agruparvigas_small.png"
@@ -689,7 +689,7 @@ namespace SteelBIM
                 "btnGerarConexao",
                 "Gerar\nConexão",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdGerarConexao",
+                "SteelBIM.Commands.CmdGerarConexao",
                 "Gera conexões metálicas (chapa de ponta, dupla cantoneira, chapa gusset) entre vigas e pilares ou entre vigas. Calcula bolt count para integração com lista de materiais.",
                 "viga_encontro_large.png",
                 "viga_encontro_small.png"
@@ -703,13 +703,13 @@ namespace SteelBIM
                 "btnAtivarLicenca",
                 "Ativar Licença",
                 assemblyPath,
-                "FerramentaEMT.Commands.CmdAtivarLicenca",
+                "SteelBIM.Commands.CmdAtivarLicenca",
                 "Cole sua chave de licença para ativar o plugin nesta máquina.",
                 null,
                 null,
                 "btnSobre",
                 "Sobre",
-                "FerramentaEMT.Commands.CmdSobre",
+                "SteelBIM.Commands.CmdSobre",
                 "Versão, estado da licença e identificador desta máquina.",
                 null,
                 null
@@ -852,7 +852,7 @@ namespace SteelBIM
                 }
             }
 
-            string resourceName = $"FerramentaEMT.Resources.{imageName}";
+            string resourceName = $"SteelBIM.Resources.{imageName}";
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
             {
                 if (stream != null)

@@ -40,7 +40,7 @@ namespace SteelBIM.Commands
                 // ADR-004: RevitProgressHost corre no mesmo thread (Revit API single-threaded)
                 // e bombeia o dispatcher para a UI atualizar a barra de progresso e receber
                 // clicks no botao Cancelar.
-                FerramentaEMT.Core.Result<ListaMateriaisExportService.ResultadoExport> outcome;
+                SteelBIM.Core.Result<ListaMateriaisExportService.ResultadoExport> outcome;
                 try
                 {
                     outcome = RevitProgressHost.Run(

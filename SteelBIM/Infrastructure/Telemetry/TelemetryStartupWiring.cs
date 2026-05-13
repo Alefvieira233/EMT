@@ -7,7 +7,7 @@ namespace SteelBIM.Infrastructure.Telemetry
     /// Cola entre App.OnStartup e TelemetryReporter — concentra o wiring
     /// num metodo testavel sem dependencia de UIControlledApplication
     /// nem de Logger/LicenseService. Mesmo padrao do
-    /// <see cref="FerramentaEMT.Infrastructure.CrashReporting.SentryStartupWiring"/>.
+    /// <see cref="SteelBIM.Infrastructure.CrashReporting.SentryStartupWiring"/>.
     /// </summary>
     public static class TelemetryStartupWiring
     {

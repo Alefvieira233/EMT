@@ -17,7 +17,7 @@ namespace SteelBIM.Commands
             // (progresso + dialog de sucesso/falha). Pilares sao rapidos: usamos
             // CancellationToken.None e sem progress — tipicamente <1s mesmo em modelos
             // grandes (sem NewGroup pra pilares, so overrides).
-            FerramentaEMT.Core.Result<AgrupamentoVisualService.ResultadoAgrupamento> outcome =
+            SteelBIM.Core.Result<AgrupamentoVisualService.ResultadoAgrupamento> outcome =
                 AgrupamentoVisualService.AgruparPilares(uidoc);
 
             if (outcome.IsFailure)

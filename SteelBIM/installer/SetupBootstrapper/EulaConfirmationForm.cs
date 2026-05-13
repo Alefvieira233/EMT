@@ -9,7 +9,7 @@ namespace SteelBIM.SetupBootstrapper;
 /// Dialogo modal de aceitacao do EULA antes da instalacao.
 ///
 /// v1.7.0 (pre-release soft launch): EULA prompt ATIVADO. O texto eh
-/// carregado a partir do recurso embutido <c>FerramentaEMT.SetupBootstrapper.EULA.md</c>
+/// carregado a partir do recurso embutido <c>SteelBIM.SetupBootstrapper.EULA.md</c>
 /// (incluido via &lt;EmbeddedResource&gt; em SetupBootstrapper.csproj a partir
 /// de <c>docs/legal/EULA.md</c>). O checkbox de aceite vem desmarcado
 /// por padrao, forcando acao explicita do usuario.
@@ -19,7 +19,7 @@ namespace SteelBIM.SetupBootstrapper;
 /// </summary>
 internal static class EulaConfirmation
 {
-    private const string EulaResourceName = "FerramentaEMT.SetupBootstrapper.EULA.md";
+    private const string EulaResourceName = "SteelBIM.SetupBootstrapper.EULA.md";
 
     /// <summary>
     /// Quando true, InstallerSession.Run exibe a janela antes da

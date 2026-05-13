@@ -28,7 +28,7 @@ namespace SteelBIM.Commands
             // ===== FASE 1: coleta =====
             // Pode abrir PickObjects (modal Revit). Nao usa RevitProgressHost aqui
             // porque deixariamos a janela de progresso vazia por tras da selecao nativa.
-            FerramentaEMT.Core.Result<DstvExportService.ColetaResult> coleta =
+            SteelBIM.Core.Result<DstvExportService.ColetaResult> coleta =
                 service.ColetarElementos(uidoc, config);
 
             if (coleta.IsFailure)
@@ -47,7 +47,7 @@ namespace SteelBIM.Commands
             // ADR-004: RevitProgressHost abre janela com barra + botao Cancelar,
             // corre o servico no mesmo thread (Revit API single-threaded) e bombeia
             // o dispatcher entre eventos de IProgress para a UI atualizar.
-            FerramentaEMT.Core.Result<DstvExportService.ResultadoExport> outcome;
+            SteelBIM.Core.Result<DstvExportService.ResultadoExport> outcome;
             try
             {
                 outcome = RevitProgressHost.Run(
