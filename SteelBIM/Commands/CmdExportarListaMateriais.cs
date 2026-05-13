@@ -96,10 +96,10 @@ namespace SteelBIM.Commands
         {
             return
                 "A exportacao para .xlsx nao depende do Excel instalado, mas a biblioteca ClosedXML nao foi encontrada.\n\n" +
-                "Para usar este comando em outro computador, copie a pasta completa do add-in, e nao apenas o arquivo FerramentaEMT.dll.\n\n" +
+                "Para usar este comando em outro computador, copie a pasta completa do add-in, e nao apenas o arquivo SteelBIM.dll.\n\n" +
                 "Arquivos obrigatorios:\n" +
-                "- FerramentaEMT.dll\n" +
-                "- FerramentaEMT.deps.json\n" +
+                "- SteelBIM.dll\n" +
+                "- SteelBIM.deps.json\n" +
                 "- ClosedXML.dll\n" +
                 "- ClosedXML.Parser.dll\n" +
                 "- DocumentFormat.OpenXml.dll\n" +

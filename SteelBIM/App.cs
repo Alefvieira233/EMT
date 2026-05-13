@@ -145,10 +145,10 @@ namespace SteelBIM
             }
             catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
 
-            // Incorporacao Victor Wave 2: split em duas abas.
-            //   tabName    = "Ferramenta EMT"  → SO os paineis PF (armadura de concreto pre-fabricado)
+            // Rebrand v2.0.0: aba principal renomeada para "SteelBIM".
+            //   tabName    = "SteelBIM"        → SO os paineis PF (armadura de concreto pre-fabricado)
             //   eccTabName = "Ferramentas ECC" → paineis gerais (modelagem, estrutura, fabricacao, QA, montagem, licenca)
-            string tabName = "Ferramenta EMT";
+            string tabName = "SteelBIM";
             string eccTabName = "Ferramentas ECC";
             RevitWindowThemeService.Initialize(application);
 

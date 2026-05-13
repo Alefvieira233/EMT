@@ -1,7 +1,7 @@
 <Window x:Class="SteelBIM.Views.LicenseActivationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ativar Licença - FerramentaEMT"
+        Title="Ativar Licença - SteelBIM"
         Width="640"
         MinWidth="560" MinHeight="460"
         MaxHeight="620"
@@ -28,7 +28,7 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0 0 0 16">
-            <TextBlock Text="Ativar FerramentaEMT" Style="{StaticResource DialogTitleText}"/>
+            <TextBlock Text="Ativar SteelBIM" Style="{StaticResource DialogTitleText}"/>
             <TextBlock Text="Cole abaixo a chave que você recebeu por email após a compra."
                        Style="{StaticResource DialogSubtitleText}"/>
         </StackPanel>

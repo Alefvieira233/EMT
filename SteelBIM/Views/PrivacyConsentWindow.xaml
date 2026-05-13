@@ -1,7 +1,7 @@
 <Window x:Class="SteelBIM.Views.PrivacyConsentWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Privacidade - FerramentaEMT"
+        Title="Privacidade - SteelBIM"
         Width="640"
         MinWidth="560" MinHeight="380"
         MaxHeight="600"
@@ -29,7 +29,7 @@
         <StackPanel Grid.Row="0" Margin="0 0 0 12">
             <TextBlock Text="Privacidade e coleta de dados"
                        Style="{StaticResource DialogTitleText}"/>
-            <TextBlock Text="Para melhorar o produto, a FerramentaEMT pode realizar as seguintes acoes. Voce escolhe o que permitir."
+            <TextBlock Text="Para melhorar o produto, a SteelBIM pode realizar as seguintes acoes. Voce escolhe o que permitir."
                        Style="{StaticResource DialogSubtitleText}"
                        TextWrapping="Wrap"/>
         </StackPanel>
