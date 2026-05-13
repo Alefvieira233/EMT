@@ -1,11 +1,11 @@
 using System;
 using System.Globalization;
-using FerramentaEMT.Licensing;
+using SteelBIM.Licensing;
 
 namespace EmtKeyGen
 {
     /// <summary>
-    /// Gerador de chaves de licenca do FerramentaEMT.
+    /// Gerador de chaves de licenca do SteelBIM.
     /// USO INTERNO DO ALEF — nunca distribuir para clientes finais.
     ///
     /// Compilar:
@@ -24,7 +24,7 @@ namespace EmtKeyGen
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine("======================================================");
-            Console.WriteLine("  FerramentaEMT — Gerador de Chaves de Licenca");
+            Console.WriteLine("  SteelBIM — Gerador de Chaves de Licenca");
             Console.WriteLine("======================================================");
 
             LicenseSecretProvider.SecretSource secretSource;

@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <!--
-    NOTA: Nao referenciamos diretamente FerramentaEMT.csproj pois ele depende do
+    NOTA: Nao referenciamos diretamente SteelBIM.csproj pois ele depende do
     RevitAPI.dll que so existe na maquina de desenvolvimento. Em vez disso,
     extraimos a logica testavel para classes puras (sem Revit) que podemos
     testar isoladamente, e linkamos esses arquivos individualmente abaixo.
@@ -37,186 +37,186 @@
   <!-- Pure-logic files compartilhados (sem dependencia de Revit) -->
   <ItemGroup>
     <!-- Sprint 5: DSTV/NC1 Export (modelos + writer + mapper sao pure C#) -->
-    <Compile Include="..\FerramentaEMT\Models\CncExport\DstvProfileType.cs"
+    <Compile Include="..\SteelBIM\Models\CncExport\DstvProfileType.cs"
              Link="LinkedSources\Models\CncExport\DstvProfileType.cs" />
-    <Compile Include="..\FerramentaEMT\Models\CncExport\DstvHole.cs"
+    <Compile Include="..\SteelBIM\Models\CncExport\DstvHole.cs"
              Link="LinkedSources\Models\CncExport\DstvHole.cs" />
-    <Compile Include="..\FerramentaEMT\Models\CncExport\DstvFile.cs"
+    <Compile Include="..\SteelBIM\Models\CncExport\DstvFile.cs"
              Link="LinkedSources\Models\CncExport\DstvFile.cs" />
-    <Compile Include="..\FerramentaEMT\Models\CncExport\ExportarDstvConfig.cs"
+    <Compile Include="..\SteelBIM\Models\CncExport\ExportarDstvConfig.cs"
              Link="LinkedSources\Models\CncExport\ExportarDstvConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Services\CncExport\DstvFileWriter.cs"
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvFileWriter.cs"
              Link="LinkedSources\Services\CncExport\DstvFileWriter.cs" />
-    <Compile Include="..\FerramentaEMT\Services\CncExport\DstvProfileMapper.cs"
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvProfileMapper.cs"
              Link="LinkedSources\Services\CncExport\DstvProfileMapper.cs" />
-    <Compile Include="..\FerramentaEMT\Services\CncExport\DstvFileNameSanitizer.cs"
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvFileNameSanitizer.cs"
              Link="LinkedSources\Services\CncExport\DstvFileNameSanitizer.cs" />
 
     <!-- Sprint 6: Model Check (modelos sao pure C#) -->
-    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckSeverity.cs"
+    <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckSeverity.cs"
              Link="LinkedSources\Models\ModelCheck\ModelCheckSeverity.cs" />
-    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckIssue.cs"
+    <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckIssue.cs"
              Link="LinkedSources\Models\ModelCheck\ModelCheckIssue.cs" />
-    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckRuleResult.cs"
+    <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckRuleResult.cs"
              Link="LinkedSources\Models\ModelCheck\ModelCheckRuleResult.cs" />
-    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckReport.cs"
+    <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckReport.cs"
              Link="LinkedSources\Models\ModelCheck\ModelCheckReport.cs" />
-    <Compile Include="..\FerramentaEMT\Models\ModelCheck\ModelCheckConfig.cs"
+    <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckConfig.cs"
              Link="LinkedSources\Models\ModelCheck\ModelCheckConfig.cs" />
 
     <!-- Sprint 7: Plano de Montagem (modelos sao pure C#) -->
-    <Compile Include="..\FerramentaEMT\Models\Montagem\EtapaMontagem.cs"
+    <Compile Include="..\SteelBIM\Models\Montagem\EtapaMontagem.cs"
              Link="LinkedSources\Models\Montagem\EtapaMontagem.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Montagem\PlanoMontagemConfig.cs"
+    <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemConfig.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Montagem\PlanoMontagemReport.cs"
+    <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Montagem\EtapaMontagemParser.cs"
+    <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"
              Link="LinkedSources\Services\Montagem\EtapaMontagemParser.cs" />
 
     <!-- Sprint 7: Conexoes (modelos e calculadora sao pure C#) -->
-    <Compile Include="..\FerramentaEMT\Models\Conexoes\TipoConexao.cs"
+    <Compile Include="..\SteelBIM\Models\Conexoes\TipoConexao.cs"
              Link="LinkedSources\Models\Conexoes\TipoConexao.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConfiguracaoChapaPonta.cs"
+    <Compile Include="..\SteelBIM\Models\Conexoes\ConfiguracaoChapaPonta.cs"
              Link="LinkedSources\Models\Conexoes\ConfiguracaoChapaPonta.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConfiguracaoCantoneira.cs"
+    <Compile Include="..\SteelBIM\Models\Conexoes\ConfiguracaoCantoneira.cs"
              Link="LinkedSources\Models\Conexoes\ConfiguracaoCantoneira.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConfiguracaoGusset.cs"
+    <Compile Include="..\SteelBIM\Models\Conexoes\ConfiguracaoGusset.cs"
              Link="LinkedSources\Models\Conexoes\ConfiguracaoGusset.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Conexoes\ConexaoConfig.cs"
+    <Compile Include="..\SteelBIM\Models\Conexoes\ConexaoConfig.cs"
              Link="LinkedSources\Models\Conexoes\ConexaoConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Conexoes\ConexaoCalculator.cs"
+    <Compile Include="..\SteelBIM\Services\Conexoes\ConexaoCalculator.cs"
              Link="LinkedSources\Services\Conexoes\ConexaoCalculator.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Conexoes\ConexaoFamilyNames.cs"
+    <Compile Include="..\SteelBIM\Services\Conexoes\ConexaoFamilyNames.cs"
              Link="LinkedSources\Services\Conexoes\ConexaoFamilyNames.cs" />
 
     <!-- 1.0.0: Sistema de Licenca (pure C#, sem Revit) -->
-    <Compile Include="..\FerramentaEMT\Licensing\LicensePayload.cs"
+    <Compile Include="..\SteelBIM\Licensing\LicensePayload.cs"
              Link="LinkedSources\Licensing\LicensePayload.cs" />
-    <Compile Include="..\FerramentaEMT\Licensing\Base64Url.cs"
+    <Compile Include="..\SteelBIM\Licensing\Base64Url.cs"
              Link="LinkedSources\Licensing\Base64Url.cs" />
-    <Compile Include="..\FerramentaEMT\Licensing\SimpleJson.cs"
+    <Compile Include="..\SteelBIM\Licensing\SimpleJson.cs"
              Link="LinkedSources\Licensing\SimpleJson.cs" />
-    <Compile Include="..\FerramentaEMT\Licensing\KeySigner.cs"
+    <Compile Include="..\SteelBIM\Licensing\KeySigner.cs"
              Link="LinkedSources\Licensing\KeySigner.cs" />
-    <Compile Include="..\FerramentaEMT\Licensing\LicenseSecretProvider.cs"
+    <Compile Include="..\SteelBIM\Licensing\LicenseSecretProvider.cs"
              Link="LinkedSources\Licensing\LicenseSecretProvider.cs" />
 
     <!-- 1.3.0: Core (Result<T>, Progress) — pure C#, sem Revit -->
-    <Compile Include="..\FerramentaEMT\Core\Result.cs"
+    <Compile Include="..\SteelBIM\Core\Result.cs"
              Link="LinkedSources\Core\Result.cs" />
-    <Compile Include="..\FerramentaEMT\Core\ProgressReport.cs"
+    <Compile Include="..\SteelBIM\Core\ProgressReport.cs"
              Link="LinkedSources\Core\ProgressReport.cs" />
-    <Compile Include="..\FerramentaEMT\Core\ProgressReporter.cs"
+    <Compile Include="..\SteelBIM\Core\ProgressReporter.cs"
              Link="LinkedSources\Core\ProgressReporter.cs" />
 
     <!-- 1.3.0: Utils (NumberParsing) — pure C#, sem Revit -->
-    <Compile Include="..\FerramentaEMT\Utils\NumberParsing.cs"
+    <Compile Include="..\SteelBIM\Utils\NumberParsing.cs"
              Link="LinkedSources\Utils\NumberParsing.cs" />
 
     <!-- 1.4.0 — Onda 3 (PR-1 incorporacao Victor): resultado de corte automatico -->
-    <Compile Include="..\FerramentaEMT\Models\CortarElementosResultado.cs"
+    <Compile Include="..\SteelBIM\Models\CortarElementosResultado.cs"
              Link="LinkedSources\Models\CortarElementosResultado.cs" />
 
     <!-- Config DTOs puros (sem Revit) — adicionados pela auditoria AIOX -->
-    <Compile Include="..\FerramentaEMT\Models\CotarTrelicaConfig.cs"
+    <Compile Include="..\SteelBIM\Models\CotarTrelicaConfig.cs"
              Link="LinkedSources\Models\CotarTrelicaConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\ExportarListaMateriaisConfig.cs"
+    <Compile Include="..\SteelBIM\Models\ExportarListaMateriaisConfig.cs"
              Link="LinkedSources\Models\ExportarListaMateriaisConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\GerarVistaPecaConfig.cs"
+    <Compile Include="..\SteelBIM\Models\GerarVistaPecaConfig.cs"
              Link="LinkedSources\Models\GerarVistaPecaConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\IdentificarPerfilConfig.cs"
+    <Compile Include="..\SteelBIM\Models\IdentificarPerfilConfig.cs"
              Link="LinkedSources\Models\IdentificarPerfilConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\MarcarPecasConfig.cs"
+    <Compile Include="..\SteelBIM\Models\MarcarPecasConfig.cs"
              Link="LinkedSources\Models\MarcarPecasConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\TagearTrelicaConfig.cs"
+    <Compile Include="..\SteelBIM\Models\TagearTrelicaConfig.cs"
              Link="LinkedSources\Models\TagearTrelicaConfig.cs" />
 
     <!-- P1.4 (2026-04-29): resumo de cotagem (POCO sem Revit) -->
-    <Compile Include="..\FerramentaEMT\Models\CotagemResumo.cs"
+    <Compile Include="..\SteelBIM\Models\CotagemResumo.cs"
              Link="LinkedSources\Models\CotagemResumo.cs" />
 
     <!-- v1.2.0: PF (Pre-Fabricado de Concreto) — helpers puros -->
-    <Compile Include="..\FerramentaEMT\Services\PF\PfNamingFormatter.cs"
+    <Compile Include="..\SteelBIM\Services\PF\PfNamingFormatter.cs"
              Link="LinkedSources\Services\PF\PfNamingFormatter.cs" />
-    <Compile Include="..\FerramentaEMT\Models\PF\PfRebarConfigs.cs"
+    <Compile Include="..\SteelBIM\Models\PF\PfRebarConfigs.cs"
              Link="LinkedSources\Models\PF\PfRebarConfigs.cs" />
 
     <!-- v1.6.0: Incorporacao Victor Wave 2 (2026-04-24) — PF RebarShape + Bloco 2 Estacas + NBR 6118 -->
-    <Compile Include="..\FerramentaEMT\Models\PF\PfRebarShapeOption.cs"
+    <Compile Include="..\SteelBIM\Models\PF\PfRebarShapeOption.cs"
              Link="LinkedSources\Models\PF\PfRebarShapeOption.cs" />
-    <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapBarPosition.cs"
+    <Compile Include="..\SteelBIM\Models\PF\PfTwoPileCapBarPosition.cs"
              Link="LinkedSources\Models\PF\PfTwoPileCapBarPosition.cs" />
-    <Compile Include="..\FerramentaEMT\Services\PF\PfNbr6118AnchorageService.cs"
+    <Compile Include="..\SteelBIM\Services\PF\PfNbr6118AnchorageService.cs"
              Link="LinkedSources\Services\PF\PfNbr6118AnchorageService.cs" />
-    <Compile Include="..\FerramentaEMT\Services\PF\PfTwoPileCapBarCatalog.cs"
+    <Compile Include="..\SteelBIM\Services\PF\PfTwoPileCapBarCatalog.cs"
              Link="LinkedSources\Services\PF\PfTwoPileCapBarCatalog.cs" />
 
     <!-- v1.6.0 followup: ADR-003 cleanup PfTwoPileCapRebarService (DTO de retorno) -->
-    <Compile Include="..\FerramentaEMT\Models\PF\PfTwoPileCapResultado.cs"
+    <Compile Include="..\SteelBIM\Models\PF\PfTwoPileCapResultado.cs"
              Link="LinkedSources\Models\PF\PfTwoPileCapResultado.cs" />
 
     <!-- v1.8.0 — Onda 6 (Wave Victor Final): DTOs puros das Ondas 3, 3.5 e 5 -->
-    <Compile Include="..\FerramentaEMT\Models\CortarElementosConfig.cs"
+    <Compile Include="..\SteelBIM\Models\CortarElementosConfig.cs"
              Link="LinkedSources\Models\CortarElementosConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Conexoes\PlacaBaseLancamentoResultado.cs"
+    <Compile Include="..\SteelBIM\Models\Conexoes\PlacaBaseLancamentoResultado.cs"
              Link="LinkedSources\Models\Conexoes\PlacaBaseLancamentoResultado.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Bloco\BlocoFundacaoRebarConfig.cs"
+    <Compile Include="..\SteelBIM\Models\Bloco\BlocoFundacaoRebarConfig.cs"
              Link="LinkedSources\Models\Bloco\BlocoFundacaoRebarConfig.cs" />
-    <Compile Include="..\FerramentaEMT\Models\PF\PfEstacaRebarConfig.cs"
+    <Compile Include="..\SteelBIM\Models\PF\PfEstacaRebarConfig.cs"
              Link="LinkedSources\Models\PF\PfEstacaRebarConfig.cs" />
 
     <!-- v1.7.0: Auto-update (PR-2) — helpers puros (sem Revit, sem rede, sem Logger) -->
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\SemVerComparer.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\SemVerComparer.cs"
              Link="LinkedSources\Infrastructure\Update\SemVerComparer.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateLog.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateLog.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateLog.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateSession.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateSession.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateSession.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateState.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateState.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateState.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\GitHubRelease.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\GitHubRelease.cs"
              Link="LinkedSources\Infrastructure\Update\GitHubRelease.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\GitHubAsset.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\GitHubAsset.cs"
              Link="LinkedSources\Infrastructure\Update\GitHubAsset.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\IGitHubReleaseProvider.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\IGitHubReleaseProvider.cs"
              Link="LinkedSources\Infrastructure\Update\IGitHubReleaseProvider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateCheckService.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateCheckService.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateCheckService.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\ZipSlipValidator.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\ZipSlipValidator.cs"
              Link="LinkedSources\Infrastructure\Update\ZipSlipValidator.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\Sha256Calculator.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\Sha256Calculator.cs"
              Link="LinkedSources\Infrastructure\Update\Sha256Calculator.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateMarker.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateMarker.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateMarker.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\ApplyResult.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\ApplyResult.cs"
              Link="LinkedSources\Infrastructure\Update\ApplyResult.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Update\UpdateApplier.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateApplier.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateApplier.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Privacy\ConsentState.cs"
+    <Compile Include="..\SteelBIM\Models\Privacy\ConsentState.cs"
              Link="LinkedSources\Models\Privacy\ConsentState.cs" />
-    <Compile Include="..\FerramentaEMT\Models\Privacy\PrivacySettings.cs"
+    <Compile Include="..\SteelBIM\Models\Privacy\PrivacySettings.cs"
              Link="LinkedSources\Models\Privacy\PrivacySettings.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Privacy\IPrivacySettingsStore.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Privacy\IPrivacySettingsStore.cs"
              Link="LinkedSources\Infrastructure\Privacy\IPrivacySettingsStore.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Privacy\PrivacyJson.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Privacy\PrivacyJson.cs"
              Link="LinkedSources\Infrastructure\Privacy\PrivacyJson.cs" />
 
     <!-- v1.7.0 PR-4: PiiScrubber promovido pro namespace Infrastructure
          (cross-cutting entre crash reporting + telemetry). Ver ADR-008 §"Reuso". -->
-    <Compile Include="..\FerramentaEMT\Infrastructure\PiiScrubber.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\PiiScrubber.cs"
              Link="LinkedSources\Infrastructure\PiiScrubber.cs" />
 
     <!-- v1.7.0 PR-3: Crash reporting via Sentry — helpers puros (sem Revit, sem rede) -->
-    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryDsnProvider.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\CrashReporting\SentryDsnProvider.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryDsnProvider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\ISentryHubFacade.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\CrashReporting\ISentryHubFacade.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\ISentryHubFacade.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryOptionsBuilder.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\CrashReporting\SentryOptionsBuilder.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryOptionsBuilder.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryReporter.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\CrashReporting\SentryReporter.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryReporter.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\CrashReporting\SentryStartupWiring.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\CrashReporting\SentryStartupWiring.cs"
              Link="LinkedSources\Infrastructure\CrashReporting\SentryStartupWiring.cs" />
     <!-- SentryHubFacade.cs (impl real do Sentry SDK) NAO eh linkado:
          depende de SentrySdk estatico que tem state global e nao eh
@@ -224,39 +224,39 @@
          via Moq nos testes. -->
 
     <!-- v1.7.0 PR-4: Telemetry via PostHog — helpers puros (sem Revit, sem rede) -->
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogApiKeyProvider.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\PostHogApiKeyProvider.cs"
              Link="LinkedSources\Infrastructure\Telemetry\PostHogApiKeyProvider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogHostProvider.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\PostHogHostProvider.cs"
              Link="LinkedSources\Infrastructure\Telemetry\PostHogHostProvider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\SessionIdProvider.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\SessionIdProvider.cs"
              Link="LinkedSources\Infrastructure\Telemetry\SessionIdProvider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\TelemetryEvent.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\TelemetryEvent.cs"
              Link="LinkedSources\Infrastructure\Telemetry\TelemetryEvent.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\ITelemetryClient.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\ITelemetryClient.cs"
              Link="LinkedSources\Infrastructure\Telemetry\ITelemetryClient.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\SamplingDecider.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\SamplingDecider.cs"
              Link="LinkedSources\Infrastructure\Telemetry\SamplingDecider.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\TelemetryOptionsBuilder.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\TelemetryOptionsBuilder.cs"
              Link="LinkedSources\Infrastructure\Telemetry\TelemetryOptionsBuilder.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\PostHogHttpTelemetryClient.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\PostHogHttpTelemetryClient.cs"
              Link="LinkedSources\Infrastructure\Telemetry\PostHogHttpTelemetryClient.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\TelemetryReporter.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\TelemetryReporter.cs"
              Link="LinkedSources\Infrastructure\Telemetry\TelemetryReporter.cs" />
-    <Compile Include="..\FerramentaEMT\Infrastructure\Telemetry\TelemetryStartupWiring.cs"
+    <Compile Include="..\SteelBIM\Infrastructure\Telemetry\TelemetryStartupWiring.cs"
              Link="LinkedSources\Infrastructure\Telemetry\TelemetryStartupWiring.cs" />
 
     <!-- v1.1.0: Trelica — helpers puros (os services usam Revit API e ficam de fora) -->
-    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaClassificador.cs"
+    <Compile Include="..\SteelBIM\Services\Trelica\TrelicaClassificador.cs"
              Link="LinkedSources\Services\Trelica\TrelicaClassificador.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaGeometria.cs"
+    <Compile Include="..\SteelBIM\Services\Trelica\TrelicaGeometria.cs"
              Link="LinkedSources\Services\Trelica\TrelicaGeometria.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaPerfilFormatter.cs"
+    <Compile Include="..\SteelBIM\Services\Trelica\TrelicaPerfilFormatter.cs"
              Link="LinkedSources\Services\Trelica\TrelicaPerfilFormatter.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Trelica\TrelicaTopologia.cs"
+    <Compile Include="..\SteelBIM\Services\Trelica\TrelicaTopologia.cs"
              Link="LinkedSources\Services\Trelica\TrelicaTopologia.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Trelica\CotaFaixaBuilder.cs"
+    <Compile Include="..\SteelBIM\Services\Trelica\CotaFaixaBuilder.cs"
              Link="LinkedSources\Services\Trelica\CotaFaixaBuilder.cs" />
-    <Compile Include="..\FerramentaEMT\Services\Trelica\CotarTrelicaReport.cs"
+    <Compile Include="..\SteelBIM\Services\Trelica\CotarTrelicaReport.cs"
              Link="LinkedSources\Services\Trelica\CotarTrelicaReport.cs" />
   </ItemGroup>
 

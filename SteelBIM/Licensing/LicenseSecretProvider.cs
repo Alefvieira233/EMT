@@ -103,9 +103,11 @@ namespace SteelBIM.Licensing
             string fromLegacy = SafeReadFile(legacyPath);
             if (!string.IsNullOrWhiteSpace(fromLegacy))
             {
-                Infrastructure.Logger.Warn(
-                    "[License] HMAC secret resolvido do path legado FerramentaEMT. " +
-                    "Mover para %LOCALAPPDATA%\\SteelBIM\\license.secret na proxima oportunidade.");
+                // Source enum LegacyLocalAppDataFile sinaliza ao startup logger
+                // (em App.cs) que cair no legado eh "warn-worthy". Nao referenciamos
+                // Logger aqui direto porque LicenseSecretProvider.cs eh linkado em
+                // tools/EmtKeyGen e SteelBIM.Tests, que nao tem Logger no contexto.
+                try { Console.Error.WriteLine("[License] HMAC secret resolvido do path legado FerramentaEMT — mover para %LOCALAPPDATA%\\SteelBIM\\license.secret."); } catch { }
                 source = SecretSource.LegacyLocalAppDataFile;
                 return fromLegacy.Trim();
             }

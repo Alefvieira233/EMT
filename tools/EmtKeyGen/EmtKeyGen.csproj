@@ -22,19 +22,19 @@
     OU referenciar os caminhos relativos exatos abaixo.
   -->
   <ItemGroup>
-    <Compile Include="..\..\FerramentaEMT\Licensing\LicensePayload.cs">
+    <Compile Include="..\..\SteelBIM\Licensing\LicensePayload.cs">
       <Link>Linked\LicensePayload.cs</Link>
     </Compile>
-    <Compile Include="..\..\FerramentaEMT\Licensing\KeySigner.cs">
+    <Compile Include="..\..\SteelBIM\Licensing\KeySigner.cs">
       <Link>Linked\KeySigner.cs</Link>
     </Compile>
-    <Compile Include="..\..\FerramentaEMT\Licensing\LicenseSecretProvider.cs">
+    <Compile Include="..\..\SteelBIM\Licensing\LicenseSecretProvider.cs">
       <Link>Linked\LicenseSecretProvider.cs</Link>
     </Compile>
-    <Compile Include="..\..\FerramentaEMT\Licensing\Base64Url.cs">
+    <Compile Include="..\..\SteelBIM\Licensing\Base64Url.cs">
       <Link>Linked\Base64Url.cs</Link>
     </Compile>
-    <Compile Include="..\..\FerramentaEMT\Licensing\SimpleJson.cs">
+    <Compile Include="..\..\SteelBIM\Licensing\SimpleJson.cs">
       <Link>Linked\SimpleJson.cs</Link>
     </Compile>
   </ItemGroup>
