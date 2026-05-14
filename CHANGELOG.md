@@ -31,6 +31,12 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
   normalizados. O `continue-on-error: true` que mascarava o problema
   foi removido de `.github/workflows/build.yml:83` — formatting
   quebrado agora falha honesto na CI.
+- `.editorconfig` `end_of_line` mudado de `crlf` para `lf` no `[*]`
+  generico, alinhando com `.gitattributes` (`* text=auto eol=lf`) que
+  ja forcava LF para `.cs` na repo. Antes do fix: CI rodava `dotnet
+  format` em files LF (do repo) mas editorconfig pedia CRLF — falso
+  positivo de 162 arquivos. Era a causa raiz mascarada pelo
+  `continue-on-error`.
 
 ### Changed
 - `PfNamingService`: variavel `vigaHorizontalNoEixoX` renomeada para

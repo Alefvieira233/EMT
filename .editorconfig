@@ -10,7 +10,13 @@ root = true
 
 [*]
 charset = utf-8-bom
-end_of_line = crlf
+# end_of_line = lf alinhado com .gitattributes (que ja forca *.cs eol=lf via
+# default text=auto eol=lf). Antes era crlf, mas o conflito fazia o CI rodar
+# dotnet format --verify-no-changes e reportar 162 arquivos como nao-formatados
+# (CI ve LF do repo, editorconfig pedia CRLF). Resolvido em v2.0.2.
+# Para arquivos que devem ficar CRLF na WT (sln, csproj, ps1, bat, cmd, etc),
+# usamos overrides especificos abaixo ou no .gitattributes.
+end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
