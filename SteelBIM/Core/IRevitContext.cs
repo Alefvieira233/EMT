@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 
@@ -67,7 +67,8 @@ namespace SteelBIM.Core
         /// </summary>
         public static IRevitContext CreateFromCommandData(ExternalCommandData commandData)
         {
-            if (commandData == null) throw new ArgumentNullException(nameof(commandData));
+            if (commandData == null)
+                throw new ArgumentNullException(nameof(commandData));
 
             UIDocument uidoc = commandData.Application?.ActiveUIDocument;
             if (uidoc == null)

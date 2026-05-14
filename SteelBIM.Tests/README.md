@@ -1,17 +1,17 @@
-# FerramentaEMT.Tests
+# SteelBIM.Tests
 
-Projeto de testes unitarios e de integracao do FerramentaEMT.
+Projeto de testes unitarios e de integracao do SteelBIM.
 
 ## Estrategia
 
-Testes diretos contra `FerramentaEMT.csproj` sao **dificeis** porque o projeto principal
+Testes diretos contra `SteelBIM.csproj` sao **dificeis** porque o projeto principal
 depende do `RevitAPI.dll`, que so existe em maquinas com Revit instalado.
 
 Por isso, **a estrategia e extrair logica pura** (sem dependencia de Revit) para classes
 testaveis:
 
 ```
-FerramentaEMT/
+SteelBIM/
 ├── Services/
 │   ├── CotasService.cs                    # depende de Revit (NAO testado aqui)
 │   └── Shared/
@@ -22,14 +22,14 @@ FerramentaEMT/
 A medida que avancamos os Sprints 2-3 e quebramos as God Classes, iremos:
 
 1. Mover logica pura para `Services/Shared/`
-2. Criar testes correspondentes em `FerramentaEMT.Tests/Services/Shared/`
+2. Criar testes correspondentes em `SteelBIM.Tests/Services/Shared/`
 3. Cobertura alvo: **70%** da logica pura
 
 ## Como rodar
 
 ### CLI
 ```bash
-cd FerramentaEMT.Tests
+cd SteelBIM.Tests
 dotnet test
 ```
 
@@ -47,7 +47,7 @@ Resultado em `TestResults/<guid>/coverage.cobertura.xml`.
 ## Estrutura
 
 ```
-FerramentaEMT.Tests/
+SteelBIM.Tests/
 ├── Smoke/                      # Sanity checks (rodam sempre)
 ├── Services/Shared/            # Testes de logica pura (a popular)
 └── Helpers/                    # Test fixtures, mocks, builders

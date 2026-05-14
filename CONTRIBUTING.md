@@ -1,4 +1,4 @@
-# Contribuindo para o FerramentaEMT
+# Contribuindo para o SteelBIM
 
 Obrigado pelo interesse. Este documento cobre o fluxo de contribuicao, convencoes
 de codigo e como levantar um ambiente de desenvolvimento do plugin.
@@ -18,11 +18,11 @@ git clone https://github.com/Alefvieira233/EMT.git
 cd EMT
 
 # Testes unitarios (nao dependem do Revit)
-cd FerramentaEMT.Tests
+cd SteelBIM.Tests
 dotnet test
 
 # Build do plugin (depende do Revit 2025 instalado)
-cd ..\FerramentaEMT
+cd ..\SteelBIM
 dotnet build --configuration Release
 ```
 
@@ -36,7 +36,7 @@ do ambiente de producao):
 $env:EMT_LICENSE_SECRET = "<sua-string-aleatoria-de-32+-chars>"
 
 # Opcao 2: arquivo persistente por usuario
-$path = "$env:LOCALAPPDATA\FerramentaEMT\license.secret"
+$path = "$env:LOCALAPPDATA\SteelBIM\license.secret"
 New-Item -ItemType Directory -Force (Split-Path $path) | Out-Null
 Set-Content -NoNewline -Encoding UTF8 -Path $path -Value "<sua-string>"
 ```
@@ -70,7 +70,7 @@ Escopos comuns: `modelcheck`, `pf`, `licensing`, `trelica`, `wpf`, `core`, `ci`.
 
 ### Testes obrigatorios
 
-Todo novo servico ou logica de dominio precisa de teste em `FerramentaEMT.Tests/`.
+Todo novo servico ou logica de dominio precisa de teste em `SteelBIM.Tests/`.
 Se o servico depende de API do Revit, extraia a logica pura para uma classe
 sem dependencia de `Autodesk.Revit.*` e teste essa parte. Exemplos:
 `PfNamingFormatter`, `TrelicaClassificador`, `DstvProfileMapper`.

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,8 +51,10 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         public TagearTrelicaReport Executar(UIDocument uidoc, TagearTrelicaConfig config)
         {
-            if (uidoc == null) throw new ArgumentNullException(nameof(uidoc));
-            if (config == null) throw new ArgumentNullException(nameof(config));
+            if (uidoc == null)
+                throw new ArgumentNullException(nameof(uidoc));
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
 
             var relatorio = new TagearTrelicaReport();
             var doc = uidoc.Document;
@@ -80,9 +82,11 @@ namespace SteelBIM.Services.Trelica
             foreach (var elemId in elementosSelecionados)
             {
                 Element elem = doc.GetElement(elemId);
-                if (elem == null) continue;
+                if (elem == null)
+                    continue;
 
-                if (!(elem is FamilyInstance fi)) continue;
+                if (!(elem is FamilyInstance fi))
+                    continue;
 
                 // Verificar se e' barra estrutural
                 if (fi.StructuralType == Autodesk.Revit.DB.Structure.StructuralType.Beam ||
@@ -167,10 +171,14 @@ namespace SteelBIM.Services.Trelica
                         {
                             // Verificar se deve procescar este tipo
                             bool deveProcescar = false;
-                            if (config.TagearBanzoSuperior && tipo == TrelicaClassificador.TipoMembro.BanzoSuperior) deveProcescar = true;
-                            if (config.TagearBanzoInferior && tipo == TrelicaClassificador.TipoMembro.BanzoInferior) deveProcescar = true;
-                            if (config.TagearMontantes && tipo == TrelicaClassificador.TipoMembro.Montante) deveProcescar = true;
-                            if (config.TagearDiagonais && tipo == TrelicaClassificador.TipoMembro.Diagonal) deveProcescar = true;
+                            if (config.TagearBanzoSuperior && tipo == TrelicaClassificador.TipoMembro.BanzoSuperior)
+                                deveProcescar = true;
+                            if (config.TagearBanzoInferior && tipo == TrelicaClassificador.TipoMembro.BanzoInferior)
+                                deveProcescar = true;
+                            if (config.TagearMontantes && tipo == TrelicaClassificador.TipoMembro.Montante)
+                                deveProcescar = true;
+                            if (config.TagearDiagonais && tipo == TrelicaClassificador.TipoMembro.Diagonal)
+                                deveProcescar = true;
 
                             if (!deveProcescar)
                                 continue;
@@ -240,7 +248,8 @@ namespace SteelBIM.Services.Trelica
 
                                 foreach (var kvp in barrasClassificadas)
                                 {
-                                    if (!(kvp.Key.Location is LocationCurve lc)) continue;
+                                    if (!(kvp.Key.Location is LocationCurve lc))
+                                        continue;
                                     XYZ mid = (lc.Curve.GetEndPoint(0) + lc.Curve.GetEndPoint(1)) / 2.0;
 
                                     if (kvp.Value == TrelicaClassificador.TipoMembro.BanzoSuperior && perfisBanzoSuperior.Count > 0)

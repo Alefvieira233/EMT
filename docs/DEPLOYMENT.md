@@ -1,4 +1,4 @@
-# Deployment — FerramentaEMT v1.5.0
+# Deployment — SteelBIM v1.5.0
 
 > Guia para instalar o plugin numa maquina nova (desenvolvedor ou cliente).
 > Para o fluxo de venda e ativacao de licenca, veja [SISTEMA-LICENCA.md](SISTEMA-LICENCA.md).
@@ -41,7 +41,7 @@ INSTALAR.bat
 O script:
 1. Verifica que `Revit.exe` nao esta em execucao
 2. Compila em Release (`dotnet build -c Release`)
-3. Gera o manifesto `FerramentaEMT.addin`
+3. Gera o manifesto `SteelBIM.addin`
 4. Copia binarios para `%AppData%\Autodesk\Revit\Addins\2025\`
 
 Abra o Revit 2025 — a aba **EMT** aparece no ribbon.
@@ -76,20 +76,20 @@ Reinicie o Revit apos `setx` para que ele enxergue a variavel.
 
 ```cmd
 :: Criar a pasta se nao existir
-mkdir "%LOCALAPPDATA%\FerramentaEMT" 2>nul
+mkdir "%LOCALAPPDATA%\SteelBIM" 2>nul
 
 :: Gravar o secret no arquivo
-echo seu-secret-base64-aqui > "%LOCALAPPDATA%\FerramentaEMT\license.secret"
+echo seu-secret-base64-aqui > "%LOCALAPPDATA%\SteelBIM\license.secret"
 ```
 
-Caminho completo: `C:\Users\<usuario>\AppData\Local\FerramentaEMT\license.secret`
+Caminho completo: `C:\Users\<usuario>\AppData\Local\SteelBIM\license.secret`
 
 #### Opcao 3: Arquivo junto ao assembly
 
 Colocar `license.secret` na mesma pasta da DLL do plugin:
 
 ```
-%AppData%\Autodesk\Revit\Addins\2025\FerramentaEMT\license.secret
+%AppData%\Autodesk\Revit\Addins\2025\SteelBIM\license.secret
 ```
 
 Menos recomendado — o arquivo pode ser sobrescrito numa reinstalacao.
@@ -140,7 +140,7 @@ O EmtKeyGen usa o mesmo `LicenseSecretProvider` — precisa do secret configurad
 ## 5. Estrutura no PC do cliente
 
 ```
-%LocalAppData%\FerramentaEMT\
+%LocalAppData%\SteelBIM\
   license\
     emt.lic          <- chave ativada, criptografada DPAPI
     emt.trl          <- data inicio do trial, criptografada DPAPI
@@ -151,10 +151,10 @@ O EmtKeyGen usa o mesmo `LicenseSecretProvider` — precisa do secret configurad
   license.secret     <- secret HMAC (Opcao 2 acima)
 
 %AppData%\Autodesk\Revit\Addins\2025\
-  FerramentaEMT\
-    FerramentaEMT.dll
+  SteelBIM\
+    SteelBIM.dll
     (demais DLLs de dependencia)
-  FerramentaEMT.addin  <- manifesto do Revit
+  SteelBIM.addin  <- manifesto do Revit
 ```
 
 ---
@@ -163,11 +163,11 @@ O EmtKeyGen usa o mesmo `LicenseSecretProvider` — precisa do secret configurad
 
 ```cmd
 :: Remove binarios e manifesto
-del "%AppData%\Autodesk\Revit\Addins\2025\FerramentaEMT.addin"
-rmdir /s /q "%AppData%\Autodesk\Revit\Addins\2025\FerramentaEMT\"
+del "%AppData%\Autodesk\Revit\Addins\2025\SteelBIM.addin"
+rmdir /s /q "%AppData%\Autodesk\Revit\Addins\2025\SteelBIM\"
 
 :: Remove dados locais (opcional)
-rmdir /s /q "%LocalAppData%\FerramentaEMT\"
+rmdir /s /q "%LocalAppData%\SteelBIM\"
 ```
 
 ---
@@ -179,7 +179,7 @@ rmdir /s /q "%LocalAppData%\FerramentaEMT\"
 | Aba EMT nao aparece no Revit | Verificar se `.addin` existe em `Addins\2025\` |
 | Erro de HMAC | Rodar `dotnet run --project tools\EmtKeyGen` para testar resolucao |
 | Licenca "WrongMachine" | Cliente trocou de PC — gerar nova chave (ver SISTEMA-LICENCA.md) |
-| Crash ao abrir | Ver `%LocalAppData%\FerramentaEMT\logs\` e `crashes\` |
+| Crash ao abrir | Ver `%LocalAppData%\SteelBIM\logs\` e `crashes\` |
 | Build falha | Rodar `Diagnostico-SDK.bat` para verificar .NET SDK e Revit |
 
 ---

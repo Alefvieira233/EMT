@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -61,7 +61,8 @@ namespace SteelBIM.Services.Montagem
                     foreach (ElementId eid in ids)
                     {
                         Element elem = doc.GetElement(eid);
-                        if (elem == null) continue;
+                        if (elem == null)
+                            continue;
 
                         // Tenta escrever no parâmetro de projeto
                         Parameter? param = elem.LookupParameter(nomeParametro);
@@ -142,7 +143,8 @@ namespace SteelBIM.Services.Montagem
                 foreach (Element elem in collector)
                 {
                     int etapaNum = LerEtapaDoElemento(elem, config.NomeParametroEtapa);
-                    if (etapaNum <= 0) continue;
+                    if (etapaNum <= 0)
+                        continue;
 
                     if (!dicEtapas.ContainsKey(etapaNum))
                     {
@@ -202,7 +204,8 @@ namespace SteelBIM.Services.Montagem
             if (paramInt != null && paramInt.StorageType == StorageType.Integer)
             {
                 int v = paramInt.AsInteger();
-                if (v > 0) return v;
+                if (v > 0)
+                    return v;
             }
 
             // 2) Fallback Comments: string no formato "Etapa:N" (parsing delegado a EtapaMontagemParser)
@@ -236,7 +239,8 @@ namespace SteelBIM.Services.Montagem
                         foreach (long elemIdVal in etapa.ElementIds)
                         {
                             Element? elem = doc.GetElement(new ElementId(elemIdVal));
-                            if (elem == null) continue;
+                            if (elem == null)
+                                continue;
 
                             var ogs = new OverrideGraphicSettings();
                             ogs.SetProjectionLineColor(cor);

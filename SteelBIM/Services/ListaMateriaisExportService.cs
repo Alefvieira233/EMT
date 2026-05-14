@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -227,7 +227,8 @@ namespace SteelBIM.Services
         /// </summary>
         public static string BuildResumoText(ResultadoExport r)
         {
-            if (r == null) throw new ArgumentNullException(nameof(r));
+            if (r == null)
+                throw new ArgumentNullException(nameof(r));
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Exportacao concluida com sucesso.");
@@ -975,47 +976,47 @@ namespace SteelBIM.Services
                 switch (parametro.StorageType)
                 {
                     case StorageType.Double:
-                    {
-                        ForgeTypeId dataType = null;
-                        try
                         {
-                            dataType = parametro.Definition?.GetDataType();
-                        }
-                        catch
-                        {
-                            dataType = null;
-                        }
+                            ForgeTypeId dataType = null;
+                            try
+                            {
+                                dataType = parametro.Definition?.GetDataType();
+                            }
+                            catch
+                            {
+                                dataType = null;
+                            }
 
-                        if (dataType != null && dataType.Equals(SpecTypeId.MassPerUnitLength))
-                        {
-                            pesoLinearKgM = UnitUtils.ConvertFromInternalUnits(
-                                parametro.AsDouble(),
-                                UnitTypeId.KilogramsPerMeter);
-                            return pesoLinearKgM > 0.0;
-                        }
+                            if (dataType != null && dataType.Equals(SpecTypeId.MassPerUnitLength))
+                            {
+                                pesoLinearKgM = UnitUtils.ConvertFromInternalUnits(
+                                    parametro.AsDouble(),
+                                    UnitTypeId.KilogramsPerMeter);
+                                return pesoLinearKgM > 0.0;
+                            }
 
-                        if (TryParsePesoLinearStringKgM(parametro.AsValueString(), out pesoLinearKgM))
-                            return true;
+                            if (TryParsePesoLinearStringKgM(parametro.AsValueString(), out pesoLinearKgM))
+                                return true;
 
-                        if (TryParsePesoLinearStringKgM(parametro.AsString(), out pesoLinearKgM))
-                            return true;
+                            if (TryParsePesoLinearStringKgM(parametro.AsString(), out pesoLinearKgM))
+                                return true;
 
-                        if (ParametroNomeIndicaKgPorMetro(parametro.Definition?.Name))
-                        {
-                            pesoLinearKgM = parametro.AsDouble();
-                            return pesoLinearKgM > 0.0;
-                        }
+                            if (ParametroNomeIndicaKgPorMetro(parametro.Definition?.Name))
+                            {
+                                pesoLinearKgM = parametro.AsDouble();
+                                return pesoLinearKgM > 0.0;
+                            }
 
-                        return false;
-                    }
-                    case StorageType.Integer:
-                    {
-                        if (!ParametroNomeIndicaKgPorMetro(parametro.Definition?.Name))
                             return false;
+                        }
+                    case StorageType.Integer:
+                        {
+                            if (!ParametroNomeIndicaKgPorMetro(parametro.Definition?.Name))
+                                return false;
 
-                        pesoLinearKgM = parametro.AsInteger();
-                        return pesoLinearKgM > 0.0;
-                    }
+                            pesoLinearKgM = parametro.AsInteger();
+                            return pesoLinearKgM > 0.0;
+                        }
                     case StorageType.String:
                         return TryParsePesoLinearStringKgM(parametro.AsString(), out pesoLinearKgM);
                     default:

@@ -1,4 +1,4 @@
-# Sistema de Licença — FerramentaEMT 1.0.0
+# Sistema de Licença — SteelBIM 1.0.0
 
 > Guia operacional para o ALEF (vendedor) e para o Victor (compilação).
 > Cobre como gerar chaves, distribuir, ativar e o que fazer quando o cliente
@@ -8,7 +8,7 @@
 
 ## 1. Visão geral
 
-O FerramentaEMT tem licenciamento **offline e self-hosted** — sem dependência de
+O SteelBIM tem licenciamento **offline e self-hosted** — sem dependência de
 servidor, sem custo mensal de SaaS, sem internet obrigatória no PC do cliente.
 
 Funciona assim:
@@ -19,7 +19,7 @@ Funciona assim:
   365 dias e envia por email.
 - **Ativação**: cliente cola a chave em `Ribbon → Licença → Ativar Licença`. A
   chave é amarrada ao identificador da máquina (`MachineGuid` + usuário Windows)
-  e armazenada criptografada (DPAPI) em `%LocalAppData%\FerramentaEMT\license\`.
+  e armazenada criptografada (DPAPI) em `%LocalAppData%\SteelBIM\license\`.
 - **Validação**: a cada execução de comando do plugin, o `FerramentaCommandBase`
   consulta `LicenseService.GetCurrentState()`. Se inválida → bloqueia e abre a
   janela de ativação automaticamente.
@@ -79,7 +79,7 @@ Email padrão:
 
 > Olá [Nome],
 >
-> Obrigado pela compra do FerramentaEMT! Sua licença está pronta.
+> Obrigado pela compra do SteelBIM! Sua licença está pronta.
 >
 > 1. Instale o plugin baixando o instalador em [link interno do drive].
 > 2. Abra o Revit 2025 → aba **Ferramenta EMT** → painel **Licença** →
@@ -140,11 +140,11 @@ Procedimento:
 ## 5. Onde os arquivos ficam (no PC do cliente)
 
 ```
-%LocalAppData%\FerramentaEMT\license\
+%LocalAppData%\SteelBIM\license\
 ├── emt.lic   ← chave + fingerprint, criptografada DPAPI (só lida pelo usuário)
 └── emt.trl   ← data de início do trial, criptografada DPAPI
 
-%LocalAppData%\FerramentaEMT\logs\
+%LocalAppData%\SteelBIM\logs\
 └── emt-YYYYMMDD.log   ← logs (Serilog, retenção 30 dias)
 ```
 
@@ -183,7 +183,7 @@ Para reforçar no futuro (opcional):
 
 ## 7. Trocar o secret (situação rara — se o secret vazar)
 
-O secret está em: `FerramentaEMT/Licensing/KeySigner.cs`, constante `Secret`.
+O secret está em: `SteelBIM/Licensing/KeySigner.cs`, constante `Secret`.
 
 1. Gere novo valor (PowerShell):
    ```powershell

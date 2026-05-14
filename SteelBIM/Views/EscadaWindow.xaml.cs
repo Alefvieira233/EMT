@@ -1,11 +1,11 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 using Autodesk.Revit.DB;
 using SteelBIM.Forms;
 using SteelBIM.Models;
 using SteelBIM.Utils;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
 
 namespace SteelBIM.Views
 {
@@ -101,7 +101,8 @@ namespace SteelBIM.Views
 
         private void SelectComboItem(System.Windows.Controls.ComboBox cmb, string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return;
+            if (string.IsNullOrWhiteSpace(value))
+                return;
             for (int i = 0; i < cmb.Items.Count; i++)
             {
                 if ((string)cmb.Items[i] == value)
@@ -115,7 +116,8 @@ namespace SteelBIM.Views
         private void PopulateTiposLongarina()
         {
             cmbLongarina.Items.Clear();
-            if (cmbLongarinaFamilia.SelectedItem is not string family) return;
+            if (cmbLongarinaFamilia.SelectedItem is not string family)
+                return;
 
             foreach (FamilySymbol symbol in _symbols.Where(s => s.FamilyName == family).OrderBy(s => s.Name))
                 cmbLongarina.Items.Add(new SymbolItem(symbol));
@@ -139,7 +141,8 @@ namespace SteelBIM.Views
         private void PopulateTiposDegrau()
         {
             cmbDegrau.Items.Clear();
-            if (cmbDegrauFamilia.SelectedItem is not string family) return;
+            if (cmbDegrauFamilia.SelectedItem is not string family)
+                return;
 
             foreach (FamilySymbol symbol in _symbols.Where(s => s.FamilyName == family).OrderBy(s => s.Name))
                 cmbDegrau.Items.Add(new SymbolItem(symbol));
@@ -229,10 +232,14 @@ namespace SteelBIM.Views
             NumberParsing.TryParseDouble(numPisada.Text, out pisada);
             int.TryParse(numQuantidadeDegraus.Text, out quantidadeDegraus);
 
-            if (largura <= 0.0) largura = 100.0;
-            if (espelho <= 0.0) espelho = 19.0;
-            if (pisada <= 0.0) pisada = 30.0;
-            if (espessuraChapa <= 0.0) espessuraChapa = 0.5;
+            if (largura <= 0.0)
+                largura = 100.0;
+            if (espelho <= 0.0)
+                espelho = 19.0;
+            if (pisada <= 0.0)
+                pisada = 30.0;
+            if (espessuraChapa <= 0.0)
+                espessuraChapa = 0.5;
 
             return new EscadaConfig
             {

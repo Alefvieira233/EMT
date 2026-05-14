@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 // Origem: projeto Victor (incorporado e adaptado na Onda 3, Miniciclo 3).
 using System;
 using System.Collections.Generic;

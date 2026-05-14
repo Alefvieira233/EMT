@@ -90,7 +90,7 @@ Configuracao: env var `STEELBIM_CODESIGN_TIMESTAMP_URL` (default DigiCert).
 Multiple SDK versions podem estar instaladas; nosso PS1 procura a mais
 recente (sort descending) preferindo x64 > x86.
 
-Override manual: `EMT_CODESIGN_SIGNTOOL` com path absoluto.
+Override manual: `STEELBIM_CODESIGN_SIGNTOOL` com path absoluto.
 
 ## Layout das mudancas
 
@@ -170,7 +170,7 @@ NAO publicar em release — apenas dev local pra testes.
 | Cert vaza por commit acidental | `.gitignore` exclui `*.pfx`, `*.p12`. ADR-009 lista como red line. `git diff --cached` antes de cada commit. CI runner deleta PFX no `if: always()` step. |
 | Cert vaza por base64 logado | `CODESIGN_CERT_BASE64` eh secret do GitHub — masked nos logs. Workflow nunca imprime `$env:CODESIGN_CERT_BASE64` (apenas usa em decode + delete). |
 | Senha errada → signtool falha tarde | Workflow valida via `Get-PfxCertificate` ANTES de chamar signtool. Falha rapida com mensagem clara. |
-| signtool nao encontrado | Auto-discovery em Windows Kits 10. Override via `EMT_CODESIGN_SIGNTOOL`. Fallback warning no PS1 que documenta como instalar Windows SDK. |
+| signtool nao encontrado | Auto-discovery em Windows Kits 10. Override via `STEELBIM_CODESIGN_SIGNTOOL`. Fallback warning no PS1 que documenta como instalar Windows SDK. |
 | Timestamp server fora do ar | DigiCert eh ~99.9% uptime. Fallbacks documentados em `docs/CODE-SIGNING.md` §6 (Sectigo, GlobalSign, etc). Override via `STEELBIM_CODESIGN_TIMESTAMP_URL`. |
 | SmartScreen reputation lenta com OV | Esperar — apos ~500-1000 downloads SmartScreen aprende. EV nao tem essa janela mas custa 2-3x mais. Re-avaliar EV em v2.0.0. |
 | Cert expira sem renovar | Timestamp em todos os binarios garante validade indefinida dos releases ja publicados. Renovacao manual com 30 dias de antecedencia (todo no calendario do Alef). |

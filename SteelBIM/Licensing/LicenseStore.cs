@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
-using SteelBIM.Infrastructure;
 using Microsoft.Win32;
+using SteelBIM.Infrastructure;
 
 namespace SteelBIM.Licensing
 {
@@ -64,7 +64,9 @@ namespace SteelBIM.Licensing
                     return;
                 Directory.CreateDirectory(Path.GetDirectoryName(newPath) ?? ".");
                 File.Copy(legacyPath, newPath, overwrite: false);
-                try { File.Delete(legacyPath); } catch { /* nao fatal */ }
+                try
+                { File.Delete(legacyPath); }
+                catch { /* nao fatal */ }
                 Logger.Info("[License] Migrated {What} from FerramentaEMT legacy path", what);
             }
             catch (Exception ex)
@@ -96,7 +98,8 @@ namespace SteelBIM.Licensing
             string path = LicensePath();
             if (!File.Exists(path))
                 TryMigrateFile(LegacyLicensePath(), path, "license");
-            if (!File.Exists(path)) return null;
+            if (!File.Exists(path))
+                return null;
 
             try
             {
@@ -131,7 +134,8 @@ namespace SteelBIM.Licensing
             try
             {
                 string path = LicensePath();
-                if (File.Exists(path)) File.Delete(path);
+                if (File.Exists(path))
+                    File.Delete(path);
             }
             catch (Exception ex)
             {
@@ -170,7 +174,8 @@ namespace SteelBIM.Licensing
         /// <summary>Define a data de inicio do trial como agora (so se ainda nao existe nenhum sentinel).</summary>
         public static void StartTrialIfNotStarted()
         {
-            if (GetTrialStartUtc().HasValue) return;
+            if (GetTrialStartUtc().HasValue)
+                return;
 
             long unix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             WriteTrialToFile(unix);
@@ -184,7 +189,8 @@ namespace SteelBIM.Licensing
             string path = TrialPath();
             if (!File.Exists(path))
                 TryMigrateFile(LegacyTrialPath(), path, "trial");
-            if (!File.Exists(path)) return null;
+            if (!File.Exists(path))
+                return null;
 
             try
             {
@@ -244,7 +250,9 @@ namespace SteelBIM.Licensing
                     {
                         using RegistryKey newKey = Registry.CurrentUser.CreateSubKey(TrialRegPath, writable: true);
                         newKey?.SetValue(TrialRegValueName, legacyEncrypted, RegistryValueKind.Binary);
-                        try { Registry.CurrentUser.DeleteSubKeyTree(LegacyTrialRegPath, throwOnMissingSubKey: false); } catch { }
+                        try
+                        { Registry.CurrentUser.DeleteSubKeyTree(LegacyTrialRegPath, throwOnMissingSubKey: false); }
+                        catch { }
                         Logger.Info("[License] Migrated trial registry from Software\\FerramentaEMT\\Trial");
                     }
                     catch (Exception migEx)
@@ -279,7 +287,8 @@ namespace SteelBIM.Licensing
             try
             {
                 using RegistryKey key = Registry.CurrentUser.CreateSubKey(TrialRegPath, writable: true);
-                if (key == null) return;
+                if (key == null)
+                    return;
 
                 byte[] data = Encoding.UTF8.GetBytes(unix.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 byte[] encrypted = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);

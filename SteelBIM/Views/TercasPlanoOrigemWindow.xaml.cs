@@ -1,5 +1,5 @@
+﻿using System.Windows;
 using SteelBIM.Utils;
-using System.Windows;
 
 namespace SteelBIM.Views
 {

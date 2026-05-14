@@ -1,10 +1,10 @@
-#nullable enable
+﻿#nullable enable
 
-using Autodesk.Revit.DB;
-using SteelBIM.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Autodesk.Revit.DB;
+using SteelBIM.Infrastructure;
 
 namespace SteelBIM.Services.Trelica
 {

@@ -1,4 +1,4 @@
-# Architecture — FerramentaEMT
+# Architecture — SteelBIM
 
 Documento de referencia da arquitetura do plugin. Atualizado a cada Sprint major.
 
@@ -6,7 +6,7 @@ Documento de referencia da arquitetura do plugin. Atualizado a cada Sprint major
 
 ## 1. Visao Geral
 
-FerramentaEMT e um Revit add-in (.NET 8.0) escrito em C# 12, com interface WPF.
+SteelBIM e um Revit add-in (.NET 8.0) escrito em C# 12, com interface WPF.
 Segue arquitetura em camadas:
 
 ```
@@ -41,10 +41,10 @@ Segue arquitetura em camadas:
 ## 2. Estrutura de Diretorios
 
 ```
-FerramentaEMT/
+SteelBIM/
 ├── App.cs                    # IExternalApplication, registra ribbon
-├── FerramentaEMT.addin       # manifest gerado pelo .bat
-├── FerramentaEMT.csproj      # .NET 8 + WPF + ClosedXML + Serilog
+├── SteelBIM.addin       # manifest gerado pelo .bat
+├── SteelBIM.csproj      # .NET 8 + WPF + ClosedXML + Serilog
 │
 ├── Commands/                 # IExternalCommand (entry points)
 │   ├── FerramentaCommandBase.cs    # ★ base abstrata
@@ -99,10 +99,10 @@ FerramentaEMT/
 
 E na raiz:
 ```
-FerramentaEMT  OFICIAL/
-├── FerramentaEMT/                       # projeto principal (acima)
-├── FerramentaEMT.Tests/                 # ★ NOVO (Sprint 1) — xUnit
-├── FerramentaEMT.Solution.sln           # solution unificada
+SteelBIM  OFICIAL/
+├── SteelBIM/                       # projeto principal (acima)
+├── SteelBIM.Tests/                 # ★ NOVO (Sprint 1) — xUnit
+├── SteelBIM.Solution.sln           # solution unificada
 ├── .github/workflows/build.yml          # CI
 ├── README.md
 ├── CHANGELOG.md
@@ -305,5 +305,5 @@ ADRs detalhadas serao adicionadas em `docs/adr/` quando necessario.
 
 ### Adicionar nova Skill (logica reutilizavel)
 1. Criar em `Services/Shared/` (logica pura, sem Revit)
-2. Criar testes em `FerramentaEMT.Tests/Services/Shared/`
+2. Criar testes em `SteelBIM.Tests/Services/Shared/`
 3. Documentar uso no XML doc da classe

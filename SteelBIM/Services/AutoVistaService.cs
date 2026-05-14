@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -519,8 +519,10 @@ namespace SteelBIM.Services
             {
                 IList<Reference>? refsLeft = elem.GetReferences(FamilyInstanceReferenceType.Left);
                 IList<Reference>? refsRight = elem.GetReferences(FamilyInstanceReferenceType.Right);
-                if (refsLeft == null || refsLeft.Count == 0) return;
-                if (refsRight == null || refsRight.Count == 0) return;
+                if (refsLeft == null || refsLeft.Count == 0)
+                    return;
+                if (refsRight == null || refsRight.Count == 0)
+                    return;
 
                 var refArr = new ReferenceArray();
                 refArr.Append(refsLeft[0]);
@@ -656,7 +658,8 @@ namespace SteelBIM.Services
             {
                 var exact = collector.FirstOrDefault(fs =>
                     fs.Family.Name == familyName && fs.Name == typeName);
-                if (exact != null) return exact;
+                if (exact != null)
+                    return exact;
             }
 
             // Primeiro disponivel

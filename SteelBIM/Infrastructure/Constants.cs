@@ -1,4 +1,4 @@
-namespace SteelBIM.Infrastructure
+﻿namespace SteelBIM.Infrastructure
 {
     /// <summary>
     /// Constantes globais do FerramentaEMT.

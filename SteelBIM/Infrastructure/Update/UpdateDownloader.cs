@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -80,7 +80,8 @@ namespace SteelBIM.Infrastructure.Update
         /// <summary>Construtor para testes (permite redirecionar diretorio).</summary>
         public UpdateDownloader(HttpClient httpClient, string updatesDirectory)
         {
-            if (httpClient == null) throw new ArgumentNullException("httpClient");
+            if (httpClient == null)
+                throw new ArgumentNullException("httpClient");
             if (string.IsNullOrWhiteSpace(updatesDirectory))
                 throw new ArgumentException("updatesDirectory obrigatorio", "updatesDirectory");
             _http = httpClient;
@@ -101,7 +102,8 @@ namespace SteelBIM.Infrastructure.Update
 
         public async Task<DownloadResult> DownloadAndValidateAsync(GitHubRelease release, CancellationToken ct)
         {
-            if (release == null) throw new ArgumentNullException("release");
+            if (release == null)
+                throw new ArgumentNullException("release");
             if (string.IsNullOrWhiteSpace(release.TagName))
                 throw new ArgumentException("release.TagName obrigatorio", "release");
 
@@ -138,7 +140,9 @@ namespace SteelBIM.Infrastructure.Update
                 {
                     foreach (string oldFile in Directory.GetFiles(_updatesDirectory, "*.zip"))
                     {
-                        try { File.Delete(oldFile); } catch { /* best effort */ }
+                        try
+                        { File.Delete(oldFile); }
+                        catch { /* best effort */ }
                     }
                 }
                 else
@@ -316,15 +320,20 @@ namespace SteelBIM.Infrastructure.Update
             }
             finally
             {
-                if (archive != null) archive.Dispose();
-                if (tempDllPath != null) TryDelete(tempDllPath);
+                if (archive != null)
+                    archive.Dispose();
+                if (tempDllPath != null)
+                    TryDelete(tempDllPath);
             }
         }
 
         private static void TryDelete(string path)
         {
-            if (string.IsNullOrEmpty(path)) return;
-            try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort */ }
+            if (string.IsNullOrEmpty(path))
+                return;
+            try
+            { if (File.Exists(path)) File.Delete(path); }
+            catch { /* best effort */ }
         }
 
         /// <summary>
@@ -334,9 +343,11 @@ namespace SteelBIM.Infrastructure.Update
         internal static string ReleaseTagToFileName(string tagName)
         {
             string s = tagName ?? "";
-            if (s.Length > 0 && (s[0] == 'v' || s[0] == 'V')) s = s.Substring(1);
+            if (s.Length > 0 && (s[0] == 'v' || s[0] == 'V'))
+                s = s.Substring(1);
             char[] invalid = Path.GetInvalidFileNameChars();
-            foreach (char c in invalid) s = s.Replace(c, '_');
+            foreach (char c in invalid)
+                s = s.Replace(c, '_');
             return s + ".zip";
         }
     }

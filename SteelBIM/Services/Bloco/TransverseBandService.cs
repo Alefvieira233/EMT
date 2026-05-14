@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -33,9 +33,12 @@ namespace SteelBIM.Services.Bloco
             string barTypeName, double cov, double z, double spacing,
             BlocoRebarBendConfig dobra)
         {
-            double xMin = frame.MinX + cov; double xMax = frame.MaxX - cov;
-            double yMin = frame.MinY + cov; double yMax = frame.MaxY - cov;
-            if (xMax - xMin < ToCm(5.0)) return 0;
+            double xMin = frame.MinX + cov;
+            double xMax = frame.MaxX - cov;
+            double yMin = frame.MinY + cov;
+            double yMax = frame.MaxY - cov;
+            if (xMax - xMin < ToCm(5.0))
+                return 0;
 
             RebarBarType barType = GetBarType(doc, barTypeName);
             List<double> positions = DistributeBySpacing(yMin, yMax, spacing);
@@ -57,9 +60,12 @@ namespace SteelBIM.Services.Bloco
             string barTypeName, double cov, double z, double spacing,
             BlocoRebarBendConfig dobra)
         {
-            double xMin = frame.MinX + cov; double xMax = frame.MaxX - cov;
-            double yMin = frame.MinY + cov; double yMax = frame.MaxY - cov;
-            if (yMax - yMin < ToCm(5.0)) return 0;
+            double xMin = frame.MinX + cov;
+            double xMax = frame.MaxX - cov;
+            double yMin = frame.MinY + cov;
+            double yMax = frame.MaxY - cov;
+            if (yMax - yMin < ToCm(5.0))
+                return 0;
 
             RebarBarType barType = GetBarType(doc, barTypeName);
             List<double> positions = DistributeBySpacing(xMin, xMax, spacing);
@@ -78,7 +84,8 @@ namespace SteelBIM.Services.Bloco
 
         private static List<double> DistributeBySpacing(double min, double max, double spacing)
         {
-            if (spacing <= ToCm(1.0)) return new List<double> { min, max };
+            if (spacing <= ToCm(1.0))
+                return new List<double> { min, max };
             List<double> result = new List<double>();
             double pos = min;
             while (pos <= max + ToCm(1.0))

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -63,8 +63,10 @@ namespace SteelBIM.Services.CncExport
         /// </summary>
         public Result<ColetaResult> ColetarElementos(UIDocument uidoc, ExportarDstvConfig config)
         {
-            if (config == null) return Result<ColetaResult>.Fail("Configuracao nao informada.");
-            if (uidoc == null) return Result<ColetaResult>.Fail("Documento do Revit nao disponivel.");
+            if (config == null)
+                return Result<ColetaResult>.Fail("Configuracao nao informada.");
+            if (uidoc == null)
+                return Result<ColetaResult>.Fail("Documento do Revit nao disponivel.");
 
             Document doc = uidoc.Document;
             bool cancelado;
@@ -98,9 +100,12 @@ namespace SteelBIM.Services.CncExport
             IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            if (uidoc == null) throw new ArgumentNullException(nameof(uidoc));
-            if (elementos == null) throw new ArgumentNullException(nameof(elementos));
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+            if (uidoc == null)
+                throw new ArgumentNullException(nameof(uidoc));
+            if (elementos == null)
+                throw new ArgumentNullException(nameof(elementos));
 
             Stopwatch sw = Stopwatch.StartNew();
             ResultadoExport resultado = new ResultadoExport
@@ -257,7 +262,8 @@ namespace SteelBIM.Services.CncExport
         /// </summary>
         public static string BuildResumoText(ResultadoExport r)
         {
-            if (r == null) throw new ArgumentNullException(nameof(r));
+            if (r == null)
+                throw new ArgumentNullException(nameof(r));
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Exportacao DSTV/NC1 concluida.");
@@ -342,7 +348,8 @@ namespace SteelBIM.Services.CncExport
         {
             List<FamilyInstance> result = new List<FamilyInstance>();
             View view = doc.ActiveView;
-            if (view == null) return result;
+            if (view == null)
+                return result;
 
             foreach (BuiltInCategory cat in CategoriasEstruturais)
             {
@@ -367,7 +374,8 @@ namespace SteelBIM.Services.CncExport
                     .OfType<FamilyInstance>()
                     .Where(IsEstrutural)
                     .ToList();
-                if (fromSel.Count > 0) return fromSel;
+                if (fromSel.Count > 0)
+                    return fromSel;
             }
 
             try
@@ -396,7 +404,8 @@ namespace SteelBIM.Services.CncExport
             return elementos.Where(e =>
             {
                 BuiltInCategory? cat = e.Category?.BuiltInCategory;
-                if (cat == BuiltInCategory.OST_StructuralColumns) return config.ExportarPilares;
+                if (cat == BuiltInCategory.OST_StructuralColumns)
+                    return config.ExportarPilares;
                 if (cat == BuiltInCategory.OST_StructuralFraming)
                 {
                     if (e.StructuralType == StructuralType.Brace)

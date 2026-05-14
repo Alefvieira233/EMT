@@ -13,7 +13,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\installer\Build-Distributi
 Saidas geradas:
 
 - `artifacts\installer\package`
-- `artifacts\installer\FerramentaEMT-Revit2025-Release.zip`
+- `artifacts\installer\SteelBIM-Revit2025-Release.zip`
 
 ## Gerar setup.exe
 
@@ -25,7 +25,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\installer\Build-SetupExe.p
 
 Saida gerada:
 
-- `artifacts\installer\FerramentaEMT-Revit2025-Setup.exe`
+- `artifacts\installer\SteelBIM-Revit2025-Setup.exe`
 
 ## Instalar em outro computador
 
@@ -34,25 +34,25 @@ Saida gerada:
 3. Execute:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-FerramentaEMT.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-SteelBIM.ps1
 ```
 
 Ou execute o `setup.exe` gerado acima.
 
 O script copia os arquivos para:
 
-- `%AppData%\Autodesk\Revit\Addins\2025\FerramentaEMT`
+- `%AppData%\Autodesk\Revit\Addins\2025\SteelBIM`
 
 E cria o manifesto:
 
-- `%AppData%\Autodesk\Revit\Addins\2025\FerramentaEMT.Distribuicao.addin`
+- `%AppData%\Autodesk\Revit\Addins\2025\SteelBIM.Distribuicao.addin`
 
 ## Desinstalar
 
 Na mesma pasta do pacote, execute:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-FerramentaEMT.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-SteelBIM.ps1
 ```
 
 ## Observacoes

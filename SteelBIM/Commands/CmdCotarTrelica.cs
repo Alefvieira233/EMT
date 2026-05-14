@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,7 +62,8 @@ namespace SteelBIM.Commands
             // ===== 3. Abre dialogo de configuracao =====
             var wnd = new CotarTrelicaWindow();
             bool? ok = wnd.ShowDialog();
-            if (ok != true) return Result.Cancelled;
+            if (ok != true)
+                return Result.Cancelled;
 
             CotarTrelicaConfig config = wnd.BuildConfig();
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Versioning;
@@ -78,7 +78,8 @@ namespace SteelBIM.Views
 
         private void ExibirFeedback(LicenseState result)
         {
-            if (result == null) return;
+            if (result == null)
+                return;
             txtFeedback.Text = result.MensagemAmigavel ?? string.Empty;
             borderFeedback.Visibility = string.IsNullOrEmpty(txtFeedback.Text)
                 ? Visibility.Collapsed

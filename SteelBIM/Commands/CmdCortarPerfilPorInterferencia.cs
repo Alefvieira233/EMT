@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.Attributes;
@@ -18,105 +18,105 @@ namespace SteelBIM.Commands
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
-                FamilyInstance viga = SelecionarViga(uidoc, doc);
-                if (viga == null)
-                    return Result.Cancelled;
+            FamilyInstance viga = SelecionarViga(uidoc, doc);
+            if (viga == null)
+                return Result.Cancelled;
 
-                if (!viga.CanSplit)
-                {
-                    AppDialogService.ShowWarning(
-                        "Seccionar Viga",
-                        "A viga selecionada nao pode ser seccionada pela API. Use uma viga reta ou em arco que permita split.");
-                    return Result.Cancelled;
-                }
-
-                Curve curvaViga = (viga.Location as LocationCurve)?.Curve;
-                if (curvaViga == null)
-                {
-                    AppDialogService.ShowWarning("Seccionar Viga", "Nao foi possivel obter a curva da viga selecionada.", "Curva indisponível");
-                    return Result.Cancelled;
-                }
-
-                List<Element> referencias = SelecionarReferencias(uidoc, doc, viga.Id);
-                if (referencias.Count == 0)
-                {
-                    AppDialogService.ShowWarning("Seccionar Viga", "Nenhum elemento de referencia valido foi selecionado.", "Nenhuma referência encontrada");
-                    return Result.Cancelled;
-                }
-
-                Plane planoVista = ObterPlanoDaVista(doc.ActiveView);
-                List<string> diagnostico = new List<string>();
-                List<PontoDeCorte> cortes = ObterPontosDeCorte(curvaViga, referencias, planoVista, diagnostico);
-                if (cortes.Count == 0)
-                {
-                    AppDialogService.ShowWarning(
-                        "Seccionar Viga",
-                        "Nenhum ponto de corte interno foi encontrado a partir dos elementos de referencia selecionados." +
-                        (diagnostico.Count > 0 ? "\n\nDiagnostico:\n" + string.Join("\n", diagnostico.Take(12)) : string.Empty),
-                        "Nenhum ponto de corte encontrado");
-                    return Result.Cancelled;
-                }
-
-                List<ElementId> idsResultado = new List<ElementId> { viga.Id };
-                int cortesAplicados = 0;
-                int referenciasAproveitadas = cortes.Select(c => c.ElementoId.Value).Distinct().Count();
-
-                using (Transaction t = new Transaction(doc, "Seccionar Viga"))
-                {
-                    t.Start();
-
-                    foreach (PontoDeCorte corte in cortes.OrderByDescending(c => c.Parametro))
-                    {
-                        if (!viga.CanSplit)
-                            continue;
-
-                        Curve curvaAtual = (viga.Location as LocationCurve)?.Curve;
-                        if (curvaAtual == null)
-                            continue;
-
-                        double parametroAtual = ObterParametroNormalizado(curvaAtual, corte.Ponto);
-                        if (parametroAtual <= 1e-6 || parametroAtual >= 1.0 - 1e-6)
-                            continue;
-
-                        ElementId novaVigaId = viga.Split(parametroAtual);
-                        if (novaVigaId == null || novaVigaId == ElementId.InvalidElementId)
-                            continue;
-
-                        FamilyInstance novaViga = doc.GetElement(novaVigaId) as FamilyInstance;
-                        if (novaViga == null)
-                            continue;
-
-                        StructuralFramingUtils.DisallowJoinAtEnd(viga, 1);
-                        StructuralFramingUtils.DisallowJoinAtEnd(novaViga, 0);
-
-                        idsResultado.Add(novaVigaId);
-                        cortesAplicados++;
-                    }
-
-                    t.Commit();
-                }
-
-                if (cortesAplicados == 0)
-                {
-                    AppDialogService.ShowWarning("Seccionar Viga", "Nenhum corte foi aplicado na viga selecionada.", "Nenhum corte aplicado");
-                    return Result.Cancelled;
-                }
-
-                uidoc.Selection.SetElementIds(idsResultado);
-
-                AppDialogService.ShowInfo(
+            if (!viga.CanSplit)
+            {
+                AppDialogService.ShowWarning(
                     "Seccionar Viga",
-                    $"Viga seccionada com sucesso." +
-                    $"\n\nViga original: {ObterDescricaoElemento(viga)}" +
-                    $"\nReferencias selecionadas: {referencias.Count}" +
-                    $"\nReferencias aproveitadas: {referenciasAproveitadas}" +
-                    $"\nPontos de corte encontrados: {cortes.Count}" +
-                    $"\nCortes aplicados: {cortesAplicados}" +
-                    $"\nSegmentos selecionados ao final: {idsResultado.Count}" +
-                    (diagnostico.Count > 0 ? $"\n\nDiagnostico:\n{string.Join("\n", diagnostico.Take(12))}" : string.Empty),
-                    "Seccionamento concluído");
+                    "A viga selecionada nao pode ser seccionada pela API. Use uma viga reta ou em arco que permita split.");
+                return Result.Cancelled;
+            }
 
-                return Result.Succeeded;
+            Curve curvaViga = (viga.Location as LocationCurve)?.Curve;
+            if (curvaViga == null)
+            {
+                AppDialogService.ShowWarning("Seccionar Viga", "Nao foi possivel obter a curva da viga selecionada.", "Curva indisponível");
+                return Result.Cancelled;
+            }
+
+            List<Element> referencias = SelecionarReferencias(uidoc, doc, viga.Id);
+            if (referencias.Count == 0)
+            {
+                AppDialogService.ShowWarning("Seccionar Viga", "Nenhum elemento de referencia valido foi selecionado.", "Nenhuma referência encontrada");
+                return Result.Cancelled;
+            }
+
+            Plane planoVista = ObterPlanoDaVista(doc.ActiveView);
+            List<string> diagnostico = new List<string>();
+            List<PontoDeCorte> cortes = ObterPontosDeCorte(curvaViga, referencias, planoVista, diagnostico);
+            if (cortes.Count == 0)
+            {
+                AppDialogService.ShowWarning(
+                    "Seccionar Viga",
+                    "Nenhum ponto de corte interno foi encontrado a partir dos elementos de referencia selecionados." +
+                    (diagnostico.Count > 0 ? "\n\nDiagnostico:\n" + string.Join("\n", diagnostico.Take(12)) : string.Empty),
+                    "Nenhum ponto de corte encontrado");
+                return Result.Cancelled;
+            }
+
+            List<ElementId> idsResultado = new List<ElementId> { viga.Id };
+            int cortesAplicados = 0;
+            int referenciasAproveitadas = cortes.Select(c => c.ElementoId.Value).Distinct().Count();
+
+            using (Transaction t = new Transaction(doc, "Seccionar Viga"))
+            {
+                t.Start();
+
+                foreach (PontoDeCorte corte in cortes.OrderByDescending(c => c.Parametro))
+                {
+                    if (!viga.CanSplit)
+                        continue;
+
+                    Curve curvaAtual = (viga.Location as LocationCurve)?.Curve;
+                    if (curvaAtual == null)
+                        continue;
+
+                    double parametroAtual = ObterParametroNormalizado(curvaAtual, corte.Ponto);
+                    if (parametroAtual <= 1e-6 || parametroAtual >= 1.0 - 1e-6)
+                        continue;
+
+                    ElementId novaVigaId = viga.Split(parametroAtual);
+                    if (novaVigaId == null || novaVigaId == ElementId.InvalidElementId)
+                        continue;
+
+                    FamilyInstance novaViga = doc.GetElement(novaVigaId) as FamilyInstance;
+                    if (novaViga == null)
+                        continue;
+
+                    StructuralFramingUtils.DisallowJoinAtEnd(viga, 1);
+                    StructuralFramingUtils.DisallowJoinAtEnd(novaViga, 0);
+
+                    idsResultado.Add(novaVigaId);
+                    cortesAplicados++;
+                }
+
+                t.Commit();
+            }
+
+            if (cortesAplicados == 0)
+            {
+                AppDialogService.ShowWarning("Seccionar Viga", "Nenhum corte foi aplicado na viga selecionada.", "Nenhum corte aplicado");
+                return Result.Cancelled;
+            }
+
+            uidoc.Selection.SetElementIds(idsResultado);
+
+            AppDialogService.ShowInfo(
+                "Seccionar Viga",
+                $"Viga seccionada com sucesso." +
+                $"\n\nViga original: {ObterDescricaoElemento(viga)}" +
+                $"\nReferencias selecionadas: {referencias.Count}" +
+                $"\nReferencias aproveitadas: {referenciasAproveitadas}" +
+                $"\nPontos de corte encontrados: {cortes.Count}" +
+                $"\nCortes aplicados: {cortesAplicados}" +
+                $"\nSegmentos selecionados ao final: {idsResultado.Count}" +
+                (diagnostico.Count > 0 ? $"\n\nDiagnostico:\n{string.Join("\n", diagnostico.Take(12))}" : string.Empty),
+                "Seccionamento concluído");
+
+            return Result.Succeeded;
         }
 
         private FamilyInstance SelecionarViga(UIDocument uidoc, Document doc)

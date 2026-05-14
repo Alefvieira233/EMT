@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -61,10 +61,12 @@ namespace SteelBIM.Utils
             Func<IProgress<ProgressReport>, CancellationToken, TResult> work,
             Window owner = null)
         {
-            if (work == null) throw new ArgumentNullException(nameof(work));
+            if (work == null)
+                throw new ArgumentNullException(nameof(work));
 
             ProgressWindow window = new ProgressWindow(title, headline);
-            if (owner != null) window.Owner = owner;
+            if (owner != null)
+                window.Owner = owner;
 
             using (CancellationTokenSource cts = new CancellationTokenSource())
             {
@@ -72,7 +74,8 @@ namespace SteelBIM.Utils
                 {
                     // Proteger contra exceptions de um CTS ja disposed
                     // (caso o usuario feche depois que o trabalho ja terminou).
-                    try { cts.Cancel(); }
+                    try
+                    { cts.Cancel(); }
                     catch (ObjectDisposedException) { /* ignorado */ }
                 };
 
@@ -100,7 +103,8 @@ namespace SteelBIM.Utils
                     // Usar Dispatcher para evitar reentrada se Closing ainda esta rodando.
                     if (window.IsVisible)
                     {
-                        try { window.Close(); }
+                        try
+                        { window.Close(); }
                         catch (InvalidOperationException) { /* janela ja fechada */ }
                     }
                 }

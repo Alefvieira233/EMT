@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -368,7 +368,8 @@ namespace SteelBIM.Services
         /// </summary>
         public static string BuildResumoText(ResultadoAgrupamento r)
         {
-            if (r == null) return "Processamento concluido.";
+            if (r == null)
+                return "Processamento concluido.";
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Processamento concluido.");
@@ -406,7 +407,8 @@ namespace SteelBIM.Services
         /// <summary>Mensagem amigavel pra operacao de limpeza.</summary>
         public static string BuildResumoText(ResultadoLimpeza r)
         {
-            if (r == null) return "Limpeza concluida.";
+            if (r == null)
+                return "Limpeza concluida.";
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Limpeza concluida.");

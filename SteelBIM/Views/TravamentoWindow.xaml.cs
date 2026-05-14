@@ -1,11 +1,11 @@
-using Autodesk.Revit.DB;
-using SteelBIM.Models;
-using SteelBIM.Forms;
-using SteelBIM.Utils;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Autodesk.Revit.DB;
+using SteelBIM.Forms;
+using SteelBIM.Models;
+using SteelBIM.Utils;
 
 namespace SteelBIM.Views
 {
@@ -214,7 +214,8 @@ namespace SteelBIM.Views
                 double zOffset = 0.0;
                 int.TryParse(numSubd.Text, out subd);
                 NumberParsing.TryParseDouble(numZOffset.Text, out zOffset);
-                if (subd <= 0) subd = 1;
+                if (subd <= 0)
+                    subd = 1;
                 return new TravamentoConfig
                 {
                     SymbolTirante = lancarTirante ? tItem.Symbol : null,

@@ -1,5 +1,5 @@
 # =====================================================
-# .gitattributes — FerramentaEMT
+# .gitattributes — SteelBIM
 # Normalizacao de fim-de-linha para evitar diffs ruidosos
 # entre editores Windows (CRLF) e o repositorio (LF).
 # =====================================================
@@ -7,15 +7,30 @@
 # Padrao: autodetecta arquivos de texto e normaliza para LF no repo.
 * text=auto eol=lf
 
+# Regras explicitas defensivas (v2.0.3) — blindam contra regressao do
+# conflito editorconfig/gitattributes que mascarou format CI em v2.0.2.
+# Editorconfig pede end_of_line=lf no [*], e estas regras garantem que
+# qualquer ferramenta IDE/format ve LF aqui tambem.
+*.cs       text eol=lf
+*.xaml     text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.xml      text eol=lf
+*.config   text eol=lf
+*.resx     text eol=lf
+
 # Arquivos especificamente do ecossistema .NET / Visual Studio
 # geralmente usam CRLF — manter para evitar estranheza na IDE.
+# (Decisao do team preservada — nao mudar para LF sem alinhamento.)
 *.sln      text eol=crlf
 *.csproj   text eol=crlf
 *.vbproj   text eol=crlf
 *.props    text eol=crlf
 *.targets  text eol=crlf
 
-# Scripts Windows
+# Scripts Windows — CRLF eh requerido pelo cmd.exe / PowerShell.
 *.bat      text eol=crlf
 *.cmd      text eol=crlf
 *.ps1      text eol=crlf

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,8 +52,10 @@ namespace SteelBIM.Services.IdentificacaoPerfil
         /// </summary>
         public IdentificarPerfilReport Executar(UIDocument uidoc, IdentificarPerfilConfig config)
         {
-            if (uidoc == null) throw new ArgumentNullException(nameof(uidoc));
-            if (config == null) throw new ArgumentNullException(nameof(config));
+            if (uidoc == null)
+                throw new ArgumentNullException(nameof(uidoc));
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
 
             var relatorio = new IdentificarPerfilReport();
             var doc = uidoc.Document;
@@ -83,9 +85,11 @@ namespace SteelBIM.Services.IdentificacaoPerfil
             foreach (var elemId in elementosSelecionados)
             {
                 Element elem = doc.GetElement(elemId);
-                if (elem == null) continue;
+                if (elem == null)
+                    continue;
 
-                if (!(elem is FamilyInstance fi)) continue;
+                if (!(elem is FamilyInstance fi))
+                    continue;
 
                 bool deveProcescar = false;
 
@@ -132,7 +136,7 @@ namespace SteelBIM.Services.IdentificacaoPerfil
                             // Obter nome do perfil
                             string nomePerfil = ObterNomePerfil(fi);
 
-                            
+
                             // Criar tag
                             var tag = IndependentTag.Create(
                                 doc,

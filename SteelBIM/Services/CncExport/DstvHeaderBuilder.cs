@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Autodesk.Revit.DB;
 using SteelBIM.Infrastructure;
@@ -22,9 +22,12 @@ namespace SteelBIM.Services.CncExport
             ExportarDstvConfig config,
             DstvFile output)
         {
-            if (doc == null) throw new ArgumentNullException(nameof(doc));
-            if (element == null) throw new ArgumentNullException(nameof(element));
-            if (output == null) throw new ArgumentNullException(nameof(output));
+            if (doc == null)
+                throw new ArgumentNullException(nameof(doc));
+            if (element == null)
+                throw new ArgumentNullException(nameof(element));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
             config ??= new ExportarDstvConfig();
 
             ElementType type = doc.GetElement(element.GetTypeId()) as ElementType;
@@ -53,12 +56,12 @@ namespace SteelBIM.Services.CncExport
 
             // ---------- Dimensoes do perfil (do tipo) ----------
 
-            output.ProfileHeightMm     = ReadLengthMm(type, BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT);
-            output.FlangeWidthMm       = ReadLengthMm(type, BuiltInParameter.STRUCTURAL_SECTION_COMMON_WIDTH);
+            output.ProfileHeightMm = ReadLengthMm(type, BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT);
+            output.FlangeWidthMm = ReadLengthMm(type, BuiltInParameter.STRUCTURAL_SECTION_COMMON_WIDTH);
             // Revit nao expoe BuiltInParameter universal para espessura mesa/alma em todas as versoes
             // (nomes diferem entre I-shape, HSS, channel, etc). Tentar shared parameters.
-            output.FlangeThicknessMm   = TryReadSharedLengthMm(type, "Flange Thickness", "Espessura Mesa", "tf");
-            output.WebThicknessMm      = TryReadSharedLengthMm(type, "Web Thickness", "Espessura Alma", "tw");
+            output.FlangeThicknessMm = TryReadSharedLengthMm(type, "Flange Thickness", "Espessura Mesa", "tf");
+            output.WebThicknessMm = TryReadSharedLengthMm(type, "Web Thickness", "Espessura Alma", "tw");
 
             // Raio de filete — Revit nao tem BuiltInParameter universal, tentar shared parameter
             output.FilletRadiusMm = TryReadSharedLengthMm(type, "Fillet Radius", "Raio Filete", "k");
@@ -82,13 +85,15 @@ namespace SteelBIM.Services.CncExport
             {
                 Parameter p = element.LookupParameter(config.NomeParametroMarca);
                 string v = p?.AsString();
-                if (!string.IsNullOrWhiteSpace(v)) return v;
+                if (!string.IsNullOrWhiteSpace(v))
+                    return v;
             }
 
             // ALL_MODEL_MARK
             Parameter pMark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
             string mark = pMark?.AsString();
-            if (!string.IsNullOrWhiteSpace(mark)) return mark;
+            if (!string.IsNullOrWhiteSpace(mark))
+                return mark;
 
             // Fallback: usar ID do elemento
             return $"ID-{element.Id?.Value ?? 0}";
@@ -103,22 +108,26 @@ namespace SteelBIM.Services.CncExport
             ElementId matId = ElementId.InvalidElementId;
 
             Parameter pMat = element.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
-            if (pMat != null && pMat.HasValue) matId = pMat.AsElementId();
+            if (pMat != null && pMat.HasValue)
+                matId = pMat.AsElementId();
 
             if ((matId == null || matId == ElementId.InvalidElementId) && type != null)
             {
                 Parameter pTypeMat = type.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
-                if (pTypeMat != null && pTypeMat.HasValue) matId = pTypeMat.AsElementId();
+                if (pTypeMat != null && pTypeMat.HasValue)
+                    matId = pTypeMat.AsElementId();
             }
 
             if ((matId == null || matId == ElementId.InvalidElementId) && element != null)
             {
                 var mats = element.GetMaterialIds(false);
-                if (mats != null) matId = mats.FirstOrDefault(x => x != ElementId.InvalidElementId)
+                if (mats != null)
+                    matId = mats.FirstOrDefault(x => x != ElementId.InvalidElementId)
                                           ?? ElementId.InvalidElementId;
             }
 
-            if (matId == null || matId == ElementId.InvalidElementId) return "";
+            if (matId == null || matId == ElementId.InvalidElementId)
+                return "";
 
             Material mat = doc.GetElement(matId) as Material;
             return mat?.Name ?? "";
@@ -136,7 +145,8 @@ namespace SteelBIM.Services.CncExport
             {
                 Parameter p = element.LookupParameter(nome);
                 string v = p?.AsString();
-                if (!string.IsNullOrWhiteSpace(v)) return v;
+                if (!string.IsNullOrWhiteSpace(v))
+                    return v;
             }
             return "";
         }
@@ -155,12 +165,14 @@ namespace SteelBIM.Services.CncExport
                     // Tentar Project Number primeiro
                     Parameter pNum = info.get_Parameter(BuiltInParameter.PROJECT_NUMBER);
                     string num = pNum?.AsString();
-                    if (!string.IsNullOrWhiteSpace(num)) return num;
+                    if (!string.IsNullOrWhiteSpace(num))
+                        return num;
 
                     // Fallback: Project Name
                     Parameter pName = info.get_Parameter(BuiltInParameter.PROJECT_NAME);
                     string name = pName?.AsString();
-                    if (!string.IsNullOrWhiteSpace(name)) return name;
+                    if (!string.IsNullOrWhiteSpace(name))
+                        return name;
                 }
             }
             catch (Exception ex) { Logger.Warn(ex, "Falha ao ler parametro do header DSTV"); }
@@ -185,7 +197,8 @@ namespace SteelBIM.Services.CncExport
                 {
                     Parameter p = info.LookupParameter("Drawing Number") ?? info.LookupParameter("Numero do Desenho");
                     string v = p?.AsString();
-                    if (!string.IsNullOrWhiteSpace(v)) return v;
+                    if (!string.IsNullOrWhiteSpace(v))
+                        return v;
                 }
             }
             catch (Exception ex) { Logger.Warn(ex, "Falha ao ler parametro do header DSTV"); }
@@ -198,12 +211,15 @@ namespace SteelBIM.Services.CncExport
 
         private static double ReadLengthMm(Element elem, BuiltInParameter bip)
         {
-            if (elem == null) return 0;
+            if (elem == null)
+                return 0;
             try
             {
                 Parameter p = elem.get_Parameter(bip);
-                if (p == null || !p.HasValue) return 0;
-                if (p.StorageType != StorageType.Double) return 0;
+                if (p == null || !p.HasValue)
+                    return 0;
+                if (p.StorageType != StorageType.Double)
+                    return 0;
                 return UnitUtils.ConvertFromInternalUnits(p.AsDouble(), UnitTypeId.Millimeters);
             }
             catch (Exception ex) { Logger.Warn(ex, "Falha ao ler dimensao do perfil"); return 0; }
@@ -211,7 +227,8 @@ namespace SteelBIM.Services.CncExport
 
         private static double TryReadSharedLengthMm(Element elem, params string[] candidateNames)
         {
-            if (elem == null || candidateNames == null) return 0;
+            if (elem == null || candidateNames == null)
+                return 0;
             foreach (string name in candidateNames)
             {
                 try
@@ -227,14 +244,16 @@ namespace SteelBIM.Services.CncExport
 
         public static double GetCutLengthMm(FamilyInstance element)
         {
-            if (element == null) return 0;
+            if (element == null)
+                return 0;
 
             // CUT_LENGTH (preferencial — leva em conta corte/coping)
             Parameter pCut = element.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
             if (pCut != null && pCut.HasValue && pCut.StorageType == StorageType.Double)
             {
                 double cut = pCut.AsDouble();
-                if (cut > 0) return UnitUtils.ConvertFromInternalUnits(cut, UnitTypeId.Millimeters);
+                if (cut > 0)
+                    return UnitUtils.ConvertFromInternalUnits(cut, UnitTypeId.Millimeters);
             }
 
             // INSTANCE_LENGTH (comprimento bruto)
@@ -242,7 +261,8 @@ namespace SteelBIM.Services.CncExport
             if (pLen != null && pLen.HasValue && pLen.StorageType == StorageType.Double)
             {
                 double len = pLen.AsDouble();
-                if (len > 0) return UnitUtils.ConvertFromInternalUnits(len, UnitTypeId.Millimeters);
+                if (len > 0)
+                    return UnitUtils.ConvertFromInternalUnits(len, UnitTypeId.Millimeters);
             }
 
             // Fallback: location curve
@@ -273,7 +293,8 @@ namespace SteelBIM.Services.CncExport
                     if (p != null && p.HasValue && p.StorageType == StorageType.Double)
                     {
                         double v = p.AsDouble();
-                        if (v > 0) return v;
+                        if (v > 0)
+                            return v;
                     }
                 }
                 catch (Exception ex) { Logger.Warn(ex, "Falha ao ler parametro do header DSTV"); }
@@ -283,7 +304,8 @@ namespace SteelBIM.Services.CncExport
             try
             {
                 Parameter pVol = element.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED);
-                if (pVol == null || !pVol.HasValue) return 0;
+                if (pVol == null || !pVol.HasValue)
+                    return 0;
 
                 double volumeFt3 = pVol.AsDouble();
                 double volumeM3 = UnitUtils.ConvertFromInternalUnits(volumeFt3, UnitTypeId.CubicMeters);
@@ -292,7 +314,8 @@ namespace SteelBIM.Services.CncExport
                     ? partial.CutLengthMm
                     : GetCutLengthMm(element);
 
-                if (cutLengthMm <= 0 || volumeM3 <= 0) return 0;
+                if (cutLengthMm <= 0 || volumeM3 <= 0)
+                    return 0;
 
                 double cutLengthM = cutLengthMm / 1000.0;
                 double areaM2 = volumeM3 / cutLengthM;
@@ -313,18 +336,23 @@ namespace SteelBIM.Services.CncExport
             {
                 ElementId matId = ElementId.InvalidElementId;
                 Parameter p = element.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
-                if (p != null && p.HasValue) matId = p.AsElementId();
+                if (p != null && p.HasValue)
+                    matId = p.AsElementId();
 
-                if (matId == null || matId == ElementId.InvalidElementId) return null;
+                if (matId == null || matId == ElementId.InvalidElementId)
+                    return null;
                 Material mat = doc.GetElement(matId) as Material;
-                if (mat == null) return null;
+                if (mat == null)
+                    return null;
 
                 ElementId psaId = mat.StructuralAssetId;
-                if (psaId == null || psaId == ElementId.InvalidElementId) return null;
+                if (psaId == null || psaId == ElementId.InvalidElementId)
+                    return null;
 
                 PropertySetElement pse = doc.GetElement(psaId) as PropertySetElement;
                 StructuralAsset asset = pse?.GetStructuralAsset();
-                if (asset == null) return null;
+                if (asset == null)
+                    return null;
 
                 // Density retornado em kg/ft3 (Revit internal). Converter para kg/m3.
                 double rawDensity = asset.Density;

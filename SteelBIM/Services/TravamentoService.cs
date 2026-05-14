@@ -1,10 +1,10 @@
-﻿using Autodesk.Revit.DB;
+﻿using System.Collections.Generic;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using SteelBIM.Models;
 using SteelBIM.Utils;
-using System.Collections.Generic;
 
 namespace SteelBIM.Services
 {
@@ -59,7 +59,8 @@ namespace SteelBIM.Services
                     Curve cA = RevitUtils.GetElementCurve(elA);
                     Curve cB = RevitUtils.GetElementCurve(elB);
 
-                    if (cA == null || cB == null) continue;
+                    if (cA == null || cB == null)
+                        continue;
 
                     double step = 1.0 / (config.Quantidade + 1);
                     bool isPonta = (i == 0 || i == totalVaos - 1);

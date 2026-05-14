@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System.Windows;
 using SteelBIM.Models;
 using SteelBIM.Utils;

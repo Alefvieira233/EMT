@@ -1,6 +1,6 @@
-using SteelBIM.Utils;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
+using SteelBIM.Utils;
 
 namespace SteelBIM.Views
 {

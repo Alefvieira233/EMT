@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using Autodesk.Revit.DB;
@@ -110,7 +110,8 @@ namespace SteelBIM.Views
 
         private void Configuracao_Changed(object sender, RoutedEventArgs e)
         {
-            if (_atualizando) return;
+            if (_atualizando)
+                return;
             AtualizarResumo();
         }
 
@@ -129,7 +130,8 @@ namespace SteelBIM.Views
 
         private void AtualizarResumo()
         {
-            if (txtResumo == null) return;
+            if (txtResumo == null)
+                return;
 
             string escopo = rbVistaAtiva?.IsChecked == true
                 ? "Todos os elementos da vista ativa"

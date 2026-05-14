@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Autodesk.Revit.Attributes;
@@ -94,7 +94,8 @@ namespace SteelBIM.Commands
                             "Funcionalidade bloqueada");
 
                         // Abre direto a janela de ativacao para o usuario
-                        try { new LicenseActivationWindow().ShowDialog(); }
+                        try
+                        { new LicenseActivationWindow().ShowDialog(); }
                         catch (Exception ex) { Logger.Error(ex, "[{Cmd}] falha abrindo LicenseActivationWindow", commandName); }
 
                         return Result.Cancelled;

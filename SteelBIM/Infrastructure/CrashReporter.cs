@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,7 +35,8 @@ namespace SteelBIM.Infrastructure
         {
             lock (_lock)
             {
-                if (_initialized) return;
+                if (_initialized)
+                    return;
 
                 try
                 {
@@ -57,14 +58,16 @@ namespace SteelBIM.Infrastructure
 
                     // Log final — isolado num try/catch proprio para que uma falha aqui
                     // nao derrube a captura ja registrada.
-                    try { Logger.Info("[CrashReporter] inicializado em {Dir}", CrashDirectory); }
+                    try
+                    { Logger.Info("[CrashReporter] inicializado em {Dir}", CrashDirectory); }
                     catch { /* logger pode falhar sem comprometer captura */ }
                 }
                 catch (Exception ex)
                 {
                     // Falha antes de _initialized=true: handlers nao foram registrados,
                     // CrashDirectory pode estar null. Estado consistente para retry.
-                    try { Logger.Error(ex, "[CrashReporter] falha ao inicializar — continuara sem captura"); }
+                    try
+                    { Logger.Error(ex, "[CrashReporter] falha ao inicializar — continuara sem captura"); }
                     catch { /* logger tambem falhou, nada a fazer */ }
                 }
             }
@@ -112,12 +115,14 @@ namespace SteelBIM.Infrastructure
 
                 File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
 
-                try { Logger.Error(ex, "[CrashReporter] crash ({Kind}) dump em {Path}", kind, path); }
+                try
+                { Logger.Error(ex, "[CrashReporter] crash ({Kind}) dump em {Path}", kind, path); }
                 catch { /* ignore */ }
 
                 // PR-3: forward para Sentry. No-op silencioso se DSN ausente,
                 // consent denied, ou Sentry indisponivel. NUNCA lanca.
-                try { SentryReporter.CaptureCrash(ex, kind); }
+                try
+                { SentryReporter.CaptureCrash(ex, kind); }
                 catch { /* defensivo: SentryReporter ja eh try/catch raiz */ }
             }
             catch

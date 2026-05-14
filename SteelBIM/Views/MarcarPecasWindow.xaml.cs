@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -51,12 +51,16 @@ namespace SteelBIM.Views
                 tolerancia = tolParsed;
 
             var destino = DestinoMarca.ParametroMark;
-            if (rbParamComments.IsChecked == true) destino = DestinoMarca.ParametroComments;
-            if (rbParamCustom.IsChecked == true) destino = DestinoMarca.ParametroCustomizado;
+            if (rbParamComments.IsChecked == true)
+                destino = DestinoMarca.ParametroComments;
+            if (rbParamCustom.IsChecked == true)
+                destino = DestinoMarca.ParametroCustomizado;
 
             var escopo = EscopoMarcacao.VistaAtiva;
-            if (rbModeloInteiro.IsChecked == true) escopo = EscopoMarcacao.ModeloInteiro;
-            if (rbSelecaoManual.IsChecked == true) escopo = EscopoMarcacao.SelecaoManual;
+            if (rbModeloInteiro.IsChecked == true)
+                escopo = EscopoMarcacao.ModeloInteiro;
+            if (rbSelecaoManual.IsChecked == true)
+                escopo = EscopoMarcacao.SelecaoManual;
 
             return new MarcarPecasConfig
             {
@@ -107,27 +111,31 @@ namespace SteelBIM.Views
 
         private void Configuracao_Changed(object sender, RoutedEventArgs e)
         {
-            if (_atualizando) return;
+            if (_atualizando)
+                return;
             AtualizarResumo();
         }
 
         private void TxtPrefixo_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_atualizando) return;
+            if (_atualizando)
+                return;
             AtualizarExemplo();
             AtualizarResumo();
         }
 
         private void TxtNum_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_atualizando) return;
+            if (_atualizando)
+                return;
             AtualizarExemplo();
             AtualizarResumo();
         }
 
         private void CmbDigitos_Changed(object sender, SelectionChangedEventArgs e)
         {
-            if (_atualizando) return;
+            if (_atualizando)
+                return;
             AtualizarExemplo();
             AtualizarResumo();
         }
@@ -147,7 +155,8 @@ namespace SteelBIM.Views
 
         private void AtualizarExemplo()
         {
-            if (txtExemplo == null) return;
+            if (txtExemplo == null)
+                return;
 
             string prefixo = txtPrefixoVigas?.Text?.Trim() ?? "V";
             int numInicial = 1;
@@ -169,11 +178,14 @@ namespace SteelBIM.Views
 
         private void AtualizarResumo()
         {
-            if (txtResumo == null) return;
+            if (txtResumo == null)
+                return;
 
             string escopo = "Vista ativa";
-            if (rbModeloInteiro?.IsChecked == true) escopo = "Modelo inteiro";
-            if (rbSelecaoManual?.IsChecked == true) escopo = "Seleção manual";
+            if (rbModeloInteiro?.IsChecked == true)
+                escopo = "Modelo inteiro";
+            if (rbSelecaoManual?.IsChecked == true)
+                escopo = "Seleção manual";
 
             string categorias = string.Join(", ", new[]
             {
@@ -186,8 +198,10 @@ namespace SteelBIM.Views
                 categorias = "Nenhuma";
 
             string destino = "Mark";
-            if (rbParamComments?.IsChecked == true) destino = "Comments";
-            if (rbParamCustom?.IsChecked == true) destino = $"Customizado ({txtParamCustom?.Text ?? ""})";
+            if (rbParamComments?.IsChecked == true)
+                destino = "Comments";
+            if (rbParamCustom?.IsChecked == true)
+                destino = $"Customizado ({txtParamCustom?.Text ?? ""})";
 
             string sobrescrever = chkSobrescrever?.IsChecked == true ? "Sim" : "Não (pula existentes)";
             string destaque = chkDestaqueVisual?.IsChecked == true ? "Sim" : "Não";

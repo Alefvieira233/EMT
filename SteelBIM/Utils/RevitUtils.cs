@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI.Selection;
-using System.Collections.Generic;
-using System.Linq;
 using SteelBIM.Infrastructure;
 
 namespace SteelBIM.Utils
@@ -16,7 +16,8 @@ namespace SteelBIM.Utils
 
         public static Level GetElementLevel(Document doc, Element el)
         {
-            if (el == null) return null;
+            if (el == null)
+                return null;
 
             if (el.LevelId != ElementId.InvalidElementId)
                 return doc.GetElement(el.LevelId) as Level;
@@ -37,21 +38,25 @@ namespace SteelBIM.Utils
 
         public static XYZ SafeNormalize(XYZ v)
         {
-            if (v == null) return XYZ.Zero;
+            if (v == null)
+                return XYZ.Zero;
             double len = v.GetLength();
-            if (len < EPS) return XYZ.Zero;
+            if (len < EPS)
+                return XYZ.Zero;
             return v.Normalize();
         }
 
         public static bool IsZeroVector(XYZ v)
         {
-            if (v == null) return true;
+            if (v == null)
+                return true;
             return v.GetLength() < EPS;
         }
 
         public static Curve GetElementCurve(Element el)
         {
-            if (el == null) return null;
+            if (el == null)
+                return null;
 
             LocationCurve lc = el.Location as LocationCurve;
             if (lc != null && lc.Curve != null)
@@ -88,7 +93,8 @@ namespace SteelBIM.Utils
 
         public static Line EnsureSameDirection(Line refLine, Line testLine)
         {
-            if (refLine == null || testLine == null) return testLine;
+            if (refLine == null || testLine == null)
+                return testLine;
 
             XYZ dRef = SafeNormalize(refLine.GetEndPoint(1) - refLine.GetEndPoint(0));
             XYZ dTest = SafeNormalize(testLine.GetEndPoint(1) - testLine.GetEndPoint(0));
@@ -101,13 +107,15 @@ namespace SteelBIM.Utils
 
         public static Line ReverseLine(Line line)
         {
-            if (line == null) return null;
+            if (line == null)
+                return null;
             return Line.CreateBound(line.GetEndPoint(1), line.GetEndPoint(0));
         }
 
         public static void SetZJustification(FamilyInstance fi, int zJustificationValue)
         {
-            if (fi == null) return;
+            if (fi == null)
+                return;
 
             try
             {
@@ -120,7 +128,8 @@ namespace SteelBIM.Utils
 
         public static void SetYZOffsets(FamilyInstance fi, double y, double z)
         {
-            if (fi == null) return;
+            if (fi == null)
+                return;
 
             try
             {
@@ -141,7 +150,8 @@ namespace SteelBIM.Utils
 
         public static void SetSectionRotation(FamilyInstance fi, double angleRad)
         {
-            if (fi == null) return;
+            if (fi == null)
+                return;
 
             try
             {
@@ -154,7 +164,8 @@ namespace SteelBIM.Utils
 
         public static void DisallowJoins(FamilyInstance fi)
         {
-            if (fi == null) return;
+            if (fi == null)
+                return;
 
             try
             {
@@ -171,7 +182,8 @@ namespace SteelBIM.Utils
 
         public static void AllowJoins(FamilyInstance fi)
         {
-            if (fi == null) return;
+            if (fi == null)
+                return;
 
             try
             {
@@ -240,12 +252,14 @@ namespace SteelBIM.Utils
             try
             {
                 Reference r = uidoc.Selection.PickObject(ObjectType.Element, prompt);
-                if (r == null) return false;
+                if (r == null)
+                    return false;
 
                 pickedElement = uidoc.Document.GetElement(r);
                 Curve c = GetElementCurve(pickedElement);
 
-                if (c == null) return false;
+                if (c == null)
+                    return false;
 
                 Line line = c as Line;
                 if (line == null)
@@ -275,7 +289,8 @@ namespace SteelBIM.Utils
             XYZ dir = p1 - p0;
             double len2 = dir.DotProduct(dir);
 
-            if (len2 < EPS) return 0.0;
+            if (len2 < EPS)
+                return 0.0;
 
             return (pt - p0).DotProduct(dir) / len2;
         }
@@ -335,19 +350,22 @@ namespace SteelBIM.Utils
 
             foreach (Curve c in curvasBanzos)
             {
-                if (c == null) continue;
+                if (c == null)
+                    continue;
 
                 Line banzoLine = c as Line;
                 if (banzoLine == null)
                 {
                     XYZ p0 = c.GetEndPoint(0);
                     XYZ p1 = c.GetEndPoint(1);
-                    if (p0.DistanceTo(p1) < EPS) continue;
+                    if (p0.DistanceTo(p1) < EPS)
+                        continue;
                     banzoLine = Line.CreateBound(p0, p1);
                 }
 
                 Line banzoProj = ProjectLineOntoPlane(banzoLine, plane);
-                if (banzoProj == null) continue;
+                if (banzoProj == null)
+                    continue;
 
                 XYZ hit;
                 if (TryIntersectLines2DInPlane(eixoTerca, banzoProj, plane, out hit))

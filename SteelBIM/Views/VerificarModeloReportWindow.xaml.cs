@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,11 +8,11 @@ using System.Windows.Input;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using ClosedXML.Excel;
+using Microsoft.Win32;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models.ModelCheck;
 using SteelBIM.Services.ModelCheck;
 using SteelBIM.Utils;
-using Microsoft.Win32;
 
 namespace SteelBIM.Views
 {

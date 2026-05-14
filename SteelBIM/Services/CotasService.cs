@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -512,12 +512,14 @@ namespace SteelBIM.Services
 
         private XYZ AjustarSentidoDoEixoPelaSelecao(List<Element> elementos, View view, XYZ eixoBase)
         {
-            if (elementos.Count < 2) return eixoBase;
+            if (elementos.Count < 2)
+                return eixoBase;
 
             XYZ? primeiro = ObterCentroDoElemento(elementos.First(), view);
             XYZ? ultimo = ObterCentroDoElemento(elementos.Last(), view);
 
-            if (primeiro is null || ultimo is null) return eixoBase;
+            if (primeiro is null || ultimo is null)
+                return eixoBase;
 
             double delta = ProjetarNoEixo(ultimo - primeiro, eixoBase);
             return delta >= 0 ? eixoBase : eixoBase.Negate();
@@ -526,7 +528,8 @@ namespace SteelBIM.Services
         private XYZ DeterminarEixoPrincipalDaSelecao(List<Element> elementos, View view)
         {
             BoundingBoxXYZ? caixa = ObterCaixaDosElementos(elementos, view);
-            if (caixa is null) return ObterEixoHorizontalDaVista(view);
+            if (caixa is null)
+                return ObterEixoHorizontalDaVista(view);
 
             double larguraHorizontal = Math.Abs(ProjetarNoEixo(caixa.Max - caixa.Min, ObterEixoHorizontalDaVista(view)));
             double larguraVertical = Math.Abs(ProjetarNoEixo(caixa.Max - caixa.Min, ObterEixoVerticalDaVista(view)));
@@ -1029,7 +1032,8 @@ namespace SteelBIM.Services
                     continue;
 
                 List<XYZ> vertices = ObterVerticesDaFace(fp, transform);
-                if (vertices.Count == 0) continue;
+                if (vertices.Count == 0)
+                    continue;
 
                 double faceMin = vertices.Min(v => ProjetarNoEixo(v, dadosLinha.EixoDirecao));
                 double faceMax = vertices.Max(v => ProjetarNoEixo(v, dadosLinha.EixoDirecao));
@@ -1052,10 +1056,12 @@ namespace SteelBIM.Services
                 {
                     foreach (Edge edge in loop)
                     {
-                        if (edge.Reference is null) continue;
+                        if (edge.Reference is null)
+                            continue;
 
                         Curve curva = edge.AsCurve();
-                        if (curva is not Line linhaAresta) continue;
+                        if (curva is not Line linhaAresta)
+                            continue;
 
                         XYZ direcao = transform.OfVector(linhaAresta.Direction).Normalize();
                         if (!ArestaServeComoReferencia(direcao, dadosLinha))
@@ -1136,7 +1142,8 @@ namespace SteelBIM.Services
             foreach (Element el in elementos)
             {
                 BoundingBoxXYZ? bbox = el.get_BoundingBox(view);
-                if (bbox is null) continue;
+                if (bbox is null)
+                    continue;
 
                 foreach (XYZ canto in ObterCantosHorizontais(bbox))
                 {
@@ -1174,7 +1181,8 @@ namespace SteelBIM.Services
             foreach (Element el in elementos)
             {
                 BoundingBoxXYZ? bbox = el.get_BoundingBox(view);
-                if (bbox is null) continue;
+                if (bbox is null)
+                    continue;
 
                 foreach (XYZ canto in ObterCantosHorizontais(bbox))
                 {
@@ -1193,7 +1201,8 @@ namespace SteelBIM.Services
         private XYZ ObterCentroDosElementos(List<Element> elementos, View view)
         {
             BoundingBoxXYZ? caixa = ObterCaixaDosElementos(elementos, view);
-            if (caixa is null) return XYZ.Zero;
+            if (caixa is null)
+                return XYZ.Zero;
 
             return new XYZ(
                 (caixa.Min.X + caixa.Max.X) * 0.5,
@@ -1204,7 +1213,8 @@ namespace SteelBIM.Services
         private XYZ? ObterCentroDoElemento(Element elemento, View view)
         {
             BoundingBoxXYZ? bbox = elemento.get_BoundingBox(view);
-            if (bbox is null) return null;
+            if (bbox is null)
+                return null;
 
             return new XYZ(
                 (bbox.Min.X + bbox.Max.X) * 0.5,
@@ -1219,7 +1229,8 @@ namespace SteelBIM.Services
             foreach (Element el in elementos)
             {
                 BoundingBoxXYZ? bbox = el.get_BoundingBox(view);
-                if (bbox is null) continue;
+                if (bbox is null)
+                    continue;
 
                 if (caixa is null)
                 {
@@ -1334,7 +1345,8 @@ namespace SteelBIM.Services
 
             foreach (ReferenciaCota ref_ in ordenadas)
             {
-                if (!chaves.Add(ref_.Chave)) continue;
+                if (!chaves.Add(ref_.Chave))
+                    continue;
 
                 if (unicas.Count > 0 &&
                     Math.Abs(unicas[^1].Posicao - ref_.Posicao) <= ToleranciaDeduplicacao)

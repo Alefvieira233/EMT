@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,8 @@ namespace SteelBIM.Services.Bloco
     {
         public static BlocoHostFrame BuildFrame(Element host)
         {
-            if (host == null) throw new ArgumentNullException(nameof(host));
+            if (host == null)
+                throw new ArgumentNullException(nameof(host));
 
             BoundingBoxXYZ? bbox = host.get_BoundingBox(null);
             if (bbox == null)
@@ -26,7 +27,8 @@ namespace SteelBIM.Services.Bloco
             if (host is FamilyInstance fi)
             {
                 XYZ h = NormalizeHorizontal(fi.GetTransform().BasisX);
-                if (!h.IsZeroLength()) xAxis = h;
+                if (!h.IsZeroLength())
+                    xAxis = h;
                 if (fi.Location is LocationPoint lp)
                     origin = new XYZ(lp.Point.X, lp.Point.Y, bbox.Min.Z);
             }
@@ -74,9 +76,12 @@ namespace SteelBIM.Services.Bloco
             double minX, double maxX, double minY, double maxY, double minZ, double maxZ)
         {
             LocalToWorld = localToWorld;
-            MinX = minX; MaxX = maxX;
-            MinY = minY; MaxY = maxY;
-            MinZ = minZ; MaxZ = maxZ;
+            MinX = minX;
+            MaxX = maxX;
+            MinY = minY;
+            MaxY = maxY;
+            MinZ = minZ;
+            MaxZ = maxZ;
         }
 
         public Transform LocalToWorld { get; }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models.Privacy;
@@ -69,7 +69,9 @@ namespace SteelBIM.Infrastructure.Privacy
                                 if (!string.IsNullOrEmpty(newDir) && !Directory.Exists(newDir))
                                     Directory.CreateDirectory(newDir);
                                 File.Copy(legacy, _filePath, overwrite: false);
-                                try { File.Delete(legacy); } catch { /* nao fatal */ }
+                                try
+                                { File.Delete(legacy); }
+                                catch { /* nao fatal */ }
                                 Logger.Info("[Privacy] Migrated privacy.json from FerramentaEMT legacy path");
                             }
                             catch (Exception mEx)
@@ -102,7 +104,8 @@ namespace SteelBIM.Infrastructure.Privacy
 
         public void Save(PrivacySettings settings)
         {
-            if (settings == null) return;
+            if (settings == null)
+                return;
 
             try
             {

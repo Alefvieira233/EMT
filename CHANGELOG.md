@@ -15,6 +15,50 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.0.3] - 2026-05-14
+
+### Fixed
+- `EMT_CODESIGN_SIGNTOOL` -> `STEELBIM_CODESIGN_SIGNTOOL`: ultimo
+  residuo do rebrand v2.0.0 que ficou de fora em v2.0.2 (3 arquivos:
+  Build-SetupExe.ps1, docs/CODE-SIGNING.md, docs/ADR/009-code-signing.md).
+- `dotnet format SteelBIM.Solution.sln --verify-no-changes` agora passa
+  com exit 0 (antes 473 erros WHITESPACE em files que escapavam do
+  escopo Tests-csproj usado pelo CI). Apply tocou 197 files (cosmetico:
+  BOM UTF-8 + using sort + indentacao).
+
+### Changed
+- `.gitattributes` ganha regras defensivas explicitas `text eol=lf` para
+  `*.cs`, `*.xaml`, `*.json`, `*.md`, `*.yml`, `*.yaml`, `*.xml`,
+  `*.config`, `*.resx`. Blinda contra regressao do conflito
+  editorconfig/gitattributes (root cause de v2.0.2). Decisao team
+  preservada para `*.sln`/`*.csproj`/`*.bat`/`*.ps1`/`*.cmd` (CRLF).
+- Docs core (CONTRIBUTING.md, CLAUDE.md, RUNBOOK, DEPLOYMENT, ARCHITECTURE,
+  SISTEMA-LICENCA, installer/README, Tests/README): prosa current-tense
+  alinhada para `SteelBIM`. Historicos preservados (planning v1.x,
+  paths fisicos pre-rebrand em RUNBOOK, ADRs, docs/legal, docs/victor,
+  docs/auditoria, docs/reference-projects).
+- 5 branches legacy mergeadas removidas: feat/code-signing-skeleton-p0-1,
+  feat/rebrand-steelbim-v2, feat/victor-final-5-ribbon-wire,
+  refactor/fabricacao-signature-builder, docs/auditoria-wave-victor-final.
+
+### Documented
+- `docs/auditoria/v2.0.3-pre-mercado.md`: auditoria consolidada antes do
+  lancamento publico (inventario do produto, gaps de README, classificacao
+  completa dos 4535 CA warnings em A/B/C, roteiro de smoke test).
+
+### Known issues (deferidos para v2.1.0+)
+- README.md desatualizado: titulo, badge versao, contagem de comandos,
+  arquitetura. Sera reescrito junto com a pagina de vendas.
+- ~4535 warnings CA categoria A/B/C documentados em docs/auditoria/,
+  defer para v2.1.0.
+- 1 branch legacy (`feat/legal-drafts-p0-5`) ficou: classificador do
+  agente bloqueou force-delete, Alef executa manualmente.
+- 4 services com melhorias Victor pendentes (auditoria pos-v1.8.0).
+- Code signing cert pendente (Sectigo OV ~R\$ 600-900/ano).
+- Revisao juridica drafts/legal/*.draft.md pendente.
+
+---
+
 ## [2.0.2] - 2026-05-14
 
 ### Fixed

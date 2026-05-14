@@ -112,7 +112,7 @@ Copy-Item -LiteralPath $publishedExePath -Destination $setupExePath -Force
 #   - STEELBIM_CODESIGN_CERT_PFX        : caminho do .pfx
 #   - STEELBIM_CODESIGN_CERT_PASSWORD   : senha do .pfx (NUNCA logada)
 #   - STEELBIM_CODESIGN_TIMESTAMP_URL   : timestamp server (default DigiCert)
-#   - EMT_CODESIGN_SIGNTOOL        : caminho explicito do signtool.exe
+#   - STEELBIM_CODESIGN_SIGNTOOL        : caminho explicito do signtool.exe
 #                                    (auto-discovery se ausente)
 # Documentacao: docs/CODE-SIGNING.md + docs/ADR/009-code-signing.md.
 # ===========================================================================
@@ -152,9 +152,9 @@ if ([string]::IsNullOrWhiteSpace($timestampUrl)) {
 }
 
 if (-not [string]::IsNullOrWhiteSpace($certPath) -and (Test-Path -LiteralPath $certPath)) {
-    $signtool = Resolve-Signtool -ExplicitPath $env:EMT_CODESIGN_SIGNTOOL
+    $signtool = Resolve-Signtool -ExplicitPath $env:STEELBIM_CODESIGN_SIGNTOOL
     if (-not $signtool) {
-        Write-Warning "[Signing] signtool.exe nao encontrado. Instale Windows SDK ou defina EMT_CODESIGN_SIGNTOOL."
+        Write-Warning "[Signing] signtool.exe nao encontrado. Instale Windows SDK ou defina STEELBIM_CODESIGN_SIGNTOOL."
         Write-Warning "[Signing] setup.exe ficara NAO-ASSINADO."
     } else {
         Write-Host "[Signing] Certificate found at $certPath. Signing setup.exe via $signtool..."

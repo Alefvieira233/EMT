@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -111,7 +111,8 @@ namespace SteelBIM.Services
             int count = 0;
 
             DadosPeca? dados = ExtrairDadosPeca(elem, view);
-            if (dados == null) return 0;
+            if (dados == null)
+                return 0;
 
             // Eixos da vista para determinar direções válidas
             XYZ eixoH = ObterEixoHorizontalDaVista(view);
@@ -123,7 +124,8 @@ namespace SteelBIM.Services
             {
                 Dimension? dim = CriarCotaEntreExtremos(
                     doc, view, elem, dados, offsetFt, eixoH, eixoV, normalVista);
-                if (dim != null) count++;
+                if (dim != null)
+                    count++;
             }
 
             // 2. Cota de altura do perfil (d)
@@ -131,7 +133,8 @@ namespace SteelBIM.Services
             {
                 Dimension? dim = CriarCotaAlturaPerfil(
                     doc, view, elem, dados, offsetFt, eixoH, eixoV, normalVista);
-                if (dim != null) count++;
+                if (dim != null)
+                    count++;
             }
 
             // 3. Cota de largura da mesa (bf)
@@ -139,7 +142,8 @@ namespace SteelBIM.Services
             {
                 Dimension? dim = CriarCotaLarguraMesa(
                     doc, view, elem, dados, offsetFt, eixoH, eixoV, normalVista);
-                if (dim != null) count++;
+                if (dim != null)
+                    count++;
             }
 
             return count;
@@ -220,7 +224,8 @@ namespace SteelBIM.Services
             };
 
             GeometryElement? geo = elem.get_Geometry(opcoes);
-            if (geo == null) return new List<RefCota>();
+            if (geo == null)
+                return new List<RefCota>();
 
             var referencias = new List<RefCota>();
             ColetarEdgesRecursivo(doc, geo, Transform.Identity, eixoMedicao, normalVista, referencias);
@@ -283,7 +288,8 @@ namespace SteelBIM.Services
         {
             foreach (Face face in solid.Faces)
             {
-                if (face is not PlanarFace pf) continue;
+                if (face is not PlanarFace pf)
+                    continue;
 
                 // Normal da face no espaço do modelo
                 XYZ normalModelo = transform.OfVector(pf.FaceNormal);
@@ -291,23 +297,27 @@ namespace SteelBIM.Services
                 // A face deve ser perpendicular ao eixo de medição
                 // (normal da face paralela ao eixo ⇒ a face "olha" na direção da medição)
                 double dotEixo = Math.Abs(normalModelo.DotProduct(eixoMedicao));
-                if (dotEixo < 0.85) continue; // tolerância ~30°
+                if (dotEixo < 0.85)
+                    continue; // tolerância ~30°
 
                 // Coleta arestas desta face
                 foreach (EdgeArray loop in pf.EdgeLoops)
                 {
                     foreach (Edge edge in loop)
                     {
-                        if (edge.Reference == null) continue;
+                        if (edge.Reference == null)
+                            continue;
 
                         Curve curva = edge.AsCurve();
-                        if (curva is not Line linhaAresta) continue;
+                        if (curva is not Line linhaAresta)
+                            continue;
 
                         // A aresta deve ser paralela à normal da vista
                         // (assim ela aparece como um ponto/linha na vista e gera ref linear válida)
                         XYZ direcaoAresta = transform.OfVector(linhaAresta.Direction).Normalize();
                         double dotNormalVista = Math.Abs(direcaoAresta.DotProduct(normalVista));
-                        if (dotNormalVista < 0.7) continue;
+                        if (dotNormalVista < 0.7)
+                            continue;
 
                         // Posição da aresta projetada no eixo de medição
                         XYZ pontoMedio = transform.OfPoint(curva.Evaluate(0.5, true));
@@ -363,7 +373,8 @@ namespace SteelBIM.Services
                     if (refs != null && refs.Count > 0)
                     {
                         XYZ? centro = ObterCentroDoElemento(elem, view);
-                        if (centro == null) continue;
+                        if (centro == null)
+                            continue;
 
                         double posicao = centro.DotProduct(eixoMedicao);
                         string chave = refs[0].ConvertToStableRepresentation(doc);
@@ -379,7 +390,8 @@ namespace SteelBIM.Services
         private XYZ? ObterCentroDoElemento(Element elem, View view)
         {
             BoundingBoxXYZ? bb = elem.get_BoundingBox(view);
-            if (bb == null) return null;
+            if (bb == null)
+                return null;
             return (bb.Min + bb.Max) / 2.0;
         }
 
@@ -398,7 +410,8 @@ namespace SteelBIM.Services
             {
                 // Eixo de medição = direção da peça projetada no plano da vista
                 XYZ eixoMedicao = ProjetarNoPlanoDaVista(dados.Direcao, normalVista);
-                if (eixoMedicao.GetLength() < 1e-6) return null;
+                if (eixoMedicao.GetLength() < 1e-6)
+                    return null;
                 eixoMedicao = eixoMedicao.Normalize();
 
                 // Linha de cota: paralela ao eixo de medição, com offset perpendicular
@@ -412,11 +425,13 @@ namespace SteelBIM.Services
                     doc, view, elem, dimLine,
                     FamilyInstanceReferenceType.Left,
                     FamilyInstanceReferenceType.Right);
-                if (dim != null) return dim;
+                if (dim != null)
+                    return dim;
 
                 // 2a tentativa: coletor por edges (fallback)
                 List<RefCota> refs = ColetarReferenciasNoEixo(doc, view, elem, eixoMedicao, normalVista);
-                if (refs.Count < 2) return null;
+                if (refs.Count < 2)
+                    return null;
 
                 refs.Sort((a, b) => a.Posicao.CompareTo(b.Posicao));
 
@@ -443,8 +458,10 @@ namespace SteelBIM.Services
             {
                 IList<Reference> refsA = elem.GetReferences(tipoA);
                 IList<Reference> refsB = elem.GetReferences(tipoB);
-                if (refsA == null || refsA.Count == 0) return null;
-                if (refsB == null || refsB.Count == 0) return null;
+                if (refsA == null || refsA.Count == 0)
+                    return null;
+                if (refsB == null || refsB.Count == 0)
+                    return null;
 
                 ReferenceArray arr = new ReferenceArray();
                 arr.Append(refsA[0]);
@@ -474,7 +491,8 @@ namespace SteelBIM.Services
                 else
                     dirAltura = ProjetarNoPlanoDaVista(XYZ.BasisZ, normalVista);
 
-                if (dirAltura.GetLength() < 1e-6) return null;
+                if (dirAltura.GetLength() < 1e-6)
+                    return null;
                 dirAltura = dirAltura.Normalize();
 
                 // Posicionar cota no início da peça, offset lateral
@@ -492,11 +510,13 @@ namespace SteelBIM.Services
                     doc, view, elem, dimLine,
                     FamilyInstanceReferenceType.Top,
                     FamilyInstanceReferenceType.Bottom);
-                if (dim != null) return dim;
+                if (dim != null)
+                    return dim;
 
                 // 2a tentativa: edges (fallback)
                 List<RefCota> refs = ColetarReferenciasNoEixo(doc, view, elem, dirAltura, normalVista);
-                if (refs.Count < 2) return null;
+                if (refs.Count < 2)
+                    return null;
 
                 refs.Sort((a, b) => a.Posicao.CompareTo(b.Posicao));
 
@@ -533,7 +553,8 @@ namespace SteelBIM.Services
                     dirLargura = ProjetarNoPlanoDaVista(perp, normalVista);
                 }
 
-                if (dirLargura.GetLength() < 1e-6) return null;
+                if (dirLargura.GetLength() < 1e-6)
+                    return null;
                 dirLargura = dirLargura.Normalize();
 
                 // Posicionar abaixo da peça
@@ -557,11 +578,13 @@ namespace SteelBIM.Services
                     doc, view, elem, dimLine,
                     FamilyInstanceReferenceType.Front,
                     FamilyInstanceReferenceType.Back);
-                if (dim != null) return dim;
+                if (dim != null)
+                    return dim;
 
                 // 2a tentativa: edges (fallback)
                 List<RefCota> refs = ColetarReferenciasNoEixo(doc, view, elem, dirLargura, normalVista);
-                if (refs.Count < 2) return null;
+                if (refs.Count < 2)
+                    return null;
 
                 refs.Sort((a, b) => a.Posicao.CompareTo(b.Posicao));
 
@@ -596,7 +619,8 @@ namespace SteelBIM.Services
 
         private XYZ ObterEixoHorizontalDaVista(View view)
         {
-            if (view is ViewPlan) return XYZ.BasisX;
+            if (view is ViewPlan)
+                return XYZ.BasisX;
             if (view is ViewSection vs)
                 return vs.RightDirection;
             return view.RightDirection;
@@ -604,7 +628,8 @@ namespace SteelBIM.Services
 
         private XYZ ObterEixoVerticalDaVista(View view)
         {
-            if (view is ViewPlan) return XYZ.BasisY;
+            if (view is ViewPlan)
+                return XYZ.BasisY;
             if (view is ViewSection vs)
                 return vs.UpDirection;
             return view.UpDirection;

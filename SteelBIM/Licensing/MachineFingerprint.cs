@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
@@ -58,7 +58,8 @@ namespace SteelBIM.Licensing
                     RegistryHive.LocalMachine,
                     RegistryView.Registry64);
                 using RegistryKey crypto = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
-                if (crypto == null) return null;
+                if (crypto == null)
+                    return null;
 
                 object value = crypto.GetValue("MachineGuid");
                 return value?.ToString();

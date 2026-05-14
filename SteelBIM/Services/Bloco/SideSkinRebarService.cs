@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -13,12 +13,14 @@ namespace SteelBIM.Services.Bloco
             Document doc, Element host, BlocoHostFrame frame,
             BlocoArmaduraLateralConfig config)
         {
-            if (!config.LancarNasFacesX && !config.LancarNasFacesY) return 0;
+            if (!config.LancarNasFacesX && !config.LancarNasFacesY)
+                return 0;
 
             double cov = ToCm(config.CobrimentoCm);
             double zMin = frame.MinZ + cov;
             double zMax = frame.MaxZ - cov;
-            if (zMax - zMin < ToCm(5.0)) return 0;
+            if (zMax - zMin < ToCm(5.0))
+                return 0;
 
             RebarBarType barType = GetBarType(doc, config.BarTypeName);
             List<double> zLevels = CalcularPosicoes(

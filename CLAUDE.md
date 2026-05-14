@@ -1,31 +1,36 @@
-# CLAUDE.md — Contexto do projeto FerramentaEMT
+# CLAUDE.md — Contexto do projeto SteelBIM
 
 Este arquivo é lido automaticamente pela Claude no início de cada sessão.
 Contém o contexto essencial do projeto e apontadores para o resto da documentação.
 
+> **Nota historica:** o projeto chamava-se FerramentaEMT ate v1.x. O rebrand
+> para **SteelBIM** aconteceu em v2.0.0 (2026-05-13). Entradas pre-v2.0.0 no
+> "Historico recente" abaixo preservam o nome antigo intencionalmente.
+
 ## Sobre o projeto
 
-**FerramentaEMT** é um plugin Revit 2025 para automatizar trabalho de estrutura metálica
-(detalhamento, fabricação, documentação, CNC, montagem). Desenvolvido para uso do
-escritório EMT (ALEF CHRISTIAN GOMES VIEIRA, CREA 0319918963).
+**SteelBIM** é um plugin Revit 2025 para automatizar trabalho de estrutura metálica
+e pré-fabricado de concreto (detalhamento, fabricação, documentação, CNC, montagem,
+armaduras PF). Desenvolvido para uso do escritório EMT (ALEF CHRISTIAN GOMES VIEIRA,
+CREA 0319918963).
 
 Alvo: .NET 8.0-windows / Revit 2025 API / WPF.
 
 ## Onde estão as coisas
 
-- `FerramentaEMT/` — código-fonte do plugin (Commands, Services, Views, Models, etc.).
-- `FerramentaEMT.Tests/` — testes unitários (196 testes passando na última verificação).
-- `FerramentaEMT.Distribuicao/` — projeto de instalador/distribuição.
+- `SteelBIM/` — código-fonte do plugin (Commands, Services, Views, Models, etc.).
+- `SteelBIM.Tests/` — testes unitários (777 testes passando em v2.0.3).
+- `SteelBIM.Distribuicao/` — projeto de instalador/distribuição.
 - `docs/reference-projects/` — **projetos executivos reais do escritório usados como referência de estilo**. Sempre consultar antes de escrever funções novas relacionadas a cotagem, tags, vistas, detalhes.
-- `CHANGELOG.md` — histórico de versões (v1.0.5 é o estado atual estável).
+- `CHANGELOG.md` — histórico de versões (v2.0.3 é o estado atual estável).
 
 ## Padrões a seguir
 
 - Idioma: código e comentários em português (PT-BR sem acentos em identificadores).
-- Logging via `FerramentaEMT.Infrastructure.Logger` (nunca `Console` ou `TaskDialog` direto).
-- Diálogos via `FerramentaEMT.Utils.AppDialogService` (nunca `MessageBox` direto).
+- Logging via `SteelBIM.Infrastructure.Logger` (nunca `Console` ou `TaskDialog` direto).
+- Diálogos via `SteelBIM.Utils.AppDialogService` (nunca `MessageBox` direto).
 - Transações sempre com `using (Transaction t = ...)` e nome descritivo.
-- Commands herdam de `FerramentaCommandBase` (que já trata licenciamento e erros).
+- Commands herdam de `FerramentaCommandBase` (classe base — nome preservado por design, ja trata licenciamento e erros).
 - Nullable enable nos arquivos modificados (`#nullable enable` no topo se não for projeto-wide).
 - TreatWarningsAsErrors em Release — zero warnings.
 

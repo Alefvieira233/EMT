@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -104,15 +104,18 @@ namespace SteelBIM.Services.Bloco
 
             if (modo == BlocoModoQuantidade.PorQuantidade)
             {
-                if (quantidade <= 0) return new List<double>();
-                if (quantidade == 1) return new List<double> { (min + max) / 2.0 };
+                if (quantidade <= 0)
+                    return new List<double>();
+                if (quantidade == 1)
+                    return new List<double> { (min + max) / 2.0 };
                 double step = (max - min) / (quantidade - 1);
                 return Enumerable.Range(0, quantidade).Select(i => min + i * step).ToList();
             }
             else
             {
                 double spacing = ToCm(espacamentoCm);
-                if (spacing <= ToCm(1.0)) return new List<double> { min, max };
+                if (spacing <= ToCm(1.0))
+                    return new List<double> { min, max };
                 List<double> result = new List<double>();
                 double pos = min;
                 while (pos <= max + ToCm(1.0))

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;

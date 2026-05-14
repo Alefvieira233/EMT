@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Serilog;
 using Serilog.Events;
@@ -41,7 +41,8 @@ namespace SteelBIM.Infrastructure
         {
             lock (_lock)
             {
-                if (_initialized) return;
+                if (_initialized)
+                    return;
 
                 try
                 {
@@ -86,7 +87,8 @@ namespace SteelBIM.Infrastructure
         {
             lock (_lock)
             {
-                if (!_initialized) return;
+                if (!_initialized)
+                    return;
                 Log.Information("=== SteelBIM encerrado ===");
                 Log.CloseAndFlush();
                 _initialized = false;

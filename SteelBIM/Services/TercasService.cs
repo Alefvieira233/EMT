@@ -1,10 +1,10 @@
-﻿using Autodesk.Revit.DB;
+﻿using System.Collections.Generic;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using SteelBIM.Models;
 using SteelBIM.Utils;
-using System.Collections.Generic;
 
 namespace SteelBIM.Services
 {
@@ -76,7 +76,8 @@ namespace SteelBIM.Services
                 {
                     Element el = doc.GetElement(r);
                     Curve c = RevitUtils.GetElementCurve(el);
-                    if (c != null) curvasBanzos.Add(c);
+                    if (c != null)
+                        curvasBanzos.Add(c);
                 }
                 if (curvasBanzos.Count == 0)
                 {
@@ -100,7 +101,8 @@ namespace SteelBIM.Services
             using (Transaction t = new Transaction(doc, "Criar Terças por Plano"))
             {
                 t.Start();
-                if (!config.SymbolSelecionado.IsActive) config.SymbolSelecionado.Activate();
+                if (!config.SymbolSelecionado.IsActive)
+                    config.SymbolSelecionado.Activate();
                 doc.Regenerate();
 
                 double step = 1.0 / (config.Quantidade + 1);
@@ -110,7 +112,8 @@ namespace SteelBIM.Services
                     XYZ ptA = lineA.Evaluate(par, true);
                     XYZ ptB = lineB.Evaluate(par, true);
                     XYZ dirSpan = RevitUtils.SafeNormalize(ptB - ptA);
-                    if (RevitUtils.IsZeroVector(dirSpan)) continue;
+                    if (RevitUtils.IsZeroVector(dirSpan))
+                        continue;
                     XYZ start = ptA - dirSpan * beiralIniFt;
                     XYZ end = ptB + dirSpan * beiralFimFt;
                     if (System.Math.Abs(offsetFt) > RevitUtils.EPS)
@@ -119,7 +122,8 @@ namespace SteelBIM.Services
                         start = start + n * offsetFt;
                         end = end + n * offsetFt;
                     }
-                    if (start.DistanceTo(end) < RevitUtils.EPS) continue;
+                    if (start.DistanceTo(end) < RevitUtils.EPS)
+                        continue;
                     Line eixoTerca = Line.CreateBound(start, end);
                     CreateTercaSegments(doc, eixoTerca, plane, curvasBanzos, config.DividirNosBanzos, config.SymbolSelecionado, nivel, config.ZJustificationValue, rotacaoRad);
                 }
@@ -140,7 +144,8 @@ namespace SteelBIM.Services
             int zJustificationValue,
             double rotacaoRad)
         {
-            if (eixoTerca == null || perfil == null || nivel == null) return;
+            if (eixoTerca == null || perfil == null || nivel == null)
+                return;
 
             List<XYZ> nodes = new List<XYZ>();
             nodes.Add(eixoTerca.GetEndPoint(0));

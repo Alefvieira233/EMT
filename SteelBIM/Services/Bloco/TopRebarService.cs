@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -34,13 +34,17 @@ namespace SteelBIM.Services.Bloco
             double runMin, runMax, distMin, distMax;
             if (isAlongX)
             {
-                runMin = frame.MinX + cov; runMax = frame.MaxX - cov;
-                distMin = frame.MinY + cov; distMax = frame.MaxY - cov;
+                runMin = frame.MinX + cov;
+                runMax = frame.MaxX - cov;
+                distMin = frame.MinY + cov;
+                distMax = frame.MaxY - cov;
             }
             else
             {
-                runMin = frame.MinY + cov; runMax = frame.MaxY - cov;
-                distMin = frame.MinX + cov; distMax = frame.MaxX - cov;
+                runMin = frame.MinY + cov;
+                runMax = frame.MaxY - cov;
+                distMin = frame.MinX + cov;
+                distMax = frame.MaxX - cov;
             }
 
             if (runMax - runMin < ToCm(5.0) || distMax - distMin < ToCm(5.0))

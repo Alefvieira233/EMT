@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using SteelBIM.Core;
 using SteelBIM.Utils;
@@ -76,7 +76,8 @@ namespace SteelBIM.Views
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            if (CancelRequested) return;
+            if (CancelRequested)
+                return;
             CancelRequested = true;
             btnCancel.IsEnabled = false;
             btnCancel.Content = "Cancelando...";

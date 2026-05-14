@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
 // Metadados do assembly SteelBIM.
@@ -14,9 +14,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 
 // Versao — manter sincronizado com CHANGELOG.md e o badge do README.
-[assembly: AssemblyVersion("2.0.2.0")]
-[assembly: AssemblyFileVersion("2.0.2.0")]
-[assembly: AssemblyInformationalVersion("2.0.2")]
+[assembly: AssemblyVersion("2.0.3.0")]
+[assembly: AssemblyFileVersion("2.0.3.0")]
+[assembly: AssemblyInformationalVersion("2.0.3")]
 
 // ComVisible(false) para evitar expor todos os tipos via COM acidentalmente.
 [assembly: ComVisible(false)]

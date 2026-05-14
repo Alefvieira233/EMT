@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -165,8 +165,10 @@ namespace SteelBIM.Services
 
                 if (resultadoPar.Sucesso)
                 {
-                    if (resultadoPar.Aplicado) alteracoesAplicadas++;
-                    else if (resultadoPar.JaConforme) jaConformes++;
+                    if (resultadoPar.Aplicado)
+                        alteracoesAplicadas++;
+                    else if (resultadoPar.JaConforme)
+                        jaConformes++;
 
                     string prefixo = resultadoPar.Aplicado ? "aplicado" : "ja conforme";
                     diagnostico.Add($"{descricaoPar} -> {prefixo} por {resultadoPar.Estrategia}.");
@@ -266,7 +268,8 @@ namespace SteelBIM.Services
             List<Element> encontrados = new List<Element>();
 
             BoundingBoxXYZ bbox = null;
-            try { bbox = origem?.get_BoundingBox(null); }
+            try
+            { bbox = origem?.get_BoundingBox(null); }
             catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel para elemento {Id}: {Msg}", origem?.Id, ex.Message); }
 
             if (origem == null || bbox == null || categorias == null || categorias.Count == 0)
@@ -308,9 +311,11 @@ namespace SteelBIM.Services
             BoundingBoxXYZ bb1 = null;
             BoundingBoxXYZ bb2 = null;
 
-            try { bb1 = primeiro?.get_BoundingBox(null); }
+            try
+            { bb1 = primeiro?.get_BoundingBox(null); }
             catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel: {Msg}", ex.Message); }
-            try { bb2 = segundo?.get_BoundingBox(null); }
+            try
+            { bb2 = segundo?.get_BoundingBox(null); }
             catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel: {Msg}", ex.Message); }
 
             if (bb1 == null || bb2 == null || !BoundingBoxesOverlapSignificantly(bb1, bb2))
@@ -415,7 +420,8 @@ namespace SteelBIM.Services
                 if (obj is GeometryInstance instancia)
                 {
                     GeometryElement geometriaInstancia = null;
-                    try { geometriaInstancia = instancia.GetInstanceGeometry(); }
+                    try
+                    { geometriaInstancia = instancia.GetInstanceGeometry(); }
                     catch (Exception ex) { Logger.Debug("[CortarElementos] GetInstanceGeometry falhou: {Msg}", ex.Message); }
 
                     if (geometriaInstancia == null)
@@ -430,13 +436,16 @@ namespace SteelBIM.Services
         private bool BoundingBoxesOverlapSignificantly(BoundingBoxXYZ bb1, BoundingBoxXYZ bb2)
         {
             double ox = OverlapOnAxis(bb1.Min.X, bb1.Max.X, bb2.Min.X, bb2.Max.X);
-            if (ox < MinOverlapFt) return false;
+            if (ox < MinOverlapFt)
+                return false;
 
             double oy = OverlapOnAxis(bb1.Min.Y, bb1.Max.Y, bb2.Min.Y, bb2.Max.Y);
-            if (oy < MinOverlapFt) return false;
+            if (oy < MinOverlapFt)
+                return false;
 
             double oz = OverlapOnAxis(bb1.Min.Z, bb1.Max.Z, bb2.Min.Z, bb2.Max.Z);
-            if (oz < MinOverlapFt) return false;
+            if (oz < MinOverlapFt)
+                return false;
 
             return true;
         }
@@ -697,7 +706,8 @@ namespace SteelBIM.Services
 
         private string DescreverElemento(Element elemento)
         {
-            if (elemento == null) return "<nulo>";
+            if (elemento == null)
+                return "<nulo>";
 
             string categoria = elemento.Category?.Name ?? "Sem categoria";
             string nome = elemento.Name ?? elemento.GetType().Name;

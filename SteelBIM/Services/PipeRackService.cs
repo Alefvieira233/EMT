@@ -1,11 +1,11 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Models;
 using SteelBIM.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SteelBIM.Services
 {

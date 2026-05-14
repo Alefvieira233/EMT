@@ -1,14 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Autodesk.Revit.UI;
-using Autodesk.Revit.UI.Events;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Events;
 using SteelBIM.Infrastructure;
 using SteelBIM.Infrastructure.CrashReporting;
 using SteelBIM.Infrastructure.Privacy;
@@ -92,7 +92,8 @@ namespace SteelBIM
                 releaseResolver: () => typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown");
 
             // 1.0.0: inicializar sistema de licenca (cria trial na primeira execucao)
-            try { LicenseService.Initialize(); }
+            try
+            { LicenseService.Initialize(); }
             catch (Exception licEx) { Logger.Error(licEx, "[App] LicenseService.Initialize falhou — continuar mesmo assim"); }
 
             // PR-4 (P0.6): telemetria de uso via PostHog (HTTP-direct).
@@ -134,7 +135,8 @@ namespace SteelBIM
             // primeiro Idling — NAO bloqueia o boot do Revit (modal em
             // OnStartup teria esse risco). Self-detach atomic: o handler
             // se desinscreve PRIMEIRO, sem flag externa.
-            try { application.Idling += OnFirstIdling; }
+            try
+            { application.Idling += OnFirstIdling; }
             catch (Exception idlEx) { Logger.Warn(idlEx, "[Privacy] falha ao registrar Idling handler"); }
 
             // 1.3.0: logar fonte do segredo HMAC
@@ -724,12 +726,14 @@ namespace SteelBIM
 
             // PR-4: drena eventos pendentes da telemetria. PostHogHttpTelemetryClient
             // usa fire-and-forget sem batch buffer, entao Flush eh no-op imediato.
-            try { TelemetryReporter.Flush(2000); }
+            try
+            { TelemetryReporter.Flush(2000); }
             catch (Exception flushEx) { Logger.Warn(flushEx, "[Telemetry] Flush em OnShutdown falhou"); }
 
             // PR-3: drena eventos pendentes do Sentry antes de fechar (max 2s).
             // No-op silencioso se Sentry nao foi inicializado.
-            try { SentryReporter.Flush(2000); }
+            try
+            { SentryReporter.Flush(2000); }
             catch (Exception flushEx) { Logger.Warn(flushEx, "[Sentry] Flush em OnShutdown falhou"); }
 
             RevitWindowThemeService.Shutdown();
@@ -881,7 +885,8 @@ namespace SteelBIM
         /// </summary>
         private static string ResolveLicenseStateForReporting()
         {
-            try { return LicenseService.GetCurrentState().Status.ToString(); }
+            try
+            { return LicenseService.GetCurrentState().Status.ToString(); }
             catch { return "Unknown"; }
         }
 
@@ -922,7 +927,8 @@ namespace SteelBIM
                 uiApp.Idling -= OnFirstIdling;
             }
 
-            try { EnsureConsentIfNeeded(); }
+            try
+            { EnsureConsentIfNeeded(); }
             catch (Exception ex) { Logger.Warn(ex, "[Privacy] consent dialog falhou"); }
         }
 

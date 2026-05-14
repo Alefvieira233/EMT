@@ -256,7 +256,7 @@ Migracao Sectigo → DigiCert (ou similar):
 
 | Sintoma | Causa provavel | Solucao |
 |---|---|---|
-| `Cannot find signtool.exe` | Windows SDK nao instalado | Instalar via Visual Studio Installer ("Windows 10/11 SDK") OU baixar [Windows SDK standalone](https://developer.microsoft.com/windows/downloads/windows-sdk/). Ou definir `EMT_CODESIGN_SIGNTOOL` apontando para o exe. |
+| `Cannot find signtool.exe` | Windows SDK nao instalado | Instalar via Visual Studio Installer ("Windows 10/11 SDK") OU baixar [Windows SDK standalone](https://developer.microsoft.com/windows/downloads/windows-sdk/). Ou definir `STEELBIM_CODESIGN_SIGNTOOL` apontando para o exe. |
 | `signtool failed with code 1 (timestamp server unreachable)` | Firewall corporativo bloqueando timestamp.digicert.com | Trocar pra `http://timestamp.sectigo.com` ou `http://timestamp.globalsign.com/?signature=sha2`. |
 | `signtool failed with code 2 (PFX parse error)` | Senha errada ou .pfx corrompido | Validar manualmente: `Get-PfxCertificate -FilePath cert.pfx -Password (Read-Host -AsSecureString)`. Se falhar, re-exportar do Cert Store. |
 | `SmartScreen ainda bloqueia mesmo assinado` | Reputation building em progresso (cert OV) | Esperar — apos ~500-1000 downloads, SmartScreen aprende. EV nao tem esse problema. |

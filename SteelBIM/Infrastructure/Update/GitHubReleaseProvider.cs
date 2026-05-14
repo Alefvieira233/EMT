@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
@@ -22,8 +22,10 @@ namespace SteelBIM.Infrastructure.Update
 
         public GitHubReleaseProvider(string owner, string repo)
         {
-            if (string.IsNullOrWhiteSpace(owner)) throw new ArgumentException("owner obrigatorio", "owner");
-            if (string.IsNullOrWhiteSpace(repo)) throw new ArgumentException("repo obrigatorio", "repo");
+            if (string.IsNullOrWhiteSpace(owner))
+                throw new ArgumentException("owner obrigatorio", "owner");
+            if (string.IsNullOrWhiteSpace(repo))
+                throw new ArgumentException("repo obrigatorio", "repo");
             _owner = owner;
             _repo = repo;
         }
@@ -110,14 +112,16 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         internal static GitHubRelease ParseRelease(string json)
         {
-            if (string.IsNullOrWhiteSpace(json)) return null;
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
 
             try
             {
                 using (JsonDocument doc = JsonDocument.Parse(json))
                 {
                     JsonElement root = doc.RootElement;
-                    if (root.ValueKind != JsonValueKind.Object) return null;
+                    if (root.ValueKind != JsonValueKind.Object)
+                        return null;
 
                     GitHubRelease release = new GitHubRelease
                     {
@@ -133,7 +137,8 @@ namespace SteelBIM.Infrastructure.Update
                     {
                         foreach (JsonElement assetElem in assetsElem.EnumerateArray())
                         {
-                            if (assetElem.ValueKind != JsonValueKind.Object) continue;
+                            if (assetElem.ValueKind != JsonValueKind.Object)
+                                continue;
                             release.Assets.Add(new GitHubAsset
                             {
                                 Name = TryGetString(assetElem, "name"),
@@ -165,8 +170,10 @@ namespace SteelBIM.Infrastructure.Update
         {
             if (parent.TryGetProperty(name, out JsonElement el))
             {
-                if (el.ValueKind == JsonValueKind.True) return true;
-                if (el.ValueKind == JsonValueKind.False) return false;
+                if (el.ValueKind == JsonValueKind.True)
+                    return true;
+                if (el.ValueKind == JsonValueKind.False)
+                    return false;
             }
             return false;
         }

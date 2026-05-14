@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -195,7 +195,8 @@ namespace SteelBIM.Services.Trelica
             CalcularBoundingBox2D(IEnumerable<(double X, double Z)> pontos2D)
         {
             var lista = pontos2D.ToList();
-            if (lista.Count == 0) return (0, 0, 0, 0, 0, 0);
+            if (lista.Count == 0)
+                return (0, 0, 0, 0, 0, 0);
 
             double xMin = lista.Min(p => p.X);
             double xMax = lista.Max(p => p.X);
@@ -392,17 +393,20 @@ namespace SteelBIM.Services.Trelica
                                 double xEstacao = seg.XInicio;
                                 var barraSuperior = TrelicaRevitHelper.EncontrarBarraNoNo(
                                     barras, xEstacao, vista);
-                                if (barraSuperior == null) continue;
+                                if (barraSuperior == null)
+                                    continue;
 
                                 var barraInferior = TrelicaRevitHelper.EncontrarBarraNoNo(
                                     barras, xEstacao, vista);
-                                if (barraInferior == null) continue;
+                                if (barraInferior == null)
+                                    continue;
 
                                 // Obter coordenadas Z (elevacao) dos nos
                                 var noSup = nosSuperior.FirstOrDefault(p => Math.Abs(p.X - xEstacao) < 0.01);
                                 var noInf = nosInferior.FirstOrDefault(p => Math.Abs(p.X - xEstacao) < 0.01);
 
-                                if (noSup.X == 0 || noInf.X == 0) continue;
+                                if (noSup.X == 0 || noInf.X == 0)
+                                    continue;
 
                                 // Desprojetar para 3D
                                 XYZ pos3DSup = TrelicaRevitHelper.DesprojetarPonto(noSup.X, noSup.Z, vista);
@@ -417,7 +421,8 @@ namespace SteelBIM.Services.Trelica
                                 XYZ posText = new XYZ((pos3DSup.X + pos3DInf.X) / 2.0, (pos3DSup.Y + pos3DInf.Y) / 2.0, pos3DSup.Z + 0.5);
                                 string textoAltura = $"{alturaMm:F0}";
                                 var tn = TrelicaRevitHelper.CriarTextoNota(doc, vista, posText, textoAltura, textTypeId);
-                                if (tn != null) textosCriados++;
+                                if (tn != null)
+                                    textosCriados++;
                             }
                             catch (Exception ex)
                             {
@@ -436,7 +441,8 @@ namespace SteelBIM.Services.Trelica
                             // Encontrar barra no inicio do segmento
                             var barraInicio = TrelicaRevitHelper.EncontrarBarraNoNo(
                                 barras, seg.XInicio, vista);
-                            if (barraInicio == null) continue;
+                            if (barraInicio == null)
+                                continue;
 
                             var refInicio = TrelicaRevitHelper.ObterReferenciaExtremo(
                                 barraInicio.Value.Barra, barraInicio.Value.Endpoint, vista);
@@ -463,7 +469,8 @@ namespace SteelBIM.Services.Trelica
                         }
                     }
 
-                    if (refs.Size == 0) continue;
+                    if (refs.Size == 0)
+                        continue;
 
                     // Calcular ponto e direcao da linha de cota
                     double zCota = bbox.ZMax + faixa.OffsetZPes; // default para faixas acima
@@ -587,7 +594,8 @@ namespace SteelBIM.Services.Trelica
 
                     string texto = $"BANZO SUPERIOR {perfilSuperior}";
                     var tn = TrelicaRevitHelper.CriarTextoNota(doc, vista, pos3D, texto, textTypeId);
-                    if (tn != null) textosCriados++;
+                    if (tn != null)
+                        textosCriados++;
                 }
 
                 // Posicionar texto "BANZO INFERIOR <perfil>" abaixo do banzo
@@ -599,7 +607,8 @@ namespace SteelBIM.Services.Trelica
 
                     string texto = $"BANZO INFERIOR {perfilInferior}";
                     var tn = TrelicaRevitHelper.CriarTextoNota(doc, vista, pos3D, texto, textTypeId);
-                    if (tn != null) textosCriados++;
+                    if (tn != null)
+                        textosCriados++;
                 }
             }
             catch (Exception ex)
@@ -618,7 +627,8 @@ namespace SteelBIM.Services.Trelica
         {
             try
             {
-                if (fi.Symbol == null) return "-";
+                if (fi.Symbol == null)
+                    return "-";
                 string family = fi.Symbol.Family?.Name ?? "";
                 string type = fi.Symbol.Name ?? "";
                 return $"{family} {type}".Trim();
@@ -631,7 +641,8 @@ namespace SteelBIM.Services.Trelica
 
         private int DetectarMultiplicadorComposto(FamilyInstance fi, CotarTrelicaConfig config)
         {
-            if (!config.CantoneiraDupla) return 1;
+            if (!config.CantoneiraDupla)
+                return 1;
 
             try
             {
@@ -662,7 +673,8 @@ namespace SteelBIM.Services.Trelica
             var barrasBanzo = barras.Where(b =>
                 classificacao.TryGetValue(b, out var tipo) && tipo == tipoBanzo).ToList();
 
-            if (barrasBanzo.Count == 0) return "";
+            if (barrasBanzo.Count == 0)
+                return "";
 
             // Usar primeira barra como representativa (todas as barras do banzo devem ter mesmo perfil)
             var rep = barrasBanzo[0];

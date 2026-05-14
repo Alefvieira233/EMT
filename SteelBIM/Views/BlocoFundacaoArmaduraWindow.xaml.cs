@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Globalization;
 using System.Windows;
@@ -58,9 +58,9 @@ namespace SteelBIM.Views
             {
                 LancarArmaduraInferior = chkLancarInferior.IsChecked == true,
                 LancarArmaduraSuperior = chkLancarSuperior.IsChecked == true,
-                LancarArmaduraLateral  = chkLancarLateral.IsChecked == true,
-                LancarEstriboVertical  = chkLancarEstVert.IsChecked == true,
-                LancarEstriboHorizontal= chkLancarEstHoriz.IsChecked == true,
+                LancarArmaduraLateral = chkLancarLateral.IsChecked == true,
+                LancarEstriboVertical = chkLancarEstVert.IsChecked == true,
+                LancarEstriboHorizontal = chkLancarEstHoriz.IsChecked == true,
                 LancarFaixaTransversal = chkLancarFaixaTrans.IsChecked == true
             };
 
@@ -91,12 +91,12 @@ namespace SteelBIM.Views
                 chkSupYDobF, txtSupYDobFComp, rbSupYDobFCima);
 
             // --- Lateral ---
-            c.ArmaduraLateral.BarTypeName  = BarName(cmbLatBarra);
+            c.ArmaduraLateral.BarTypeName = BarName(cmbLatBarra);
             c.ArmaduraLateral.CobrimentoCm = ParseD(txtLatCob.Text, 5.0);
             c.ArmaduraLateral.ModoQuantidade = rbLatQtd.IsChecked == true
                 ? BlocoModoQuantidade.PorQuantidade : BlocoModoQuantidade.PorEspacamento;
-            c.ArmaduraLateral.Quantidade   = ParseI(txtLatQtd.Text, 2);
-            c.ArmaduraLateral.EspacamentoCm= ParseD(txtLatEsp.Text, 20.0);
+            c.ArmaduraLateral.Quantidade = ParseI(txtLatQtd.Text, 2);
+            c.ArmaduraLateral.EspacamentoCm = ParseD(txtLatEsp.Text, 20.0);
             c.ArmaduraLateral.LancarNasFacesX = chkLatFacesX.IsChecked == true;
             c.ArmaduraLateral.LancarNasFacesY = chkLatFacesY.IsChecked == true;
             FillBend(c.ArmaduraLateral.Dobra,
@@ -104,34 +104,34 @@ namespace SteelBIM.Views
                 chkLatDobF, txtLatDobFComp, rbLatDobFCima);
 
             // --- Estribo Vertical ---
-            c.EstriboVertical.BarTypeName  = BarName(cmbEstVertBarra);
+            c.EstriboVertical.BarTypeName = BarName(cmbEstVertBarra);
             c.EstriboVertical.CobrimentoCm = ParseD(txtEstVertCob.Text, 5.0);
             c.EstriboVertical.AnguloGarras = GarraAngle(cmbEstVertGarra);
-            c.EstriboVertical.DirX.Ativo   = chkEstVertXAtivo.IsChecked == true;
+            c.EstriboVertical.DirX.Ativo = chkEstVertXAtivo.IsChecked == true;
             c.EstriboVertical.DirX.ModoQuantidade = rbEstVertXQtd.IsChecked == true
                 ? BlocoModoQuantidade.PorQuantidade : BlocoModoQuantidade.PorEspacamento;
-            c.EstriboVertical.DirX.Quantidade   = ParseI(txtEstVertXQtd.Text, 2);
-            c.EstriboVertical.DirX.EspacamentoCm= ParseD(txtEstVertXEsp.Text, 20.0);
-            c.EstriboVertical.DirY.Ativo   = chkEstVertYAtivo.IsChecked == true;
+            c.EstriboVertical.DirX.Quantidade = ParseI(txtEstVertXQtd.Text, 2);
+            c.EstriboVertical.DirX.EspacamentoCm = ParseD(txtEstVertXEsp.Text, 20.0);
+            c.EstriboVertical.DirY.Ativo = chkEstVertYAtivo.IsChecked == true;
             c.EstriboVertical.DirY.ModoQuantidade = rbEstVertYQtd.IsChecked == true
                 ? BlocoModoQuantidade.PorQuantidade : BlocoModoQuantidade.PorEspacamento;
-            c.EstriboVertical.DirY.Quantidade   = ParseI(txtEstVertYQtd.Text, 2);
-            c.EstriboVertical.DirY.EspacamentoCm= ParseD(txtEstVertYEsp.Text, 20.0);
+            c.EstriboVertical.DirY.Quantidade = ParseI(txtEstVertYQtd.Text, 2);
+            c.EstriboVertical.DirY.EspacamentoCm = ParseD(txtEstVertYEsp.Text, 20.0);
 
             // --- Estribo Horizontal ---
-            c.EstriboHorizontal.BarTypeName  = BarName(cmbEstHorizBarra);
+            c.EstriboHorizontal.BarTypeName = BarName(cmbEstHorizBarra);
             c.EstriboHorizontal.CobrimentoCm = ParseD(txtEstHorizCob.Text, 5.0);
             c.EstriboHorizontal.AnguloGarras = GarraAngle(cmbEstHorizGarra);
             c.EstriboHorizontal.ModoQuantidade = rbEstHorizQtd.IsChecked == true
                 ? BlocoModoQuantidade.PorQuantidade : BlocoModoQuantidade.PorEspacamento;
-            c.EstriboHorizontal.Quantidade   = ParseI(txtEstHorizQtd.Text, 2);
-            c.EstriboHorizontal.EspacamentoCm= ParseD(txtEstHorizEsp.Text, 20.0);
+            c.EstriboHorizontal.Quantidade = ParseI(txtEstHorizQtd.Text, 2);
+            c.EstriboHorizontal.EspacamentoCm = ParseD(txtEstHorizEsp.Text, 20.0);
 
             // --- Faixa Transversal ---
-            c.FaixaTransversal.BarTypeName  = BarName(cmbFaixaTransBarra);
+            c.FaixaTransversal.BarTypeName = BarName(cmbFaixaTransBarra);
             c.FaixaTransversal.CobrimentoCm = ParseD(txtFaixaTransCob.Text, 5.0);
-            c.FaixaTransversal.EspacamentoCm= ParseD(txtFaixaTransEsp.Text, 15.0);
-            c.FaixaTransversal.PosicaoZCm   = ParseD(txtFaixaTransPosZ.Text, 10.0);
+            c.FaixaTransversal.EspacamentoCm = ParseD(txtFaixaTransEsp.Text, 15.0);
+            c.FaixaTransversal.PosicaoZCm = ParseD(txtFaixaTransPosZ.Text, 10.0);
             c.FaixaTransversal.Direcao = rbFaixaTransX.IsChecked == true ? BlocoDirecao.ApenasX
                 : rbFaixaTransY.IsChecked == true ? BlocoDirecao.ApenasY : BlocoDirecao.AmbosXeY;
             FillBend(c.FaixaTransversal.Dobra,
@@ -152,9 +152,9 @@ namespace SteelBIM.Views
             bool algumAtivo =
                 c.LancarArmaduraInferior ||
                 c.LancarArmaduraSuperior ||
-                c.LancarArmaduraLateral  ||
-                c.LancarEstriboVertical  ||
-                c.LancarEstriboHorizontal||
+                c.LancarArmaduraLateral ||
+                c.LancarEstriboVertical ||
+                c.LancarEstriboHorizontal ||
                 c.LancarFaixaTransversal;
 
             if (!algumAtivo)
@@ -252,14 +252,14 @@ namespace SteelBIM.Views
             CheckBox chkDobI, TextBox txtDobIComp, RadioButton rbDobICima,
             CheckBox chkDobF, TextBox txtDobFComp, RadioButton rbDobFCima)
         {
-            d.Ativo       = chkAtivo.IsChecked == true;
+            d.Ativo = chkAtivo.IsChecked == true;
             d.BarTypeName = BarName(cmbBarra);
-            d.CobrimentoCm= ParseD(txtCob.Text, 5.0);
-            d.OffsetZCm   = ParseD(txtOffZ.Text, 0.0);
+            d.CobrimentoCm = ParseD(txtCob.Text, 5.0);
+            d.OffsetZCm = ParseD(txtOffZ.Text, 0.0);
             d.ModoQuantidade = rbQtd.IsChecked == true
                 ? BlocoModoQuantidade.PorQuantidade : BlocoModoQuantidade.PorEspacamento;
-            d.Quantidade   = ParseI(txtQtd.Text, 4);
-            d.EspacamentoCm= ParseD(txtEsp.Text, 15.0);
+            d.Quantidade = ParseI(txtQtd.Text, 4);
+            d.EspacamentoCm = ParseD(txtEsp.Text, 15.0);
             FillBend(d.Dobra, chkDobI, txtDobIComp, rbDobICima, chkDobF, txtDobFComp, rbDobFCima);
         }
 
@@ -282,8 +282,10 @@ namespace SteelBIM.Views
         private static BlocoAnguloGancho GarraAngle(ComboBox cmb)
         {
             string tag = (cmb.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "135°";
-            if (tag.StartsWith("90")) return BlocoAnguloGancho.Graus90;
-            if (tag.StartsWith("180")) return BlocoAnguloGancho.Graus180;
+            if (tag.StartsWith("90"))
+                return BlocoAnguloGancho.Graus90;
+            if (tag.StartsWith("180"))
+                return BlocoAnguloGancho.Graus180;
             return BlocoAnguloGancho.Graus135;
         }
 

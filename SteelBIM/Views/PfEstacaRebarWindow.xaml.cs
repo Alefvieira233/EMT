@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -59,7 +59,8 @@ namespace SteelBIM.Views
                 }
 
                 double lengthCm = 0.0;
-                try { lengthCm = PfRebarService.GetColumnLengthCm(samplePile); }
+                try
+                { lengthCm = PfRebarService.GetColumnLengthCm(samplePile); }
                 catch { }
 
                 string hostInfo = PfElementService.GetHostPreview(sampleElement);
@@ -218,16 +219,20 @@ namespace SteelBIM.Views
         private double SelectedSteelFyk()
         {
             string value = cmbSteel.SelectedItem as string ?? "CA-50";
-            if (value.Contains("60")) return 600.0;
-            if (value.Contains("25")) return 250.0;
+            if (value.Contains("60"))
+                return 600.0;
+            if (value.Contains("25"))
+                return 250.0;
             return 500.0;
         }
 
         private PfBarSurfaceType SelectedBarSurface()
         {
             string value = cmbSteel.SelectedItem as string ?? "CA-50";
-            if (value.Contains("25")) return PfBarSurfaceType.Lisa;
-            if (value.Contains("60")) return PfBarSurfaceType.Entalhada;
+            if (value.Contains("25"))
+                return PfBarSurfaceType.Lisa;
+            if (value.Contains("60"))
+                return PfBarSurfaceType.Entalhada;
             return PfBarSurfaceType.Nervurada;
         }
 
@@ -235,10 +240,14 @@ namespace SteelBIM.Views
         {
             switch (cmbAnchorage.SelectedIndex)
             {
-                case 1: return PfAnchorageType.Gancho90;
-                case 2: return PfAnchorageType.Gancho180;
-                case 3: return PfAnchorageType.Gancho45;
-                default: return PfAnchorageType.Reta;
+                case 1:
+                    return PfAnchorageType.Gancho90;
+                case 2:
+                    return PfAnchorageType.Gancho180;
+                case 3:
+                    return PfAnchorageType.Gancho45;
+                default:
+                    return PfAnchorageType.Reta;
             }
         }
 
@@ -246,11 +255,16 @@ namespace SteelBIM.Views
         {
             if (lap == null || !lap.Enabled)
                 return string.Empty;
-            if (lap.ConcreteFckMpa <= 0.0) return "Informe um fck maior que zero.";
-            if (lap.SteelFykMpa <= 0.0) return "Informe um aço válido.";
-            if (lap.SplicePercentage <= 0.0 || lap.SplicePercentage > 100.0) return "Informe uma porcentagem entre 0 e 100.";
-            if (lap.BarSpacingCm <= 0.0) return "Informe um espaçamento entre barras maior que zero.";
-            if (lap.MaxBarLengthCm <= 0.0) return "Informe um comprimento máximo de barra maior que zero.";
+            if (lap.ConcreteFckMpa <= 0.0)
+                return "Informe um fck maior que zero.";
+            if (lap.SteelFykMpa <= 0.0)
+                return "Informe um aço válido.";
+            if (lap.SplicePercentage <= 0.0 || lap.SplicePercentage > 100.0)
+                return "Informe uma porcentagem entre 0 e 100.";
+            if (lap.BarSpacingCm <= 0.0)
+                return "Informe um espaçamento entre barras maior que zero.";
+            if (lap.MaxBarLengthCm <= 0.0)
+                return "Informe um comprimento máximo de barra maior que zero.";
             return string.Empty;
         }
 
@@ -318,7 +332,8 @@ namespace SteelBIM.Views
                 double dotRadiusCm = valid ? usefulRadiusCm : radiusCm * 0.6;
                 double bx = centerPx + (Math.Cos(angle) * dotRadiusCm * scale);
                 double by = centerPx + (Math.Sin(angle) * dotRadiusCm * scale);
-                if (!valid) invalidCount++;
+                if (!valid)
+                    invalidCount++;
                 DrawBarDot(bx, by, i + 1, valid);
             }
 
@@ -437,9 +452,12 @@ namespace SteelBIM.Views
 
         private static double ParseDouble(string text, double fallback)
         {
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double v1)) return v1;
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double v2)) return v2;
-            if (double.TryParse(text.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out double v3)) return v3;
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double v1))
+                return v1;
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double v2))
+                return v2;
+            if (double.TryParse(text.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out double v3))
+                return v3;
             return fallback;
         }
 

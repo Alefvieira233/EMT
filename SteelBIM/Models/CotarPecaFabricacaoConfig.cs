@@ -1,4 +1,4 @@
-namespace SteelBIM.Models
+﻿namespace SteelBIM.Models
 {
     public enum EscopoCotagem
     {

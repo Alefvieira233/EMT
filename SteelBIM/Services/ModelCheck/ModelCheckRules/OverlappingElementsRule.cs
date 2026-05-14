@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -132,9 +132,12 @@ namespace SteelBIM.Services.ModelCheck.ModelCheckRules
 
         private bool BoundingBoxesIntersect(BoundingBoxXYZ bb1, BoundingBoxXYZ bb2)
         {
-            if (bb1.Min.X > bb2.Max.X || bb2.Min.X > bb1.Max.X) return false;
-            if (bb1.Min.Y > bb2.Max.Y || bb2.Min.Y > bb1.Max.Y) return false;
-            if (bb1.Min.Z > bb2.Max.Z || bb2.Min.Z > bb1.Max.Z) return false;
+            if (bb1.Min.X > bb2.Max.X || bb2.Min.X > bb1.Max.X)
+                return false;
+            if (bb1.Min.Y > bb2.Max.Y || bb2.Min.Y > bb1.Max.Y)
+                return false;
+            if (bb1.Min.Z > bb2.Max.Z || bb2.Min.Z > bb1.Max.Z)
+                return false;
 
             return true;
         }

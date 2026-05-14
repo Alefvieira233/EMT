@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -14,9 +14,12 @@ namespace SteelBIM.Services.Bloco
             BlocoEstriboVerticalConfig config)
         {
             double cov = ToCm(config.CobrimentoCm);
-            double yMin = frame.MinY + cov; double yMax = frame.MaxY - cov;
-            double xMin = frame.MinX + cov; double xMax = frame.MaxX - cov;
-            double zMin = frame.MinZ + cov; double zMax = frame.MaxZ - cov;
+            double yMin = frame.MinY + cov;
+            double yMax = frame.MaxY - cov;
+            double xMin = frame.MinX + cov;
+            double xMax = frame.MaxX - cov;
+            double zMin = frame.MinZ + cov;
+            double zMax = frame.MaxZ - cov;
 
             if (xMax - xMin < ToCm(5.0) || yMax - yMin < ToCm(5.0) || zMax - zMin < ToCm(5.0))
                 return 0;

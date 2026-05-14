@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using SteelBIM.Infrastructure;
@@ -28,12 +28,14 @@ namespace SteelBIM.Services.CncExport
         public static List<DstvHole> Extract(Document doc, FamilyInstance element)
         {
             var holes = new List<DstvHole>();
-            if (element == null) return holes;
+            if (element == null)
+                return holes;
 
             for (int i = 1; i <= MaxHoles; i++)
             {
                 DstvHole h = TryReadParametricHole(element, i);
-                if (h == null) continue;
+                if (h == null)
+                    continue;
                 holes.Add(h);
             }
 
@@ -50,7 +52,8 @@ namespace SteelBIM.Services.CncExport
                 $"Furo {index} Diametro",
                 $"Furo {index} Diâmetro");
 
-            if (!diam.HasValue || diam.Value <= 0) return null;
+            if (!diam.HasValue || diam.Value <= 0)
+                return null;
 
             double? x = ReadLengthMm(element, $"Hole {index} X", $"Furo {index} X");
             double? y = ReadLengthMm(element, $"Hole {index} Y", $"Furo {index} Y");
@@ -72,7 +75,8 @@ namespace SteelBIM.Services.CncExport
                 try
                 {
                     Parameter p = elem.LookupParameter(name);
-                    if (p == null || !p.HasValue) continue;
+                    if (p == null || !p.HasValue)
+                        continue;
                     if (p.StorageType == StorageType.Double)
                         return UnitUtils.ConvertFromInternalUnits(p.AsDouble(), UnitTypeId.Millimeters);
                 }
@@ -88,9 +92,12 @@ namespace SteelBIM.Services.CncExport
                 try
                 {
                     Parameter p = elem.LookupParameter(name);
-                    if (p == null || !p.HasValue) continue;
-                    if (p.StorageType == StorageType.String) return p.AsString() ?? "";
-                    if (p.StorageType == StorageType.Integer) return p.AsInteger().ToString();
+                    if (p == null || !p.HasValue)
+                        continue;
+                    if (p.StorageType == StorageType.String)
+                        return p.AsString() ?? "";
+                    if (p.StorageType == StorageType.Integer)
+                        return p.AsInteger().ToString();
                 }
                 catch (Exception ex) { Logger.Warn(ex, "Falha ao ler parametro de furo"); }
             }
@@ -99,7 +106,8 @@ namespace SteelBIM.Services.CncExport
 
         private static DstvFace ParseFace(string raw)
         {
-            if (string.IsNullOrWhiteSpace(raw)) return DstvFace.WebFront;
+            if (string.IsNullOrWhiteSpace(raw))
+                return DstvFace.WebFront;
             string s = raw.Trim().ToLowerInvariant();
 
             return s switch

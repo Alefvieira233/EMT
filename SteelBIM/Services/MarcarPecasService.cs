@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -314,12 +314,16 @@ namespace SteelBIM.Services
             foreach (var elem in elementos)
             {
                 string? categoriaLogica = ClassificarCategoria(elem);
-                if (categoriaLogica == null) continue;
+                if (categoriaLogica == null)
+                    continue;
 
                 // Filtro por categorias habilitadas
-                if (categoriaLogica == "Viga" && !config.MarcarVigas) continue;
-                if (categoriaLogica == "Pilar" && !config.MarcarPilares) continue;
-                if (categoriaLogica == "Contraventamento" && !config.MarcarContraventamentos) continue;
+                if (categoriaLogica == "Viga" && !config.MarcarVigas)
+                    continue;
+                if (categoriaLogica == "Pilar" && !config.MarcarPilares)
+                    continue;
+                if (categoriaLogica == "Contraventamento" && !config.MarcarContraventamentos)
+                    continue;
 
                 ElementType? tipo = doc.GetElement(elem.GetTypeId()) as ElementType;
                 Material? material = ObterMaterialPrincipal(doc, elem, tipo);
@@ -393,15 +397,19 @@ namespace SteelBIM.Services
 
         private static void AppendParametrosDimensao(StringBuilder sb, string prefixo, Element? elemento)
         {
-            if (elemento == null) return;
+            if (elemento == null)
+                return;
 
             foreach (Parameter param in elemento.Parameters.Cast<Parameter>())
             {
-                if (param?.Definition == null) continue;
-                if (!ParametroParticipaDaChave(param.Definition.Name)) continue;
+                if (param?.Definition == null)
+                    continue;
+                if (!ParametroParticipaDaChave(param.Definition.Name))
+                    continue;
 
                 string valor = ObterValorParametroParaChave(param);
-                if (string.IsNullOrWhiteSpace(valor)) continue;
+                if (string.IsNullOrWhiteSpace(valor))
+                    continue;
 
                 sb.Append(prefixo).Append(':')
                   .Append(Normalizar(param.Definition.Name)).Append('=')
@@ -411,9 +419,11 @@ namespace SteelBIM.Services
 
         private static bool ParametroParticipaDaChave(string nome)
         {
-            if (string.IsNullOrWhiteSpace(nome)) return false;
+            if (string.IsNullOrWhiteSpace(nome))
+                return false;
             string normalizado = Normalizar(nome);
-            if (PalavrasIgnoradas.Any(normalizado.Contains)) return false;
+            if (PalavrasIgnoradas.Any(normalizado.Contains))
+                return false;
             return PalavrasDimensao.Any(normalizado.Contains);
         }
 
@@ -458,7 +468,8 @@ namespace SteelBIM.Services
 
         private static ElementId? ObterMaterialEstruturalId(Element? elemento)
         {
-            if (elemento == null) return null;
+            if (elemento == null)
+                return null;
             Parameter? p = elemento.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
             if (p != null && p.HasValue)
             {
@@ -471,7 +482,8 @@ namespace SteelBIM.Services
 
         private static ElementId? ObterPrimeiroMaterialGeometrico(Element? elemento)
         {
-            if (elemento == null) return null;
+            if (elemento == null)
+                return null;
             try
             {
                 ICollection<ElementId> ids = elemento.GetMaterialIds(false);
@@ -508,7 +520,8 @@ namespace SteelBIM.Services
                     comprimentoInterno = curva.Length;
             }
 
-            if (comprimentoInterno <= 0) return 0;
+            if (comprimentoInterno <= 0)
+                return 0;
 
             double metros = UnitUtils.ConvertFromInternalUnits(comprimentoInterno, UnitTypeId.Meters);
 
@@ -566,7 +579,8 @@ namespace SteelBIM.Services
         private static void AplicarDestaqueVisual(Document doc, List<GrupoMarcado> grupos)
         {
             View? vistaAtiva = doc.ActiveView;
-            if (vistaAtiva == null) return;
+            if (vistaAtiva == null)
+                return;
 
             // Obter um FillPatternElement para preenchimento solido
             ElementId? solidFillId = ObterPreenchimentoSolido(doc);

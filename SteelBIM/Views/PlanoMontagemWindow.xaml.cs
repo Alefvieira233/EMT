@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using Microsoft.Win32;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models.Montagem;
 using SteelBIM.Services.Montagem;
 using SteelBIM.Utils;
-using Microsoft.Win32;
 
 namespace SteelBIM.Views
 {

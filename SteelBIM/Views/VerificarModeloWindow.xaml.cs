@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Autodesk.Revit.UI;
+using Microsoft.Win32;
 using SteelBIM.Models.ModelCheck;
 using SteelBIM.Utils;
-using Microsoft.Win32;
 
 namespace SteelBIM.Views
 {
@@ -112,7 +112,8 @@ namespace SteelBIM.Views
         /// </summary>
         private void AplicarConfig(ModelCheckConfig config)
         {
-            if (config == null) return;
+            if (config == null)
+                return;
             // TODO (futuro): preencher controles a partir de config
             // Ex: chkCarimbo.IsChecked = config.RunTitleBlockParameters;
             //     txtCarimboFamilia.Text = config.TitleBlockFamilyName;

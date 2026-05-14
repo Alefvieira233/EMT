@@ -1,10 +1,10 @@
-using Autodesk.Revit.DB;
-using SteelBIM.Models;
-using SteelBIM.Forms;
-using SteelBIM.Utils;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using Autodesk.Revit.DB;
+using SteelBIM.Forms;
+using SteelBIM.Models;
+using SteelBIM.Utils;
 
 namespace SteelBIM.Views
 {

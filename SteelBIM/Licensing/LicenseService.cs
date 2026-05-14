@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.Versioning;
 using SteelBIM.Infrastructure;
 
@@ -126,7 +126,8 @@ namespace SteelBIM.Licensing
         /// </summary>
         public static LicenseState GetCurrentState()
         {
-            if (_cached != null) return _cached;
+            if (_cached != null)
+                return _cached;
             _cached = ComputeState();
             return _cached;
         }
