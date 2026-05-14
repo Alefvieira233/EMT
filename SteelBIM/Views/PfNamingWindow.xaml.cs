@@ -473,6 +473,11 @@ namespace SteelBIM.Views
                 return;
             }
 
+            // Cabecalho explicando que a ordem da lista (familia/tipo) NAO eh
+            // a ordem em que a numeracao sera aplicada (que eh geometrica).
+            // Reduz suporte do cliente confundir filtro com ordem final.
+            lstElementos.Items.Add($"[{elementos.Count} elemento(s) — lista por familia/tipo para filtro; a ordem de numeracao e geometrica]");
+
             foreach (NumeracaoElementoInfo elemento in elementos
                          .OrderBy(x => x.FamiliaNome, StringComparer.CurrentCultureIgnoreCase)
                          .ThenBy(x => x.TipoNome, StringComparer.CurrentCultureIgnoreCase)

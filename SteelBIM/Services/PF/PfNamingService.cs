@@ -10,6 +10,12 @@ namespace SteelBIM.Services.PF
 {
     internal sealed class PfNamingService
     {
+        // Tolerancia em pes para o snap de ordenacao geometrica. ~10 cm em
+        // grids estruturais — vigas dentro desse raio do mesmo eixo logico
+        // caem no mesmo bucket numerico, eliminando dependencia de qual
+        // viga "ancorou" o cluster greedy anterior.
+        private const double EIXO_TOLERANCIA_FT = 0.328084;
+
         public Result Execute(
             UIDocument uidoc,
             string commandName,
@@ -37,14 +43,8 @@ namespace SteelBIM.Services.PF
                 .OrderBy(x => config.Alvo == PfNamingTarget.Vigas
                     ? PfElementService.GetBeamAxisGroup(x, view)
                     : 0)
-                .ThenBy(x => config.Alvo == PfNamingTarget.Vigas &&
-                             PfElementService.GetBeamAxisGroup(x, view) == 1
-                    ? PfElementService.GetHorizontalOrder(view, PfElementService.GetRepresentativePoint(x, view))
-                    : -PfElementService.GetVerticalOrder(view, PfElementService.GetRepresentativePoint(x, view)))
-                .ThenBy(x => config.Alvo == PfNamingTarget.Vigas &&
-                             PfElementService.GetBeamAxisGroup(x, view) == 1
-                    ? -PfElementService.GetVerticalOrder(view, PfElementService.GetRepresentativePoint(x, view))
-                    : PfElementService.GetHorizontalOrder(view, PfElementService.GetRepresentativePoint(x, view)))
+                .ThenBy(x => OrderHorizontalSnapped(x, view, config))
+                .ThenBy(x => OrderVerticalSnapped(x, view, config))
                 .ThenBy(x => x.Id.Value)
                 .ToList();
 
@@ -105,11 +105,48 @@ namespace SteelBIM.Services.PF
             if (config.Alvo == PfNamingTarget.Vigas)
                 resumo += "\nOrdem aplicada nas vigas: horizontais/X primeiro, depois verticais/Y.";
 
+            if (config.Alvo == PfNamingTarget.Vigas)
+            {
+                int diagonais = ordenados.Count(e => PfElementService.GetBeamAxisGroup(e, view) == 2);
+                if (diagonais > 0)
+                {
+                    resumo += $"\n{diagonais} viga(s) sem eixo definido foram numeradas por Id ao final da sequencia.";
+                }
+            }
+
             if (falhas.Count > 0)
                 resumo += "\n\nSem parametro editavel em alguns elementos:\n- " + string.Join("\n- ", falhas.Take(8));
 
             AppDialogService.ShowInfo(commandName, resumo, "Numeracao concluida");
             return Result.Succeeded;
+        }
+
+        private static double OrderHorizontalSnapped(Element x, View view, PfNamingConfig config)
+        {
+            bool vigaHorizontalNoEixoX =
+                config.Alvo == PfNamingTarget.Vigas &&
+                PfElementService.GetBeamAxisGroup(x, view) == 1;
+
+            XYZ p = PfElementService.GetRepresentativePoint(x, view);
+            double raw = vigaHorizontalNoEixoX
+                ? PfElementService.GetHorizontalOrder(view, p)
+                : -PfElementService.GetVerticalOrder(view, p);
+
+            return PfElementService.GetSnappedOrder(raw, EIXO_TOLERANCIA_FT);
+        }
+
+        private static double OrderVerticalSnapped(Element x, View view, PfNamingConfig config)
+        {
+            bool vigaHorizontalNoEixoX =
+                config.Alvo == PfNamingTarget.Vigas &&
+                PfElementService.GetBeamAxisGroup(x, view) == 1;
+
+            XYZ p = PfElementService.GetRepresentativePoint(x, view);
+            double raw = vigaHorizontalNoEixoX
+                ? -PfElementService.GetVerticalOrder(view, p)
+                : PfElementService.GetHorizontalOrder(view, p);
+
+            return PfElementService.GetSnappedOrder(raw, EIXO_TOLERANCIA_FT);
         }
     }
 }

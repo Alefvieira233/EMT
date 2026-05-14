@@ -15,6 +15,24 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.0.1] - 2026-05-13
+
+### Fixed
+- Comando "Nomear PF" (PfNamingService): ordenacao de vigas com pequeno
+  desalinhamento agora eh deterministica via GetSnappedOrder com
+  tolerancia de 10 cm (~0.328 ft). Anteriormente o clustering greedy
+  fazia vigas no mesmo eixo logico receberem ordens diferentes dependendo
+  de qual viga "ancorava" o grupo. Reportado por cliente em 2026-05-13.
+
+### Added
+- Relatorio final de "Nomear PF" agora informa quantas vigas
+  diagonais/sem eixo foram numeradas por Id ao final da sequencia.
+- Lista de itens filtrados na janela "Nomear PF" ganha cabecalho
+  explicando que a ordem da lista (familia/tipo) e para filtro — a
+  ordem de numeracao real e geometrica.
+
+---
+
 ## [2.0.0] — 2026-05-13 — Rebranding completo FerramentaEMT -> SteelBIM
 
 ### BREAKING — Rebranding completo FerramentaEMT -> SteelBIM
