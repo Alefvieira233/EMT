@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -103,7 +103,8 @@ namespace SteelBIM.Services.CncExport
 
         private static void WriteCuts(StringBuilder sb, DstvFile f)
         {
-            if (!f.HasMiteredEnds()) return;
+            if (!f.HasMiteredEnds())
+                return;
 
             sb.Append("SC").Append(NewLine);
             // Formato simplificado: angulo de inicio e angulo de fim em graus
@@ -121,7 +122,8 @@ namespace SteelBIM.Services.CncExport
 
         private static void WriteHoles(StringBuilder sb, DstvFile f)
         {
-            if (f.Holes == null || f.Holes.Count == 0) return;
+            if (f.Holes == null || f.Holes.Count == 0)
+                return;
 
             // Agrupar por face e ordenar para reprodutibilidade
             var byFace = new System.Collections.Generic.Dictionary<DstvFace, System.Collections.Generic.List<DstvHole>>();
@@ -167,7 +169,8 @@ namespace SteelBIM.Services.CncExport
 
         private static void WriteNotes(StringBuilder sb, DstvFile f)
         {
-            if (string.IsNullOrWhiteSpace(f.Notes)) return;
+            if (string.IsNullOrWhiteSpace(f.Notes))
+                return;
 
             sb.Append("SI").Append(NewLine);
             // Quebra a string em linhas e prefixa cada uma com 2 espacos
@@ -213,9 +216,11 @@ namespace SteelBIM.Services.CncExport
         private static int CompareHoles(DstvHole a, DstvHole b)
         {
             int c = a.XMm.CompareTo(b.XMm);
-            if (c != 0) return c;
+            if (c != 0)
+                return c;
             c = a.YMm.CompareTo(b.YMm);
-            if (c != 0) return c;
+            if (c != 0)
+                return c;
             return a.DiameterMm.CompareTo(b.DiameterMm);
         }
     }

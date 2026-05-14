@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using SteelBIM.Infrastructure.Update;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Update;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Update
@@ -30,7 +30,8 @@ namespace SteelBIM.Tests.Infrastructure.Update
 
         public void Dispose()
         {
-            try { if (Directory.Exists(_tempRoot)) Directory.Delete(_tempRoot, recursive: true); }
+            try
+            { if (Directory.Exists(_tempRoot)) Directory.Delete(_tempRoot, recursive: true); }
             catch { /* best effort */ }
         }
 

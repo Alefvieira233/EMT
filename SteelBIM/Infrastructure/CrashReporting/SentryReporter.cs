@@ -1,7 +1,7 @@
-using System;
+﻿using System;
+using Sentry;
 using SteelBIM.Infrastructure.Privacy;
 using SteelBIM.Models.Privacy;
-using Sentry;
 
 namespace SteelBIM.Infrastructure.CrashReporting
 {
@@ -167,9 +167,12 @@ namespace SteelBIM.Infrastructure.CrashReporting
         /// </summary>
         public static void CaptureCrash(Exception ex, string kind)
         {
-            if (!IsEnabled) return;
-            if (ex == null) return;
-            if (_hub == null) return;
+            if (!IsEnabled)
+                return;
+            if (ex == null)
+                return;
+            if (_hub == null)
+                return;
 
             try
             {
@@ -190,8 +193,10 @@ namespace SteelBIM.Infrastructure.CrashReporting
         /// </summary>
         public static void Flush(int timeoutMs = 2000)
         {
-            if (!IsEnabled) return;
-            if (_hub == null) return;
+            if (!IsEnabled)
+                return;
+            if (_hub == null)
+                return;
 
             try
             {
@@ -209,7 +214,8 @@ namespace SteelBIM.Infrastructure.CrashReporting
         /// <summary>Substitui o hub para testes. Null restaura factory default.</summary>
         internal static void OverrideHubForTests(ISentryHubFacade fake)
         {
-            lock (_lock) { _hub = fake; }
+            lock (_lock)
+            { _hub = fake; }
         }
 
         /// <summary>
@@ -237,39 +243,50 @@ namespace SteelBIM.Infrastructure.CrashReporting
 
         private static ISentryHubFacade ResolveHub()
         {
-            if (_hub != null) return _hub;
+            if (_hub != null)
+                return _hub;
             if (HubFactory != null)
             {
-                try { return HubFactory(); } catch { return null; }
+                try
+                { return HubFactory(); }
+                catch { return null; }
             }
             return null;
         }
 
         private static PrivacySettings SafeLoadSettings()
         {
-            try { return PrivacyStore?.Load(); }
+            try
+            { return PrivacyStore?.Load(); }
             catch { return null; }
         }
 
         private static string SafeRelease()
         {
-            try { return ReleaseResolver?.Invoke() ?? "unknown"; }
+            try
+            { return ReleaseResolver?.Invoke() ?? "unknown"; }
             catch { return "unknown"; }
         }
 
         private static void SafeLogInfo(string message)
         {
-            try { LogInfo?.Invoke(message); } catch { }
+            try
+            { LogInfo?.Invoke(message); }
+            catch { }
         }
 
         private static void SafeLogInfoTemplate(string template, object[] args)
         {
-            try { LogInfoTemplate?.Invoke(template, args); } catch { }
+            try
+            { LogInfoTemplate?.Invoke(template, args); }
+            catch { }
         }
 
         private static void SafeLogWarn(Exception ex, string message)
         {
-            try { LogWarn?.Invoke(ex, message); } catch { }
+            try
+            { LogWarn?.Invoke(ex, message); }
+            catch { }
         }
     }
 }

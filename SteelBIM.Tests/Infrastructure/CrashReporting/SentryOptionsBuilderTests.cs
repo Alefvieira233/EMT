@@ -1,7 +1,7 @@
-using System;
-using SteelBIM.Infrastructure.CrashReporting;
+﻿using System;
 using FluentAssertions;
 using Sentry;
+using SteelBIM.Infrastructure.CrashReporting;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.CrashReporting

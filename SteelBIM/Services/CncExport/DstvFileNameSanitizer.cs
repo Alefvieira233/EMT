@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.IO;
 using System.Text;
@@ -19,7 +19,8 @@ namespace SteelBIM.Services.CncExport
         /// </summary>
         public static string Sanitize(string? nome)
         {
-            if (string.IsNullOrWhiteSpace(nome)) return DefaultName;
+            if (string.IsNullOrWhiteSpace(nome))
+                return DefaultName;
 
             var sb = new StringBuilder(nome!.Length);
             char[] invalidos = Path.GetInvalidFileNameChars();

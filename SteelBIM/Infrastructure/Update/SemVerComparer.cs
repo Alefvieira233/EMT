@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 
 namespace SteelBIM.Infrastructure.Update
@@ -20,11 +20,14 @@ namespace SteelBIM.Infrastructure.Update
         public static bool TryParse(string raw, out SemVer result)
         {
             result = default;
-            if (string.IsNullOrWhiteSpace(raw)) return false;
+            if (string.IsNullOrWhiteSpace(raw))
+                return false;
 
             string s = raw.Trim();
-            if (s.Length > 0 && (s[0] == 'v' || s[0] == 'V')) s = s.Substring(1);
-            if (s.Length == 0) return false;
+            if (s.Length > 0 && (s[0] == 'v' || s[0] == 'V'))
+                s = s.Substring(1);
+            if (s.Length == 0)
+                return false;
 
             string preRelease = string.Empty;
             int dashIdx = s.IndexOf('-');
@@ -35,7 +38,8 @@ namespace SteelBIM.Infrastructure.Update
             }
 
             string[] parts = s.Split('.');
-            if (parts.Length < 1 || parts.Length > 3) return false;
+            if (parts.Length < 1 || parts.Length > 3)
+                return false;
 
             int major = 0, minor = 0, patch = 0;
             if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out major))
@@ -45,7 +49,8 @@ namespace SteelBIM.Infrastructure.Update
             if (parts.Length == 3 && !int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out patch))
                 return false;
 
-            if (major < 0 || minor < 0 || patch < 0) return false;
+            if (major < 0 || minor < 0 || patch < 0)
+                return false;
 
             result = new SemVer(major, minor, patch, preRelease);
             return true;
@@ -58,18 +63,24 @@ namespace SteelBIM.Infrastructure.Update
         public static int Compare(SemVer a, SemVer b)
         {
             int cmp = a.Major.CompareTo(b.Major);
-            if (cmp != 0) return cmp;
+            if (cmp != 0)
+                return cmp;
             cmp = a.Minor.CompareTo(b.Minor);
-            if (cmp != 0) return cmp;
+            if (cmp != 0)
+                return cmp;
             cmp = a.Patch.CompareTo(b.Patch);
-            if (cmp != 0) return cmp;
+            if (cmp != 0)
+                return cmp;
 
             // Pre-release < release final
             bool aPre = !string.IsNullOrEmpty(a.PreRelease);
             bool bPre = !string.IsNullOrEmpty(b.PreRelease);
-            if (aPre && !bPre) return -1;
-            if (!aPre && bPre) return 1;
-            if (!aPre && !bPre) return 0;
+            if (aPre && !bPre)
+                return -1;
+            if (!aPre && bPre)
+                return 1;
+            if (!aPre && !bPre)
+                return 0;
 
             return string.CompareOrdinal(a.PreRelease, b.PreRelease);
         }
@@ -79,8 +90,10 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static int? CompareStrings(string a, string b)
         {
-            if (!TryParse(a, out SemVer va)) return null;
-            if (!TryParse(b, out SemVer vb)) return null;
+            if (!TryParse(a, out SemVer va))
+                return null;
+            if (!TryParse(b, out SemVer vb))
+                return null;
             return Compare(va, vb);
         }
     }

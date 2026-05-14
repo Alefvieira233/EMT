@@ -96,15 +96,15 @@ Apos ter `emt-codesign.pfx` em maos, configure via env vars do sistema:
 
 ```cmd
 :: Definir como variaveis de ambiente do USUARIO (persistem em logon):
-setx EMT_CODESIGN_CERT_PFX "C:\certs\emt-codesign.pfx"
-setx EMT_CODESIGN_CERT_PASSWORD "sua-senha-forte-aqui"
+setx STEELBIM_CODESIGN_CERT_PFX "C:\certs\emt-codesign.pfx"
+setx STEELBIM_CODESIGN_CERT_PASSWORD "sua-senha-forte-aqui"
 ```
 
 Ou em PowerShell (sessao atual + persistente):
 
 ```powershell
-[Environment]::SetEnvironmentVariable("EMT_CODESIGN_CERT_PFX", "C:\certs\emt-codesign.pfx", "User")
-[Environment]::SetEnvironmentVariable("EMT_CODESIGN_CERT_PASSWORD", "sua-senha-forte-aqui", "User")
+[Environment]::SetEnvironmentVariable("STEELBIM_CODESIGN_CERT_PFX", "C:\certs\emt-codesign.pfx", "User")
+[Environment]::SetEnvironmentVariable("STEELBIM_CODESIGN_CERT_PASSWORD", "sua-senha-forte-aqui", "User")
 ```
 
 **REABRIR terminais/CMD apos `setx`** — a env var so eh herdada por
@@ -221,8 +221,8 @@ quando cert esta sendo renovado):
 
 ```cmd
 :: Limpar env vars temporariamente:
-set EMT_CODESIGN_CERT_PFX=
-set EMT_CODESIGN_CERT_PASSWORD=
+set STEELBIM_CODESIGN_CERT_PFX=
+set STEELBIM_CODESIGN_CERT_PASSWORD=
 :: Rodar normal:
 Gerar-Setup.bat
 ```

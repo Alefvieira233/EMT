@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using SteelBIM.Models.Privacy;
@@ -22,7 +22,8 @@ namespace SteelBIM.Infrastructure.Privacy
 
         public static string Serialize(PrivacySettings settings)
         {
-            if (settings == null) throw new ArgumentNullException("settings");
+            if (settings == null)
+                throw new ArgumentNullException("settings");
             return JsonSerializer.Serialize(settings, WriteOptions);
         }
 

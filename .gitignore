@@ -105,7 +105,7 @@ session-id.json
 # v1.7.0 PR-5 (P0.1): certificados de code signing — NUNCA commitar.
 # .pfx eh gerado com chave privada exportavel; commit eh comprometimento
 # total da identidade de assinatura. Mesmo padrao do license.secret +
-# sentry.dsn + posthog.apikey: env var (EMT_CODESIGN_CERT_PFX) ou path
+# sentry.dsn + posthog.apikey: env var (STEELBIM_CODESIGN_CERT_PFX) ou path
 # fora do repo. Ver docs/CODE-SIGNING.md + docs/ADR/009-code-signing.md.
 *.pfx
 *.p12

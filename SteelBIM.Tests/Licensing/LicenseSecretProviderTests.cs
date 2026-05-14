@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using SteelBIM.Licensing;
 using FluentAssertions;
+using SteelBIM.Licensing;
 using Xunit;
 
 namespace SteelBIM.Tests.Licensing

@@ -1,7 +1,7 @@
-using System;
+﻿using System;
+using FluentAssertions;
 using SteelBIM.Infrastructure.Privacy;
 using SteelBIM.Models.Privacy;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Privacy

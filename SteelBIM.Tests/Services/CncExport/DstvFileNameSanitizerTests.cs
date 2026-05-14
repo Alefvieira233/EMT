@@ -1,6 +1,6 @@
-#nullable enable
-using SteelBIM.Services.CncExport;
+﻿#nullable enable
 using FluentAssertions;
+using SteelBIM.Services.CncExport;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.CncExport

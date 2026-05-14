@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -68,7 +68,8 @@ namespace SteelBIM.Infrastructure.Telemetry
         public static string GetShortPrefix()
         {
             string id = GetOrCreate();
-            if (string.IsNullOrEmpty(id) || id.Length < 8) return id ?? string.Empty;
+            if (string.IsNullOrEmpty(id) || id.Length < 8)
+                return id ?? string.Empty;
             return id.Substring(0, 8);
         }
 
@@ -77,7 +78,8 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         internal static void ResetCacheForTests()
         {
-            lock (_lock) { _cachedSessionId = null; }
+            lock (_lock)
+            { _cachedSessionId = null; }
         }
 
         private static string ResolvePath()
@@ -85,14 +87,16 @@ namespace SteelBIM.Infrastructure.Telemetry
             try
             {
                 string overridePath = Environment.GetEnvironmentVariable(TestPathOverrideEnvVar);
-                if (!string.IsNullOrWhiteSpace(overridePath)) return overridePath;
+                if (!string.IsNullOrWhiteSpace(overridePath))
+                    return overridePath;
             }
             catch { /* ignore */ }
 
             try
             {
                 string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                if (string.IsNullOrWhiteSpace(root)) return null;
+                if (string.IsNullOrWhiteSpace(root))
+                    return null;
                 return Path.Combine(root, "SteelBIM", FileName);
             }
             catch { return null; }
@@ -100,10 +104,12 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static string TryRead(string path)
         {
-            if (string.IsNullOrWhiteSpace(path)) return null;
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
             try
             {
-                if (!File.Exists(path)) return null;
+                if (!File.Exists(path))
+                    return null;
                 string raw = File.ReadAllText(path);
                 return ParseJson(raw);
             }
@@ -112,7 +118,8 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static void TryWrite(string path, string sessionId)
         {
-            if (string.IsNullOrWhiteSpace(path)) return;
+            if (string.IsNullOrWhiteSpace(path))
+                return;
             try
             {
                 string dir = Path.GetDirectoryName(path);
@@ -139,16 +146,21 @@ namespace SteelBIM.Infrastructure.Telemetry
         // de tudo.
         private static string ParseJson(string raw)
         {
-            if (string.IsNullOrWhiteSpace(raw)) return null;
+            if (string.IsNullOrWhiteSpace(raw))
+                return null;
             const string key = "\"session_id\"";
             int idx = raw.IndexOf(key, StringComparison.Ordinal);
-            if (idx < 0) return null;
+            if (idx < 0)
+                return null;
             int colon = raw.IndexOf(':', idx + key.Length);
-            if (colon < 0) return null;
+            if (colon < 0)
+                return null;
             int firstQuote = raw.IndexOf('"', colon + 1);
-            if (firstQuote < 0) return null;
+            if (firstQuote < 0)
+                return null;
             int secondQuote = raw.IndexOf('"', firstQuote + 1);
-            if (secondQuote < 0) return null;
+            if (secondQuote < 0)
+                return null;
             return raw.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
         }
 

@@ -1,7 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading;
-using SteelBIM.Utils;
 using FluentAssertions;
+using SteelBIM.Utils;
 using Xunit;
 
 namespace SteelBIM.Tests.Utils

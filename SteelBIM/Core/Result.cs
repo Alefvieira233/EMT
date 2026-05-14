@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace SteelBIM.Core
 {
@@ -74,8 +74,10 @@ namespace SteelBIM.Core
         /// </summary>
         public Result<TOut> Match<TOut>(Func<T, Result<TOut>> onSuccess, Func<string, Result<TOut>> onFailure)
         {
-            if (onSuccess == null) throw new ArgumentNullException(nameof(onSuccess));
-            if (onFailure == null) throw new ArgumentNullException(nameof(onFailure));
+            if (onSuccess == null)
+                throw new ArgumentNullException(nameof(onSuccess));
+            if (onFailure == null)
+                throw new ArgumentNullException(nameof(onFailure));
             return IsSuccess ? onSuccess(Value) : onFailure(Error);
         }
 
@@ -84,7 +86,8 @@ namespace SteelBIM.Core
         /// </summary>
         public Result<TOut> Map<TOut>(Func<T, TOut> transform)
         {
-            if (transform == null) throw new ArgumentNullException(nameof(transform));
+            if (transform == null)
+                throw new ArgumentNullException(nameof(transform));
             return IsSuccess ? Result<TOut>.Ok(transform(Value)) : Result<TOut>.Fail(Error);
         }
 

@@ -1,7 +1,7 @@
-using System;
-using Xunit;
+﻿using System;
 using FluentAssertions;
 using SteelBIM.Models.Montagem;
+using Xunit;
 
 namespace SteelBIM.Tests.Models.Montagem
 {

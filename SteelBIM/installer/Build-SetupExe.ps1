@@ -106,12 +106,12 @@ Copy-Item -LiteralPath $publishedExePath -Destination $setupExePath -Force
 # ===========================================================================
 # v1.7.0 (PR-5 P0.1): code signing parametrizado via signtool.
 # Comportamento:
-#   - Se EMT_CODESIGN_CERT_PFX estiver setado E o arquivo existir, assina.
+#   - Se STEELBIM_CODESIGN_CERT_PFX estiver setado E o arquivo existir, assina.
 #   - Senao, gera setup.exe NAO-assinado com warning visivel (modo dev).
 # Variaveis suportadas (env):
-#   - EMT_CODESIGN_CERT_PFX        : caminho do .pfx
-#   - EMT_CODESIGN_CERT_PASSWORD   : senha do .pfx (NUNCA logada)
-#   - EMT_CODESIGN_TIMESTAMP_URL   : timestamp server (default DigiCert)
+#   - STEELBIM_CODESIGN_CERT_PFX        : caminho do .pfx
+#   - STEELBIM_CODESIGN_CERT_PASSWORD   : senha do .pfx (NUNCA logada)
+#   - STEELBIM_CODESIGN_TIMESTAMP_URL   : timestamp server (default DigiCert)
 #   - EMT_CODESIGN_SIGNTOOL        : caminho explicito do signtool.exe
 #                                    (auto-discovery se ausente)
 # Documentacao: docs/CODE-SIGNING.md + docs/ADR/009-code-signing.md.
@@ -144,9 +144,9 @@ function Resolve-Signtool {
     return $null
 }
 
-$certPath = $env:EMT_CODESIGN_CERT_PFX
-$certPassword = $env:EMT_CODESIGN_CERT_PASSWORD
-$timestampUrl = $env:EMT_CODESIGN_TIMESTAMP_URL
+$certPath = $env:STEELBIM_CODESIGN_CERT_PFX
+$certPassword = $env:STEELBIM_CODESIGN_CERT_PASSWORD
+$timestampUrl = $env:STEELBIM_CODESIGN_TIMESTAMP_URL
 if ([string]::IsNullOrWhiteSpace($timestampUrl)) {
     $timestampUrl = "http://timestamp.digicert.com"
 }
@@ -179,7 +179,7 @@ if (-not [string]::IsNullOrWhiteSpace($certPath) -and (Test-Path -LiteralPath $c
         Write-Host "[Signing] OK - setup.exe assinado com timestamp $timestampUrl"
     }
 } else {
-    Write-Warning "[Signing] EMT_CODESIGN_CERT_PFX nao definido ou arquivo ausente."
+    Write-Warning "[Signing] STEELBIM_CODESIGN_CERT_PFX nao definido ou arquivo ausente."
     Write-Warning "[Signing] setup.exe sera gerado NAO-ASSINADO (modo dev)."
     Write-Warning "[Signing] SmartScreen vai bloquear em PCs novos. Ver docs/CODE-SIGNING.md."
 }

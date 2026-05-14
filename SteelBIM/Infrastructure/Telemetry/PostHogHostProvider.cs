@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 
 namespace SteelBIM.Infrastructure.Telemetry
@@ -57,7 +57,8 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static string SafeReadEnvVar()
         {
-            try { return Environment.GetEnvironmentVariable(EnvVarName); }
+            try
+            { return Environment.GetEnvironmentVariable(EnvVarName); }
             catch { return null; }
         }
     }

@@ -1,7 +1,7 @@
-#nullable enable
+﻿#nullable enable
 using System;
-using SteelBIM.Services.Trelica;
 using FluentAssertions;
+using SteelBIM.Services.Trelica;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.Trelica

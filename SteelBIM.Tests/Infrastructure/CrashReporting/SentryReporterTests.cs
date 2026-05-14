@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using SteelBIM.Infrastructure.CrashReporting;
-using SteelBIM.Infrastructure.Privacy;
-using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Sentry;
+using SteelBIM.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.CrashReporting

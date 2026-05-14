@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -45,7 +45,8 @@ namespace SteelBIM.Licensing
         /// </summary>
         public static string Sign(LicensePayload payload)
         {
-            if (payload == null) throw new ArgumentNullException(nameof(payload));
+            if (payload == null)
+                throw new ArgumentNullException(nameof(payload));
 
             string payloadJson = SimpleJson.Serialize(payload);
             byte[] payloadBytes = Encoding.UTF8.GetBytes(payloadJson);
@@ -63,11 +64,13 @@ namespace SteelBIM.Licensing
         /// </summary>
         public static LicensePayload Verify(string token)
         {
-            if (string.IsNullOrWhiteSpace(token)) return null;
+            if (string.IsNullOrWhiteSpace(token))
+                return null;
 
             string trimmed = token.Trim();
             int dotIndex = trimmed.IndexOf('.');
-            if (dotIndex <= 0 || dotIndex >= trimmed.Length - 1) return null;
+            if (dotIndex <= 0 || dotIndex >= trimmed.Length - 1)
+                return null;
 
             string payloadB64 = trimmed.Substring(0, dotIndex);
             string sigB64 = trimmed.Substring(dotIndex + 1);

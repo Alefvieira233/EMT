@@ -1,4 +1,4 @@
-using SteelBIM.Models.Privacy;
+﻿using SteelBIM.Models.Privacy;
 
 namespace SteelBIM.Infrastructure.Privacy
 {

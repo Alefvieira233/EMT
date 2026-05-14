@@ -1,8 +1,8 @@
-#nullable enable
+﻿#nullable enable
 using System.Globalization;
 using System.Threading;
-using SteelBIM.Services.PF;
 using FluentAssertions;
+using SteelBIM.Services.PF;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.PF

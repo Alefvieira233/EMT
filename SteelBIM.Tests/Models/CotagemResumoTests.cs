@@ -1,6 +1,6 @@
-using System.Reflection;
-using SteelBIM.Models;
+﻿using System.Reflection;
 using FluentAssertions;
+using SteelBIM.Models;
 using Xunit;
 
 namespace SteelBIM.Tests.Models

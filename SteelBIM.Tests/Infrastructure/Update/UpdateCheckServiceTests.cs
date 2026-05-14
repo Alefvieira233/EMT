@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Moq;
 using SteelBIM.Infrastructure.Privacy;
 using SteelBIM.Infrastructure.Update;
 using SteelBIM.Models.Privacy;
-using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Update

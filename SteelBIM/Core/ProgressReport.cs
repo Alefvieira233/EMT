@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace SteelBIM.Core
 {
@@ -32,10 +32,13 @@ namespace SteelBIM.Core
         {
             get
             {
-                if (Total <= 0) return 0d;
+                if (Total <= 0)
+                    return 0d;
                 double f = (double)Current / Total;
-                if (f < 0d) return 0d;
-                if (f > 1d) return 1d;
+                if (f < 0d)
+                    return 0d;
+                if (f > 1d)
+                    return 1d;
                 return f;
             }
         }

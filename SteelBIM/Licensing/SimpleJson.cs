@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Text;
 
@@ -18,7 +18,8 @@ namespace SteelBIM.Licensing
     {
         public static string Serialize(LicensePayload p)
         {
-            if (p == null) throw new ArgumentNullException(nameof(p));
+            if (p == null)
+                throw new ArgumentNullException(nameof(p));
 
             StringBuilder sb = new StringBuilder(128);
             sb.Append("{\"e\":\"");
@@ -35,7 +36,8 @@ namespace SteelBIM.Licensing
 
         public static LicensePayload Deserialize(string json)
         {
-            if (string.IsNullOrEmpty(json)) throw new ArgumentException("json vazio");
+            if (string.IsNullOrEmpty(json))
+                throw new ArgumentException("json vazio");
 
             // Parser hand-rolled MUITO simples — assume o formato exato gerado por Serialize.
             // E aceitavel porque so consumimos JSON gerado por nos mesmos.
@@ -50,10 +52,13 @@ namespace SteelBIM.Licensing
             while (true)
             {
                 SkipWhitespace(json, ref idx);
-                if (idx >= json.Length) break;
-                if (json[idx] == '}') break;
+                if (idx >= json.Length)
+                    break;
+                if (json[idx] == '}')
+                    break;
 
-                if (json[idx] == ',') { idx++; SkipWhitespace(json, ref idx); }
+                if (json[idx] == ',')
+                { idx++; SkipWhitespace(json, ref idx); }
 
                 string key = ReadString(json, ref idx);
                 SkipWhitespace(json, ref idx);
@@ -101,7 +106,8 @@ namespace SteelBIM.Licensing
 
         private static void SkipWhitespace(string s, ref int i)
         {
-            while (i < s.Length && char.IsWhiteSpace(s[i])) i++;
+            while (i < s.Length && char.IsWhiteSpace(s[i]))
+                i++;
         }
 
         private static string ReadString(string s, ref int i)
@@ -138,22 +144,26 @@ namespace SteelBIM.Licensing
         private static long ReadLong(string s, ref int i)
         {
             int start = i;
-            if (i < s.Length && s[i] == '-') i++;
-            while (i < s.Length && s[i] >= '0' && s[i] <= '9') i++;
+            if (i < s.Length && s[i] == '-')
+                i++;
+            while (i < s.Length && s[i] >= '0' && s[i] <= '9')
+                i++;
             string slice = s.Substring(start, i - start);
             return long.Parse(slice, CultureInfo.InvariantCulture);
         }
 
         private static void SkipValue(string s, ref int i)
         {
-            if (i >= s.Length) return;
+            if (i >= s.Length)
+                return;
             if (s[i] == '"')
             {
                 ReadString(s, ref i);
             }
             else
             {
-                while (i < s.Length && s[i] != ',' && s[i] != '}') i++;
+                while (i < s.Length && s[i] != ',' && s[i] != '}')
+                    i++;
             }
         }
 
@@ -163,12 +173,24 @@ namespace SteelBIM.Licensing
             {
                 switch (c)
                 {
-                    case '"': sb.Append("\\\""); break;
-                    case '\\': sb.Append("\\\\"); break;
-                    case '\n': sb.Append("\\n"); break;
-                    case '\r': sb.Append("\\r"); break;
-                    case '\t': sb.Append("\\t"); break;
-                    default: sb.Append(c); break;
+                    case '"':
+                        sb.Append("\\\"");
+                        break;
+                    case '\\':
+                        sb.Append("\\\\");
+                        break;
+                    case '\n':
+                        sb.Append("\\n");
+                        break;
+                    case '\r':
+                        sb.Append("\\r");
+                        break;
+                    case '\t':
+                        sb.Append("\\t");
+                        break;
+                    default:
+                        sb.Append(c);
+                        break;
                 }
             }
         }

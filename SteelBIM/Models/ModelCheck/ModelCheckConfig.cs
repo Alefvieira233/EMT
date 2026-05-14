@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace SteelBIM.Models.ModelCheck
 {
@@ -76,16 +76,26 @@ namespace SteelBIM.Models.ModelCheck
         public int GetEnabledRulesCount()
         {
             int count = 0;
-            if (RunMissingMaterial) count++;
-            if (RunMissingMark) count++;
-            if (RunDuplicateMark) count++;
-            if (RunOverlappingElements) count++;
-            if (RunMissingProfile) count++;
-            if (RunZeroLength) count++;
-            if (RunMissingLevel) count++;
-            if (RunStructuralWithoutType) count++;
-            if (RunMissingComment) count++;
-            if (RunOrphanGroup) count++;
+            if (RunMissingMaterial)
+                count++;
+            if (RunMissingMark)
+                count++;
+            if (RunDuplicateMark)
+                count++;
+            if (RunOverlappingElements)
+                count++;
+            if (RunMissingProfile)
+                count++;
+            if (RunZeroLength)
+                count++;
+            if (RunMissingLevel)
+                count++;
+            if (RunStructuralWithoutType)
+                count++;
+            if (RunMissingComment)
+                count++;
+            if (RunOrphanGroup)
+                count++;
             if (RunTitleBlockParameters && TitleBlockParameters != null)
                 count += TitleBlockParameters.Count;
             return count;

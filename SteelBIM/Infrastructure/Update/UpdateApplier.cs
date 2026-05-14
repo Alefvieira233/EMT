@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -159,7 +159,8 @@ namespace SteelBIM.Infrastructure.Update
             catch (Exception ex)
             {
                 UpdateLog.WarnException(ex, "[Update] falha ao re-validar SHA256", EmptyArgs);
-                if (ex is IOException) UpdateSession.RecordIoFailure("apply-revalidate-hash");
+                if (ex is IOException)
+                    UpdateSession.RecordIoFailure("apply-revalidate-hash");
                 TryDelete(chosenPath);
                 return ApplyResult.InvalidMarker;
             }
@@ -174,7 +175,8 @@ namespace SteelBIM.Infrastructure.Update
             }
 
             string backupDir = _installDirectory + ".bak";
-            try { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); }
+            try
+            { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); }
             catch { /* best effort */ }
 
             try
@@ -191,7 +193,8 @@ namespace SteelBIM.Infrastructure.Update
             catch (Exception ex)
             {
                 UpdateLog.WarnException(ex, "[Update] falha ao fazer backup do install dir", EmptyArgs);
-                if (ex is IOException) UpdateSession.RecordIoFailure("apply-backup");
+                if (ex is IOException)
+                    UpdateSession.RecordIoFailure("apply-backup");
                 TryDelete(chosenPath);
                 return ApplyResult.InvalidMarker;
             }
@@ -209,13 +212,15 @@ namespace SteelBIM.Infrastructure.Update
             catch (Exception ex)
             {
                 UpdateLog.WarnException(ex, "[Update] falha ao extrair .zip — restaurando backup", EmptyArgs);
-                if (ex is IOException) UpdateSession.RecordIoFailure("apply-extract");
+                if (ex is IOException)
+                    UpdateSession.RecordIoFailure("apply-extract");
                 RestoreBackup(backupDir);
                 TryDelete(chosenPath);
                 return ApplyResult.InvalidMarker;
             }
 
-            try { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); }
+            try
+            { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); }
             catch { /* best effort */ }
             TryDelete(chosen.ZipPath);
             TryDelete(chosenPath);
@@ -283,7 +288,8 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static bool IsFileInUseException(IOException ex)
         {
-            if (ex == null) return false;
+            if (ex == null)
+                return false;
             int hr = ex.HResult & 0xFFFF;
             return hr == 32 || hr == 33;
         }
@@ -292,8 +298,11 @@ namespace SteelBIM.Infrastructure.Update
 
         private static void TryDelete(string path)
         {
-            if (string.IsNullOrEmpty(path)) return;
-            try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort */ }
+            if (string.IsNullOrEmpty(path))
+                return;
+            try
+            { if (File.Exists(path)) File.Delete(path); }
+            catch { /* best effort */ }
         }
     }
 }

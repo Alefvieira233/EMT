@@ -15,6 +15,31 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.0.2] - 2026-05-14
+
+### Fixed
+- Renomeacao residual do rebrand v2.0.0: variaveis de ambiente
+  `EMT_CODESIGN_CERT_PFX`, `EMT_CODESIGN_CERT_PASSWORD` e
+  `EMT_CODESIGN_TIMESTAMP_URL` renomeadas para `STEELBIM_CODESIGN_*`
+  em `SteelBIM/installer/Build-SetupExe.ps1`, `docs/CODE-SIGNING.md`,
+  `docs/ADR/009-code-signing.md` e comentario em `.gitignore`.
+  Necessario antes de configurar cert de assinatura digital no GitHub
+  Actions. **Nota:** `EMT_CODESIGN_SIGNTOOL` nao foi renomeada — fora
+  do escopo deste hotfix; sera tratada em v2.0.3+.
+- `dotnet format` em `SteelBIM.Tests/` agora passa sem erros: 162
+  arquivos .cs com violacoes de whitespace/BOM/single-line-if foram
+  normalizados. O `continue-on-error: true` que mascarava o problema
+  foi removido de `.github/workflows/build.yml:83` — formatting
+  quebrado agora falha honesto na CI.
+
+### Changed
+- `PfNamingService`: variavel `vigaHorizontalNoEixoX` renomeada para
+  `vigaAlinhadaComEixoY`. Nome anterior contradizia a semantica do
+  `GetBeamAxisGroup` (grupo 1 = viga vertical na vista, nao horizontal).
+  Logica intacta — apenas naming.
+
+---
+
 ## [2.0.1] - 2026-05-13
 
 ### Fixed

@@ -1,5 +1,5 @@
+﻿using FluentAssertions;
 using SteelBIM.Infrastructure.Update;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Update

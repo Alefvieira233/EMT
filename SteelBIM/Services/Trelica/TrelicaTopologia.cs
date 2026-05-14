@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,21 +36,26 @@ namespace SteelBIM.Services.Trelica
         /// <param name="nosSuperior">Lista de (x, z) dos nos do banzo superior ordenados por x.</param>
         public static Topologia Detectar(IReadOnlyList<(double X, double Z)> nosSuperior)
         {
-            if (nosSuperior is null) throw new ArgumentNullException(nameof(nosSuperior));
-            if (nosSuperior.Count < 2) return Topologia.Desconhecida;
+            if (nosSuperior is null)
+                throw new ArgumentNullException(nameof(nosSuperior));
+            if (nosSuperior.Count < 2)
+                return Topologia.Desconhecida;
 
             double vao = nosSuperior[^1].X - nosSuperior[0].X;
-            if (vao <= 0) return Topologia.Desconhecida;
+            if (vao <= 0)
+                return Topologia.Desconhecida;
             double tolZ = vao * TolRelativaVao;
 
             double zMin = nosSuperior.Min(p => p.Z);
             double zMax = nosSuperior.Max(p => p.Z);
-            if (zMax - zMin <= tolZ) return Topologia.Plana;
+            if (zMax - zMin <= tolZ)
+                return Topologia.Plana;
 
             // Acha o indice do pico
             int idxPico = 0;
             for (int i = 1; i < nosSuperior.Count; i++)
-                if (nosSuperior[i].Z > nosSuperior[idxPico].Z) idxPico = i;
+                if (nosSuperior[i].Z > nosSuperior[idxPico].Z)
+                    idxPico = i;
 
             // Se o pico e a extremidade -> shed (monotonico)
             if (idxPico == 0 || idxPico == nosSuperior.Count - 1)
@@ -59,13 +64,16 @@ namespace SteelBIM.Services.Trelica
             // Caso contrario, sobe ate o pico e desce -> duas aguas
             bool subiuAteOPico = true;
             for (int i = 1; i <= idxPico; i++)
-                if (nosSuperior[i].Z + tolZ < nosSuperior[i - 1].Z) { subiuAteOPico = false; break; }
+                if (nosSuperior[i].Z + tolZ < nosSuperior[i - 1].Z)
+                { subiuAteOPico = false; break; }
 
             bool desceuDepoisDoPico = true;
             for (int i = idxPico + 1; i < nosSuperior.Count; i++)
-                if (nosSuperior[i].Z > nosSuperior[i - 1].Z + tolZ) { desceuDepoisDoPico = false; break; }
+                if (nosSuperior[i].Z > nosSuperior[i - 1].Z + tolZ)
+                { desceuDepoisDoPico = false; break; }
 
-            if (subiuAteOPico && desceuDepoisDoPico) return Topologia.DuasAguas;
+            if (subiuAteOPico && desceuDepoisDoPico)
+                return Topologia.DuasAguas;
             return Topologia.Desconhecida;
         }
     }

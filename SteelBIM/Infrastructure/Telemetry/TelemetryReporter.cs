@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using SteelBIM.Infrastructure.Privacy;
 using SteelBIM.Models.Privacy;
@@ -137,7 +137,8 @@ namespace SteelBIM.Infrastructure.Telemetry
                     }
 
                     ITelemetryClient client;
-                    try { client = ClientFactory(); }
+                    try
+                    { client = ClientFactory(); }
                     catch (Exception fEx)
                     {
                         SafeLogWarn(fEx, "[Telemetry] client factory falhou");
@@ -188,11 +189,15 @@ namespace SteelBIM.Infrastructure.Telemetry
         /// </summary>
         public static void Track(TelemetryEvent evt)
         {
-            if (!IsEnabled) return;
-            if (evt == null) return;
-            if (_client == null) return;
+            if (!IsEnabled)
+                return;
+            if (evt == null)
+                return;
+            if (_client == null)
+                return;
 
-            try { _client.Track(evt); }
+            try
+            { _client.Track(evt); }
             catch (Exception ex)
             {
                 SafeLogWarn(ex, "[Telemetry] Track falhou");
@@ -205,8 +210,10 @@ namespace SteelBIM.Infrastructure.Telemetry
         /// </summary>
         public static void Flush(int timeoutMs = 2000)
         {
-            if (!IsEnabled) return;
-            if (_client == null) return;
+            if (!IsEnabled)
+                return;
+            if (_client == null)
+                return;
 
             try
             {
@@ -222,7 +229,8 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         internal static void OverrideClientForTests(ITelemetryClient fake)
         {
-            lock (_lock) { _client = fake; }
+            lock (_lock)
+            { _client = fake; }
         }
 
         internal static void ResetForTests()
@@ -247,29 +255,37 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static PrivacySettings SafeLoadSettings()
         {
-            try { return PrivacyStore?.Load(); }
+            try
+            { return PrivacyStore?.Load(); }
             catch { return null; }
         }
 
         private static string SafeResolveLicenseState()
         {
-            try { return LicenseStateResolver?.Invoke() ?? "Unknown"; }
+            try
+            { return LicenseStateResolver?.Invoke() ?? "Unknown"; }
             catch { return "Unknown"; }
         }
 
         private static void SafeLogInfo(string message)
         {
-            try { LogInfo?.Invoke(message); } catch { }
+            try
+            { LogInfo?.Invoke(message); }
+            catch { }
         }
 
         private static void SafeLogInfoTemplate(string template, object[] args)
         {
-            try { LogInfoTemplate?.Invoke(template, args); } catch { }
+            try
+            { LogInfoTemplate?.Invoke(template, args); }
+            catch { }
         }
 
         private static void SafeLogWarn(Exception ex, string message)
         {
-            try { LogWarn?.Invoke(ex, message); } catch { }
+            try
+            { LogWarn?.Invoke(ex, message); }
+            catch { }
         }
     }
 }

@@ -1,5 +1,5 @@
+﻿using FluentAssertions;
 using SteelBIM.Models.PF;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Models.PF
@@ -78,7 +78,8 @@ namespace SteelBIM.Tests.Models.PF
             string resumo = r.ToResumo();
             int countDashes = 0;
             int idx = 0;
-            while ((idx = resumo.IndexOf("\n- ", idx)) >= 0) { countDashes++; idx++; }
+            while ((idx = resumo.IndexOf("\n- ", idx)) >= 0)
+            { countDashes++; idx++; }
 
             countDashes.Should().Be(10);
         }

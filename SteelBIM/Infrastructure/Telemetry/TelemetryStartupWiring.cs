@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using SteelBIM.Infrastructure.Privacy;
 
 namespace SteelBIM.Infrastructure.Telemetry

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.Json;
 
 namespace SteelBIM.Infrastructure.Update
@@ -45,7 +45,8 @@ namespace SteelBIM.Infrastructure.Update
 
         public static string Serialize(UpdateMarker marker)
         {
-            if (marker == null) throw new ArgumentNullException("marker");
+            if (marker == null)
+                throw new ArgumentNullException("marker");
             return JsonSerializer.Serialize(marker, WriteOptions);
         }
 
@@ -55,12 +56,14 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static UpdateMarker DeserializeOrNull(string json)
         {
-            if (string.IsNullOrWhiteSpace(json)) return null;
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
 
             try
             {
                 UpdateMarker parsed = JsonSerializer.Deserialize<UpdateMarker>(json);
-                if (parsed == null || string.IsNullOrWhiteSpace(parsed.Version)) return null;
+                if (parsed == null || string.IsNullOrWhiteSpace(parsed.Version))
+                    return null;
                 return parsed;
             }
             catch (JsonException)

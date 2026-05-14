@@ -1,9 +1,9 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using Xunit;
 using FluentAssertions;
 using SteelBIM.Services.Trelica;
+using Xunit;
 
 namespace SteelBIM.Tests.Services.Trelica
 {

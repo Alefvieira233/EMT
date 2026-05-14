@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 
 namespace SteelBIM.Services.Montagem
@@ -26,17 +26,22 @@ namespace SteelBIM.Services.Montagem
         /// <returns>Numero da etapa (positivo) ou 0 se nao encontrado/invalido.</returns>
         public static int Parse(string? texto)
         {
-            if (string.IsNullOrEmpty(texto)) return 0;
+            if (string.IsNullOrEmpty(texto))
+                return 0;
 
             int idx = texto.IndexOf(Prefixo, StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return 0;
+            if (idx < 0)
+                return 0;
 
             string resto = texto.Substring(idx + Prefixo.Length);
             int fim = 0;
-            while (fim < resto.Length && char.IsDigit(resto[fim])) fim++;
-            if (fim == 0) return 0;
+            while (fim < resto.Length && char.IsDigit(resto[fim]))
+                fim++;
+            if (fim == 0)
+                return 0;
 
-            if (!int.TryParse(resto.Substring(0, fim), out int etapa)) return 0;
+            if (!int.TryParse(resto.Substring(0, fim), out int etapa))
+                return 0;
             return etapa > 0 ? etapa : 0;
         }
 

@@ -1,6 +1,6 @@
-using System;
-using SteelBIM.Core;
+﻿using System;
 using FluentAssertions;
+using SteelBIM.Core;
 using Xunit;
 
 namespace SteelBIM.Tests.Core

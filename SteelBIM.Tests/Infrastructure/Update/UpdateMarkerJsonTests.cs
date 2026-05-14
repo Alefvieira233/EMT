@@ -1,6 +1,6 @@
-using System;
-using SteelBIM.Infrastructure.Update;
+﻿using System;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Update;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Update

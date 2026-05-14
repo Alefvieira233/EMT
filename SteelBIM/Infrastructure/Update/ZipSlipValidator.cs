@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 
@@ -20,21 +20,26 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static bool IsSafeEntryName(string entryName)
         {
-            if (string.IsNullOrEmpty(entryName)) return false;
+            if (string.IsNullOrEmpty(entryName))
+                return false;
 
             // Path absoluto (Unix-style)
-            if (entryName.StartsWith("/", StringComparison.Ordinal)) return false;
-            if (entryName.StartsWith("\\", StringComparison.Ordinal)) return false;
+            if (entryName.StartsWith("/", StringComparison.Ordinal))
+                return false;
+            if (entryName.StartsWith("\\", StringComparison.Ordinal))
+                return false;
 
             // Path absoluto (Windows com drive)
-            if (entryName.Length >= 2 && entryName[1] == ':') return false;
+            if (entryName.Length >= 2 && entryName[1] == ':')
+                return false;
 
             // ".." em qualquer segmento (separados por / ou \)
             string normalized = entryName.Replace('\\', '/');
             string[] segments = normalized.Split('/');
             foreach (string seg in segments)
             {
-                if (seg == "..") return false;
+                if (seg == "..")
+                    return false;
             }
 
             return true;
@@ -47,7 +52,8 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static bool AllEntriesSafe(ZipArchive archive)
         {
-            if (archive == null) throw new ArgumentNullException("archive");
+            if (archive == null)
+                throw new ArgumentNullException("archive");
 
             foreach (ZipArchiveEntry entry in archive.Entries)
             {

@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Linq;
-using Xunit;
 using FluentAssertions;
 using SteelBIM.Models.ModelCheck;
+using Xunit;
 
 namespace SteelBIM.Tests.Services.ModelCheck
 {

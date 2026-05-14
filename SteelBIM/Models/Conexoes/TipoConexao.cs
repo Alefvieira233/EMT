@@ -1,4 +1,4 @@
-namespace SteelBIM.Models.Conexoes
+﻿namespace SteelBIM.Models.Conexoes
 {
     /// <summary>Tipo de conexão estrutural entre elementos metálicos.</summary>
     public enum TipoConexao

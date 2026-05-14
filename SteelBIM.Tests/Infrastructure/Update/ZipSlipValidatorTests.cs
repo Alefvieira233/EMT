@@ -1,8 +1,8 @@
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Text;
-using SteelBIM.Infrastructure.Update;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Update;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Update

@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using SteelBIM.Infrastructure.Telemetry;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Telemetry;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Telemetry

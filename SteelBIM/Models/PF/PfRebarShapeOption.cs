@@ -1,4 +1,4 @@
-namespace SteelBIM.Models.PF
+﻿namespace SteelBIM.Models.PF
 {
     public sealed class PfRebarShapeOption
     {

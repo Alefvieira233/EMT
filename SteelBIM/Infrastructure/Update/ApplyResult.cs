@@ -1,4 +1,4 @@
-namespace SteelBIM.Infrastructure.Update
+﻿namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Resultado de uma chamada a <see cref="UpdateApplier.ApplyPendingIfAny"/>.

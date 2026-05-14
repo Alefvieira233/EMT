@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using SteelBIM.Core;
 using FluentAssertions;
+using SteelBIM.Core;
 using Xunit;
 
 namespace SteelBIM.Tests.Core

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -99,7 +99,8 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static string SafeReadEnvVar()
         {
-            try { return Environment.GetEnvironmentVariable(EnvVarName); }
+            try
+            { return Environment.GetEnvironmentVariable(EnvVarName); }
             catch { return null; }
         }
 
@@ -108,7 +109,8 @@ namespace SteelBIM.Infrastructure.Telemetry
             try
             {
                 string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                if (string.IsNullOrWhiteSpace(root)) return null;
+                if (string.IsNullOrWhiteSpace(root))
+                    return null;
                 return Path.Combine(root, "SteelBIM", ApiKeyFileName);
             }
             catch { return null; }
@@ -119,7 +121,8 @@ namespace SteelBIM.Infrastructure.Telemetry
             try
             {
                 string dir = Path.GetDirectoryName(typeof(PostHogApiKeyProvider).Assembly.Location);
-                if (string.IsNullOrWhiteSpace(dir)) return null;
+                if (string.IsNullOrWhiteSpace(dir))
+                    return null;
                 return Path.Combine(dir, ApiKeyFileName);
             }
             catch { return null; }
@@ -127,8 +130,10 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static string SafeReadFile(string path)
         {
-            if (string.IsNullOrWhiteSpace(path)) return null;
-            try { return File.ReadAllText(path); }
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+            try
+            { return File.ReadAllText(path); }
             catch (FileNotFoundException) { return null; }
             catch (DirectoryNotFoundException) { return null; }
             catch { return null; }
@@ -143,9 +148,11 @@ namespace SteelBIM.Infrastructure.Telemetry
             offendingPath = null;
             foreach (string candidate in new[] { TryBuildLocalAppDataPath(), TryBuildAssemblyAdjacentPath() })
             {
-                if (string.IsNullOrWhiteSpace(candidate)) continue;
+                if (string.IsNullOrWhiteSpace(candidate))
+                    continue;
                 string raw;
-                try { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
+                try
+                { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
                 catch { continue; }
                 if (raw != null && string.IsNullOrWhiteSpace(raw))
                 {

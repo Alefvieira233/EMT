@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Net.Http;
 using System.Text;
@@ -54,7 +54,8 @@ namespace SteelBIM.Infrastructure.Telemetry
             Action<Exception, string> logWarnException = null,
             Action<string, object[]> logWarnTemplate = null)
         {
-            if (http == null) throw new ArgumentNullException(nameof(http));
+            if (http == null)
+                throw new ArgumentNullException(nameof(http));
             _http = http;
             _apiKey = apiKey ?? string.Empty;
             _host = NormalizeHost(host);
@@ -77,16 +78,20 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         public void Track(TelemetryEvent evt)
         {
-            if (!IsEnabled) return;
-            if (evt == null) return;
+            if (!IsEnabled)
+                return;
+            if (evt == null)
+                return;
 
             // Sample rate: command.executed:success vai a 10%, resto 100%.
-            if (!SamplingDecider.ShouldSend(evt)) return;
+            if (!SamplingDecider.ShouldSend(evt))
+                return;
 
             string licenseState = SafeResolveLicenseState();
             TelemetryEvent enriched = TelemetryOptionsBuilder.ScrubAndTag(
                 evt, _release, licenseState, _sessionId);
-            if (enriched == null) return;
+            if (enriched == null)
+                return;
 
             // Anonymous type: fields ja em snake_case porque
             // JsonNamingPolicy.SnakeCaseLower esta ativo, MAS escolhi
@@ -136,13 +141,15 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private string SafeResolveLicenseState()
         {
-            try { return _licenseStateResolver() ?? "Unknown"; }
+            try
+            { return _licenseStateResolver() ?? "Unknown"; }
             catch { return "Unknown"; }
         }
 
         private static string NormalizeHost(string host)
         {
-            if (string.IsNullOrWhiteSpace(host)) return "https://eu.posthog.com";
+            if (string.IsNullOrWhiteSpace(host))
+                return "https://eu.posthog.com";
             string trimmed = host.Trim().TrimEnd('/');
             // Aceita "eu.posthog.com" sem schema, vira "https://...".
             if (!trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Threading;
 
@@ -73,14 +73,17 @@ namespace SteelBIM.Core
         /// <summary>Report com throttle — pode ser descartado se vier dentro do intervalo.</summary>
         public void Report(int current, int total, string message = null)
         {
-            if (_inner == null) return;
+            if (_inner == null)
+                return;
 
             long now = _watch.ElapsedMilliseconds;
             long last = Interlocked.Read(ref _lastEmitMs);
-            if (now - last < _throttleMs) return;
+            if (now - last < _throttleMs)
+                return;
 
             // Tentativa unica de reservar o slot de emit — se outro thread ganhou, nao emite.
-            if (Interlocked.CompareExchange(ref _lastEmitMs, now, last) != last) return;
+            if (Interlocked.CompareExchange(ref _lastEmitMs, now, last) != last)
+                return;
 
             _inner.Report(new ProgressReport(current, total, message));
         }
@@ -88,7 +91,8 @@ namespace SteelBIM.Core
         /// <summary>Report que sempre propaga (ignora throttle). Use para etapa final ou marcos criticos.</summary>
         public void ReportFinal(int current, int total, string message = null)
         {
-            if (_inner == null) return;
+            if (_inner == null)
+                return;
             Interlocked.Exchange(ref _lastEmitMs, _watch.ElapsedMilliseconds);
             _inner.Report(new ProgressReport(current, total, message));
         }

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +31,8 @@ namespace SteelBIM.Services.Trelica
         /// <returns>Lista de larguras dos paineis, em pes, na ordem do banzo.</returns>
         public static IReadOnlyList<double> LarguraDosPaineis(IEnumerable<double> xNos)
         {
-            if (xNos is null) throw new ArgumentNullException(nameof(xNos));
+            if (xNos is null)
+                throw new ArgumentNullException(nameof(xNos));
             var ordenados = xNos.OrderBy(x => x).ToList();
             var limpos = new List<double>();
             foreach (var x in ordenados)
@@ -50,9 +51,11 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         public static double VaoTotal(IEnumerable<double> xNos)
         {
-            if (xNos is null) throw new ArgumentNullException(nameof(xNos));
+            if (xNos is null)
+                throw new ArgumentNullException(nameof(xNos));
             var lista = xNos.ToList();
-            if (lista.Count < 2) return 0.0;
+            if (lista.Count < 2)
+                return 0.0;
             return lista.Max() - lista.Min();
         }
 
@@ -66,9 +69,12 @@ namespace SteelBIM.Services.Trelica
             Func<double, double> zSuperior,
             Func<double, double> zInferior)
         {
-            if (xEstacoes is null) throw new ArgumentNullException(nameof(xEstacoes));
-            if (zSuperior is null) throw new ArgumentNullException(nameof(zSuperior));
-            if (zInferior is null) throw new ArgumentNullException(nameof(zInferior));
+            if (xEstacoes is null)
+                throw new ArgumentNullException(nameof(xEstacoes));
+            if (zSuperior is null)
+                throw new ArgumentNullException(nameof(zSuperior));
+            if (zInferior is null)
+                throw new ArgumentNullException(nameof(zInferior));
             return xEstacoes.Select(x => Math.Max(0.0, zSuperior(x) - zInferior(x))).ToList();
         }
 
@@ -78,7 +84,8 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         public static (double xEsq, double xDir) ExtremosApoio(IEnumerable<double> xBanzoInferior)
         {
-            if (xBanzoInferior is null) throw new ArgumentNullException(nameof(xBanzoInferior));
+            if (xBanzoInferior is null)
+                throw new ArgumentNullException(nameof(xBanzoInferior));
             var lista = xBanzoInferior.ToList();
             if (lista.Count < 2)
                 throw new ArgumentException("Banzo inferior precisa de pelo menos 2 nos.", nameof(xBanzoInferior));

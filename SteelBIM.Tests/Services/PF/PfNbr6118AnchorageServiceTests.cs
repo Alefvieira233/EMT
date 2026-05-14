@@ -1,7 +1,7 @@
-using System;
+﻿using System;
+using FluentAssertions;
 using SteelBIM.Models.PF;
 using SteelBIM.Services.PF;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.PF

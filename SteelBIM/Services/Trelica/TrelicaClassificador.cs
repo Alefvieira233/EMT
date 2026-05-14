@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 
 namespace SteelBIM.Services.Trelica
@@ -53,10 +53,13 @@ namespace SteelBIM.Services.Trelica
         /// <returns><see cref="TipoMembro.BanzoIndefinido"/>, <see cref="TipoMembro.Montante"/> ou <see cref="TipoMembro.Diagonal"/>.</returns>
         public static TipoMembro ClassificarPorInclinacao(double inclinacaoAbsRad)
         {
-            if (double.IsNaN(inclinacaoAbsRad)) return TipoMembro.Indefinido;
+            if (double.IsNaN(inclinacaoAbsRad))
+                return TipoMembro.Indefinido;
             double abs = Math.Abs(inclinacaoAbsRad);
-            if (abs <= TolInclinacaoBanzoRad) return TipoMembro.BanzoIndefinido;
-            if (abs >= TolInclinacaoMontanteRad) return TipoMembro.Montante;
+            if (abs <= TolInclinacaoBanzoRad)
+                return TipoMembro.BanzoIndefinido;
+            if (abs >= TolInclinacaoMontanteRad)
+                return TipoMembro.Montante;
             return TipoMembro.Diagonal;
         }
 
@@ -73,8 +76,10 @@ namespace SteelBIM.Services.Trelica
             double tolZPes = TolDesempateZPes)
         {
             double delta = zMedioBarra - zMedioTrelica;
-            if (delta > tolZPes) return TipoMembro.BanzoSuperior;
-            if (delta < -tolZPes) return TipoMembro.BanzoInferior;
+            if (delta > tolZPes)
+                return TipoMembro.BanzoSuperior;
+            if (delta < -tolZPes)
+                return TipoMembro.BanzoInferior;
             return TipoMembro.BanzoIndefinido;
         }
     }

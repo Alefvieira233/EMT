@@ -1,4 +1,4 @@
-namespace SteelBIM.Models.ModelCheck
+﻿namespace SteelBIM.Models.ModelCheck
 {
     /// <summary>
     /// Severidade de um problema encontrado pela verificacao de modelo.

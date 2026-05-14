@@ -1,5 +1,5 @@
+﻿using FluentAssertions;
 using SteelBIM.Models.PF;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Models.PF

@@ -1,6 +1,6 @@
+﻿using FluentAssertions;
 using SteelBIM.Models.CncExport;
 using SteelBIM.Services.CncExport;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.CncExport

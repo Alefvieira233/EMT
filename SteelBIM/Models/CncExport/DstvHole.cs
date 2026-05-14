@@ -1,4 +1,4 @@
-namespace SteelBIM.Models.CncExport
+﻿namespace SteelBIM.Models.CncExport
 {
     /// <summary>
     /// Codigo de face DSTV onde o furo (ou contorno) esta posicionado.

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using SteelBIM.Infrastructure.Privacy;
@@ -32,8 +32,10 @@ namespace SteelBIM.Infrastructure.Update
             string currentVersion,
             Func<DateTime> utcNow = null)
         {
-            if (provider == null) throw new ArgumentNullException("provider");
-            if (settingsStore == null) throw new ArgumentNullException("settingsStore");
+            if (provider == null)
+                throw new ArgumentNullException("provider");
+            if (settingsStore == null)
+                throw new ArgumentNullException("settingsStore");
             if (string.IsNullOrWhiteSpace(currentVersion))
                 throw new ArgumentException("currentVersion obrigatoria", "currentVersion");
 

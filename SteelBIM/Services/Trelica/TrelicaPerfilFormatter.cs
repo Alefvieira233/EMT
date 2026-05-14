@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 
 namespace SteelBIM.Services.Trelica
@@ -29,9 +29,11 @@ namespace SteelBIM.Services.Trelica
         /// <param name="multiplicador">Numero de pecas paralelas (1=simples, 2=dupla).</param>
         public static string Formatar(string? nomeTipo, int multiplicador = 1)
         {
-            if (string.IsNullOrWhiteSpace(nomeTipo)) return Placeholder;
+            if (string.IsNullOrWhiteSpace(nomeTipo))
+                return Placeholder;
             string limpo = Normalizar(nomeTipo!);
-            if (multiplicador <= 1) return limpo;
+            if (multiplicador <= 1)
+                return limpo;
             return $"{multiplicador}x {limpo}";
         }
 
@@ -40,7 +42,8 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         public static string Normalizar(string nomeTipo)
         {
-            if (string.IsNullOrWhiteSpace(nomeTipo)) return Placeholder;
+            if (string.IsNullOrWhiteSpace(nomeTipo))
+                return Placeholder;
             return nomeTipo.Trim().Replace("  ", " ");
         }
 
@@ -51,7 +54,8 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         public static bool EhCantoneira(string? nomeTipo)
         {
-            if (string.IsNullOrWhiteSpace(nomeTipo)) return false;
+            if (string.IsNullOrWhiteSpace(nomeTipo))
+                return false;
             string s = nomeTipo!.Trim();
             return s.StartsWith("L ", StringComparison.OrdinalIgnoreCase)
                 || s.StartsWith("L-", StringComparison.OrdinalIgnoreCase)

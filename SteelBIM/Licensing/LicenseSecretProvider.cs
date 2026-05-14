@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -107,7 +107,9 @@ namespace SteelBIM.Licensing
                 // (em App.cs) que cair no legado eh "warn-worthy". Nao referenciamos
                 // Logger aqui direto porque LicenseSecretProvider.cs eh linkado em
                 // tools/EmtKeyGen e SteelBIM.Tests, que nao tem Logger no contexto.
-                try { Console.Error.WriteLine("[License] HMAC secret resolvido do path legado FerramentaEMT — mover para %LOCALAPPDATA%\\SteelBIM\\license.secret."); } catch { }
+                try
+                { Console.Error.WriteLine("[License] HMAC secret resolvido do path legado FerramentaEMT — mover para %LOCALAPPDATA%\\SteelBIM\\license.secret."); }
+                catch { }
                 source = SecretSource.LegacyLocalAppDataFile;
                 return fromLegacy.Trim();
             }
@@ -210,9 +212,11 @@ namespace SteelBIM.Licensing
             offendingPath = null;
             foreach (string candidate in new[] { TryBuildLocalAppDataPath(), TryBuildAssemblyAdjacentPath() })
             {
-                if (string.IsNullOrWhiteSpace(candidate)) continue;
+                if (string.IsNullOrWhiteSpace(candidate))
+                    continue;
                 string raw;
-                try { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
+                try
+                { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
                 catch { continue; }
                 if (raw != null && string.IsNullOrWhiteSpace(raw))
                 {

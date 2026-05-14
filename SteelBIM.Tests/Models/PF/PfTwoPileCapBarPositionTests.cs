@@ -1,7 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading;
-using SteelBIM.Models.PF;
 using FluentAssertions;
+using SteelBIM.Models.PF;
 using Xunit;
 
 namespace SteelBIM.Tests.Models.PF

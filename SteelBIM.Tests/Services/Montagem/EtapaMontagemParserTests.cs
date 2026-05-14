@@ -1,6 +1,6 @@
-#nullable enable
-using SteelBIM.Services.Montagem;
+﻿#nullable enable
 using FluentAssertions;
+using SteelBIM.Services.Montagem;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.Montagem

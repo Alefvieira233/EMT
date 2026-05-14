@@ -1,4 +1,4 @@
-namespace SteelBIM.Infrastructure.Update
+﻿namespace SteelBIM.Infrastructure.Update
 {
     /// <summary>
     /// Asset de um GitHub Release (arquivo anexado, ex: o .zip ou checksums.txt).

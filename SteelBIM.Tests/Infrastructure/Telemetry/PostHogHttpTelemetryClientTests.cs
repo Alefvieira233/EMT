@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using SteelBIM.Infrastructure.Telemetry;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Telemetry;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Telemetry
@@ -35,7 +35,8 @@ namespace SteelBIM.Tests.Infrastructure.Telemetry
             protected override async Task<HttpResponseMessage> SendAsync(
                 HttpRequestMessage req, CancellationToken ct)
             {
-                if (ThrowOnSend) throw new HttpRequestException("simulated network down");
+                if (ThrowOnSend)
+                    throw new HttpRequestException("simulated network down");
 
                 string body = req.Content != null
                     ? await req.Content.ReadAsStringAsync(ct).ConfigureAwait(false)
@@ -290,12 +291,14 @@ namespace SteelBIM.Tests.Infrastructure.Telemetry
             PostHogHttpTelemetryClient client = NewClient(handler);
 
             // command.failed sempre 100%. Vai postar.
-            for (int i = 0; i < 5; i++) client.Track(FailureEvent());
+            for (int i = 0; i < 5; i++)
+                client.Track(FailureEvent());
 
             // Aguarda alguns serem processados (sao em background)
             for (int i = 0; i < 50; i++)
             {
-                if (handler.RequestCount >= 5) break;
+                if (handler.RequestCount >= 5)
+                    break;
                 Thread.Sleep(50);
             }
 
@@ -320,7 +323,8 @@ namespace SteelBIM.Tests.Infrastructure.Telemetry
             // Aguarda fire-and-forget completar
             for (int i = 0; i < 50; i++)
             {
-                if (warnCount > 0) break;
+                if (warnCount > 0)
+                    break;
                 Thread.Sleep(50);
             }
             warnCount.Should().Be(1, "exception deve ser logada via warn");
@@ -345,7 +349,8 @@ namespace SteelBIM.Tests.Infrastructure.Telemetry
             // Aguarda o warn template ser chamado
             for (int i = 0; i < 50; i++)
             {
-                if (warnTemplateCount > 0) break;
+                if (warnTemplateCount > 0)
+                    break;
                 Thread.Sleep(50);
             }
             warnTemplateCount.Should().Be(1, "401 deve ser logada via warn template");

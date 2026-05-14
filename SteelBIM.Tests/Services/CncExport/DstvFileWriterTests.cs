@@ -1,8 +1,8 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading;
+using FluentAssertions;
 using SteelBIM.Models.CncExport;
 using SteelBIM.Services.CncExport;
-using FluentAssertions;
 using Xunit;
 
 namespace SteelBIM.Tests.Services.CncExport

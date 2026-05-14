@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using SteelBIM.Infrastructure.Telemetry;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Telemetry;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Telemetry
@@ -87,7 +87,8 @@ namespace SteelBIM.Tests.Infrastructure.Telemetry
 
             for (int i = 0; i < 1000; i++)
             {
-                if (SamplingDecider.ShouldSend(evt, rng)) trues++;
+                if (SamplingDecider.ShouldSend(evt, rng))
+                    trues++;
             }
 
             // 10% +- 5pts: aceita [5%, 20%]

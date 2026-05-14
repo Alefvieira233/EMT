@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace SteelBIM.Infrastructure
 {
@@ -56,8 +56,10 @@ namespace SteelBIM.Infrastructure
         /// </summary>
         public static string Scrub(string input)
         {
-            if (input == null) return null;
-            if (input.Length == 0) return input;
+            if (input == null)
+                return null;
+            if (input.Length == 0)
+                return input;
 
             // Ordem nao importa: emails nao casam com pathos, e vice-versa.
             string scrubbed = EmailRegex.Replace(input, "<EMAIL>");

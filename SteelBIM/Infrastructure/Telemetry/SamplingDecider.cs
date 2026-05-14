@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace SteelBIM.Infrastructure.Telemetry
 {
@@ -36,10 +36,13 @@ namespace SteelBIM.Infrastructure.Telemetry
         /// </summary>
         public static bool ShouldSend(TelemetryEvent evt, Random rng = null)
         {
-            if (evt == null) return false;
+            if (evt == null)
+                return false;
             double rate = ResolveRate(evt);
-            if (rate >= 1.0) return true;
-            if (rate <= 0.0) return false;
+            if (rate >= 1.0)
+                return true;
+            if (rate <= 0.0)
+                return false;
             double dice = (rng ?? Random.Shared).NextDouble();
             return dice < rate;
         }
@@ -47,7 +50,8 @@ namespace SteelBIM.Infrastructure.Telemetry
         /// <summary>Sample rate aplicavel ao evento. Util para inspecao em log.</summary>
         public static double ResolveRate(TelemetryEvent evt)
         {
-            if (evt == null) return 0.0;
+            if (evt == null)
+                return 0.0;
             if (evt.Name == EventCommandExecuted)
             {
                 bool isSuccess = ExtractSuccess(evt);
@@ -61,11 +65,14 @@ namespace SteelBIM.Infrastructure.Telemetry
         {
             // Default: assume success quando ausente — semantica "command.executed"
             // sem property eh inconsistente, mas defensivo: 10% sample em vez de 100%.
-            if (evt.Properties == null) return true;
+            if (evt.Properties == null)
+                return true;
             if (!evt.Properties.TryGetValue(SuccessProperty, out object raw) || raw == null)
                 return true;
-            if (raw is bool b) return b;
-            if (raw is string s && bool.TryParse(s, out bool parsed)) return parsed;
+            if (raw is bool b)
+                return b;
+            if (raw is string s && bool.TryParse(s, out bool parsed))
+                return parsed;
             return true;
         }
     }

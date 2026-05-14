@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
@@ -22,7 +22,8 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static string ComputeHex(Stream stream)
         {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null)
+                throw new ArgumentNullException("stream");
 
             using (SHA256 sha = SHA256.Create())
             {
@@ -36,7 +37,8 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static string ComputeHex(byte[] data)
         {
-            if (data == null) throw new ArgumentNullException("data");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
             using (SHA256 sha = SHA256.Create())
             {
@@ -73,26 +75,33 @@ namespace SteelBIM.Infrastructure.Update
         /// </summary>
         public static string FindHashForFile(string checksumsContent, string fileName)
         {
-            if (string.IsNullOrWhiteSpace(checksumsContent)) return null;
-            if (string.IsNullOrWhiteSpace(fileName)) return null;
+            if (string.IsNullOrWhiteSpace(checksumsContent))
+                return null;
+            if (string.IsNullOrWhiteSpace(fileName))
+                return null;
 
             string[] lines = checksumsContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string line in lines)
             {
                 string trimmed = line.Trim();
-                if (trimmed.Length < 65) continue; // 64 hex + 1 space minimum
+                if (trimmed.Length < 65)
+                    continue; // 64 hex + 1 space minimum
 
                 // Hash eh tudo ate o primeiro whitespace
                 int firstWs = -1;
                 for (int i = 0; i < trimmed.Length; i++)
                 {
-                    if (char.IsWhiteSpace(trimmed[i])) { firstWs = i; break; }
+                    if (char.IsWhiteSpace(trimmed[i]))
+                    { firstWs = i; break; }
                 }
-                if (firstWs < 0) continue;
+                if (firstWs < 0)
+                    continue;
 
                 string hash = trimmed.Substring(0, firstWs);
-                if (hash.Length != 64) continue;
-                if (!IsHex(hash)) continue;
+                if (hash.Length != 64)
+                    continue;
+                if (!IsHex(hash))
+                    continue;
 
                 string rest = trimmed.Substring(firstWs).TrimStart();
                 // GNU sha256sum prefixa nome com '*' em modo binario — remover
@@ -115,7 +124,8 @@ namespace SteelBIM.Infrastructure.Update
             {
                 char c = s[i];
                 bool ok = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-                if (!ok) return false;
+                if (!ok)
+                    return false;
             }
             return true;
         }

@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-using Xunit;
+﻿using System.Collections.Generic;
 using FluentAssertions;
 using SteelBIM.Models.ModelCheck;
+using Xunit;
 
 namespace SteelBIM.Tests.Models.ModelCheck
 {

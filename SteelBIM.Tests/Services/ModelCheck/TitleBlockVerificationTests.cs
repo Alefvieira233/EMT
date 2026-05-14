@@ -1,9 +1,9 @@
-#nullable enable
+﻿#nullable enable
 using System.Collections.Generic;
 using System.Linq;
-using Xunit;
 using FluentAssertions;
 using SteelBIM.Models.ModelCheck;
+using Xunit;
 
 namespace SteelBIM.Tests.Services.ModelCheck
 {

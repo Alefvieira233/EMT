@@ -1,6 +1,6 @@
-using System.Text;
-using SteelBIM.Licensing;
+﻿using System.Text;
 using FluentAssertions;
+using SteelBIM.Licensing;
 using Xunit;
 
 namespace SteelBIM.Tests.Licensing

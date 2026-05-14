@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Linq;
-using SteelBIM.Infrastructure.CrashReporting;
-using SteelBIM.Infrastructure.Privacy;
-using SteelBIM.Models.Privacy;
 using FluentAssertions;
 using Moq;
 using Sentry;
+using SteelBIM.Infrastructure.CrashReporting;
+using SteelBIM.Infrastructure.Privacy;
+using SteelBIM.Models.Privacy;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.CrashReporting
@@ -76,7 +76,8 @@ namespace SteelBIM.Tests.Infrastructure.CrashReporting
             // ACT 2: simula o que CrashReporter.DumpCrash faz —
             // SentryReporter.CaptureCrash(ex, kind).
             InvalidOperationException smokeEx;
-            try { throw new InvalidOperationException("smoke"); }
+            try
+            { throw new InvalidOperationException("smoke"); }
             catch (InvalidOperationException caught) { smokeEx = caught; }
             SentryReporter.CaptureCrash(smokeEx, "unhandled");
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -76,7 +76,8 @@ namespace SteelBIM.Infrastructure.Telemetry
             string licenseState,
             string sessionId)
         {
-            if (evt == null) return null;
+            if (evt == null)
+                return null;
 
             IReadOnlyDictionary<string, object> scrubbed = ScrubProperties(evt.Properties);
             Dictionary<string, object> merged = new Dictionary<string, object>(scrubbed);
@@ -93,13 +94,15 @@ namespace SteelBIM.Infrastructure.Telemetry
 
         private static string SafeOsDescription()
         {
-            try { return RuntimeInformation.OSDescription; }
+            try
+            { return RuntimeInformation.OSDescription; }
             catch { return "unknown"; }
         }
 
         private static string SafeCultureName()
         {
-            try { return CultureInfo.CurrentCulture.Name; }
+            try
+            { return CultureInfo.CurrentCulture.Name; }
             catch { return "unknown"; }
         }
     }

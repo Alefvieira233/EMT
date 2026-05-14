@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using SteelBIM.Infrastructure;
 using Sentry;
+using SteelBIM.Infrastructure;
 
 namespace SteelBIM.Infrastructure.CrashReporting
 {
@@ -77,7 +77,8 @@ namespace SteelBIM.Infrastructure.CrashReporting
             string release,
             string licenseState)
         {
-            if (evt == null) return null;
+            if (evt == null)
+                return null;
 
             // 1. Scrubbing de PII em strings que contem mensagens reais.
             ScrubMessage(evt);
@@ -96,7 +97,8 @@ namespace SteelBIM.Infrastructure.CrashReporting
 
         private static void ScrubMessage(SentryEvent evt)
         {
-            if (evt.Message == null) return;
+            if (evt.Message == null)
+                return;
             try
             {
                 if (evt.Message.Message != null)
@@ -113,12 +115,14 @@ namespace SteelBIM.Infrastructure.CrashReporting
 
         private static void ScrubExceptionValues(SentryEvent evt)
         {
-            if (evt.SentryExceptions == null) return;
+            if (evt.SentryExceptions == null)
+                return;
             try
             {
                 foreach (Sentry.Protocol.SentryException sex in evt.SentryExceptions)
                 {
-                    if (sex == null) continue;
+                    if (sex == null)
+                        continue;
                     if (sex.Value != null)
                         sex.Value = PiiScrubber.Scrub(sex.Value);
                 }
@@ -131,20 +135,24 @@ namespace SteelBIM.Infrastructure.CrashReporting
 
         private static string ResolveLicenseStateSafely(Func<string> provider)
         {
-            if (provider == null) return "Unknown";
-            try { return provider() ?? "Unknown"; }
+            if (provider == null)
+                return "Unknown";
+            try
+            { return provider() ?? "Unknown"; }
             catch { return "Unknown"; }
         }
 
         private static string SafeOsDescription()
         {
-            try { return RuntimeInformation.OSDescription; }
+            try
+            { return RuntimeInformation.OSDescription; }
             catch { return "unknown"; }
         }
 
         private static string SafeCultureName()
         {
-            try { return CultureInfo.CurrentCulture.Name; }
+            try
+            { return CultureInfo.CurrentCulture.Name; }
             catch { return "unknown"; }
         }
     }

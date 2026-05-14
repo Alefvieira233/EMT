@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using Xunit;
 using FluentAssertions;
 using SteelBIM.Models.Montagem;
+using Xunit;
 
 namespace SteelBIM.Tests.Services.Montagem
 {

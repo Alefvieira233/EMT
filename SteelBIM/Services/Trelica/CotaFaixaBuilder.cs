@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +84,8 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         public static FaixaCotas FaixaAlturasMontantes(IReadOnlyList<double> xMontantes)
         {
-            if (xMontantes is null) throw new ArgumentNullException(nameof(xMontantes));
+            if (xMontantes is null)
+                throw new ArgumentNullException(nameof(xMontantes));
             var segs = xMontantes.Select(x => new SegmentoCota(x, x, null)).ToList();
             return new FaixaCotas(Faixa.AlturasMontantes, segs, 0.0);
         }
@@ -96,8 +97,10 @@ namespace SteelBIM.Services.Trelica
         /// </summary>
         internal static IReadOnlyList<SegmentoCota> SegmentosConsecutivos(IReadOnlyList<double> xs)
         {
-            if (xs is null) throw new ArgumentNullException(nameof(xs));
-            if (xs.Count < 2) return Array.Empty<SegmentoCota>();
+            if (xs is null)
+                throw new ArgumentNullException(nameof(xs));
+            if (xs.Count < 2)
+                return Array.Empty<SegmentoCota>();
             for (int i = 1; i < xs.Count; i++)
             {
                 if (xs[i] < xs[i - 1])

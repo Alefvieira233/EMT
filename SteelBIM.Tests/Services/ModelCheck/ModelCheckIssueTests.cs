@@ -1,5 +1,5 @@
+﻿using SteelBIM.Models.ModelCheck;
 using Xunit;
-using SteelBIM.Models.ModelCheck;
 
 namespace SteelBIM.Tests.Services.ModelCheck
 {

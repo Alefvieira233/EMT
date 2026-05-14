@@ -1,6 +1,6 @@
-using FluentAssertions;
-using Xunit;
+﻿using FluentAssertions;
 using SteelBIM.Models.Conexoes;
+using Xunit;
 
 namespace SteelBIM.Tests.Models.Conexoes
 {

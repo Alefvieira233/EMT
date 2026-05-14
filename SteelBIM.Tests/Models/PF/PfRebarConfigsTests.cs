@@ -1,6 +1,6 @@
-#nullable enable
-using SteelBIM.Models.PF;
+﻿#nullable enable
 using FluentAssertions;
+using SteelBIM.Models.PF;
 using Xunit;
 
 namespace SteelBIM.Tests.Models.PF

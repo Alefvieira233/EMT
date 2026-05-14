@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
 using SteelBIM.Models.CncExport;
 
@@ -41,11 +41,13 @@ namespace SteelBIM.Services.CncExport
 
             // 1. Verificar nome do tipo primeiro (mais especifico)
             DstvProfileType? byType = MapByDesignation(type);
-            if (byType.HasValue) return byType.Value;
+            if (byType.HasValue)
+                return byType.Value;
 
             // 2. Cair para nome da familia
             DstvProfileType? byFamily = MapByDesignation(family);
-            if (byFamily.HasValue) return byFamily.Value;
+            if (byFamily.HasValue)
+                return byFamily.Value;
 
             // 3. Heuristicas de palavras-chave na familia
             if (family.Contains("WIDE FLANGE") || family.Contains("PERFIL I") || family.Contains("PERFIL H"))
@@ -149,7 +151,8 @@ namespace SteelBIM.Services.CncExport
         private static bool HasDigit(string s)
         {
             for (int i = 0; i < s.Length; i++)
-                if (char.IsDigit(s[i])) return true;
+                if (char.IsDigit(s[i]))
+                    return true;
             return false;
         }
 
@@ -160,10 +163,12 @@ namespace SteelBIM.Services.CncExport
         /// </summary>
         private static bool StartsDigit(string s, string prefix)
         {
-            if (!s.StartsWith(prefix, StringComparison.Ordinal)) return false;
+            if (!s.StartsWith(prefix, StringComparison.Ordinal))
+                return false;
             int i = prefix.Length;
             // tolerar 1 separador ('-' ou espaco) antes do digito
-            if (i < s.Length && (s[i] == '-' || s[i] == ' ')) i++;
+            if (i < s.Length && (s[i] == '-' || s[i] == ' '))
+                i++;
             return i < s.Length && char.IsDigit(s[i]);
         }
     }

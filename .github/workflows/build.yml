@@ -79,5 +79,6 @@ jobs:
 
       - name: Verify formatting (Tests project)
         working-directory: SteelBIM.Tests
+        # Removido continue-on-error em v2.0.2 - apos limpeza de formatting
+        # em SteelBIM.Tests. Build deve falhar honesto se formatting quebrar.
         run: dotnet format --verify-no-changes --verbosity diagnostic
-        continue-on-error: true   # WARNING ONLY for now; flip to fail later

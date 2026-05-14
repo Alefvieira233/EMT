@@ -1,6 +1,6 @@
-using System;
-using SteelBIM.Infrastructure.Telemetry;
+﻿using System;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Telemetry;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Telemetry

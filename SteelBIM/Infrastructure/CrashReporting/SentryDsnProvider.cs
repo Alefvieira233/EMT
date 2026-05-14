@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -184,9 +184,11 @@ namespace SteelBIM.Infrastructure.CrashReporting
             offendingPath = null;
             foreach (string candidate in new[] { TryBuildLocalAppDataPath(), TryBuildAssemblyAdjacentPath() })
             {
-                if (string.IsNullOrWhiteSpace(candidate)) continue;
+                if (string.IsNullOrWhiteSpace(candidate))
+                    continue;
                 string raw;
-                try { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
+                try
+                { raw = File.Exists(candidate) ? File.ReadAllText(candidate) : null; }
                 catch { continue; }
                 if (raw != null && string.IsNullOrWhiteSpace(raw))
                 {

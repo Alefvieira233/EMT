@@ -1,8 +1,8 @@
-using System;
-using Xunit;
+﻿using System;
 using FluentAssertions;
 using SteelBIM.Models.Conexoes;
 using SteelBIM.Services.Conexoes;
+using Xunit;
 
 namespace SteelBIM.Tests.Services.Conexoes
 {

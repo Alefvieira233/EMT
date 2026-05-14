@@ -123,12 +123,12 @@ namespace SteelBIM.Services.PF
 
         private static double OrderHorizontalSnapped(Element x, View view, PfNamingConfig config)
         {
-            bool vigaHorizontalNoEixoX =
+            bool vigaAlinhadaComEixoY =
                 config.Alvo == PfNamingTarget.Vigas &&
                 PfElementService.GetBeamAxisGroup(x, view) == 1;
 
             XYZ p = PfElementService.GetRepresentativePoint(x, view);
-            double raw = vigaHorizontalNoEixoX
+            double raw = vigaAlinhadaComEixoY
                 ? PfElementService.GetHorizontalOrder(view, p)
                 : -PfElementService.GetVerticalOrder(view, p);
 
@@ -137,12 +137,12 @@ namespace SteelBIM.Services.PF
 
         private static double OrderVerticalSnapped(Element x, View view, PfNamingConfig config)
         {
-            bool vigaHorizontalNoEixoX =
+            bool vigaAlinhadaComEixoY =
                 config.Alvo == PfNamingTarget.Vigas &&
                 PfElementService.GetBeamAxisGroup(x, view) == 1;
 
             XYZ p = PfElementService.GetRepresentativePoint(x, view);
-            double raw = vigaHorizontalNoEixoX
+            double raw = vigaAlinhadaComEixoY
                 ? -PfElementService.GetVerticalOrder(view, p)
                 : PfElementService.GetHorizontalOrder(view, p);
 

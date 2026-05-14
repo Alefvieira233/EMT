@@ -31,7 +31,7 @@ P0.1, mesmo antes de ter o certificado fisico em maos.
 Implementar code signing como **skeleton parametrizado**:
 
 1. **`Build-SetupExe.ps1`** ganha passo de `signtool sign` opcional,
-   ativado por env var `EMT_CODESIGN_CERT_PFX`. Sem env var: warning
+   ativado por env var `STEELBIM_CODESIGN_CERT_PFX`. Sem env var: warning
    + setup.exe nao-assinado (modo dev). Com env var: assinatura
    automatica + falha rapida se algo errado.
 2. **`.github/workflows/release.yml`** novo, com signing condicional
@@ -82,7 +82,7 @@ Servidores de timestamp validos:
 - `http://timestamp.globalsign.com/?signature=sha2`.
 - `http://tsa.starfieldtech.com`.
 
-Configuracao: env var `EMT_CODESIGN_TIMESTAMP_URL` (default DigiCert).
+Configuracao: env var `STEELBIM_CODESIGN_TIMESTAMP_URL` (default DigiCert).
 
 ### Auto-discovery de signtool
 
@@ -127,8 +127,8 @@ Fluxo: 3-7 dias uteis (OV) ou 1-3 semanas (EV — exige token fisico).
 
 1. Exportar `.pfx` do Cert Store (ver `docs/CODE-SIGNING.md` §3) ou
    usar o `.pfx` recebido por email da CA.
-2. Local (Alef): `setx EMT_CODESIGN_CERT_PFX "C:\certs\emt.pfx"` +
-   `setx EMT_CODESIGN_CERT_PASSWORD "..."`.
+2. Local (Alef): `setx STEELBIM_CODESIGN_CERT_PFX "C:\certs\emt.pfx"` +
+   `setx STEELBIM_CODESIGN_CERT_PASSWORD "..."`.
 3. CI: codificar em base64 (`base64 -w0`) e colar como secret
    `CODESIGN_CERT_BASE64`. Senha como `CODESIGN_CERT_PASSWORD`.
 4. Validar localmente: `Gerar-Setup.bat` deve logar
@@ -156,7 +156,7 @@ Fluxo: 3-7 dias uteis (OV) ou 1-3 semanas (EV — exige token fisico).
 ### Como desativar signing em emergencia
 
 ```cmd
-set EMT_CODESIGN_CERT_PFX=
+set STEELBIM_CODESIGN_CERT_PFX=
 Gerar-Setup.bat
 ```
 
@@ -171,7 +171,7 @@ NAO publicar em release — apenas dev local pra testes.
 | Cert vaza por base64 logado | `CODESIGN_CERT_BASE64` eh secret do GitHub — masked nos logs. Workflow nunca imprime `$env:CODESIGN_CERT_BASE64` (apenas usa em decode + delete). |
 | Senha errada → signtool falha tarde | Workflow valida via `Get-PfxCertificate` ANTES de chamar signtool. Falha rapida com mensagem clara. |
 | signtool nao encontrado | Auto-discovery em Windows Kits 10. Override via `EMT_CODESIGN_SIGNTOOL`. Fallback warning no PS1 que documenta como instalar Windows SDK. |
-| Timestamp server fora do ar | DigiCert eh ~99.9% uptime. Fallbacks documentados em `docs/CODE-SIGNING.md` §6 (Sectigo, GlobalSign, etc). Override via `EMT_CODESIGN_TIMESTAMP_URL`. |
+| Timestamp server fora do ar | DigiCert eh ~99.9% uptime. Fallbacks documentados em `docs/CODE-SIGNING.md` §6 (Sectigo, GlobalSign, etc). Override via `STEELBIM_CODESIGN_TIMESTAMP_URL`. |
 | SmartScreen reputation lenta com OV | Esperar — apos ~500-1000 downloads SmartScreen aprende. EV nao tem essa janela mas custa 2-3x mais. Re-avaliar EV em v2.0.0. |
 | Cert expira sem renovar | Timestamp em todos os binarios garante validade indefinida dos releases ja publicados. Renovacao manual com 30 dias de antecedencia (todo no calendario do Alef). |
 | Workflow release.yml roda em PR de outsider sem secrets | GitHub Secrets nao sao expostos a PRs de fork por design. Workflow falha rapido em "Validate signing secrets" — comportamento esperado. |

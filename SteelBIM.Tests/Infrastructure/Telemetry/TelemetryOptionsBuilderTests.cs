@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using SteelBIM.Infrastructure.Telemetry;
+﻿using System.Collections.Generic;
 using FluentAssertions;
+using SteelBIM.Infrastructure.Telemetry;
 using Xunit;
 
 namespace SteelBIM.Tests.Infrastructure.Telemetry
