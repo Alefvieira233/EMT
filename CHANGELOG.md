@@ -15,6 +15,28 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.1.0] - 2026-05-14
+
+### Changed (BREAKING — UI/UX)
+- **Ribbon unificada:** comandos antes em duas abas separadas
+  ("SteelBIM" + "Ferramentas ECC") agora vivem numa unica aba
+  "SteelBIM". Marca unica de produto, percepcao consistente para
+  usuario novo. Mantida ordem logica: paineis PF primeiro
+  (diferencial competitivo do plugin BR), seguidos do fluxo geral
+  (Modelagem, Estrutura, Vigas, Vista, Documentacao, Fabricacao,
+  CNC, Verificacao, Montagem, Licenca).
+- **Icones renovados:** 44 icones de comandos atualizados para o
+  padrao lucide_blue final do Victor (estilo monocromatico azul
+  moderno, 2026-04-27). Substitui o estilo ilustrativo
+  multicolorido herdado de v1.x.
+
+### Notes
+- Migracao de v2.0.x: usuarios que tinham atalhos personalizados na
+  aba "Ferramentas ECC" precisam re-criar os atalhos apontando para
+  a aba "SteelBIM". Os comandos em si nao mudaram nem foram removidos.
+
+---
+
 ## [2.0.3] - 2026-05-14
 
 ### Fixed

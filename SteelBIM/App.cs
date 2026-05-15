@@ -147,11 +147,12 @@ namespace SteelBIM
             }
             catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
 
-            // Rebrand v2.0.0: aba principal renomeada para "SteelBIM".
-            //   tabName    = "SteelBIM"        → SO os paineis PF (armadura de concreto pre-fabricado)
-            //   eccTabName = "Ferramentas ECC" → paineis gerais (modelagem, estrutura, fabricacao, QA, montagem, licenca)
+            // v2.1.0: aba unica "SteelBIM" agregando todos os paineis (PF + Geral).
+            // Decisao de branding: marca unica de produto -> aba unica de ribbon.
+            // Historico: v2.0.0 (rebrand) manteve as duas abas herdadas de v1.5.0.
+            // v2.1.0 unifica porque "Ferramentas ECC" como aba separada parecia
+            // plugin distinto pro usuario final, prejudicando percepcao da marca.
             string tabName = "SteelBIM";
-            string eccTabName = "Ferramentas ECC";
             RevitWindowThemeService.Initialize(application);
 
             try
@@ -161,29 +162,29 @@ namespace SteelBIM
             catch (Exception ex)
             {
                 // Aba já existe — esperado quando o plugin recarrega
-                Logger.Debug("CreateRibbonTab (EMT): aba ja existe ({Msg})", ex.Message);
+                Logger.Debug("CreateRibbonTab: aba ja existe ({Msg})", ex.Message);
             }
 
-            try
-            {
-                application.CreateRibbonTab(eccTabName);
-            }
-            catch (Exception ex)
-            {
-                Logger.Debug("CreateRibbonTab (ECC): aba ja existe ({Msg})", ex.Message);
-            }
-
-            // --- Paineis na aba "Ferramentas ECC" (fluxo geral) ---
-            RibbonPanel panelModelagem = GetOrCreatePanel(application, eccTabName, "Modelagem");
-            RibbonPanel panelEstrutura = GetOrCreatePanel(application, eccTabName, "Estrutura");
-            RibbonPanel panelVigas = GetOrCreatePanel(application, eccTabName, "Vigas");
-            RibbonPanel panelVista = GetOrCreatePanel(application, eccTabName, "Vista");
-            RibbonPanel panelDocumentacao = GetOrCreatePanel(application, eccTabName, "Documentação");
-
-            // --- Paineis na aba "Ferramenta EMT" (so fluxo PF) ---
+            // v2.1.0: paineis na aba unica "SteelBIM".
+            // Ordem visual no ribbon segue ordem das chamadas GetOrCreatePanel
+            // abaixo (Revit cria o painel na primeira chamada):
+            //   PF Construcao -> PF Documentacao -> PF Armaduras -> Modelagem ->
+            //   Estrutura -> Vigas -> Vista -> Documentacao -> Fabricacao ->
+            //   CNC -> Verificacao -> Montagem -> Licenca
+            // PF primeiro: eh o diferencial competitivo do plugin BR.
             RibbonPanel panelPfConstrucao = GetOrCreatePanel(application, tabName, "PF Construção");
             RibbonPanel panelPfDocumentacao = GetOrCreatePanel(application, tabName, "PF Documentação");
             RibbonPanel panelPfArmaduras = GetOrCreatePanel(application, tabName, "PF Armaduras");
+            RibbonPanel panelModelagem = GetOrCreatePanel(application, tabName, "Modelagem");
+            RibbonPanel panelEstrutura = GetOrCreatePanel(application, tabName, "Estrutura");
+            RibbonPanel panelVigas = GetOrCreatePanel(application, tabName, "Vigas");
+            RibbonPanel panelVista = GetOrCreatePanel(application, tabName, "Vista");
+            RibbonPanel panelDocumentacao = GetOrCreatePanel(application, tabName, "Documentação");
+            RibbonPanel panelFabricacao = GetOrCreatePanel(application, tabName, "Fabricação");
+            RibbonPanel panelCnc = GetOrCreatePanel(application, tabName, "CNC");
+            RibbonPanel panelQa = GetOrCreatePanel(application, tabName, "Verificação");
+            RibbonPanel panelMontagem = GetOrCreatePanel(application, tabName, "Montagem");
+            RibbonPanel panelLicenca = GetOrCreatePanel(application, tabName, "Licença");
 
             string assemblyPath = Assembly.GetExecutingAssembly().Location;
 
@@ -608,8 +609,7 @@ namespace SteelBIM
                 "armadura_grid_small.png"
             );
 
-            // --- Painel Fabricação (novos módulos) ---
-            RibbonPanel panelFabricacao = GetOrCreatePanel(application, eccTabName, "Fabricação");
+            // --- Painel Fabricação (botoes; painel criado no topo, v2.1.0) ---
 
             AddButton(
                 panelFabricacao,
@@ -644,8 +644,7 @@ namespace SteelBIM
                 "marca_peca_small.png"
             );
 
-            // --- Painel CNC (Sprint 5) ---
-            RibbonPanel panelCnc = GetOrCreatePanel(application, eccTabName, "CNC");
+            // --- Painel CNC (botoes; painel criado no topo, v2.1.0) ---
 
             AddButton(
                 panelCnc,
@@ -658,8 +657,7 @@ namespace SteelBIM
                 "sheets_small.png"
             );
 
-            // --- Painel QA (Sprint 6) ---
-            RibbonPanel panelQa = GetOrCreatePanel(application, eccTabName, "Verificação");
+            // --- Painel QA (botoes; painel criado no topo, v2.1.0) ---
 
             AddButton(
                 panelQa,
@@ -672,8 +670,7 @@ namespace SteelBIM
                 "broom_small.png"
             );
 
-            // --- Painel Montagem (Sprint 7) ---
-            RibbonPanel panelMontagem = GetOrCreatePanel(application, eccTabName, "Montagem");
+            // --- Painel Montagem (botoes; painel criado no topo, v2.1.0) ---
 
             AddButton(
                 panelMontagem,
@@ -697,8 +694,7 @@ namespace SteelBIM
                 "viga_encontro_small.png"
             );
 
-            // --- Painel Licença (1.0.0) ---
-            RibbonPanel panelLicenca = GetOrCreatePanel(application, eccTabName, "Licença");
+            // --- Painel Licença (botoes; painel criado no topo, v2.1.0) ---
 
             AddStackedButtons(
                 panelLicenca,
