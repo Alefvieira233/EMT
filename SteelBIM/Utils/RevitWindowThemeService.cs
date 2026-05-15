@@ -11,10 +11,10 @@ namespace SteelBIM.Utils
     internal static class RevitWindowThemeService
     {
         private static readonly Uri LightThemeUri =
-            new Uri("/FerramentaEMT;component/Views/Themes/AppTheme.Light.xaml", UriKind.Relative);
+            new Uri("/SteelBIM;component/Views/Themes/AppTheme.Light.xaml", UriKind.Relative);
 
         private static readonly Uri DarkThemeUri =
-            new Uri("/FerramentaEMT;component/Views/Themes/AppTheme.Dark.xaml", UriKind.Relative);
+            new Uri("/SteelBIM;component/Views/Themes/AppTheme.Dark.xaml", UriKind.Relative);
 
         private static readonly List<WeakReference<Window>> Windows = new List<WeakReference<Window>>();
 

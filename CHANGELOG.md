@@ -15,6 +15,24 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.1.1] - 2026-05-15
+
+### Fixed (CRITICAL)
+- Janelas WPF do plugin nao abriam por residuo do rebrand v2.0.0:
+  `RevitWindowThemeService.cs` tinha 2 pack URIs hardcoded apontando
+  para o assembly antigo `/FerramentaEMT;component/`. Trocado para
+  `/SteelBIM;component/`. Sem esse fix, NENHUMA janela do plugin
+  abria (LicenseActivation, PrivacyConsent, todas PF, Cortar,
+  Trelica, etc) — `FileNotFoundException: Could not load file or
+  assembly 'FerramentaEMT'`.
+- Bug escapou de 4 auditorias porque os greps buscavam
+  `FerramentaEMT` em namespaces/usings/paths mas nao em pack URIs
+  embutidos em codigo C# (`/Assembly;component/` runtime).
+- Sintoma reportado pelo smoke test do Alef em 2026-05-15 logo apos
+  a publicacao da v2.1.0. v2.1.0 estava inutilizada em producao.
+
+---
+
 ## [2.1.0] - 2026-05-14
 
 ### Changed (BREAKING — UI/UX)
