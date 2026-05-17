@@ -17,15 +17,17 @@ namespace SteelBIM.Views
     {
         private readonly UIDocument _uidoc;
         private readonly PlanoMontagemService _service;
+        private readonly List<ElementId> _idsPreSelecionados;
         private PlanoMontagemConfig _config;
 
-        public PlanoMontagemWindow(UIDocument uidoc)
+        public PlanoMontagemWindow(UIDocument uidoc, List<ElementId> idsPreSelecionados)
         {
             InitializeComponent();
             RevitWindowThemeService.Attach(this);
 
             _uidoc = uidoc;
             _service = new PlanoMontagemService();
+            _idsPreSelecionados = idsPreSelecionados ?? new List<ElementId>();
             _config = new PlanoMontagemConfig();
         }
 
@@ -37,61 +39,29 @@ namespace SteelBIM.Views
             {
                 AppDialogService.ShowError(
                     "Plano de Montagem",
-                    "Por favor, insira um número de etapa válido (inteiro positivo).",
-                    "Entrada inválida");
+                    "Por favor, insira um numero de etapa valido (inteiro positivo).",
+                    "Entrada invalida");
+                return;
+            }
+
+            if (_idsPreSelecionados.Count == 0)
+            {
+                // Defesa em profundidade — o comando ja validou, mas garantir aqui tambem
+                AppDialogService.ShowError(
+                    "Plano de Montagem",
+                    "Nenhum elemento foi pre-selecionado. Feche esta janela, selecione os " +
+                    "elementos no Revit e reabra o comando.",
+                    "Sem selecao");
                 return;
             }
 
             string descricao = txtDescricao.Text?.Trim() ?? "";
 
-            // ETAPA 1: tentar usar seleção pré-existente do Revit (antes de abrir a janela)
-            var ids = new List<ElementId>();
-            var preSelecao = _uidoc.Selection.GetElementIds();
-            if (preSelecao != null && preSelecao.Count > 0)
-            {
-                foreach (ElementId id in preSelecao)
-                    ids.Add(id);
-                Logger.Info("[PlanoMontagemWindow] Usando pre-selecao: {Count} elementos", ids.Count);
-            }
-
             try
             {
-                // ETAPA 2: se nao havia pre-selecao, pedir pick interativo.
-                // CRITICO: WPF modal bloqueia a UI do Revit. Precisa Hide() antes do PickObjects.
-                if (ids.Count == 0)
-                {
-                    AppDialogService.ShowInfo(
-                        "Plano de Montagem",
-                        "A janela sera minimizada. Clique nos elementos no Revit e pressione Enter (ou ESC para cancelar).",
-                        "Selecao");
-
-                    this.Hide();
-                    try
-                    {
-                        IList<Reference> refs = _uidoc.Selection.PickObjects(
-                            Autodesk.Revit.UI.Selection.ObjectType.Element,
-                            "Selecione elementos para atribuir a etapa");
-
-                        if (refs == null || refs.Count == 0)
-                        {
-                            Logger.Info("[PlanoMontagemWindow] Nenhum elemento selecionado");
-                            return;
-                        }
-
-                        foreach (Reference r in refs)
-                            ids.Add(r.ElementId);
-                    }
-                    finally
-                    {
-                        // Reabrir a janela (nao-modal Show dentro do ShowDialog original)
-                        this.Show();
-                        this.Activate();
-                    }
-                }
-
                 var resultado = _service.AtribuirEtapa(
                     _uidoc,
-                    ids,
+                    _idsPreSelecionados,
                     numEtapa,
                     _config.NomeParametroEtapa);
 
@@ -99,9 +69,11 @@ namespace SteelBIM.Views
                 {
                     AppDialogService.ShowInfo(
                         "Plano de Montagem",
-                        resultado.Mensagem ?? "Etapa atribuída com sucesso.",
+                        resultado.Mensagem ?? "Etapa atribuida com sucesso.",
                         "Sucesso");
-                    Logger.Info("[PlanoMontagemWindow] Etapa {Etapa} atribuída a {Count} elementos", numEtapa, resultado.ElementosProcessados);
+                    Logger.Info(
+                        "[PlanoMontagemWindow] Etapa {Etapa} atribuida a {Count} elementos",
+                        numEtapa, resultado.ElementosProcessados);
                 }
                 else
                 {
@@ -110,10 +82,6 @@ namespace SteelBIM.Views
                         resultado.Mensagem ?? "Falha ao atribuir etapa.",
                         "Erro");
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Logger.Info("[PlanoMontagemWindow] Seleção cancelada pelo usuário");
             }
             catch (Exception ex)
             {

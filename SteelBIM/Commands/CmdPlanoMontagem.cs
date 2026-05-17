@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using SteelBIM.Utils;
 using SteelBIM.Views;
 
 namespace SteelBIM.Commands
@@ -20,8 +23,27 @@ namespace SteelBIM.Commands
         {
             try
             {
-                // Abre a janela de configuração do plano de montagem
-                var window = new PlanoMontagemWindow(uidoc);
+                // Pre-selecao obrigatoria. Alinha com padrao dos outros comandos
+                // do plugin (PickObjects dentro de ShowDialog modal causa deadlock
+                // do thread principal do Revit — bug fatal corrigido em v2.1.2).
+                ICollection<ElementId> selecionados = uidoc.Selection.GetElementIds();
+                if (selecionados == null || selecionados.Count == 0)
+                {
+                    AppDialogService.ShowWarning(
+                        CommandName,
+                        "Selecione os elementos no Revit ANTES de abrir este comando.\n\n" +
+                        "Fluxo correto:\n" +
+                        "1. Selecione os elementos estruturais que receberao a etapa\n" +
+                        "2. Execute o comando Plano de Montagem\n" +
+                        "3. Informe o numero da etapa na janela\n" +
+                        "4. Clique em Atribuir",
+                        "Selecao obrigatoria");
+                    return Result.Cancelled;
+                }
+
+                // Janela WPF coleta APENAS configuracao (etapa + descricao).
+                // Service usa os IDs ja selecionados — nao picka mais.
+                var window = new PlanoMontagemWindow(uidoc, selecionados.ToList());
                 window.ShowDialog();
 
                 return Result.Succeeded;

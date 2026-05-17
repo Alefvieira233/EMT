@@ -15,6 +15,33 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.1.2] - 2026-05-15
+
+### Fixed (CRITICAL)
+- Comando "Plano de Montagem" causava CRASH FATAL do Revit quando
+  usuario clicava em "Atribuir aos Selecionados" sem pre-selecao
+  previa. Root cause: PlanoMontagemWindow chamava
+  `uidoc.Selection.PickObjects()` DENTRO de janela WPF aberta como
+  ShowDialog modal — modal bloqueia thread principal do Revit,
+  PickObjects precisa thread livre, resultado eh deadlock + crash.
+  `Hide()` antes do PickObjects nao resolvia (ShowDialog continua
+  bloqueante).
+- Fix: alinhar com padrao dos outros 26 comandos — pre-selecao
+  agora eh obrigatoria. `CmdPlanoMontagem` valida selecao ANTES de
+  abrir janela. Window apenas coleta config (etapa + descricao),
+  nao picka mais elementos.
+- Detectado por smoke test do Alef apos publicacao da v2.1.1.
+
+### Changed (UX)
+- Plano de Montagem agora exige pre-selecao de elementos no Revit
+  antes de executar o comando. Fluxo correto:
+  1. Selecionar elementos no Revit
+  2. Executar Plano de Montagem
+  3. Informar etapa + descricao
+  4. Clicar em Atribuir
+
+---
+
 ## [2.1.1] - 2026-05-15
 
 ### Fixed (CRITICAL)
