@@ -15,6 +15,32 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.3.0] - 2026-05-17
+
+### Added (FEATURE NOVA)
+- **Diagrama de Montagem (BR)** — comando novo no painel Montagem
+  que gera a prancha tecnica de detalhamento estrutural no padrao
+  brasileiro. MVP cobre:
+  - Vista de elevacao (Section View) alinhada aos elementos selecionados
+  - Crop automatico para mostrar so os elementos relevantes + margem
+  - Eixos do projeto visiveis na vista
+  - Cotas alinhadas entre eixos consecutivos (linha superior)
+  - Tags automaticas com parametro Mark (marca de fabricacao) em cada peca
+- Escala padrao 1:75. Orientacao automatica baseada em geometria
+  (override manual disponivel na janela: X/Y/Auto).
+- Diferente de "Sequenciamento BIM" (v2.2.0, 4D phasing) e de
+  "Vista de Peca" (shop drawing individual).
+- Pre-selecao obrigatoria (padrao alinhado com v2.1.2). Service ADR-003
+  mudo (retorna DTO, cada operacao Revit em transaction propria).
+
+### Roadmap v2.3.1+
+- Cotas verticais (alturas dos elementos)
+- Cotas individuais de comprimento de pecas
+- Insercao em folha com title block
+- Simbolo de nivel "TERREO"
+
+---
+
 ## [2.2.0] - 2026-05-17
 
 ### Changed (BREAKING — UX)

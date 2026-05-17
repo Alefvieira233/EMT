@@ -690,6 +690,23 @@ namespace SteelBIM
 
             AddButton(
                 panelMontagem,
+                "btnDiagramaMontagem",
+                "Diagrama de\nMontagem",
+                assemblyPath,
+                "SteelBIM.Commands.CmdGerarDiagramaMontagem",
+                "Diagrama de Montagem (padrao brasileiro) — Gera vista de elevacao " +
+                "dos elementos estruturais selecionados com eixos do projeto visiveis, " +
+                "cotas alinhadas entre eixos e tags com marca de fabricacao (Mark) " +
+                "em cada peca. Util para entrega de pranchas de detalhamento " +
+                "estrutural ao pessoal de obra. Escala padrao 1:75. " +
+                "v2.3.0 = MVP (eixos+cotas+tags); cotas verticais e folha com " +
+                "title block na v2.3.1+.",
+                "agruparvigas_large.png",
+                "agruparvigas_small.png"
+            );
+
+            AddButton(
+                panelMontagem,
                 "btnGerarConexao",
                 "Gerar\nConexão",
                 assemblyPath,
