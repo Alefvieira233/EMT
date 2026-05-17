@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF> <!-- enable WPF assemblies for BitmapImage -->
+		<UseWindowsForms>true</UseWindowsForms> <!-- v2.2.0: ColorDialog do seletor de cor por fase (Sequenciamento BIM) -->
 		<Nullable>disable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<LangVersion>latest</LangVersion>

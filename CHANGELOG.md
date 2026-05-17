@@ -15,6 +15,45 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.2.0] - 2026-05-17
+
+### Changed (BREAKING — UX)
+- **Comando "Plano de Montagem" renomeado para "Sequenciamento BIM"**.
+  Razao: no Brasil, "plano de montagem" significa prancha tecnica com
+  elevacao + eixos + cotas + marcas (diagrama de detalhamento). A
+  funcao implementa 4D BIM phasing (atribuir fases, colorir, exportar
+  Excel). Nome anterior causava confusao com usuarios brasileiros.
+  Classe interna (CmdPlanoMontagem/PlanoMontagemWindow/Service)
+  preservada para nao quebrar atalhos personalizados.
+- Tooltip do ribbon agora descreve precisamente: planejamento 4D,
+  coordenacao de cronograma, integracao com Synchro/Navisworks.
+
+### Fixed
+- Bug "Atribuido a 0 elemento(s)" quando elementos selecionados nao
+  tinham parametro editavel. Adicionado triplo fallback:
+  1. Parametro de projeto EMT_Etapa_Montagem (criado automaticamente
+     se nao existir — bind a Structural Framing/Columns/Foundation)
+  2. Parametro built-in Comments (com regex "Etapa:N")
+  3. Parametro built-in Mark (prefixo "E{N}/")
+- Mensagem clara ao usuario quando algum elemento nao aceita a
+  atribuicao, em vez de retornar silenciosamente 0.
+- LerEtapaDoElemento espelha os 3 fallbacks na leitura (antes so lia
+  Integer + Comments).
+
+### Added
+- Seletor de cor por fase: na aba "Visualizar Plano", cada etapa do
+  DataGrid tem um botao "Escolher" que abre dialog de cor
+  (System.Windows.Forms.ColorDialog). Cor escolhida eh aplicada no
+  destaque visual da proxima geracao do plano. Cores nao definidas
+  usam paleta padrao ciclica. csproj ganha UseWindowsForms=true.
+
+### Roadmap registrado
+- "Diagrama de Montagem" no padrao brasileiro (vista de elevacao +
+  eixos + cotas + marcas de fabricacao) eh feature distinta planejada
+  para v3.0.0. Vide PDF EM-08 entregue pelo cliente como referencia.
+
+---
+
 ## [2.1.2] - 2026-05-15
 
 ### Fixed (CRITICAL)

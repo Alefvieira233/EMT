@@ -69,6 +69,8 @@
              Link="LinkedSources\Models\Montagem\EtapaMontagem.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemConfig.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemConfig.cs" />
+    <Compile Include="..\SteelBIM\Models\Montagem\ColorRGB.cs"
+             Link="LinkedSources\Models\Montagem\ColorRGB.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"

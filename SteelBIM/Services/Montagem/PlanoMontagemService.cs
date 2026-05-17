@@ -17,7 +17,7 @@ namespace SteelBIM.Services.Montagem
     /// </summary>
     public class PlanoMontagemService
     {
-        private const string Titulo = "Plano de Montagem";
+        private const string Titulo = "Sequenciamento BIM";
 
         // 5-color cyclic palette para destaque visual
         private static readonly Color[] CoresPadrao = new[]
@@ -38,22 +38,103 @@ namespace SteelBIM.Services.Montagem
         }
 
         /// <summary>
-        /// Atribui um número de etapa de montagem a uma lista de elementos.
-        /// Cria o parâmetro de projeto se não existir; fallback para Comments se necessário.
+        /// Garante que o parametro de projeto "EMT_Etapa_Montagem" exista
+        /// como Integer aplicavel a Structural Framing, Structural Columns
+        /// e Structural Foundations. Se nao existir, cria. Idempotente.
         /// </summary>
+        private bool GarantirParametroEtapa(Document doc, string nomeParametro)
+        {
+            try
+            {
+                // Verifica se ja existe como projeto parameter
+                BindingMap bindings = doc.ParameterBindings;
+                DefinitionBindingMapIterator it = bindings.ForwardIterator();
+                while (it.MoveNext())
+                {
+                    Definition? def = it.Key as Definition;
+                    if (def != null && string.Equals(def.Name, nomeParametro, StringComparison.OrdinalIgnoreCase))
+                        return true; // ja existe
+                }
+
+                // Nao existe — criar via SharedParameter temporario
+                string sharedFile = System.IO.Path.Combine(
+                    System.IO.Path.GetTempPath(),
+                    $"SteelBIM_SharedParams_{DateTime.Now:yyyyMMddHHmmss}.txt");
+                System.IO.File.WriteAllText(sharedFile, "# This is a Revit shared parameter file.\n*META\tVERSION\tMINVERSION\n*GROUP\tID\tNAME\n*PARAM\tGUID\tNAME\tDATATYPE\tDATACATEGORY\tGROUP\tVISIBLE\tDESCRIPTION\tUSERMODIFIABLE\n");
+
+                DefinitionFile defFile;
+                string previousSharedFile = doc.Application.SharedParametersFilename;
+                try
+                {
+                    doc.Application.SharedParametersFilename = sharedFile;
+                    defFile = doc.Application.OpenSharedParameterFile();
+
+                    DefinitionGroup group = defFile.Groups.Create("SteelBIM");
+                    ExternalDefinitionCreationOptions opts = new ExternalDefinitionCreationOptions(
+                        nomeParametro, SpecTypeId.Int.Integer);
+                    opts.UserModifiable = true;
+                    opts.Description = "Numero da etapa de montagem (Sequenciamento BIM)";
+                    ExternalDefinition externalDef = (ExternalDefinition)group.Definitions.Create(opts);
+
+                    // Bind a categorias estruturais relevantes
+                    CategorySet categories = doc.Application.Create.NewCategorySet();
+                    foreach (BuiltInCategory bic in new[] {
+                        BuiltInCategory.OST_StructuralFraming,
+                        BuiltInCategory.OST_StructuralColumns,
+                        BuiltInCategory.OST_StructuralFoundation,
+                        BuiltInCategory.OST_GenericModel })
+                    {
+                        Category cat = Category.GetCategory(doc, bic);
+                        if (cat != null)
+                            categories.Insert(cat);
+                    }
+
+                    InstanceBinding binding = doc.Application.Create.NewInstanceBinding(categories);
+                    doc.ParameterBindings.Insert(externalDef, binding, GroupTypeId.Construction);
+
+                    Logger.Info("[SequenciamentoBim] Parametro {Nome} criado automaticamente", nomeParametro);
+                    return true;
+                }
+                finally
+                {
+                    if (!string.IsNullOrEmpty(previousSharedFile))
+                        doc.Application.SharedParametersFilename = previousSharedFile;
+                    try
+                    { System.IO.File.Delete(sharedFile); }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[SequenciamentoBim] Falha ao criar parametro {Nome}", nomeParametro);
+                return false;
+            }
+        }
+
         public ResultadoMontagem AtribuirEtapa(
             UIDocument uidoc,
             IList<ElementId> ids,
             int etapa,
             string nomeParametro)
         {
-            Logger.Info("[PlanoMontagem] Atribuindo etapa {Etapa} a {Count} elementos", etapa, ids.Count);
+            Logger.Info("[SequenciamentoBim] Atribuindo etapa {Etapa} a {Count} elementos", etapa, ids.Count);
 
             Document doc = uidoc.Document;
             int processados = 0;
+            int falhas = 0;
+            List<string> motivosFalha = new List<string>();
 
             try
             {
+                // GARANTIR que o parametro EMT_Etapa_Montagem existe
+                // (cria automaticamente se necessario)
+                using (Transaction txParam = new Transaction(doc, "Criar parametro Sequenciamento BIM"))
+                {
+                    txParam.Start();
+                    GarantirParametroEtapa(doc, nomeParametro);
+                    txParam.Commit();
+                }
+
                 using (Transaction tx = new Transaction(doc, $"Atribuir etapa {etapa}"))
                 {
                     tx.Start();
@@ -62,47 +143,90 @@ namespace SteelBIM.Services.Montagem
                     {
                         Element elem = doc.GetElement(eid);
                         if (elem == null)
+                        {
+                            falhas++;
+                            motivosFalha.Add($"Id {eid.Value}: elemento nao encontrado");
                             continue;
+                        }
 
-                        // Tenta escrever no parâmetro de projeto
-                        Parameter? param = elem.LookupParameter(nomeParametro);
-                        if (param != null && param.StorageType == StorageType.Integer)
+                        // FALLBACK 1: parametro dedicado (criado automaticamente acima)
+                        Parameter param = elem.LookupParameter(nomeParametro);
+                        if (param != null && !param.IsReadOnly && param.StorageType == StorageType.Integer)
                         {
                             param.Set(etapa);
                             processados++;
+                            continue;
                         }
-                        else
+
+                        // FALLBACK 2: parametro built-in Comments (string)
+                        Parameter comments = elem.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS);
+                        if (comments != null && !comments.IsReadOnly && comments.StorageType == StorageType.String)
                         {
-                            // Fallback: escreve em Comments. Sempre sobrescreve (remove "Etapa:X" anterior).
-                            Parameter? comments = elem.LookupParameter("Comments");
-                            if (comments != null && !comments.IsReadOnly)
-                            {
-                                string valorAnterior = comments.AsString() ?? "";
-                                // Remove qualquer "Etapa:N" existente (caso o elemento ja tivesse etapa antiga)
-                                string semEtapaAntiga = System.Text.RegularExpressions.Regex.Replace(
-                                    valorAnterior, @"Etapa:\d+\s*;?\s*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
-                                string novoValor = string.IsNullOrEmpty(semEtapaAntiga)
-                                    ? $"Etapa:{etapa}"
-                                    : $"Etapa:{etapa}; {semEtapaAntiga}";
-                                comments.Set(novoValor);
-                                processados++;
-                            }
+                            string valorAnterior = comments.AsString() ?? "";
+                            string semEtapaAntiga = System.Text.RegularExpressions.Regex.Replace(
+                                valorAnterior, @"Etapa:\d+\s*;?\s*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+                            string novoValor = string.IsNullOrEmpty(semEtapaAntiga)
+                                ? $"Etapa:{etapa}"
+                                : $"Etapa:{etapa}; {semEtapaAntiga}";
+                            comments.Set(novoValor);
+                            processados++;
+                            continue;
                         }
+
+                        // FALLBACK 3: parametro built-in Mark (string)
+                        // So usar se Comments tambem nao funcionar — Mark eh marca de fabricacao
+                        Parameter mark = elem.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
+                        if (mark != null && !mark.IsReadOnly && mark.StorageType == StorageType.String)
+                        {
+                            // Anexar etapa no inicio da marca existente (nao destrutivo)
+                            string valorAnterior = mark.AsString() ?? "";
+                            string semEtapaAntiga = System.Text.RegularExpressions.Regex.Replace(
+                                valorAnterior, @"^E\d+/", "");
+                            mark.Set($"E{etapa}/{semEtapaAntiga}");
+                            processados++;
+                            continue;
+                        }
+
+                        // Nenhum fallback funcionou
+                        falhas++;
+                        string categoria = elem.Category?.Name ?? "(sem categoria)";
+                        motivosFalha.Add($"Id {eid.Value} ({categoria}): nao tem parametro editavel");
                     }
 
                     tx.Commit();
                 }
 
+                string mensagem;
+                if (processados > 0 && falhas == 0)
+                {
+                    mensagem = $"Atribuido a {processados} elemento(s) com sucesso.";
+                }
+                else if (processados > 0 && falhas > 0)
+                {
+                    mensagem = $"Atribuido a {processados} elemento(s). " +
+                              $"{falhas} elemento(s) nao puderam receber a etapa " +
+                              $"(sem parametro editavel). Verifique os tipos das familias.";
+                }
+                else
+                {
+                    mensagem = $"FALHA: nenhum dos {ids.Count} elemento(s) selecionado(s) " +
+                              $"aceita atribuicao de etapa. Causa provavel: as familias " +
+                              $"selecionadas nao tem parametros 'Comments' ou 'Mark' " +
+                              $"editaveis, e nao foi possivel criar o parametro de " +
+                              $"projeto automaticamente. Verifique permissoes do arquivo " +
+                              $"e tente em familias com parametros nativos.";
+                }
+
                 return new ResultadoMontagem
                 {
-                    Sucesso = true,
+                    Sucesso = processados > 0,
                     ElementosProcessados = processados,
-                    Mensagem = $"Atribuído a {processados} elemento(s)."
+                    Mensagem = mensagem
                 };
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "[PlanoMontagem] Erro ao atribuir etapa");
+                Logger.Error(ex, "[SequenciamentoBim] Erro ao atribuir etapa");
                 return new ResultadoMontagem
                 {
                     Sucesso = false,
@@ -200,7 +324,7 @@ namespace SteelBIM.Services.Montagem
         private static int LerEtapaDoElemento(Element elem, string nomeParametroEtapa)
         {
             // 1) Parametro Integer nomeado (caminho ideal)
-            Parameter? paramInt = elem.LookupParameter(nomeParametroEtapa);
+            Parameter paramInt = elem.LookupParameter(nomeParametroEtapa);
             if (paramInt != null && paramInt.StorageType == StorageType.Integer)
             {
                 int v = paramInt.AsInteger();
@@ -208,11 +332,23 @@ namespace SteelBIM.Services.Montagem
                     return v;
             }
 
-            // 2) Fallback Comments: string no formato "Etapa:N" (parsing delegado a EtapaMontagemParser)
-            Parameter? comments = elem.LookupParameter("Comments");
+            // 2) Fallback Comments com regex "Etapa:N"
+            Parameter comments = elem.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS);
             if (comments != null && comments.StorageType == StorageType.String)
             {
-                return EtapaMontagemParser.Parse(comments.AsString());
+                int etapa = EtapaMontagemParser.Parse(comments.AsString());
+                if (etapa > 0)
+                    return etapa;
+            }
+
+            // 3) Fallback Mark com regex "E{N}/"
+            Parameter mark = elem.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
+            if (mark != null && mark.StorageType == StorageType.String)
+            {
+                string markValue = mark.AsString() ?? "";
+                var m = System.Text.RegularExpressions.Regex.Match(markValue, @"^E(\d+)/");
+                if (m.Success && int.TryParse(m.Groups[1].Value, out int v) && v > 0)
+                    return v;
             }
 
             return 0;
@@ -221,24 +357,38 @@ namespace SteelBIM.Services.Montagem
         /// <summary>
         /// Aplica destaque visual (colorização) aos elementos de cada etapa usando OverrideGraphicSettings.
         /// </summary>
-        public void AplicarDestaqueVisual(Document doc, View view, List<EtapaMontagem> etapas)
+        public void AplicarDestaqueVisual(
+            Document doc,
+            View view,
+            List<EtapaMontagem> etapas,
+            Dictionary<int, Models.Montagem.ColorRGB>? coresCustom = null)
         {
-            Logger.Info("[PlanoMontagem] Aplicando destaque visual a {Count} etapas", etapas.Count);
+            Logger.Info("[SequenciamentoBim] Aplicando destaque visual a {Count} etapas", etapas.Count);
 
             try
             {
-                using (Transaction tx = new Transaction(doc, "Destaque Visual - Plano de Montagem"))
+                using (Transaction tx = new Transaction(doc, "Destaque Visual - Sequenciamento BIM"))
                 {
                     tx.Start();
 
                     for (int i = 0; i < etapas.Count; i++)
                     {
                         EtapaMontagem etapa = etapas[i];
-                        Color cor = CoresPadrao[i % CoresPadrao.Length];
+
+                        // Usa cor custom se houver, senao paleta padrao ciclica
+                        Color cor;
+                        if (coresCustom != null && coresCustom.TryGetValue(etapa.Numero, out var custom))
+                        {
+                            cor = new Color(custom.R, custom.G, custom.B);
+                        }
+                        else
+                        {
+                            cor = CoresPadrao[i % CoresPadrao.Length];
+                        }
 
                         foreach (long elemIdVal in etapa.ElementIds)
                         {
-                            Element? elem = doc.GetElement(new ElementId(elemIdVal));
+                            Element elem = doc.GetElement(new ElementId(elemIdVal));
                             if (elem == null)
                                 continue;
 
@@ -256,7 +406,7 @@ namespace SteelBIM.Services.Montagem
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "[PlanoMontagem] Erro ao aplicar destaque visual");
+                Logger.Error(ex, "[SequenciamentoBim] Erro ao aplicar destaque visual");
             }
         }
 

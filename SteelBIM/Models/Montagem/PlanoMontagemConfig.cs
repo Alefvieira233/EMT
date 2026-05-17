@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SteelBIM.Models.Montagem
 {
@@ -32,5 +33,12 @@ namespace SteelBIM.Models.Montagem
 
         /// <summary>Escopo de elementos a considerar no plano.</summary>
         public EscopoMontagem Escopo { get; set; } = EscopoMontagem.VistaAtiva;
+
+        /// <summary>
+        /// Mapa de cores customizadas por numero de etapa. Se uma etapa nao
+        /// tem entrada aqui, usa a paleta padrao ciclica.
+        /// </summary>
+        public Dictionary<int, ColorRGB> CoresCustomPorEtapa { get; set; }
+            = new Dictionary<int, ColorRGB>();
     }
 }

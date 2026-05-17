@@ -10,6 +10,7 @@ using SteelBIM.Infrastructure;
 using SteelBIM.Models.Montagem;
 using SteelBIM.Services.Montagem;
 using SteelBIM.Utils;
+using SDColor = System.Drawing.Color;
 
 namespace SteelBIM.Views
 {
@@ -38,7 +39,7 @@ namespace SteelBIM.Views
             if (!int.TryParse(txtNumeroEtapa.Text, out int numEtapa) || numEtapa <= 0)
             {
                 AppDialogService.ShowError(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     "Por favor, insira um numero de etapa valido (inteiro positivo).",
                     "Entrada invalida");
                 return;
@@ -48,7 +49,7 @@ namespace SteelBIM.Views
             {
                 // Defesa em profundidade — o comando ja validou, mas garantir aqui tambem
                 AppDialogService.ShowError(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     "Nenhum elemento foi pre-selecionado. Feche esta janela, selecione os " +
                     "elementos no Revit e reabra o comando.",
                     "Sem selecao");
@@ -68,7 +69,7 @@ namespace SteelBIM.Views
                 if (resultado.Sucesso)
                 {
                     AppDialogService.ShowInfo(
-                        "Plano de Montagem",
+                        "Sequenciamento BIM",
                         resultado.Mensagem ?? "Etapa atribuida com sucesso.",
                         "Sucesso");
                     Logger.Info(
@@ -78,7 +79,7 @@ namespace SteelBIM.Views
                 else
                 {
                     AppDialogService.ShowError(
-                        "Plano de Montagem",
+                        "Sequenciamento BIM",
                         resultado.Mensagem ?? "Falha ao atribuir etapa.",
                         "Erro");
                 }
@@ -87,7 +88,7 @@ namespace SteelBIM.Views
             {
                 Logger.Error(ex, "[PlanoMontagemWindow] Erro ao atribuir etapa");
                 AppDialogService.ShowError(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     ex.Message,
                     "Erro");
             }
@@ -104,7 +105,7 @@ namespace SteelBIM.Views
                 if (relatorio.TotalEtapas == 0)
                 {
                     AppDialogService.ShowWarning(
-                        "Plano de Montagem",
+                        "Sequenciamento BIM",
                         "Nenhuma etapa encontrada. Atribua etapas aos elementos primeiro.",
                         "Sem dados");
                     return;
@@ -113,19 +114,45 @@ namespace SteelBIM.Views
                 // Aplicar destaque visual
                 if (_config.AplicarDestaqueVisual)
                 {
-                    _service.AplicarDestaqueVisual(_uidoc.Document, _uidoc.ActiveView, relatorio.Etapas);
+                    _service.AplicarDestaqueVisual(
+                        _uidoc.Document,
+                        _uidoc.ActiveView,
+                        relatorio.Etapas,
+                        _config.CoresCustomPorEtapa);
                 }
 
                 // Exibir no DataGrid
                 var dados = new ObservableCollection<dynamic>();
                 foreach (var etapa in relatorio.Etapas)
                 {
+                    // Cor atual: custom ou paleta padrao
+                    var paleta = new[] {
+                        System.Windows.Media.Color.FromRgb(0, 100, 200),
+                        System.Windows.Media.Color.FromRgb(0, 180, 80),
+                        System.Windows.Media.Color.FromRgb(255, 140, 0),
+                        System.Windows.Media.Color.FromRgb(200, 50, 50),
+                        System.Windows.Media.Color.FromRgb(150, 50, 200)
+                    };
+
+                    System.Windows.Media.Color corMedia;
+                    if (_config.CoresCustomPorEtapa.TryGetValue(etapa.Numero, out var custom))
+                    {
+                        corMedia = System.Windows.Media.Color.FromRgb(custom.R, custom.G, custom.B);
+                    }
+                    else
+                    {
+                        corMedia = paleta[(etapa.Numero - 1) % paleta.Length];
+                    }
+                    var brush = new System.Windows.Media.SolidColorBrush(corMedia);
+                    brush.Freeze();
+
                     dynamic row = new
                     {
                         Etapa = etapa.Numero,
-                        Descricao = etapa.Descricao,
+                        Descricao = etapa.Descricao ?? "",
                         DataPlanejada = etapa.DataPlanejada?.ToString("dd/MM/yyyy") ?? "-",
-                        Quantidade = etapa.ElementIds.Count
+                        Quantidade = etapa.ElementIds.Count,
+                        CorAtualBrush = brush
                     };
                     dados.Add(row);
                 }
@@ -133,7 +160,7 @@ namespace SteelBIM.Views
                 dgEtapas.ItemsSource = dados;
 
                 AppDialogService.ShowInfo(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     $"Plano gerado: {relatorio.TotalEtapas} etapa(s), {relatorio.TotalElementos} elemento(s). Destaque visual aplicado.",
                     "Sucesso");
 
@@ -143,9 +170,48 @@ namespace SteelBIM.Views
             {
                 Logger.Error(ex, "[PlanoMontagemWindow] Erro ao gerar plano");
                 AppDialogService.ShowError(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     ex.Message,
                     "Erro");
+            }
+        }
+
+        private void BtnEscolherCor_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.Tag is int etapaNum)
+            {
+                using (var dlg = new System.Windows.Forms.ColorDialog())
+                {
+                    // Cor inicial: a custom atual ou a paleta default
+                    SDColor inicial;
+                    if (_config.CoresCustomPorEtapa.TryGetValue(etapaNum, out var custom))
+                    {
+                        inicial = SDColor.FromArgb(custom.R, custom.G, custom.B);
+                    }
+                    else
+                    {
+                        var paleta = new[] {
+                            SDColor.FromArgb(0, 100, 200),
+                            SDColor.FromArgb(0, 180, 80),
+                            SDColor.FromArgb(255, 140, 0),
+                            SDColor.FromArgb(200, 50, 50),
+                            SDColor.FromArgb(150, 50, 200)
+                        };
+                        inicial = paleta[(etapaNum - 1) % paleta.Length];
+                    }
+                    dlg.Color = inicial;
+                    dlg.FullOpen = true;
+
+                    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        _config.CoresCustomPorEtapa[etapaNum] = new SteelBIM.Models.Montagem.ColorRGB(
+                            dlg.Color.R, dlg.Color.G, dlg.Color.B);
+                        AppDialogService.ShowInfo(
+                            "Sequenciamento BIM",
+                            $"Cor da etapa {etapaNum} atualizada. Clique em 'Gerar Plano' novamente para aplicar.",
+                            "Cor selecionada");
+                    }
+                }
             }
         }
 
@@ -153,7 +219,7 @@ namespace SteelBIM.Views
         {
             var dlg = new SaveFileDialog
             {
-                Title = "Salvar Plano de Montagem",
+                Title = "Salvar Sequenciamento BIM",
                 Filter = "Arquivo Excel|*.xlsx",
                 DefaultExt = ".xlsx"
             };
@@ -172,7 +238,7 @@ namespace SteelBIM.Views
             if (string.IsNullOrEmpty(caminho))
             {
                 AppDialogService.ShowError(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     "Por favor, selecione um caminho para o arquivo.",
                     "Caminho ausente");
                 return;
@@ -184,7 +250,7 @@ namespace SteelBIM.Views
                 _service.ExportarRelatorioExcel(relatorio, caminho);
 
                 AppDialogService.ShowInfo(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     $"Relatório exportado com sucesso:\n{caminho}",
                     "Sucesso");
 
@@ -194,7 +260,7 @@ namespace SteelBIM.Views
             {
                 Logger.Error(ex, "[PlanoMontagemWindow] Erro ao exportar");
                 AppDialogService.ShowError(
-                    "Plano de Montagem",
+                    "Sequenciamento BIM",
                     ex.Message,
                     "Erro");
             }

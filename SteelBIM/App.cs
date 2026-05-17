@@ -674,11 +674,16 @@ namespace SteelBIM
 
             AddButton(
                 panelMontagem,
-                "btnPlanoMontagem",
-                "Plano de\nMontagem",
+                "btnSequenciamentoBim",
+                "Sequencia-\nmento BIM",
                 assemblyPath,
                 "SteelBIM.Commands.CmdPlanoMontagem",
-                "Atribui etapas de montagem a peças estruturais e aplica destaque visual por etapa para gerar planos de erection sequence.",
+                "Sequenciamento BIM (4D Phasing) — Atribui fases de montagem a " +
+                "elementos estruturais para planejamento cronologico. Agrupa pecas " +
+                "por etapa, aplica destaque visual com cores customizaveis por fase, " +
+                "exporta relatorio para Excel. Util para planejamento 4D, " +
+                "coordenacao de cronograma de obra, integracao com Synchro/Navisworks " +
+                "Timeliner e simulacao de sequencia construtiva.",
                 "agruparvigas_large.png",
                 "agruparvigas_small.png"
             );

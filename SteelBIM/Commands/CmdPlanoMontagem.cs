@@ -10,14 +10,14 @@ using SteelBIM.Views;
 namespace SteelBIM.Commands
 {
     /// <summary>
-    /// Comando para abrir a janela de Plano de Montagem (Erection Plan).
+    /// Comando para abrir a janela de Sequenciamento BIM (Erection Plan).
     /// Permite atribuir etapas de montagem a elementos, visualizar plano,
     /// aplicar destaque visual, e exportar relatório Excel.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     public class CmdPlanoMontagem : FerramentaCommandBase
     {
-        protected override string CommandName => "Plano de Montagem";
+        protected override string CommandName => "Sequenciamento BIM";
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
@@ -34,7 +34,7 @@ namespace SteelBIM.Commands
                         "Selecione os elementos no Revit ANTES de abrir este comando.\n\n" +
                         "Fluxo correto:\n" +
                         "1. Selecione os elementos estruturais que receberao a etapa\n" +
-                        "2. Execute o comando Plano de Montagem\n" +
+                        "2. Execute o comando Sequenciamento BIM\n" +
                         "3. Informe o numero da etapa na janela\n" +
                         "4. Clique em Atribuir",
                         "Selecao obrigatoria");
