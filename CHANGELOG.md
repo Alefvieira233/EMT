@@ -15,6 +15,37 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.4.0] - 2026-05-17
+
+### Added (FEATURE COMPLETA — Diagrama de Montagem 100% padrao BR)
+Complementa o MVP v2.3.0 entregando os 30% deferidos para atingir o
+padrao profissional brasileiro de prancha de detalhamento (vide PDF
+EM-08 entregue pelo cliente do Alef como referencia):
+
+- **Cotas verticais (SpotElevation)** em niveis chave dos elementos
+  (base/topo pilar, vigas, cumeeira). Clusteriza elevacoes proximas
+  com tolerancia configuravel (default 100mm). Limitado a 3-15 cotas
+  para nao poluir.
+- **Cota total do conjunto** — cota linear entre eixos extremos
+  visiveis na vista, posicionada acima da linha de cotas entre eixos.
+- **Simbolo de nivel** — Levels do projeto que cruzam o range Z dos
+  elementos selecionados ficam visiveis com bubble.
+- **Inserir em folha** (opcional, default false) — cria ViewSheet
+  com TitleBlock disponivel no projeto, posiciona Section View como
+  Viewport centralizado, permite customizar numero e nome da folha.
+- **Comprimentos individuais por peca** (EXPERIMENTAL, default false) —
+  TextNote com `L=NNcm` ao lado de cada elemento. Pode poluir em
+  geometria densa, usuario opta.
+
+### Notes
+- Sem TitleBlock no projeto: opcao folha eh ignorada com aviso no DTO
+- Sem Grids: cotas entre eixos e total nao sao criadas (esperado)
+- Sem Levels no range Z: simbolo de nivel nao cria (esperado)
+- Tolerancia de cluster influencia a quantidade de cotas verticais —
+  ajustar entre 50-300mm conforme densidade da estrutura
+
+---
+
 ## [2.3.0] - 2026-05-17
 
 ### Added (FEATURE NOVA)

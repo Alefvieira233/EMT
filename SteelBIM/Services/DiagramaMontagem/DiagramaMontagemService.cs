@@ -107,15 +107,86 @@ namespace SteelBIM.Services.DiagramaMontagem
                     }
                 }
 
-                // 8) Abrir vista para o usuario
+                // 8) Cotas verticais (SpotElevation em niveis clusterizados)
+                if (config.AdicionarCotasVerticais)
+                {
+                    using (Transaction tx6 = new Transaction(doc, "Cotas verticais"))
+                    {
+                        tx6.Start();
+                        resultado.CotasVerticais = CriarCotasVerticais(
+                            doc, vista, elementos, config.ToleranciaClusterizacaoMm);
+                        tx6.Commit();
+                    }
+                }
+
+                // 9) Cota total do conjunto
+                if (config.AdicionarCotaTotalConjunto && resultado.EixosVisiveis >= 2)
+                {
+                    using (Transaction tx7 = new Transaction(doc, "Cota total conjunto"))
+                    {
+                        tx7.Start();
+                        resultado.CotaTotalConjunto = CriarCotaTotalConjunto(doc, vista);
+                        tx7.Commit();
+                    }
+                }
+
+                // 10) Simbolo de nivel (Levels do projeto)
+                if (config.MostrarSimboloDeNivel)
+                {
+                    using (Transaction tx8 = new Transaction(doc, "Mostrar simbolo de nivel"))
+                    {
+                        tx8.Start();
+                        resultado.NiveisVisiveis = AjustarVisibilidadeNiveis(doc, vista, elementos);
+                        tx8.Commit();
+                    }
+                }
+
+                // 11) Comprimentos individuais (experimental)
+                if (config.AdicionarComprimentosIndividuais)
+                {
+                    using (Transaction tx9 = new Transaction(doc, "Comprimentos individuais"))
+                    {
+                        tx9.Start();
+                        resultado.ComprimentosCriados = CriarComprimentosIndividuais(doc, vista, elementos);
+                        tx9.Commit();
+                    }
+                }
+
+                // 12) Insercao em folha (POR ULTIMO — depende da vista pronta)
+                if (config.ColocarEmFolha)
+                {
+                    using (Transaction tx10 = new Transaction(doc, "Inserir em folha"))
+                    {
+                        tx10.Start();
+                        ElementId folhaId = ColocarVistaEmFolha(doc, vista, config, out string nomeFolha);
+                        if (folhaId != ElementId.InvalidElementId)
+                        {
+                            resultado.FolhaCriada = true;
+                            resultado.FolhaCriadaId = folhaId;
+                            resultado.NomeFolhaCriada = nomeFolha;
+                        }
+                        else
+                        {
+                            resultado.Avisos.Add("Nao foi possivel criar folha. Verifique se ha TitleBlock disponivel no projeto.");
+                        }
+                        tx10.Commit();
+                    }
+                }
+
+                // 13) Abrir vista para o usuario
                 uidoc.ActiveView = vista;
 
                 resultado.Sucesso = true;
                 resultado.Mensagem =
                     $"Diagrama criado: '{vista.Name}'.\n" +
                     $"Eixos visiveis: {resultado.EixosVisiveis}\n" +
-                    $"Cotas: {resultado.CotasCriadas}\n" +
-                    $"Tags: {resultado.TagsCriadas} (sem Mark: {resultado.TagsSemMark})";
+                    $"Niveis visiveis: {resultado.NiveisVisiveis}\n" +
+                    $"Cotas entre eixos: {resultado.CotasCriadas}\n" +
+                    $"Cotas verticais: {resultado.CotasVerticais}\n" +
+                    (resultado.CotaTotalConjunto ? "Cota total do conjunto: SIM\n" : "Cota total do conjunto: NAO\n") +
+                    $"Tags com marca: {resultado.TagsCriadas} (sem Mark: {resultado.TagsSemMark})\n" +
+                    (config.AdicionarComprimentosIndividuais ? $"Comprimentos individuais: {resultado.ComprimentosCriados}\n" : "") +
+                    (resultado.FolhaCriada ? $"Folha: '{resultado.NomeFolhaCriada}' criada\n" : "");
 
                 if (resultado.TagsSemMark > 0)
                 {
@@ -446,6 +517,365 @@ namespace SteelBIM.Services.DiagramaMontagem
                     Logger.Warn(ex, "[DiagramaMontagem] Falha ao tag elemento {Id}", e.Id);
                 }
             }
+        }
+
+        // ============================================
+        // 2H. COTAS VERTICAIS (SpotElevation clusterizado) — v2.4.0
+        // ============================================
+        /// <summary>
+        /// Cria SpotElevation em niveis chave dos elementos selecionados:
+        /// pontos onde ha viga, mudanca de elevacao, base/topo pilar.
+        /// Clusteriza pontos com elevacao Z proxima (tolerancia em mm).
+        /// Limita entre 3 e 15 cotas para nao poluir.
+        /// </summary>
+        private int CriarCotasVerticais(Document doc, ViewSection vista, List<Element> elementos, double tolMm)
+        {
+            // Coletar TODOS os pontos Z relevantes
+            var pontosZ = new List<double>();
+            foreach (Element e in elementos)
+            {
+                BoundingBoxXYZ bb = e.get_BoundingBox(null);
+                if (bb != null)
+                {
+                    pontosZ.Add(bb.Min.Z);
+                    pontosZ.Add(bb.Max.Z);
+                }
+                else if (e.Location is LocationCurve lc && lc.Curve != null)
+                {
+                    pontosZ.Add(lc.Curve.GetEndPoint(0).Z);
+                    pontosZ.Add(lc.Curve.GetEndPoint(1).Z);
+                }
+            }
+            if (pontosZ.Count == 0)
+                return 0;
+
+            // Clusterizar
+            double tolFt = UnitUtils.ConvertToInternalUnits(tolMm, UnitTypeId.Millimeters);
+            pontosZ = pontosZ.OrderBy(z => z).ToList();
+            var clusters = new List<double>();
+            double zClusterAtual = pontosZ[0];
+            clusters.Add(zClusterAtual);
+            foreach (double z in pontosZ.Skip(1))
+            {
+                if (z - zClusterAtual > tolFt)
+                {
+                    clusters.Add(z);
+                    zClusterAtual = z;
+                }
+            }
+
+            // Limitar entre 3 e 15 cotas (regra do plano — nao poluir)
+            if (clusters.Count > 15)
+            {
+                // Reamostrar uniformemente para 15
+                var reduzido = new List<double>();
+                double passo = (clusters.Count - 1) / 14.0;
+                for (int i = 0; i < 15; i++)
+                    reduzido.Add(clusters[(int)Math.Round(i * passo)]);
+                clusters = reduzido.Distinct().ToList();
+            }
+
+            // Posicionar SpotElevations a direita da extensao da vista
+            BoundingBoxXYZ bbVista = vista.get_BoundingBox(null);
+            if (bbVista == null)
+                return 0;
+
+            double xDireita = bbVista.Max.X + UnitUtils.ConvertToInternalUnits(800, UnitTypeId.Millimeters); // 80cm a direita
+
+            int cotasOk = 0;
+            foreach (double zCluster in clusters)
+            {
+                try
+                {
+                    // Encontrar um elemento que tem face nesse nivel Z
+                    Element refElem = null;
+                    foreach (Element e in elementos)
+                    {
+                        BoundingBoxXYZ bb = e.get_BoundingBox(null);
+                        if (bb == null)
+                            continue;
+                        if (Math.Abs(bb.Min.Z - zCluster) < tolFt || Math.Abs(bb.Max.Z - zCluster) < tolFt)
+                        {
+                            refElem = e;
+                            break;
+                        }
+                    }
+                    if (refElem == null)
+                        continue;
+
+                    Reference refE = new Reference(refElem);
+                    XYZ pontoElbow = new XYZ(xDireita, 0, zCluster);
+                    XYZ pontoTexto = new XYZ(xDireita + UnitUtils.ConvertToInternalUnits(200, UnitTypeId.Millimeters), 0, zCluster);
+                    XYZ pontoCota = new XYZ(xDireita, 0, zCluster);
+
+                    SpotDimension sd = doc.Create.NewSpotElevation(
+                        vista, refE,
+                        new XYZ(xDireita, 0, zCluster),
+                        pontoElbow,
+                        pontoTexto,
+                        pontoCota,
+                        true /* hasLeader */);
+
+                    if (sd != null)
+                        cotasOk++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "[DiagramaMontagem] Falha SpotElevation Z={Z}", zCluster);
+                }
+            }
+
+            return cotasOk;
+        }
+
+        // ============================================
+        // 2I. COTA TOTAL DO CONJUNTO — v2.4.0
+        // ============================================
+        /// <summary>
+        /// Cria uma cota linear total entre o eixo mais a esquerda e o mais a direita visiveis na vista.
+        /// Linha de cota fica ACIMA da linha de cotas entre eixos consecutivos.
+        /// </summary>
+        private bool CriarCotaTotalConjunto(Document doc, ViewSection vista)
+        {
+            try
+            {
+                XYZ rightDir = vista.RightDirection;
+                XYZ origin = vista.Origin;
+
+                var gridsComOrdem = new FilteredElementCollector(doc)
+                    .OfClass(typeof(Grid))
+                    .Cast<Grid>()
+                    .Where(g => g.Curve != null)
+                    .Select(g => new
+                    {
+                        Grid = g,
+                        Ordem = ProjetarPontoNaDirecao(GridPosicaoBase(g), origin, rightDir)
+                    })
+                    .OrderBy(x => x.Ordem)
+                    .ToList();
+
+                if (gridsComOrdem.Count < 2)
+                    return false;
+
+                Grid primeiro = gridsComOrdem.First().Grid;
+                Grid ultimo = gridsComOrdem.Last().Grid;
+
+                ReferenceArray refs = new ReferenceArray();
+                refs.Append(new Reference(primeiro));
+                refs.Append(new Reference(ultimo));
+
+                // Linha de cota 1m mais alta que a das cotas entre eixos
+                BoundingBoxXYZ cropBox = vista.CropBox;
+                double yTopoFt = cropBox.Max.Y + UnitUtils.ConvertToInternalUnits(1000, UnitTypeId.Millimeters);
+                XYZ p1 = ProjetarParaTopo(GridPosicaoBase(primeiro), vista.Origin + vista.UpDirection * yTopoFt, vista.UpDirection);
+                XYZ p2 = ProjetarParaTopo(GridPosicaoBase(ultimo), vista.Origin + vista.UpDirection * yTopoFt, vista.UpDirection);
+                Line linhaCota = Line.CreateBound(p1, p2);
+
+                Dimension dim = doc.Create.NewDimension(vista, linhaCota, refs);
+                return dim != null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[DiagramaMontagem] Falha cota total conjunto");
+                return false;
+            }
+        }
+
+        // ============================================
+        // 2J. SIMBOLO DE NIVEL (Levels) — v2.4.0
+        // ============================================
+        /// <summary>
+        /// Mostra os Levels do projeto que cruzam o range Z da selecao,
+        /// trazendo seu bubble visivel na vista (igual aos Grids).
+        /// </summary>
+        private int AjustarVisibilidadeNiveis(Document doc, ViewSection vista, List<Element> elementos)
+        {
+            // Determinar range Z da selecao
+            double minZ = double.MaxValue, maxZ = double.MinValue;
+            foreach (Element e in elementos)
+            {
+                BoundingBoxXYZ bb = e.get_BoundingBox(null);
+                if (bb == null)
+                    continue;
+                if (bb.Min.Z < minZ)
+                    minZ = bb.Min.Z;
+                if (bb.Max.Z > maxZ)
+                    maxZ = bb.Max.Z;
+            }
+            if (minZ == double.MaxValue)
+                return 0;
+
+            double tolFt = UnitUtils.ConvertToInternalUnits(500, UnitTypeId.Millimeters); // 50cm fora do range tb mostra
+
+            IList<Level> levels = new FilteredElementCollector(doc)
+                .OfClass(typeof(Level))
+                .Cast<Level>()
+                .Where(l => l.Elevation >= minZ - tolFt && l.Elevation <= maxZ + tolFt)
+                .ToList();
+
+            int visiveis = 0;
+            foreach (Level l in levels)
+            {
+                try
+                {
+                    l.ShowBubbleInView(DatumEnds.End0, vista);
+                    l.ShowBubbleInView(DatumEnds.End1, vista);
+                    visiveis++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "[DiagramaMontagem] Falha Level bubble {Name}", l.Name);
+                }
+            }
+
+            return visiveis;
+        }
+
+        // ============================================
+        // 2K. COMPRIMENTOS INDIVIDUAIS (experimental) — v2.4.0
+        // ============================================
+        /// <summary>
+        /// Cria TextNote com comprimento (cm) ao lado de cada peca estrutural.
+        /// Le STRUCTURAL_FRAME_CUT_LENGTH -> INSTANCE_LENGTH_PARAM -> comprimento
+        /// da LocationCurve (mesmo fallback do DstvHeaderBuilder). EXPERIMENTAL.
+        /// </summary>
+        private int CriarComprimentosIndividuais(Document doc, ViewSection vista, List<Element> elementos)
+        {
+            // Buscar TextNoteType default
+            TextNoteType defaultType = new FilteredElementCollector(doc)
+                .OfClass(typeof(TextNoteType))
+                .Cast<TextNoteType>()
+                .FirstOrDefault();
+            if (defaultType == null)
+                return 0;
+
+            int criados = 0;
+            foreach (Element e in elementos)
+            {
+                try
+                {
+                    double lenFt = 0;
+                    Parameter pCut = e.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
+                    Parameter pLen = e.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
+                    if (pCut != null && pCut.StorageType == StorageType.Double && pCut.AsDouble() > 0)
+                        lenFt = pCut.AsDouble();
+                    else if (pLen != null && pLen.StorageType == StorageType.Double && pLen.AsDouble() > 0)
+                        lenFt = pLen.AsDouble();
+                    else if (e.Location is LocationCurve lc && lc.Curve != null)
+                        lenFt = lc.Curve.Length;
+
+                    if (lenFt <= 0)
+                        continue;
+
+                    double lenCm = UnitUtils.ConvertFromInternalUnits(lenFt, UnitTypeId.Centimeters);
+
+                    BoundingBoxXYZ bb = e.get_BoundingBox(vista);
+                    if (bb == null)
+                        continue;
+                    XYZ centro = (bb.Min + bb.Max) * 0.5;
+
+                    TextNoteOptions opts = new TextNoteOptions(defaultType.Id);
+                    opts.Rotation = 0;
+                    opts.HorizontalAlignment = HorizontalTextAlignment.Center;
+
+                    TextNote tn = TextNote.Create(doc, vista.Id, centro, $"L={lenCm:F0}cm", opts);
+                    if (tn != null)
+                        criados++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "[DiagramaMontagem] Falha comprimento {Id}", e.Id);
+                }
+            }
+            return criados;
+        }
+
+        // ============================================
+        // 2L. INSERCAO EM FOLHA — v2.4.0
+        // ============================================
+        /// <summary>
+        /// Cria ViewSheet com TitleBlock disponivel no projeto e adiciona
+        /// a vista como Viewport. Retorna ElementId.InvalidElementId se nao
+        /// houver TitleBlock no projeto.
+        /// </summary>
+        private ElementId ColocarVistaEmFolha(Document doc, ViewSection vista, DiagramaMontagemConfig config, out string nomeFolha)
+        {
+            nomeFolha = string.Empty;
+
+            FamilySymbol titleBlock = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilySymbol))
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .Cast<FamilySymbol>()
+                .FirstOrDefault(fs => fs.IsActive);
+
+            // Se nenhum ativo, tenta ativar o primeiro
+            if (titleBlock == null)
+            {
+                FamilySymbol qualquer = new FilteredElementCollector(doc)
+                    .OfClass(typeof(FamilySymbol))
+                    .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                    .Cast<FamilySymbol>()
+                    .FirstOrDefault();
+                if (qualquer == null)
+                    return ElementId.InvalidElementId;
+
+                qualquer.Activate();
+                titleBlock = qualquer;
+            }
+
+            ViewSheet sheet = ViewSheet.Create(doc, titleBlock.Id);
+            if (sheet == null)
+                return ElementId.InvalidElementId;
+
+            // Setar nome e numero
+            try
+            {
+                string numero = !string.IsNullOrWhiteSpace(config.NumeroFolha) ? config.NumeroFolha : "EM-XX";
+                string nome = !string.IsNullOrWhiteSpace(config.NomeFolha) ? config.NomeFolha : vista.Name;
+
+                // Garantir unicidade do numero (Revit rejeita duplicate sheet number)
+                int sufixo = 1;
+                string numeroFinal = numero;
+                while (NumeroFolhaJaUsado(doc, numeroFinal))
+                {
+                    numeroFinal = $"{numero}-{sufixo++}";
+                    if (sufixo > 99)
+                        break;
+                }
+
+                sheet.SheetNumber = numeroFinal;
+                sheet.Name = nome;
+                nomeFolha = nome;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[DiagramaMontagem] Falha ao nomear folha");
+            }
+
+            // Adicionar viewport
+            try
+            {
+                BoundingBoxUV bbSheet = sheet.Outline;
+                XYZ pontoCentral = new XYZ(
+                    (bbSheet.Min.U + bbSheet.Max.U) / 2,
+                    (bbSheet.Min.V + bbSheet.Max.V) / 2,
+                    0);
+                Viewport.Create(doc, sheet.Id, vista.Id, pontoCentral);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[DiagramaMontagem] Falha ao criar viewport na folha");
+            }
+
+            return sheet.Id;
+        }
+
+        private bool NumeroFolhaJaUsado(Document doc, string numero)
+        {
+            return new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewSheet))
+                .Cast<ViewSheet>()
+                .Any(s => string.Equals(s.SheetNumber, numero, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

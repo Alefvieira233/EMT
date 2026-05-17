@@ -14,5 +14,14 @@ namespace SteelBIM.Models.DiagramaMontagem
         public int TagsSemMark { get; set; }
         public List<string> Avisos { get; set; } = new();
         public string Mensagem { get; set; } = string.Empty;
+
+        // Novos v2.4.0
+        public int CotasVerticais { get; set; }
+        public int NiveisVisiveis { get; set; }
+        public int ComprimentosCriados { get; set; }
+        public bool FolhaCriada { get; set; }
+        public ElementId FolhaCriadaId { get; set; }
+        public string NomeFolhaCriada { get; set; } = string.Empty;
+        public bool CotaTotalConjunto { get; set; }
     }
 }

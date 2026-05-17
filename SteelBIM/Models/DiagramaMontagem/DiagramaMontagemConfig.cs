@@ -21,5 +21,35 @@
         public bool AdicionarCotasEntreEixos { get; set; } = true;
         public bool AdicionarTagsMarca { get; set; } = true;
         public string NomeVista { get; set; } = "Diagrama de Montagem";
+
+        // === Cotagem vertical e total (novo v2.4.0) ===
+
+        /// <summary>Adiciona SpotElevation em niveis chave (base/topo pilar, vigas, cumeeira) na lateral direita.</summary>
+        public bool AdicionarCotasVerticais { get; set; } = true;
+
+        /// <summary>Tolerancia para clusterizar elevacoes proximas como "mesmo nivel". Default 100mm = 10cm.</summary>
+        public double ToleranciaClusterizacaoMm { get; set; } = 100.0;
+
+        /// <summary>Adiciona cota total da extensao horizontal acima das cotas entre eixos.</summary>
+        public bool AdicionarCotaTotalConjunto { get; set; } = true;
+
+        /// <summary>Mostra bubble dos Levels estruturais do projeto visiveis na vista.</summary>
+        public bool MostrarSimboloDeNivel { get; set; } = true;
+
+        // === Folha (novo v2.4.0) ===
+
+        /// <summary>Cria uma ViewSheet (folha) com TitleBlock e coloca a Section View como Viewport.</summary>
+        public bool ColocarEmFolha { get; set; } = false;
+
+        /// <summary>Numero da folha (preenche sheet.SheetNumber). Vazio = gera automatico.</summary>
+        public string NumeroFolha { get; set; } = "EM-XX";
+
+        /// <summary>Nome/titulo da folha (preenche sheet.Name). Vazio = usa nome da vista.</summary>
+        public string NomeFolha { get; set; } = "";
+
+        // === Comprimentos individuais (experimental v2.4.0) ===
+
+        /// <summary>Adiciona TextNote com comprimento (cm) ao lado de cada peca. EXPERIMENTAL - pode poluir.</summary>
+        public bool AdicionarComprimentosIndividuais { get; set; } = false;
     }
 }

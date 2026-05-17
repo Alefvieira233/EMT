@@ -24,15 +24,31 @@ namespace SteelBIM.Views
         public DiagramaMontagemConfig BuildConfig()
         {
             var c = new DiagramaMontagemConfig();
+
+            // Orientacao (existente)
             if (rbX.IsChecked == true)
                 c.Orientacao = OrientacaoDiagrama.ParaleloEixoX;
             else if (rbY.IsChecked == true)
                 c.Orientacao = OrientacaoDiagrama.ParaleloEixoY;
             else
                 c.Orientacao = OrientacaoDiagrama.Auto;
+
+            // Conteudo basico (existente)
             c.MostrarEixos = chkEixos.IsChecked == true;
             c.AdicionarCotasEntreEixos = chkCotas.IsChecked == true;
             c.AdicionarTagsMarca = chkTags.IsChecked == true;
+
+            // Cotagem adicional (novo v2.4.0)
+            c.AdicionarCotasVerticais = chkCotasVerticais.IsChecked == true;
+            c.AdicionarCotaTotalConjunto = chkCotaTotal.IsChecked == true;
+            c.MostrarSimboloDeNivel = chkMostrarNiveis.IsChecked == true;
+            c.AdicionarComprimentosIndividuais = chkComprimentos.IsChecked == true;
+
+            // Folha (novo v2.4.0)
+            c.ColocarEmFolha = chkFolha.IsChecked == true;
+            c.NumeroFolha = txtNumeroFolha.Text?.Trim() ?? "EM-XX";
+            c.NomeFolha = txtNomeFolha.Text?.Trim() ?? "";
+
             return c;
         }
 
