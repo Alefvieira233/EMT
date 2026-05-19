@@ -147,14 +147,52 @@ namespace SteelBIM
             }
             catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
 
-            // v2.1.0: aba unica "SteelBIM" agregando todos os paineis (PF + Geral).
-            // Decisao de branding: marca unica de produto -> aba unica de ribbon.
-            // Historico: v2.0.0 (rebrand) manteve as duas abas herdadas de v1.5.0.
-            // v2.1.0 unifica porque "Ferramentas ECC" como aba separada parecia
-            // plugin distinto pro usuario final, prejudicando percepcao da marca.
-            string tabName = "SteelBIM";
+            // v2.6.0: ribbon dividido em DUAS abas (decisao do Alef):
+            //   "SteelBIM | Modelagem"    -> modelagem, conexoes, armaduras PF, visualizacao
+            //   "SteelBIM | Detalhamento" -> vistas, cotagem, anotacao, CNC, sequenciamento, verificacao, licenca
+            // Historico: v2.0.0 herdou 2 abas de v1.5.0; v2.1.0 unificou tudo numa
+            // aba unica "SteelBIM"; v2.6.0 volta a separar — agora por FASE de
+            // trabalho (modelar vs detalhar), mantendo a marca no prefixo da aba.
+            // Apenas reorganizacao visual: nenhum command/service/AddInId mudou e
+            // os internalName dos botoes foram preservados (atalhos do usuario OK).
             RevitWindowThemeService.Initialize(application);
 
+            string tabModelagem = "SteelBIM | Modelagem";
+            string tabDetalhamento = "SteelBIM | Detalhamento";
+            CreateRibbonTabSafe(application, tabModelagem);
+            CreateRibbonTabSafe(application, tabDetalhamento);
+
+            string assemblyPath = Assembly.GetExecutingAssembly().Location;
+
+            BuildAbaModelagem(application, tabModelagem, assemblyPath);
+            BuildAbaDetalhamento(application, tabDetalhamento, assemblyPath);
+
+            return Result.Succeeded;
+        }
+
+        public Result OnShutdown(UIControlledApplication application)
+        {
+            Logger.Info("App.OnShutdown");
+
+            // PR-4: drena eventos pendentes da telemetria. PostHogHttpTelemetryClient
+            // usa fire-and-forget sem batch buffer, entao Flush eh no-op imediato.
+            try
+            { TelemetryReporter.Flush(2000); }
+            catch (Exception flushEx) { Logger.Warn(flushEx, "[Telemetry] Flush em OnShutdown falhou"); }
+
+            // PR-3: drena eventos pendentes do Sentry antes de fechar (max 2s).
+            // No-op silencioso se Sentry nao foi inicializado.
+            try
+            { SentryReporter.Flush(2000); }
+            catch (Exception flushEx) { Logger.Warn(flushEx, "[Sentry] Flush em OnShutdown falhou"); }
+
+            RevitWindowThemeService.Shutdown();
+            Logger.Shutdown();
+            return Result.Succeeded;
+        }
+
+        private static void CreateRibbonTabSafe(UIControlledApplication application, string tabName)
+        {
             try
             {
                 application.CreateRibbonTab(tabName);
@@ -164,32 +202,25 @@ namespace SteelBIM
                 // Aba já existe — esperado quando o plugin recarrega
                 Logger.Debug("CreateRibbonTab: aba ja existe ({Msg})", ex.Message);
             }
+        }
 
-            // v2.1.0: paineis na aba unica "SteelBIM".
-            // Ordem visual no ribbon segue ordem das chamadas GetOrCreatePanel
-            // abaixo (Revit cria o painel na primeira chamada):
-            //   PF Construcao -> PF Documentacao -> PF Armaduras -> Modelagem ->
-            //   Estrutura -> Vigas -> Vista -> Documentacao -> Fabricacao ->
-            //   CNC -> Verificacao -> Montagem -> Licenca
-            // PF primeiro: eh o diferencial competitivo do plugin BR.
+        // v2.6.0: ABA "SteelBIM | Modelagem" — 7 paineis (modelagem geral,
+        // estrutura metalica, operacoes em vigas, conexoes, PF construcao,
+        // PF armaduras, visualizacao). Ordem dos paineis = ordem das chamadas
+        // GetOrCreatePanel; ordem dos botoes = ordem das chamadas AddButton.
+        private void BuildAbaModelagem(UIControlledApplication application, string tabName, string assemblyPath)
+        {
+            RibbonPanel panelModelagemGeral = GetOrCreatePanel(application, tabName, "Modelagem Geral");
+            RibbonPanel panelEstruturaMetalica = GetOrCreatePanel(application, tabName, "Estrutura Metálica");
+            RibbonPanel panelOperacoesVigas = GetOrCreatePanel(application, tabName, "Operações em Vigas");
+            RibbonPanel panelConexoes = GetOrCreatePanel(application, tabName, "Conexões");
             RibbonPanel panelPfConstrucao = GetOrCreatePanel(application, tabName, "PF Construção");
-            RibbonPanel panelPfDocumentacao = GetOrCreatePanel(application, tabName, "PF Documentação");
             RibbonPanel panelPfArmaduras = GetOrCreatePanel(application, tabName, "PF Armaduras");
-            RibbonPanel panelModelagem = GetOrCreatePanel(application, tabName, "Modelagem");
-            RibbonPanel panelEstrutura = GetOrCreatePanel(application, tabName, "Estrutura");
-            RibbonPanel panelVigas = GetOrCreatePanel(application, tabName, "Vigas");
-            RibbonPanel panelVista = GetOrCreatePanel(application, tabName, "Vista");
-            RibbonPanel panelDocumentacao = GetOrCreatePanel(application, tabName, "Documentação");
-            RibbonPanel panelFabricacao = GetOrCreatePanel(application, tabName, "Fabricação");
-            RibbonPanel panelCnc = GetOrCreatePanel(application, tabName, "CNC");
-            RibbonPanel panelQa = GetOrCreatePanel(application, tabName, "Verificação");
-            RibbonPanel panelMontagem = GetOrCreatePanel(application, tabName, "Montagem");
-            RibbonPanel panelLicenca = GetOrCreatePanel(application, tabName, "Licença");
+            RibbonPanel panelVisualizacao = GetOrCreatePanel(application, tabName, "Visualização");
 
-            string assemblyPath = Assembly.GetExecutingAssembly().Location;
-
+            // --- Modelagem Geral ---
             AddButton(
-                panelModelagem,
+                panelModelagemGeral,
                 "btnLancarPipeRack",
                 "Pipe\nRack",
                 assemblyPath,
@@ -200,7 +231,7 @@ namespace SteelBIM
             );
 
             AddButton(
-                panelModelagem,
+                panelModelagemGeral,
                 "btnLancarEscada",
                 "Escada",
                 assemblyPath,
@@ -211,7 +242,7 @@ namespace SteelBIM
             );
 
             AddButton(
-                panelModelagem,
+                panelModelagemGeral,
                 "btnLancarGuardaCorpo",
                 "Guarda-\nCorpo",
                 assemblyPath,
@@ -221,8 +252,9 @@ namespace SteelBIM
                 "guardaropo_small.png"
             );
 
+            // --- Estrutura Metálica ---
             AddButton(
-                panelEstrutura,
+                panelEstruturaMetalica,
                 "btnGerarTercasPlano",
                 "Terças",
                 assemblyPath,
@@ -233,7 +265,7 @@ namespace SteelBIM
             );
 
             AddButton(
-                panelEstrutura,
+                panelEstruturaMetalica,
                 "btnGerarTravamentos",
                 "Travamentos",
                 assemblyPath,
@@ -244,7 +276,7 @@ namespace SteelBIM
             );
 
             AddButton(
-                panelEstrutura,
+                panelEstruturaMetalica,
                 "btnGerarTrelica",
                 "Treliça",
                 assemblyPath,
@@ -254,20 +286,9 @@ namespace SteelBIM
                 "trelica_small.png"
             );
 
-            AddButton(
-                panelEstrutura,
-                "btnCortarElementos",
-                "Cortar\nElementos",
-                assemblyPath,
-                "SteelBIM.Commands.CmdCortarElementos",
-                "Seleciona pisos, quadros estruturais e colunas/pilares; localiza interferencias e aplica corte automatico (JoinGeometry ou SolidSolidCut).",
-                "viga_dividida_large.png",
-                "viga_dividida_small.png"
-            );
-
             // Incorporacao Victor Final (Onda 5): Contraventamento e Placas de Base
             AddButton(
-                panelEstrutura,
+                panelEstruturaMetalica,
                 "btnGerarContraventamentoPlano",
                 "Contraven-\ntamento",
                 assemblyPath,
@@ -278,7 +299,7 @@ namespace SteelBIM
             );
 
             AddButton(
-                panelEstrutura,
+                panelEstruturaMetalica,
                 "btnLancarPlacasBase",
                 "Placas\nde Base",
                 assemblyPath,
@@ -288,8 +309,20 @@ namespace SteelBIM
                 "column_line_small.png"
             );
 
+            // --- Operações em Vigas ---
             AddButton(
-                panelVigas,
+                panelOperacoesVigas,
+                "btnCortarElementos",
+                "Cortar\nElementos",
+                assemblyPath,
+                "SteelBIM.Commands.CmdCortarElementos",
+                "Seleciona pisos, quadros estruturais e colunas/pilares; localiza interferencias e aplica corte automatico (JoinGeometry ou SolidSolidCut).",
+                "viga_dividida_large.png",
+                "viga_dividida_small.png"
+            );
+
+            AddButton(
+                panelOperacoesVigas,
                 "btnAjustarEncontroVigas",
                 "Encontro",
                 assemblyPath,
@@ -300,7 +333,7 @@ namespace SteelBIM
             );
 
             AddButton(
-                panelVigas,
+                panelOperacoesVigas,
                 "btnCortarPerfilInterferencia",
                 "Seccionar\nViga",
                 assemblyPath,
@@ -311,7 +344,7 @@ namespace SteelBIM
             );
 
             AddStackedButtons(
-                panelVigas,
+                panelOperacoesVigas,
                 "btnDesabilitarUniaoVigasSelecao",
                 "Sem União\nSeleção",
                 assemblyPath,
@@ -327,173 +360,19 @@ namespace SteelBIM
                 "viga_sem_uniao_vista_small.png"
             );
 
+            // --- Conexões ---
             AddButton(
-                panelVista,
-                "btnIsolarVigasEstruturais",
-                "Isolar\nVigas",
+                panelConexoes,
+                "btnGerarConexao",
+                "Gerar\nConexão",
                 assemblyPath,
-                "SteelBIM.Commands.CmdIsolarVigasEstruturais",
-                "Isola temporariamente apenas as vigas estruturais na vista ativa.",
-                "beam_isolar_large.png",
-                "beam_isolar_small.png"
+                "SteelBIM.Commands.CmdGerarConexao",
+                "Gera conexões metálicas (chapa de ponta, dupla cantoneira, chapa gusset) entre vigas e pilares ou entre vigas. Calcula bolt count para integração com lista de materiais.",
+                "viga_encontro_large.png",
+                "viga_encontro_small.png"
             );
 
-            AddButton(
-                panelVista,
-                "btnIsolarPilaresEstruturais",
-                "Isolar\nPilares",
-                assemblyPath,
-                "SteelBIM.Commands.CmdIsolarPilaresEstruturais",
-                "Isola temporariamente apenas os pilares estruturais na vista ativa.",
-                "column_line_large.png",
-                "column_line_small.png"
-            );
-
-            AddButton(
-                panelVista,
-                "btnAgruparPilaresPorTipo",
-                "Agrupar\nPilares",
-                assemblyPath,
-                "SteelBIM.Commands.CmdAgruparPilaresPorTipo",
-                "Agrupa pilares iguais por tipo com destaque visual por conjunto, evitando grupos nativos que possam conflitar com eixos.",
-                "agruparpilares_large.png",
-                "agruparpilares_small.png"
-            );
-
-            AddButton(
-                panelVista,
-                "btnAgruparVigasPorTipo",
-                "Agrupar\nVigas",
-                assemblyPath,
-                "SteelBIM.Commands.CmdAgruparVigasPorTipo",
-                "Agrupa vigas iguais por tipo, colore cada conjunto e cria grupos EMT.",
-                "agruparvigas_large.png",
-                "agruparvigas_small.png"
-            );
-
-            AddButton(
-                panelVista,
-                "btnLimparAgrupamentosVisuais",
-                "Limpar",
-                assemblyPath,
-                "SteelBIM.Commands.CmdLimparAgrupamentosVisuais",
-                "Remove as cores aplicadas na vista ativa e desfaz os grupos EMT criados para pilares e vigas.",
-                "broom_large.png",
-                "broom_small.png"
-            );
-
-            AddButton(
-                panelDocumentacao,
-                "btnNumerarItens",
-                "Numerar",
-                assemblyPath,
-                "SteelBIM.Commands.CmdNumerarItens",
-                "Numera elementos manualmente por ordem de clique com filtros, avanço/retrocesso e destaque visual dos itens já processados.",
-                "tag_large.png",
-                "tag_small.png"
-            );
-
-            AddButton(
-                panelDocumentacao,
-                "btnExportarListaMateriais",
-                "Exportar",
-                assemblyPath,
-                "SteelBIM.Commands.CmdExportarListaMateriais",
-                "Exporta uma lista de materiais estruturais para Excel com abas de perfis lineares, chapas/conexões e resumo consolidado.",
-                "sheets_large.png",
-                "sheets_small.png"
-            );
-
-            AddButton(
-                panelDocumentacao,
-                "btnGerarCotasAlinhamento",
-                "Cotas\nAlinhamento",
-                assemblyPath,
-                "SteelBIM.Commands.CmdGerarCotasPorAlinhamento",
-                "Selecione os elementos e clique no lado onde a cota deve ficar. A ferramenta agrupa os alinhamentos automaticamente e gera as cotas na vista ativa.",
-                "ruler_large.png",
-                "ruler_small.png"
-            );
-
-            // Sprint 1 (Bug B5): registrar CmdGerarCotasPorEixo (estava orfao)
-            AddButton(
-                panelDocumentacao,
-                "btnGerarCotasEixo",
-                "Cotas\npor Eixo",
-                assemblyPath,
-                "SteelBIM.Commands.CmdGerarCotasPorEixo",
-                "Gera cotas automaticas perpendiculares aos eixos do projeto. Detecta interseccoes com vigas e pilares na vista ativa.",
-                "ruler_large.png",
-                "ruler_small.png"
-            );
-
-            AddButton(
-                panelDocumentacao,
-                "btnCotarTrelica",
-                "Cotar\nTreliça",
-                assemblyPath,
-                "SteelBIM.Commands.CmdCotarTrelica",
-                "Aplica cotagem EMT em 5 faixas (painéis superior/inferior, vão total, vãos parciais, alturas) sobre elevação/corte de treliça selecionada.",
-                "ruler_large.png",
-                "ruler_small.png"
-            );
-
-            AddButton(
-                panelDocumentacao,
-                "btnTagearTrelica",
-                "Tagear\nTreliça",
-                assemblyPath,
-                "SteelBIM.Commands.CmdTagearTrelica",
-                "Identifica perfis (banzos, montantes, diagonais) diretamente sobre a elevação da treliça com tags padronizadas EMT.",
-                "tag_large.png",
-                "tag_small.png"
-            );
-
-            AddButton(
-                panelDocumentacao,
-                "btnIdentificarPerfil",
-                "Identificar\nPerfil",
-                assemblyPath,
-                "SteelBIM.Commands.CmdIdentificarPerfil",
-                "Identifica perfis estruturais selecionados com tag ou TextNote contendo nome do perfil, comprimento e quantidade agrupada.",
-                "tag_large.png",
-                "tag_small.png"
-            );
-
-            // --- Painéis PF (Pré-Fabricado de Concreto) ---
-            AddButton(
-                panelPfConstrucao,
-                "btnPfNomearElementos",
-                "Nomear\nPF",
-                assemblyPath,
-                "SteelBIM.Commands.PF.CmdPfNomearElementos",
-                "Nomeia pilares, vigas e lajes PF com filtros por família, tipo e parâmetro, no mesmo padrão da rotina Numerar Itens.",
-                "numeracao_large.png",
-                "numeracao_small.png"
-            );
-
-            AddButton(
-                panelPfConstrucao,
-                "btnPfIsolarPilaresConsolos",
-                "Isolar\nP+Cons.",
-                assemblyPath,
-                "SteelBIM.Commands.PF.CmdPfIsolarPilaresConsolos",
-                "Isola na vista ativa os pilares estruturais e as famílias PF com modelo Consolo.",
-                "column_line_large.png",
-                "column_line_small.png"
-            );
-
-            AddButton(
-                panelPfConstrucao,
-                "btnPfIsolarLajes",
-                "Isolar\nLajes",
-                assemblyPath,
-                "SteelBIM.Commands.PF.CmdPfIsolarLajes",
-                "Isola famílias PF cuja tipagem esteja marcada com Modelo = Laje.",
-                "beam_isolar_large.png",
-                "beam_isolar_small.png"
-            );
-
+            // --- PF Construção ---
             // Incorporacao Victor Final (Onda 5): Lancamento de fundacoes em massa
             AddButton(
                 panelPfConstrucao,
@@ -506,28 +385,7 @@ namespace SteelBIM
                 "foundation_piles_small.png"
             );
 
-            AddButton(
-                panelPfDocumentacao,
-                "btnPfElevacaoPilares",
-                "Elevação\nPilar",
-                assemblyPath,
-                "SteelBIM.Commands.PF.CmdPfElevacaoFormaPilares",
-                "Gera elevação e corte transversal para pilares estruturais, sem depender do Dynamo.",
-                "vista_peca_large.png",
-                "vista_peca_small.png"
-            );
-
-            AddButton(
-                panelPfDocumentacao,
-                "btnPfElevacaoVigas",
-                "Elevação\nVigas",
-                assemblyPath,
-                "SteelBIM.Commands.PF.CmdPfElevacaoFormaVigas",
-                "Gera elevação e corte transversal para vigas estruturais, sem depender do Dynamo.",
-                "vista_peca_large.png",
-                "vista_peca_small.png"
-            );
-
+            // --- PF Armaduras ---
             AddButton(
                 panelPfArmaduras,
                 "btnPfEstribosPilar",
@@ -609,10 +467,123 @@ namespace SteelBIM
                 "armadura_grid_small.png"
             );
 
-            // --- Painel Fabricação (botoes; painel criado no topo, v2.1.0) ---
+            // --- Visualização ---
+            AddButton(
+                panelVisualizacao,
+                "btnIsolarVigasEstruturais",
+                "Isolar\nVigas",
+                assemblyPath,
+                "SteelBIM.Commands.CmdIsolarVigasEstruturais",
+                "Isola temporariamente apenas as vigas estruturais na vista ativa.",
+                "beam_isolar_large.png",
+                "beam_isolar_small.png"
+            );
 
             AddButton(
-                panelFabricacao,
+                panelVisualizacao,
+                "btnIsolarPilaresEstruturais",
+                "Isolar\nPilares",
+                assemblyPath,
+                "SteelBIM.Commands.CmdIsolarPilaresEstruturais",
+                "Isola temporariamente apenas os pilares estruturais na vista ativa.",
+                "column_line_large.png",
+                "column_line_small.png"
+            );
+
+            AddButton(
+                panelVisualizacao,
+                "btnPfIsolarPilaresConsolos",
+                "Isolar\nP+Cons.",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdPfIsolarPilaresConsolos",
+                "Isola na vista ativa os pilares estruturais e as famílias PF com modelo Consolo.",
+                "column_line_large.png",
+                "column_line_small.png"
+            );
+
+            AddButton(
+                panelVisualizacao,
+                "btnPfIsolarLajes",
+                "Isolar\nLajes",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdPfIsolarLajes",
+                "Isola famílias PF cuja tipagem esteja marcada com Modelo = Laje.",
+                "beam_isolar_large.png",
+                "beam_isolar_small.png"
+            );
+
+            AddButton(
+                panelVisualizacao,
+                "btnAgruparPilaresPorTipo",
+                "Agrupar\nPilares",
+                assemblyPath,
+                "SteelBIM.Commands.CmdAgruparPilaresPorTipo",
+                "Agrupa pilares iguais por tipo com destaque visual por conjunto, evitando grupos nativos que possam conflitar com eixos.",
+                "agruparpilares_large.png",
+                "agruparpilares_small.png"
+            );
+
+            AddButton(
+                panelVisualizacao,
+                "btnAgruparVigasPorTipo",
+                "Agrupar\nVigas",
+                assemblyPath,
+                "SteelBIM.Commands.CmdAgruparVigasPorTipo",
+                "Agrupa vigas iguais por tipo, colore cada conjunto e cria grupos EMT.",
+                "agruparvigas_large.png",
+                "agruparvigas_small.png"
+            );
+
+            AddButton(
+                panelVisualizacao,
+                "btnLimparAgrupamentosVisuais",
+                "Limpar",
+                assemblyPath,
+                "SteelBIM.Commands.CmdLimparAgrupamentosVisuais",
+                "Remove as cores aplicadas na vista ativa e desfaz os grupos EMT criados para pilares e vigas.",
+                "broom_large.png",
+                "broom_small.png"
+            );
+        }
+
+        // v2.6.0: ABA "SteelBIM | Detalhamento" — 7 paineis (vistas, cotagem,
+        // anotacao, fabricacao CNC, montagem e sequenciamento, verificacao,
+        // licenca).
+        private void BuildAbaDetalhamento(UIControlledApplication application, string tabName, string assemblyPath)
+        {
+            RibbonPanel panelVistas = GetOrCreatePanel(application, tabName, "Vistas");
+            RibbonPanel panelCotagem = GetOrCreatePanel(application, tabName, "Cotagem");
+            RibbonPanel panelAnotacao = GetOrCreatePanel(application, tabName, "Anotação");
+            RibbonPanel panelFabricacaoCnc = GetOrCreatePanel(application, tabName, "Fabricação CNC");
+            RibbonPanel panelMontagem = GetOrCreatePanel(application, tabName, "Montagem e Sequenciamento");
+            RibbonPanel panelVerificacao = GetOrCreatePanel(application, tabName, "Verificação");
+            RibbonPanel panelLicenca = GetOrCreatePanel(application, tabName, "Licença");
+
+            // --- Vistas ---
+            AddButton(
+                panelVistas,
+                "btnPfElevacaoPilares",
+                "Elevação\nPilar",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdPfElevacaoFormaPilares",
+                "Gera elevação e corte transversal para pilares estruturais, sem depender do Dynamo.",
+                "vista_peca_large.png",
+                "vista_peca_small.png"
+            );
+
+            AddButton(
+                panelVistas,
+                "btnPfElevacaoVigas",
+                "Elevação\nVigas",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdPfElevacaoFormaVigas",
+                "Gera elevação e corte transversal para vigas estruturais, sem depender do Dynamo.",
+                "vista_peca_large.png",
+                "vista_peca_small.png"
+            );
+
+            AddButton(
+                panelVistas,
                 "btnGerarVistaPeca",
                 "Vista de\nPeça",
                 assemblyPath,
@@ -622,8 +593,43 @@ namespace SteelBIM
                 "vista_peca_small.png"
             );
 
+            // --- Cotagem ---
             AddButton(
-                panelFabricacao,
+                panelCotagem,
+                "btnGerarCotasAlinhamento",
+                "Cotas\nAlinhamento",
+                assemblyPath,
+                "SteelBIM.Commands.CmdGerarCotasPorAlinhamento",
+                "Selecione os elementos e clique no lado onde a cota deve ficar. A ferramenta agrupa os alinhamentos automaticamente e gera as cotas na vista ativa.",
+                "ruler_large.png",
+                "ruler_small.png"
+            );
+
+            // Sprint 1 (Bug B5): registrar CmdGerarCotasPorEixo (estava orfao)
+            AddButton(
+                panelCotagem,
+                "btnGerarCotasEixo",
+                "Cotas\npor Eixo",
+                assemblyPath,
+                "SteelBIM.Commands.CmdGerarCotasPorEixo",
+                "Gera cotas automaticas perpendiculares aos eixos do projeto. Detecta interseccoes com vigas e pilares na vista ativa.",
+                "ruler_large.png",
+                "ruler_small.png"
+            );
+
+            AddButton(
+                panelCotagem,
+                "btnCotarTrelica",
+                "Cotar\nTreliça",
+                assemblyPath,
+                "SteelBIM.Commands.CmdCotarTrelica",
+                "Aplica cotagem EMT em 5 faixas (painéis superior/inferior, vão total, vãos parciais, alturas) sobre elevação/corte de treliça selecionada.",
+                "ruler_large.png",
+                "ruler_small.png"
+            );
+
+            AddButton(
+                panelCotagem,
                 "btnCotarPecaFabricacao",
                 "Cotar\nFabricação",
                 assemblyPath,
@@ -633,8 +639,42 @@ namespace SteelBIM
                 "cotar_fabricacao_small.png"
             );
 
+            // --- Anotação ---
             AddButton(
-                panelFabricacao,
+                panelAnotacao,
+                "btnNumerarItens",
+                "Numerar",
+                assemblyPath,
+                "SteelBIM.Commands.CmdNumerarItens",
+                "Numera elementos manualmente por ordem de clique com filtros, avanço/retrocesso e destaque visual dos itens já processados.",
+                "tag_large.png",
+                "tag_small.png"
+            );
+
+            AddButton(
+                panelAnotacao,
+                "btnTagearTrelica",
+                "Tagear\nTreliça",
+                assemblyPath,
+                "SteelBIM.Commands.CmdTagearTrelica",
+                "Identifica perfis (banzos, montantes, diagonais) diretamente sobre a elevação da treliça com tags padronizadas EMT.",
+                "tag_large.png",
+                "tag_small.png"
+            );
+
+            AddButton(
+                panelAnotacao,
+                "btnIdentificarPerfil",
+                "Identificar\nPerfil",
+                assemblyPath,
+                "SteelBIM.Commands.CmdIdentificarPerfil",
+                "Identifica perfis estruturais selecionados com tag ou TextNote contendo nome do perfil, comprimento e quantidade agrupada.",
+                "tag_large.png",
+                "tag_small.png"
+            );
+
+            AddButton(
+                panelAnotacao,
                 "btnMarcarPecas",
                 "Marcar\nPeças",
                 assemblyPath,
@@ -644,10 +684,20 @@ namespace SteelBIM
                 "marca_peca_small.png"
             );
 
-            // --- Painel CNC (botoes; painel criado no topo, v2.1.0) ---
-
             AddButton(
-                panelCnc,
+                panelAnotacao,
+                "btnPfNomearElementos",
+                "Nomear\nPF",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdPfNomearElementos",
+                "Nomeia pilares, vigas e lajes PF com filtros por família, tipo e parâmetro, no mesmo padrão da rotina Numerar Itens.",
+                "numeracao_large.png",
+                "numeracao_small.png"
+            );
+
+            // --- Fabricação CNC ---
+            AddButton(
+                panelFabricacaoCnc,
                 "btnExportarDstv",
                 "Exportar\nDSTV/NC1",
                 assemblyPath,
@@ -657,37 +707,18 @@ namespace SteelBIM
                 "sheets_small.png"
             );
 
-            // --- Painel QA (botoes; painel criado no topo, v2.1.0) ---
-
             AddButton(
-                panelQa,
-                "btnVerificarModelo",
-                "Verificar\nModelo",
+                panelFabricacaoCnc,
+                "btnExportarListaMateriais",
+                "Exportar",
                 assemblyPath,
-                "SteelBIM.Commands.CmdVerificarModelo",
-                "Roda múltiplas regras de validação no modelo (peças sem marca, sem material, perfis sobrepostos, etc.) e gera relatório consolidado.",
-                "broom_large.png",
-                "broom_small.png"
+                "SteelBIM.Commands.CmdExportarListaMateriais",
+                "Exporta uma lista de materiais estruturais para Excel com abas de perfis lineares, chapas/conexões e resumo consolidado.",
+                "sheets_large.png",
+                "sheets_small.png"
             );
 
-            // --- Painel Montagem (botoes; painel criado no topo, v2.1.0) ---
-
-            AddButton(
-                panelMontagem,
-                "btnSequenciamentoBim",
-                "Sequencia-\nmento BIM",
-                assemblyPath,
-                "SteelBIM.Commands.CmdPlanoMontagem",
-                "Sequenciamento BIM (4D Phasing) — Atribui fases de montagem a " +
-                "elementos estruturais para planejamento cronologico. Agrupa pecas " +
-                "por etapa, aplica destaque visual com cores customizaveis por fase, " +
-                "exporta relatorio para Excel. Util para planejamento 4D, " +
-                "coordenacao de cronograma de obra, integracao com Synchro/Navisworks " +
-                "Timeliner e simulacao de sequencia construtiva.",
-                "agruparvigas_large.png",
-                "agruparvigas_small.png"
-            );
-
+            // --- Montagem e Sequenciamento ---
             AddButton(
                 panelMontagem,
                 "btnDiagramaMontagem",
@@ -707,17 +738,33 @@ namespace SteelBIM
 
             AddButton(
                 panelMontagem,
-                "btnGerarConexao",
-                "Gerar\nConexão",
+                "btnSequenciamentoBim",
+                "Sequencia-\nmento BIM",
                 assemblyPath,
-                "SteelBIM.Commands.CmdGerarConexao",
-                "Gera conexões metálicas (chapa de ponta, dupla cantoneira, chapa gusset) entre vigas e pilares ou entre vigas. Calcula bolt count para integração com lista de materiais.",
-                "viga_encontro_large.png",
-                "viga_encontro_small.png"
+                "SteelBIM.Commands.CmdPlanoMontagem",
+                "Sequenciamento BIM (4D Phasing) — Atribui fases de montagem a " +
+                "elementos estruturais para planejamento cronologico. Agrupa pecas " +
+                "por etapa, aplica destaque visual com cores customizaveis por fase, " +
+                "exporta relatorio para Excel. Util para planejamento 4D, " +
+                "coordenacao de cronograma de obra, integracao com Synchro/Navisworks " +
+                "Timeliner e simulacao de sequencia construtiva.",
+                "agruparvigas_large.png",
+                "agruparvigas_small.png"
             );
 
-            // --- Painel Licença (botoes; painel criado no topo, v2.1.0) ---
+            // --- Verificação ---
+            AddButton(
+                panelVerificacao,
+                "btnVerificarModelo",
+                "Verificar\nModelo",
+                assemblyPath,
+                "SteelBIM.Commands.CmdVerificarModelo",
+                "Roda múltiplas regras de validação no modelo (peças sem marca, sem material, perfis sobrepostos, etc.) e gera relatório consolidado.",
+                "broom_large.png",
+                "broom_small.png"
+            );
 
+            // --- Licença ---
             AddStackedButtons(
                 panelLicenca,
                 "btnAtivarLicenca",
@@ -734,29 +781,6 @@ namespace SteelBIM
                 null,
                 null
             );
-
-            return Result.Succeeded;
-        }
-
-        public Result OnShutdown(UIControlledApplication application)
-        {
-            Logger.Info("App.OnShutdown");
-
-            // PR-4: drena eventos pendentes da telemetria. PostHogHttpTelemetryClient
-            // usa fire-and-forget sem batch buffer, entao Flush eh no-op imediato.
-            try
-            { TelemetryReporter.Flush(2000); }
-            catch (Exception flushEx) { Logger.Warn(flushEx, "[Telemetry] Flush em OnShutdown falhou"); }
-
-            // PR-3: drena eventos pendentes do Sentry antes de fechar (max 2s).
-            // No-op silencioso se Sentry nao foi inicializado.
-            try
-            { SentryReporter.Flush(2000); }
-            catch (Exception flushEx) { Logger.Warn(flushEx, "[Sentry] Flush em OnShutdown falhou"); }
-
-            RevitWindowThemeService.Shutdown();
-            Logger.Shutdown();
-            return Result.Succeeded;
         }
 
         private RibbonPanel GetOrCreatePanel(UIControlledApplication app, string tabName, string panelName)

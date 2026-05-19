@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.5.0-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.6.0-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-787%20passing-brightgreen)
 
@@ -60,7 +60,8 @@ máquinas de corte, com extração de furação e mapeamento de perfis.
 3. Execute `SteelBIM-Revit2025-Setup.exe`. O SmartScreen vai avisar — o
    plugin ainda não é assinado digitalmente; clique em "Mais informações"
    e depois em "Executar assim mesmo"
-4. Abra o Revit — a aba "SteelBIM" aparece no ribbon
+4. Abra o Revit — duas abas aparecem no ribbon:
+   "SteelBIM | Modelagem" e "SteelBIM | Detalhamento"
 
 ### Opção 2 — Build a partir do source
 
@@ -107,11 +108,12 @@ de configuração e regras de domínio.
 
 ## Versão atual
 
-**v2.5.0** — histórico completo de releases em
+**v2.6.0** — histórico completo de releases em
 [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.6.0** — Ribbon split (Modelagem + Detalhamento)
 - **v2.5.0** — Pre-market polish (README rewrite + 9 guards defensivos de doc.ActiveView)
 - **v2.4.1** — Hotfix gancho de estribo NBR 6118 9.4.6.1
 - **v2.4.0** — Diagrama de Montagem completo (100% padrão BR EM-08)

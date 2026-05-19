@@ -15,6 +15,22 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.0] - 2026-05-19
+
+### Changed
+- **BREAKING (UI):** A aba unica "SteelBIM" foi dividida em duas abas:
+  "SteelBIM | Modelagem" (modelagem, conexoes, armaduras PF, visualizacao)
+  e "SteelBIM | Detalhamento" (vistas, cotagem, anotacao, CNC, sequenciamento, verificacao, licenca).
+  Atalhos de teclado personalizados pelo usuario no Revit podem precisar ser refeitos.
+- Comandos, namespaces, services e AddInId nao mudaram. Apenas re-organizacao visual.
+
+### Compatibilidade
+- Modelos e templates existentes funcionam sem alteracao.
+- Configuracoes salvas (PFConfig, etc) preservadas.
+- Licencas v2.5.0 continuam validas.
+
+---
+
 ## [2.5.0] - 2026-05-19
 
 ### Changed
