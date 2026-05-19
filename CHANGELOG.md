@@ -15,6 +15,40 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.5.0] - 2026-05-19
+
+### Changed
+- README.md reescrito do zero refletindo o estado real do plugin:
+  v2.4.1, 48 comandos no ribbon (46 features + 2 utilitários), 787
+  testes, NBR 6118 nativo, DSTV/CNC, Diagrama de Montagem completo,
+  Sequenciamento BIM 4D, PF completo. O README anterior estava
+  desatualizado em 4 versões (dizia v1.5.0, 32 comandos, 419 testes).
+
+### Fixed
+- Auditoria sistematica dos 44 sitios de doc.ActiveView identificados
+  na auditoria senior v2.4.0:
+  * 9 sitios ganharam null-check defensivo novo:
+    - 6 comandos com early-return (PADRAO 1, Result.Cancelled +
+      AppDialogService.ShowWarning): CmdCortarPerfilPorInterferencia,
+      CmdDesabilitarUniaoVigasVista, CmdIsolarPilaresEstruturais,
+      CmdIsolarVigasEstruturais, CmdPfIsolarLajes,
+      CmdPfIsolarPilaresConsolos
+    - 3 services com guard defensivo (PADRAO 2, retorno antecipado +
+      Logger.Warn): CotarPecaFabricacaoService (void),
+      PfIsolationService e PfNamingService (Result.Cancelled)
+  * ~35 sitios verificados como ja protegidos por trabalho de
+    auditoria anterior, ou sao contextos nao-guardaveis sem refactor
+    (void/List/bool inline) — fora do escopo cirurgico deste release
+- Comando executado sem vista ativa em um dos 9 sitios novos agora
+  retorna Cancelled com mensagem clara em vez de
+  NullReferenceException.
+
+### Notes
+- Refactor dos sitios void/List/bool inline planejado para v2.6.0+
+  junto com migracao ADR-003 dos 17 services legados.
+
+---
+
 ## [2.4.1] - 2026-05-18
 
 ### Fixed (CRITICAL)

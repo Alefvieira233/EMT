@@ -35,6 +35,15 @@ namespace SteelBIM.Services
         {
             Document doc = uidoc.Document;
             View view = doc.ActiveView;
+            if (view == null)
+            {
+                Logger.Warn("[CotarPecaFabricacaoService] ActiveView nulo, abortando");
+                AppDialogService.ShowWarning(
+                    "CotarPecaFabricacaoService",
+                    "Este comando precisa de uma vista ativa. Abra uma vista no Revit antes de executar.",
+                    "Sem vista ativa");
+                return;
+            }
 
             if (!VistaSuportada(view))
             {

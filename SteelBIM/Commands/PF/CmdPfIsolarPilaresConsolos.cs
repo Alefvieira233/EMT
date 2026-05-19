@@ -3,6 +3,7 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using SteelBIM.Services.PF;
+using SteelBIM.Utils;
 
 namespace SteelBIM.Commands.PF
 {
@@ -14,6 +15,14 @@ namespace SteelBIM.Commands.PF
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
             View view = doc.ActiveView;
+            if (view == null)
+            {
+                AppDialogService.ShowWarning(
+                    CommandName,
+                    "Este comando precisa de uma vista ativa. Abra uma vista no Revit antes de executar.",
+                    "Sem vista ativa");
+                return Result.Cancelled;
+            }
             List<ElementId> ids = PfElementService.CollectIdsInView(
                 doc,
                 view,

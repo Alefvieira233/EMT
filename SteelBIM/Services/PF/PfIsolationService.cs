@@ -2,6 +2,7 @@
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using SteelBIM.Infrastructure;
 using SteelBIM.Utils;
 
 namespace SteelBIM.Services.PF
@@ -25,10 +26,21 @@ namespace SteelBIM.Services.PF
                 return Result.Cancelled;
             }
 
+            View view = uidoc.Document.ActiveView;
+            if (view == null)
+            {
+                Logger.Warn("[PfIsolationService] ActiveView nulo, abortando");
+                AppDialogService.ShowWarning(
+                    commandName,
+                    "Este comando precisa de uma vista ativa. Abra uma vista no Revit antes de executar.",
+                    "Sem vista ativa");
+                return Result.Cancelled;
+            }
+
             using (Transaction transaction = new Transaction(uidoc.Document, commandName))
             {
                 transaction.Start();
-                uidoc.Document.ActiveView.IsolateElementsTemporary(ids);
+                view.IsolateElementsTemporary(ids);
                 transaction.Commit();
             }
 

@@ -44,6 +44,16 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
             }
 
+            View view = doc.ActiveView;
+            if (view == null)
+            {
+                AppDialogService.ShowWarning(
+                    CommandName,
+                    "Este comando precisa de uma vista ativa. Abra uma vista no Revit antes de executar.",
+                    "Sem vista ativa");
+                return Result.Cancelled;
+            }
+
             Plane planoVista = ObterPlanoDaVista(doc.ActiveView);
             List<string> diagnostico = new List<string>();
             List<PontoDeCorte> cortes = ObterPontosDeCorte(curvaViga, referencias, planoVista, diagnostico);

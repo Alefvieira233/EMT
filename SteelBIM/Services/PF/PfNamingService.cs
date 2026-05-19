@@ -2,6 +2,7 @@
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using SteelBIM.Infrastructure;
 using SteelBIM.Models.PF;
 using SteelBIM.Services;
 using SteelBIM.Utils;
@@ -37,6 +38,16 @@ namespace SteelBIM.Services.PF
             }
 
             View view = doc.ActiveView;
+            if (view == null)
+            {
+                Logger.Warn("[PfNamingService] ActiveView nulo, abortando");
+                AppDialogService.ShowWarning(
+                    commandName,
+                    "Este comando precisa de uma vista ativa. Abra uma vista no Revit antes de executar.",
+                    "Sem vista ativa");
+                return Result.Cancelled;
+            }
+
             List<Element> ordenados = filtrados
                 .Select(x => doc.GetElement(x.Id))
                 .Where(x => x != null)
