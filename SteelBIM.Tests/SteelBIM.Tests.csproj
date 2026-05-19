@@ -143,6 +143,9 @@
     <!-- v1.2.0: PF (Pre-Fabricado de Concreto) — helpers puros -->
     <Compile Include="..\SteelBIM\Services\PF\PfNamingFormatter.cs"
              Link="LinkedSources\Services\PF\PfNamingFormatter.cs" />
+    <!-- v2.4.1 hotfix: regra NBR 6118 9.4.6.1 do rabo de gancho de estribo -->
+    <Compile Include="..\SteelBIM\Services\PF\PfStirrupHookRules.cs"
+             Link="LinkedSources\Services\PF\PfStirrupHookRules.cs" />
     <Compile Include="..\SteelBIM\Models\PF\PfRebarConfigs.cs"
              Link="LinkedSources\Models\PF\PfRebarConfigs.cs" />
 

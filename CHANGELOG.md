@@ -15,6 +15,27 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.4.1] - 2026-05-18
+
+### Fixed (CRITICAL)
+- Estribos de pilar e viga saiam com rabo de gancho curto demais.
+  PfRebarService.GetHookTypeByAngle criava RebarHookType com rabo
+  reto = 6.Ø para qualquer angulo != 90 — incluindo o 135 graus que
+  eh o DEFAULT de estribo (PfColumnStirrupsConfig/PfBeamStirrupsConfig).
+  NBR 6118 9.4.6.1 exige >= 10.Ø para gancho de estribo a 135 graus.
+  Reportado pelo Victor.
+- Regra de multiplicador extraida para helper puro
+  PfStirrupHookRules.NbrStirrupHookMultiplier (90->12, 135->10,
+  180->5, fallback 10) com cobertura de teste — fechando o gap que
+  deixou a regressao passar de v1.6.0 a v2.4.0.
+
+### Notes
+- O bug so se manifestava em projetos sem RebarHookType pre-configurado
+  para o angulo (path de auto-criacao). Projetos com gancho 135 ja
+  permitido no template nao eram afetados (early-return preservado).
+
+---
+
 ## [2.4.0] - 2026-05-17
 
 ### Added (FEATURE COMPLETA — Diagrama de Montagem 100% padrao BR)

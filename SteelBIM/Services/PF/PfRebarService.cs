@@ -917,7 +917,10 @@ namespace SteelBIM.Services.PF
             if (hookType != null)
                 return hookType;
 
-            double multiplier = angleDegrees == 90 ? 12.0 : 6.0;
+            // NBR 6118 9.4.6.1 — rabo do gancho por angulo (regra extraida e
+            // testada em PfStirrupHookRules). Antes era `90?12:6` que dava
+            // 6.O no 135 padrao de estribo (bug de dobra v2.4.0).
+            double multiplier = PfStirrupHookRules.NbrStirrupHookMultiplier(angleDegrees);
             RebarHookType created = RebarHookType.Create(doc, DegreesToRadians(angleDegrees), multiplier);
             if (created == null)
                 throw new InvalidOperationException($"Nenhum tipo de gancho {angleDegrees} graus foi encontrado ou criado no projeto.");
