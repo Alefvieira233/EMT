@@ -5,6 +5,7 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using SteelBIM.Models.Bloco;
+using SteelBIM.Services.PF;
 
 namespace SteelBIM.Services.Bloco
 {
@@ -152,12 +153,48 @@ namespace SteelBIM.Services.Bloco
 
         public static RebarHookType? GetHookTypeByAngle(Document doc, int angleDegrees)
         {
+            // NBR 6118 secao 9.4.6.1 — v2.6.1 (hotfix P0 NBR-1):
+            // filtrar por angulo E por multiplier do rabo NBR-compliant.
+            // Antes (v2.6.0-): retornava hook mais proximo do angulo sem validar
+            // multiplier — mesma classe de bug do v2.4.0 (hook 135 com rabo 6.O
+            // em vez de 10.O). Regra extraida e testada em
+            // PfStirrupHookRules.IsCompliantWithNbr.
+            //
+            // Comportamento de null: callers (HorizontalStirrupService,
+            // VerticalStirrupService) ja tratam null como "sem hook" (RebarHookType?
+            // nullable). Quando NENHUM hook compliant existe, o caller pode prosseguir
+            // sem hook ou pode decidir criar (responsabilidade do caller; este
+            // helper nao tem barType pra setar HookPermission).
             double rad = angleDegrees * Math.PI / 180.0;
+            const double angleToleranceRad = 0.5 * Math.PI / 180.0;
             return new FilteredElementCollector(doc)
                 .OfClass(typeof(RebarHookType))
                 .Cast<RebarHookType>()
-                .OrderBy(h => Math.Abs(h.HookAngle - rad))
+                .Where(h => Math.Abs(h.HookAngle - rad) <= angleToleranceRad)
+                .Where(h => PfStirrupHookRules.IsCompliantWithNbr(angleDegrees, GetTailLengthMultiplier(h)))
+                .OrderBy(h => h.Name, StringComparer.CurrentCultureIgnoreCase)
                 .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Le o multiplier do comprimento do rabo (tail length factor) de um
+        /// RebarHookType existente. A API publica do Revit 2025 nao expoe
+        /// MultiplierForTailLength como propriedade direta nem como BuiltInParameter
+        /// estavel, entao usamos LookupParameter por nome (tenta EN e PT-BR
+        /// — Revit localizado em portugues usa "Multiplicador do Comprimento da Cauda").
+        /// Se o parametro nao for encontrado, retorna 0 — IsCompliantWithNbr
+        /// vai rejeitar o hook (fail-safe; melhor recusar do que aceitar
+        /// silenciosamente um multiplier desconhecido).
+        /// </summary>
+        private static double GetTailLengthMultiplier(RebarHookType hookType)
+        {
+            if (hookType == null)
+                return 0.0;
+            Parameter p = hookType.LookupParameter("Multiplier for Tail Length")
+                ?? hookType.LookupParameter("Multiplicador do Comprimento da Cauda");
+            if (p == null || p.StorageType != StorageType.Double)
+                return 0.0;
+            return p.AsDouble();
         }
 
         // -------------------------------------------------------------------
