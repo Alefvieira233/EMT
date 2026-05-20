@@ -915,7 +915,23 @@ namespace SteelBIM.Services.PF
                 .FirstOrDefault();
 
             if (hookType != null)
-                return hookType;
+            {
+                // v2.6.1 (hotfix P0 NBR-2): validar multiplier do hook
+                // pre-existente antes de reusar. O fix v2.4.1 garantiu o
+                // multiplier correto apenas para hooks NOVOS criados pelo plugin
+                // — projetos com template antigo que ja tinham um RebarHookType 135
+                // configurado com multiplier=6.0 (estilo v2.4.0) continuavam tendo
+                // o hook errado reusado silenciosamente. Regra extraida em
+                // PfStirrupHookRules.IsCompliantWithNbr (testada em xUnit).
+                double existingMultiplier = GetTailLengthMultiplier(hookType);
+                if (PfStirrupHookRules.IsCompliantWithNbr(angleDegrees, existingMultiplier))
+                    return hookType;
+                Logger.Warn(
+                    "[PfRebarService] Hook {AnguloGraus} grau(s) '{Nome}' ja existente com multiplier {Atual} insuficiente (NBR exige >= {Minimo}). Criando novo hook compliant.",
+                    angleDegrees, hookType.Name, existingMultiplier,
+                    PfStirrupHookRules.NbrStirrupHookMultiplier(angleDegrees));
+                // fall through pra criacao
+            }
 
             // NBR 6118 9.4.6.1 — rabo do gancho por angulo (regra extraida e
             // testada em PfStirrupHookRules). Antes era `90?12:6` que dava
@@ -938,6 +954,29 @@ namespace SteelBIM.Services.PF
             }
 
             return created;
+        }
+
+        /// <summary>
+        /// Le o multiplier do comprimento do rabo (tail length factor) de um
+        /// RebarHookType existente. v2.6.1 (hotfix P0 NBR-2): a API publica do
+        /// Revit 2025 nao expoe MultiplierForTailLength como propriedade direta
+        /// nem como BuiltInParameter estavel, entao usamos LookupParameter por
+        /// nome (tenta EN e PT-BR — Revit localizado em portugues usa
+        /// "Multiplicador do Comprimento da Cauda"). Mesma logica em
+        /// Bloco/RebarCreationService.GetTailLengthMultiplier — duplicacao
+        /// minima preferida a criar dependencia cruzada Bloco<-PF apenas por
+        /// um helper de 5 linhas. Se o parametro nao for encontrado, retorna 0
+        /// — IsCompliantWithNbr vai rejeitar o hook (fail-safe).
+        /// </summary>
+        private static double GetTailLengthMultiplier(RebarHookType hookType)
+        {
+            if (hookType == null)
+                return 0.0;
+            Parameter p = hookType.LookupParameter("Multiplier for Tail Length")
+                ?? hookType.LookupParameter("Multiplicador do Comprimento da Cauda");
+            if (p == null || p.StorageType != StorageType.Double)
+                return 0.0;
+            return p.AsDouble();
         }
 
         private int InsertEstacaBars(Document doc, FamilyInstance estaca, PfEstacaRebarConfig config)
