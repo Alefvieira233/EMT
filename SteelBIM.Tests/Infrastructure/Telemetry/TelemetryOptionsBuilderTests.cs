@@ -76,7 +76,8 @@ namespace SteelBIM.Tests.Infrastructure.Telemetry
             };
             IReadOnlyDictionary<string, object> scrubbed = TelemetryOptionsBuilder.ScrubProperties(props);
 
-            scrubbed["path"].Should().Be(@"<USER>\Desktop\file.rvt");
+            // v2.6.1 (hotfix P0 SECURITY-2): .rvt filename agora tambem scrubed.
+            scrubbed["path"].Should().Be(@"<USER>\Desktop\<REVIT_FILE>.rvt");
         }
 
         [Fact]

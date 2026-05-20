@@ -83,6 +83,10 @@ namespace SteelBIM.Infrastructure.CrashReporting
             // 1. Scrubbing de PII em strings que contem mensagens reais.
             ScrubMessage(evt);
             ScrubExceptionValues(evt);
+            // v2.6.1 (hotfix P0 SECURITY-2): expandir scrub para mais campos
+            // identificados na auditoria 2026-05-19 PHASE 6.3.
+            ScrubServerName(evt);
+            ScrubExceptionStacktraceFrames(evt);
 
             // 2. Tags padronizadas. Se ja vierem do scope (smoke test pode
             //    setar 'kind' antes), SetTag sobrescreve — esperado.
@@ -130,6 +134,62 @@ namespace SteelBIM.Infrastructure.CrashReporting
             catch
             {
                 // Defensivo — mesma razao do ScrubMessage.
+            }
+        }
+
+        /// <summary>
+        /// v2.6.1 (hotfix P0 SECURITY-2): Sentry SDK default preenche
+        /// evt.ServerName = Environment.MachineName mesmo com SendDefaultPii=false.
+        /// Hostname (ex: 'WS-EMTBRASIL-01') identifica usuario/empresa indiretamente.
+        /// Substituimos por marker constante.
+        /// </summary>
+        private static void ScrubServerName(SentryEvent evt)
+        {
+            try
+            {
+                // Setar pra null em alguns SDK versions pode ser rejeitado;
+                // marker constante e seguro e claramente identificavel em
+                // dashboards do Sentry.
+                evt.ServerName = "<HOST>";
+            }
+            catch
+            {
+                // Property pode ser readonly em alguma versao futura do SDK
+                // — defensivo, nao quebrar captura por causa disso.
+            }
+        }
+
+        /// <summary>
+        /// v2.6.1 (hotfix P0 SECURITY-2): scrubba paths de arquivo em stack
+        /// frames (auditoria PHASE 6.3). AttachStacktrace=true (linha 56)
+        /// faz o SDK anexar frames com AbsoluteFilePath/FileName quando
+        /// PDBs estao disponiveis. Esses paths podem incluir nome do
+        /// usuario (C:\Users\<x>\...) ou nome do cliente (modelo.rvt).
+        /// </summary>
+        private static void ScrubExceptionStacktraceFrames(SentryEvent evt)
+        {
+            if (evt.SentryExceptions == null)
+                return;
+            try
+            {
+                foreach (Sentry.Protocol.SentryException sex in evt.SentryExceptions)
+                {
+                    if (sex == null || sex.Stacktrace == null || sex.Stacktrace.Frames == null)
+                        continue;
+                    foreach (Sentry.SentryStackFrame frame in sex.Stacktrace.Frames)
+                    {
+                        if (frame == null)
+                            continue;
+                        if (frame.AbsolutePath != null)
+                            frame.AbsolutePath = PiiScrubber.Scrub(frame.AbsolutePath);
+                        if (frame.FileName != null)
+                            frame.FileName = PiiScrubber.Scrub(frame.FileName);
+                    }
+                }
+            }
+            catch
+            {
+                // Defensivo — Sentry.SentryStackFrame API surface pode variar.
             }
         }
 

@@ -111,8 +111,10 @@ namespace SteelBIM.Tests.Infrastructure.CrashReporting
             };
             SentryOptionsBuilder.ScrubAndTag(evt, "1.6.0", "Valid");
 
-            evt.Message.Message.Should().Contain(@"<USER>\Desktop\modelo.rvt");
+            // v2.6.1 (hotfix P0 SECURITY-2): .rvt filename agora tambem scrubed.
+            evt.Message.Message.Should().Contain(@"<USER>\Desktop\<REVIT_FILE>.rvt");
             evt.Message.Message.Should().NotContain("joao");
+            evt.Message.Message.Should().NotContain("modelo.rvt");
         }
 
         [Fact]

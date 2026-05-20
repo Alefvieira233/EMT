@@ -62,9 +62,13 @@ namespace SteelBIM.Tests.Infrastructure
         [Fact]
         public void Scrubs_windows_user_path()
         {
+            // v2.6.1: tambem scrubba o nome do .rvt (Projeto Vulcaflex.rvt
+            // etc. frequentemente identifica cliente). Stack frame com
+            // C:\Users\<user>\Desktop\projeto.rvt agora vira
+            // <USER>\Desktop\<REVIT_FILE>.rvt.
             string input = @"Falha em C:\Users\joao\Desktop\projeto.rvt";
             string output = PiiScrubber.Scrub(input);
-            output.Should().Be(@"Falha em <USER>\Desktop\projeto.rvt");
+            output.Should().Be(@"Falha em <USER>\Desktop\<REVIT_FILE>.rvt");
         }
 
         [Fact]
@@ -100,14 +104,17 @@ namespace SteelBIM.Tests.Infrastructure
         }
 
         [Fact]
-        public void Does_not_touch_unc_paths()
+        public void Scrubs_unc_paths_server_and_share()
         {
-            // UNC \\server\share\joao\ — diferente de drive letter, nao casa
-            // o regex Windows. Se quisermos cobrir UNC no futuro, mudamos
-            // o pattern; por enquanto fora de escopo (nao eh PII em CI / dev).
+            // v2.6.1 (hotfix P0 SECURITY-2): UNC paths AGORA sao scrubbed.
+            // O share name frequentemente carrega nome de cliente
+            // ('\\nas01\projeto-vulcaflex\') — scrub server+share previne
+            // o vazamento principal. Gap conhecido: username apos o share
+            // continua exposto (aceito pela auditoria — ver PiiScrubber.cs
+            // comentario sobre WindowsUncPathRegex).
             string input = @"\\fileserver\share\joao\arquivo.txt";
             string output = PiiScrubber.Scrub(input);
-            output.Should().Be(input);
+            output.Should().Be(@"<UNC>\joao\arquivo.txt");
         }
 
         // ---------- Stack frame preservation ----------
@@ -144,15 +151,157 @@ namespace SteelBIM.Tests.Infrastructure
         public void Combined_email_and_path_in_same_string()
         {
             // Cenario realista: exception message com email do usuario E
-            // path absoluto. Os dois somem.
+            // path absoluto com .rvt. Os tres somem (email, username, filename).
+            // v2.6.1: filename .rvt agora tambem e scrubbed.
             string input =
                 "User joao@empresa.com falhou em C:\\Users\\joao\\Desktop\\modelo.rvt";
             string output = PiiScrubber.Scrub(input);
 
             output.Should().Contain("<EMAIL>");
-            output.Should().Contain(@"<USER>\Desktop\modelo.rvt");
+            output.Should().Contain(@"<USER>\Desktop\<REVIT_FILE>.rvt");
             output.Should().NotContain("joao@empresa.com");
-            // Username "joao" some duas vezes (uma do email, uma do path).
+            output.Should().NotContain("modelo.rvt"); // filename scrubed
+            // Username "joao" some 3 vezes (email + path + filename context)
+        }
+
+        // ============================================================
+        // v2.6.1 (hotfix P0 SECURITY-2): novos padroes
+        // ============================================================
+
+        // ---------- Windows path localizado PT-BR ----------
+
+        [Fact]
+        public void Scrubs_windows_user_path_ptbr_sem_acento()
+        {
+            string input = @"em C:\Usuarios\maria\Documentos\nota.txt";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Be(@"em <USER>\Documentos\nota.txt");
+        }
+
+        [Fact]
+        public void Scrubs_windows_user_path_ptbr_com_acento()
+        {
+            string input = @"em D:\Usuários\joão\Documentos\file.log";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Contain(@"<USER>\Documentos\file.log");
+            output.Should().NotContain(@"joão");
+        }
+
+        [Fact]
+        public void Scrubs_windows_user_path_ptbr_e_en_no_mesmo_string()
+        {
+            string input = @"first C:\Users\a\b\ then D:\Usuários\b\c\";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Be(@"first <USER>\b\ then <USER>\c\");
+        }
+
+        // ---------- UNC paths ----------
+
+        [Fact]
+        public void Scrubs_unc_path_with_client_share_name()
+        {
+            // Cenario tipico EMT: NAS com share por cliente.
+            string input = @"erro lendo \\nas01\projetos-vulcaflex\modelo.rvt";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Contain("<UNC>\\");
+            output.Should().NotContain("nas01");
+            output.Should().NotContain("vulcaflex");
+        }
+
+        [Fact]
+        public void Scrubs_multiple_unc_paths()
+        {
+            string input = @"\\srv1\sh1\a\ vs \\srv2\sh2\b\";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Be(@"<UNC>\a\ vs <UNC>\b\");
+        }
+
+        // ---------- Revit filenames ----------
+
+        [Theory]
+        [InlineData("modelo.rvt", "<REVIT_FILE>.rvt")]
+        [InlineData("template.rte", "<REVIT_FILE>.rte")]
+        [InlineData("base.rft", "<REVIT_FILE>.rft")]
+        [InlineData("MODELO.RVT", "<REVIT_FILE>.RVT")] // case preservada na extensao
+        public void Scrubs_revit_filename_standalone(string input, string expected)
+        {
+            PiiScrubber.Scrub(input).Should().Be(expected);
+        }
+
+        [Fact]
+        public void Scrubs_revit_filename_multiword_partial()
+        {
+            // Limitacao conhecida (v2.6.1): nome de arquivo com espacos tem
+            // partial leak — apenas a ULTIMA palavra antes da extensao e
+            // scrubbed. "Familia Coluna.rfa" → "Familia <REVIT_FILE>.rfa".
+            // Aceita pela auditoria porque (a) palavras genericas tipo
+            // "Familia"/"Projeto"/"Modelo" nao identificam cliente sozinhas,
+            // (b) regex menos restritiva traz risco de gobbling sentencas
+            // inteiras quando .rvt aparece em mensagem de log. Documentado
+            // no PiiScrubber.cs (RevitFilenameRegex).
+            string output = PiiScrubber.Scrub("Familia Coluna.rfa");
+            output.Should().Be("Familia <REVIT_FILE>.rfa");
+        }
+
+        [Fact]
+        public void Scrubs_revit_filename_inside_sentence()
+        {
+            string input = "Failed to open Projeto Vulcaflex.rvt at line 42";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Contain("<REVIT_FILE>.rvt");
+            output.Should().NotContain("Vulcaflex");
+        }
+
+        [Fact]
+        public void Does_not_scrub_non_revit_extensions()
+        {
+            // .cs, .xaml, .log, .txt preservados — nao sao Revit-specific
+            // e seu nome geralmente nao e PII.
+            string input = "stack: at Foo() in MarcarPecasService.cs:12 ; log em emt.log";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Contain("MarcarPecasService.cs");
+            output.Should().Contain("emt.log");
+            output.Should().NotContain("<REVIT_FILE>");
+        }
+
+        [Fact]
+        public void Does_not_scrub_substring_match()
+        {
+            // 'extensao.rfton' (palavra que contem 'rft' mas nao termina la)
+            // — word boundary impede match falso.
+            string input = "myfile.rftensao should stay";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().Be(input);
+        }
+
+        // ---------- Regression guards P0 SECURITY-2 (v2.6.1) ----------
+
+        [Fact]
+        public void NaoRegredeV261_SECURITY2_ServerName_em_stack_path()
+        {
+            // Cenario realista: stack frame com path do cliente em NAS.
+            string input =
+                @"System.IO.FileNotFoundException at \\nas01\projetos-vulcaflex\modelo.rvt";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().NotContain("nas01");
+            output.Should().NotContain("vulcaflex");
+            output.Should().NotContain("modelo.rvt");
+            output.Should().Contain("<UNC>\\");
+            output.Should().Contain("<REVIT_FILE>.rvt");
+        }
+
+        [Fact]
+        public void NaoRegredeV261_SECURITY2_PtBr_em_locale_brasileiro()
+        {
+            // Cobre: locale ptBR (Usuários) + filename multi-word.
+            // Username e ULTIMA palavra do filename viram scrubbed; o "Projeto"
+            // (palavra generica nao-identificadora) fica como leak documentado.
+            string input = @"Caminho: C:\Usuários\fulano\Documents\Projeto Tal.rvt";
+            string output = PiiScrubber.Scrub(input);
+            output.Should().NotContain("fulano");
+            output.Should().NotContain("Tal.rvt"); // ultima palavra do filename
+            output.Should().Contain(@"<USER>\Documents\");
+            output.Should().Contain("<REVIT_FILE>.rvt");
         }
     }
 }
