@@ -15,6 +15,86 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.1] - 2026-05-19
+
+### Fixed (CRITICAL)
+- **NBR-1:** `Bloco/RebarCreationService.GetHookTypeByAngle` agora delega
+  calculo de hook a `PfStirrupHookRules.IsCompliantWithNbr` antes de
+  reusar hook existente. Antes: pattern identico ao bug do v2.4.0 (gancho
+  135 com rabo 6.O em vez de 10.O exigido pela NBR 6118 secao 9.4.6.1)
+  vivo em outro service. Identificado pela auditoria senior 2026-05-19
+  PHASE 5.1 #1.
+- **NBR-2:** `PfRebarService.GetHookTypeByAngle` agora valida multiplier
+  de hook 135 pre-existente antes de reusar. Fix v2.4.1 era PARCIAL: so
+  atuava quando nenhum hook 135 pre-existia. Projetos com template
+  configurado (com hook 135 multiplier=6.0 estilo v2.4.0) continuavam
+  silenciosamente afetados. Auditoria PHASE 5.1 #2. Se hook pre-existente
+  for non-compliant, log warning + criar novo hook compliant.
+- **MARCA:** `MarcarPecasService` agora produz piece marks deterministicas.
+  Antes: ordem de iteracao de `Element.Parameters` (NAO garantida estavel
+  pelo Revit API) + uso de `ElementId.Value` (per-document) tornavam a
+  execucao N+1 do comando potencialmente diferente da execucao N e
+  signatures distintas cross-document. Agora: chave string estavel via
+  `MarcarPecasSignatureBuilder` (FamilyName + Name) + ordenacao
+  alfabetica de parametros. Auditoria PHASE 5.6.
+
+### Security
+- **UpdateDownloader:** construtor agora valida que `HttpClient.Timeout`
+  esta em (0, 60s] via novo helper puro `HttpClientTimeoutValidator`.
+  Antes: aceitava HttpClient default (Timeout=100s) ou Infinite. Sob
+  ataque slowloris, download de 50MB congelaria a UI do Revit por
+  minutos. Auditoria PHASE 6.5 #2.
+- **PiiScrubber:** cobertura expandida com 3 novos padroes:
+  * Path Windows localizado PT-BR (`C:\Usuarios\...` e `C:\Usuários\...`)
+  * Path UNC (`\\server\share\...` vira `<UNC>\...`) — share name
+    frequentemente carrega nome de cliente
+  * Filename Revit (.rvt / .rfa / .rte / .rft) vira `<REVIT_FILE>.<ext>`
+  Adicionalmente, `SentryOptionsBuilder.ScrubAndTag` agora scrubba
+  `evt.ServerName` (hostname) e itera `SentryExceptions[].Stacktrace.
+  Frames[].AbsolutePath/FileName` aplicando o scrubber. Auditoria
+  PHASE 6.3. Gap conhecido documentado: filenames multi-word tem partial
+  leak da primeira palavra (regex exclui whitespace pra evitar gobbling
+  de sentencas) — palavras genericas (Projeto/Familia/Modelo) sozinhas
+  nao identificam cliente.
+
+### Chore
+- Removidos 5 arquivos `.bak-alef-v1.5` obsoletos do disco local de
+  desenvolvimento (`Commands/PF/CmdPfInserirAcosPilar`, `AcosViga`,
+  `EstribosPilar`, `EstribosViga` + `Services/PF/PfRebarService`).
+  Auditoria PHASE 2.9 listou como ALTO mas verificacao mostrou que
+  `.gitignore` linha 58 (`*.bak*`) ja excluia esses arquivos do repo —
+  hotfix removeu apenas dos workspaces locais; nenhum commit foi
+  necessario porque os arquivos nunca foram tracked.
+
+### Compatibilidade
+- Modelos, templates, licencas v2.6.0 continuam validos.
+- Comportamento de hook NBR pode mudar APENAS em projetos onde o bug
+  estava ativo (mudanca esperada e desejada — antes era violacao NBR
+  9.4.6.1). Usuario verá no log: `[PfRebarService] Hook 135 grau(s)
+  'EMT Gancho 135 graus' ja existente com multiplier 6 insuficiente
+  (NBR exige >= 10). Criando novo hook compliant.`
+- Piece marks geradas por v2.6.0- sao mantidas (no rerun em modelo
+  existente). Nova execucao usa novo algoritmo deterministico — pode
+  gerar marca diferente para o mesmo elemento se houver diferenca
+  entre o algoritmo antigo (ordem de Parameters) e o novo
+  (OrderBy alfabetico). Em pratica raro porque a maioria dos campos
+  participa da chave, mas vale alertar usuario que rode "Limpar
+  Marcas" antes de re-marcar projetos em producao caso queira
+  consistencia 100%.
+
+### Notes
+- Auditoria senior 2026-05-19 ficou em `docs/audits/AUDITORIA-SENIOR-
+  2026-05-19-v2.6.0.md`. Este hotfix fecha os 8 itens marcados P0 dos
+  15 CRITICAL identificados. Os 7 restantes (incluindo CAA NBR 7.4.7,
+  refactor de `PfRebarService` em helpers, ADR-003/004 migration dos
+  services restantes, code-signing Authenticode, ListaMateriais
+  determinismo) ficam programados para v2.7.0+.
+- Cobertura: 851 testes passando (787 baseline + 64 novos em 4 suites:
+  PfStirrupHookRulesTests +17, MarcarPecasSignatureBuilderTests +20,
+  HttpClientTimeoutValidatorTests +12, PiiScrubberTests +15).
+
+---
+
 ## [2.6.0] - 2026-05-19
 
 ### Changed

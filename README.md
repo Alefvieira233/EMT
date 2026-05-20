@@ -1,9 +1,9 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.6.0-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.6.1-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-787%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-851%20passing-brightgreen)
 
 Plugin Revit 2025 para detalhamento estrutural brasileiro. NBR 6118
 nativo, export DSTV/NC1 para CNC, Diagrama de Montagem completo no
@@ -102,17 +102,18 @@ Plugin estruturado em camadas, com decisões registradas em `docs/ADR/`:
 - **ADR-007** — Crash reporting via Sentry com `PiiScrubber`
 - **ADR-008** — Telemetria PostHog HTTP-direct (não SDK)
 
-São 787 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
+São 851 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
 zoneamento de armadura NBR, formatadores culture-invariant, validação
 de configuração e regras de domínio.
 
 ## Versão atual
 
-**v2.6.0** — histórico completo de releases em
+**v2.6.1** — histórico completo de releases em
 [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.6.1** — Hotfix CRITICAL P0 (NBR-1 + NBR-2 + MARCA + security)
 - **v2.6.0** — Ribbon split (Modelagem + Detalhamento)
 - **v2.5.0** — Pre-market polish (README rewrite + 9 guards defensivos de doc.ActiveView)
 - **v2.4.1** — Hotfix gancho de estribo NBR 6118 9.4.6.1

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 
 namespace SteelBIM.Infrastructure.Update
