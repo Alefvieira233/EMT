@@ -4,10 +4,22 @@
         Title="Sequenciamento BIM"
         Width="700"
         Height="600"
-        MinWidth="620" MinHeight="520" MaxHeight="720"
+        MinWidth="620" MinHeight="520" MaxHeight="800"
         Background="{DynamicResource WindowBackgroundBrush}"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
+    <!--
+        v2.6.4 (hotfix UX): root trocado de Grid (3 rows com Row 1 = "*" TabControl)
+        para DockPanel com footer Dock=Bottom + TabControl LastChildFill. Em DPI
+        125%/150%, conteudo Auto + Row=star do TabControl estourava 600px e os
+        botoes OK/Cancelar saiam da viewport.
+
+        Mantemos Height=600 fixo (sem SizeToContent) porque o tab "Visualizar
+        Plano" tem DataGrid que precisa de altura disponivel pra mostrar etapas
+        de montagem. TabControl mede so o tab ativo, entao SizeToContent daria
+        flicker ao trocar de tab. MaxHeight=800 (ajustado de 720) acomoda
+        DataGrid maior em modelos com muitas etapas.
+    -->
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,22 +28,43 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <DockPanel LastChildFill="True">
 
-        <!-- Titulo -->
-        <StackPanel Grid.Row="0" Margin="0 0 0 12">
+        <!-- Footer FIXO no rodape: OK/Cancelar sempre visiveis -->
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource ActionBarBorder}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel"
+                        Content="Cancelar"
+                        Width="80" Height="32"
+                        Margin="0,0,8,0"
+                        Background="{DynamicResource ButtonBackgroundBrush}"
+                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                        IsCancel="True"
+                        TabIndex="98"
+                        Click="BtnCancel_Click"/>
+                <Button x:Name="btnOk"
+                        Content="OK"
+                        Width="80" Height="32"
+                        Background="{DynamicResource ButtonBackgroundBrush}"
+                        Foreground="{DynamicResource ButtonForegroundBrush}"
+                        IsDefault="True"
+                        TabIndex="99"
+                        Click="BtnOk_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Header fixo no topo -->
+        <StackPanel DockPanel.Dock="Top" Margin="16,16,16,12">
             <TextBlock Text="Sequenciamento BIM (4D Phasing)" Style="{StaticResource DialogTitleText}"/>
             <TextBlock Text="Atribua fases de montagem a elementos selecionados, aplique destaque visual com cores customizaveis e exporte relatorio para planejamento 4D."
                        Style="{StaticResource DialogSubtitleText}"/>
         </StackPanel>
 
-        <!-- TabControl -->
-        <TabControl Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}">
+        <!-- TabControl preenche o restante (LastChildFill) -->
+        <TabControl Margin="16,0,16,12"
+                    Background="{DynamicResource PanelBackgroundBrush}"
+                    TabIndex="1">
+
             <!-- Tab 1: Atribuir Etapa -->
             <TabItem Header="Atribuir Etapa">
                 <Grid Margin="12">
@@ -43,22 +76,25 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Número da etapa (inteiro positivo)" Style="{StaticResource LabelText}" Margin="0 0 0 4"/>
+                    <TextBlock Grid.Row="0" Text="Número da etapa (inteiro positivo)" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
                     <TextBox x:Name="txtNumeroEtapa" Grid.Row="1" Height="32" Padding="8"
                              Background="{DynamicResource TextBoxBackgroundBrush}"
                              Foreground="{DynamicResource TextBoxForegroundBrush}"
-                             Text="1" Margin="0 0 0 12"/>
+                             Text="1" Margin="0,0,0,12"
+                             TabIndex="10"/>
 
-                    <TextBlock Grid.Row="2" Text="Descrição (opcional)" Style="{StaticResource LabelText}" Margin="0 0 0 4"/>
+                    <TextBlock Grid.Row="2" Text="Descrição (opcional)" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
                     <TextBox x:Name="txtDescricao" Grid.Row="3" Height="32" Padding="8"
                              Background="{DynamicResource TextBoxBackgroundBrush}"
                              Foreground="{DynamicResource TextBoxForegroundBrush}"
-                             Margin="0 0 0 12"/>
+                             Margin="0,0,0,12"
+                             TabIndex="11"/>
 
                     <Button x:Name="btnAtribuir" Grid.Row="4" Content="Atribuir aos Selecionados" Height="36"
                             Background="{DynamicResource ButtonBackgroundBrush}"
                             Foreground="{DynamicResource ButtonForegroundBrush}"
                             VerticalAlignment="Top"
+                            TabIndex="12"
                             Click="BtnAtribuir_Click"/>
                 </Grid>
             </TabItem>
@@ -74,7 +110,8 @@
                     <Button x:Name="btnGerarPlano" Grid.Row="0" Content="Gerar Sequenciamento" Height="36"
                             Background="{DynamicResource ButtonBackgroundBrush}"
                             Foreground="{DynamicResource ButtonForegroundBrush}"
-                            Margin="0 0 0 12"
+                            Margin="0,0,0,12"
+                            TabIndex="20"
                             Click="BtnGerarPlano_Click"/>
 
                     <DataGrid x:Name="dgEtapas" Grid.Row="1"
@@ -82,7 +119,8 @@
                               CanUserAddRows="False"
                               IsReadOnly="False"
                               Background="{DynamicResource PanelBackgroundBrush}"
-                              Foreground="{DynamicResource TextBoxForegroundBrush}">
+                              Foreground="{DynamicResource TextBoxForegroundBrush}"
+                              TabIndex="21">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Etapa" Binding="{Binding Etapa}" IsReadOnly="True" Width="60"/>
                             <DataGridTextColumn Header="Descricao" Binding="{Binding Descricao}" IsReadOnly="True" Width="*"/>
@@ -116,9 +154,9 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Caminho do arquivo Excel" Style="{StaticResource LabelText}" Margin="0 0 0 4"/>
+                    <TextBlock Grid.Row="0" Text="Caminho do arquivo Excel" Style="{StaticResource LabelText}" Margin="0,0,0,4"/>
 
-                    <Grid Grid.Row="1" Margin="0 0 0 12">
+                    <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -126,41 +164,25 @@
 
                         <TextBox x:Name="txtCaminhoRelatorio" Grid.Column="0" Height="32" Padding="8"
                                  Background="{DynamicResource TextBoxBackgroundBrush}"
-                                 Foreground="{DynamicResource TextBoxForegroundBrush}"/>
+                                 Foreground="{DynamicResource TextBoxForegroundBrush}"
+                                 TabIndex="30"/>
 
                         <Button x:Name="btnBrowse" Grid.Column="1" Content="..." Width="40" Height="32"
                                 Background="{DynamicResource ButtonBackgroundBrush}"
                                 Foreground="{DynamicResource ButtonForegroundBrush}"
-                                Margin="8 0 0 0"
+                                Margin="8,0,0,0"
+                                TabIndex="31"
                                 Click="BtnBrowse_Click"/>
                     </Grid>
 
                     <Button x:Name="btnExportar" Grid.Row="2" Content="Exportar para Excel" Height="36"
                             Background="{DynamicResource ButtonBackgroundBrush}"
                             Foreground="{DynamicResource ButtonForegroundBrush}"
+                            TabIndex="32"
                             Click="BtnExportar_Click"/>
                 </Grid>
             </TabItem>
         </TabControl>
 
-        <!-- Botões OK/Cancel -->
-        <Grid Grid.Row="2" Margin="0 12 0 0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <Button x:Name="btnOk" Grid.Column="1" Content="OK" Width="80" Height="32"
-                    Background="{DynamicResource ButtonBackgroundBrush}"
-                    Foreground="{DynamicResource ButtonForegroundBrush}"
-                    Margin="0 0 8 0"
-                    Click="BtnOk_Click"/>
-
-            <Button x:Name="btnCancel" Grid.Column="2" Content="Cancelar" Width="80" Height="32"
-                    Background="{DynamicResource ButtonBackgroundBrush}"
-                    Foreground="{DynamicResource ButtonForegroundBrush}"
-                    Click="BtnCancel_Click"/>
-        </Grid>
-    </Grid>
+    </DockPanel>
 </Window>
