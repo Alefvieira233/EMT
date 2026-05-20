@@ -15,6 +15,65 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.4] - 2026-05-20
+
+### Fixed (UX)
+- **5 janelas refatoradas** ao pattern saudavel (DockPanel + footer Dock=Bottom +
+  ScrollViewer/TabControl no LastChildFill) ja validado em
+  DiagramaMontagemWindow (v2.6.2):
+
+  | Janela | Antes | Depois | Padrao aplicado |
+  |---|---|---|---|
+  | BlocoFundacaoArmaduraWindow | Height=680 + NoResize | MinHeight=520 MaxHeight=800 + CanResize | DockPanel + TabControl Fill (6 tabs com ScrollViewer interno preservados) |
+  | TercasWindow | Height=600 + Row "filler" * vestigial | SizeToContent=Height MinHeight=460 MaxHeight=720 + CanResize | DockPanel + ScrollViewer + StackPanel |
+  | PipeRackWindow | Height=640 fixo (resto ja saudavel) | SizeToContent=Height MaxHeight=760 + CanResize | refactor minimo (estrutura DockPanel ja existia) |
+  | PlacaBaseConfigWindow | Height=720 + Row "*" + botoes sem x:Name | SizeToContent=Height MinHeight=520 MaxHeight=800 + CanResize | DockPanel + ScrollViewer + StackPanel + x:Name (btnLancar + btnCancelar) |
+  | PlanoMontagemWindow | Height=600 + Row "*" TabControl | Height=600 (mantido por DataGrid no Tab 2) + MaxHeight=800 ajustado + CanResize | DockPanel + TabControl Fill (3 tabs preservados) |
+
+- **Bug "ajustar posicao da terca" do Victor (via Bruna) fechado** — TercasWindow.
+  Diagnostico: nao existe botao com esse nome literal; bug era do btnOk "OK" que
+  sumia em DPI alto, impedindo o usuario chegar no fluxo pos-OK do command
+  ("selecione linha limite inicial, linha limite final, banzos de divisao").
+  Fix estrutural resolve o problema visual independentemente da nomenclatura.
+
+### Defensivo (todas as 5 janelas)
+- Botao primary: `IsDefault=True` (Enter dispara) + `TabIndex=99`
+- Botao cancel: `IsCancel=True` (Esc fecha) + `TabIndex=98`
+- `TabIndex` explicito em todos os inputs principais (ordem linear de cima
+  pra baixo)
+- `WindowStartupLocation=CenterOwner` (substitui CenterScreen)
+- `ResizeMode=CanResize` (substitui NoResize ou CanResizeWithGrip — pega
+  consistente)
+- Footer `Style=ActionBarBorder` (consistente com DiagramaMontagem v2.6.2 e
+  PipeRack original)
+
+### Sem mudancas
+- Logica de comando algum, services, models — intacta.
+- Code-behind das 5 janelas (1145 linhas combinadas) NAO modificado:
+  PHASE 1 confirmou zero acoplamento com `RowDefinition` / `Grid.X` /
+  `grid.RowDefinitions[N]`.
+- Contratos `DialogResult` preservados em todas (handlers `Click=BtnX_Click`
+  mantidos por nome de metodo, nao por x:Name).
+- PlacaBaseConfigWindow ganhou `x:Name="btnLancar"` + `x:Name="btnCancelar"`
+  mantendo handlers originais `BtnOk_Click` / `BtnCancel_Click` — zero risco
+  em runtime, so consistencia.
+
+### Compatibilidade
+- Modelos, templates, licencas v2.6.3 continuam validos.
+- v2.6.3 NAO marcada AFETADA — funcionalmente correta, so com 5 janelas com
+  pattern de risco em DPI alto.
+
+### Known follow-ups (v2.7.0 — UX consistency pass completo)
+- **12 janelas restantes** com Height fixo + CanResize/CanResizeWithGrip mantidas
+  nesta release (escopo controlado das 5 piores). Refactor completo do design
+  system fica para v2.7.0.
+- **Style global de Window** em `AppTheme.Base.xaml` (atualmente cada janela
+  declara MergedDictionary individualmente) — v2.7.0.
+- **ADR-011** formalizando o pattern (DockPanel + Footer + ScrollViewer/Fill +
+  SizeToContent quando aplicavel) — v2.7.0.
+
+---
+
 ## [2.6.3] - 2026-05-20
 
 ### Fixed (UX)

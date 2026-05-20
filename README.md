@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.6.3-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.6.4-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-851%20passing-brightgreen)
 
@@ -108,11 +108,12 @@ de configuração e regras de domínio.
 
 ## Versão atual
 
-**v2.6.3** — histórico completo de releases em
+**v2.6.4** — histórico completo de releases em
 [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.6.4** — Hotfix UX (5 Windows padronizadas: BlocoFundacao + Terças + PipeRack + PlacaBase + PlanoMontagem)
 - **v2.6.3** — Hotfix UX (17 ícones lucide_blue + bug Gerar Conexão + cleanup Resources/)
 - **v2.6.2** — Hotfix UX (DiagramaMontagemWindow botões sempre visíveis)
 - **v2.6.1** — Hotfix CRITICAL P0 (NBR-1 + NBR-2 + MARCA + security)
