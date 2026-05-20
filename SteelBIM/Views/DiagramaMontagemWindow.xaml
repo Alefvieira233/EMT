@@ -2,11 +2,20 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Diagrama de Montagem"
-        Width="540" Height="600"
-        MinWidth="480" MinHeight="560"
+        Width="540"
+        MinWidth="480" MinHeight="520" MaxHeight="800"
+        SizeToContent="Height"
+        ResizeMode="CanResize"
         Background="{DynamicResource WindowBackgroundBrush}"
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        WindowStartupLocation="CenterOwner">
+    <!--
+        v2.6.2 (hotfix UX): root trocado de Grid (com Height=600 + NoResize + Row=*)
+        para DockPanel com footer Dock=Bottom + ScrollViewer no conteudo. Bug do v2.6.1:
+        em DPI 125%/150% ou laptop ~768px com taskbar+ribbon, o conteudo Auto estourava
+        os 600px rigidos e empurrava os botoes para fora da viewport — feature carro-chefe
+        ficava inutilizavel. Agora os botoes sao SEMPRE visiveis (Dock=Bottom renderiza
+        primeiro), conteudo scrolla se passar MaxHeight, usuario pode redimensionar.
+    -->
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -14,77 +23,101 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0 0 0 12">
-            <TextBlock Text="Diagrama de Montagem" Style="{StaticResource DialogTitleText}"/>
-            <TextBlock Text="Gera uma vista de elevacao dos elementos selecionados, com eixos do projeto visiveis, cotas entre eixos e tags de marca em cada peca."
-                       Style="{StaticResource DialogSubtitleText}" TextWrapping="Wrap"/>
-        </StackPanel>
+    <DockPanel LastChildFill="True">
 
-        <GroupBox Grid.Row="1" Header="Orientacao da vista" Margin="0 0 0 12">
-            <StackPanel Orientation="Horizontal" Margin="8">
-                <RadioButton x:Name="rbAuto" Content="Automatica" IsChecked="True" Margin="0 0 16 0"/>
-                <RadioButton x:Name="rbX" Content="Paralela ao eixo X" Margin="0 0 16 0"/>
-                <RadioButton x:Name="rbY" Content="Paralela ao eixo Y"/>
+        <!-- Footer FIXO no rodape: botoes sempre visiveis, nao dependem do conteudo.
+             Estilo ActionBarBorder ja define background SurfaceBrush + linha superior +
+             padding — alinhado com o restante das janelas do plugin (consistencia visual). -->
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource ActionBarBorder}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel"
+                        Content="Cancelar"
+                        Width="96"
+                        Style="{StaticResource SecondaryActionButton}"
+                        Margin="0,0,8,0"
+                        IsCancel="True"
+                        TabIndex="98"
+                        Click="BtnCancel_Click"/>
+                <Button x:Name="btnGerar"
+                        Content="Gerar Diagrama"
+                        Width="140"
+                        Style="{StaticResource PrimaryActionButton}"
+                        IsDefault="True"
+                        TabIndex="99"
+                        Click="BtnGerar_Click"/>
             </StackPanel>
-        </GroupBox>
-
-        <GroupBox Grid.Row="2" Header="Conteudo da vista" Margin="0 0 0 12">
-            <StackPanel Margin="8">
-                <CheckBox x:Name="chkEixos" Content="Mostrar eixos do projeto" IsChecked="True" Margin="0 4"/>
-                <CheckBox x:Name="chkCotas" Content="Adicionar cotas entre eixos consecutivos" IsChecked="True" Margin="0 4"/>
-                <CheckBox x:Name="chkTags" Content="Adicionar tags com marca de fabricacao (Mark)" IsChecked="True" Margin="0 4"/>
-            </StackPanel>
-        </GroupBox>
-
-        <GroupBox Grid.Row="3" Header="Cotagem adicional" Margin="0 0 0 12">
-            <StackPanel Margin="8">
-                <CheckBox x:Name="chkCotasVerticais" Content="Cotas verticais (alturas) com SpotElevation" IsChecked="True" Margin="0 4"/>
-                <CheckBox x:Name="chkCotaTotal" Content="Cota total do conjunto (eixo a eixo extremo)" IsChecked="True" Margin="0 4"/>
-                <CheckBox x:Name="chkMostrarNiveis" Content="Mostrar Levels do projeto (simbolo de nivel)" IsChecked="True" Margin="0 4"/>
-                <CheckBox x:Name="chkComprimentos" Content="Comprimentos individuais por peca (EXPERIMENTAL — pode poluir)" IsChecked="False" Margin="0 4"/>
-            </StackPanel>
-        </GroupBox>
-
-        <GroupBox Grid.Row="4" Header="Inserir em folha (opcional)" Margin="0 0 0 12">
-            <Grid Margin="8">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <CheckBox x:Name="chkFolha" Grid.Row="0" Grid.ColumnSpan="2" Content="Criar folha (ViewSheet) com TitleBlock + Viewport" IsChecked="False" Margin="0 0 0 8"/>
-
-                <Label Grid.Row="1" Grid.Column="0" Content="Numero:" VerticalAlignment="Center"/>
-                <TextBox x:Name="txtNumeroFolha" Grid.Row="1" Grid.Column="1" Text="EM-XX" Margin="4 0 0 4" Padding="4"/>
-
-                <Label Grid.Row="2" Grid.Column="0" Content="Nome:" VerticalAlignment="Center"/>
-                <TextBox x:Name="txtNomeFolha" Grid.Row="2" Grid.Column="1" Text="" Margin="4 0 0 0" Padding="4"/>
-            </Grid>
-        </GroupBox>
-
-        <Border Grid.Row="5" Style="{StaticResource SubtleCardBorder}" Margin="0 0 0 12">
-            <TextBlock x:Name="txtResumo" TextWrapping="Wrap" Padding="8"/>
         </Border>
 
-        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="btnCancel" Content="Cancelar" Width="96" Style="{StaticResource SecondaryActionButton}" Margin="0 0 8 0" Click="BtnCancel_Click"/>
-            <Button x:Name="btnGerar" Content="Gerar Diagrama" Width="140" Style="{StaticResource PrimaryActionButton}" Click="BtnGerar_Click"/>
-        </StackPanel>
-    </Grid>
+        <!-- Conteudo principal: scrolla se janela for menor que o conteudo. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="16">
+            <StackPanel>
+
+                <StackPanel Margin="0,0,0,12">
+                    <TextBlock Text="Diagrama de Montagem" Style="{StaticResource DialogTitleText}"/>
+                    <TextBlock Text="Gera uma vista de elevacao dos elementos selecionados, com eixos do projeto visiveis, cotas entre eixos e tags de marca em cada peca."
+                               Style="{StaticResource DialogSubtitleText}" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <GroupBox Header="Orientacao da vista" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" Margin="8">
+                        <RadioButton x:Name="rbAuto" Content="Automatica" IsChecked="True" Margin="0,0,16,0" TabIndex="1"/>
+                        <RadioButton x:Name="rbX" Content="Paralela ao eixo X" Margin="0,0,16,0" TabIndex="2"/>
+                        <RadioButton x:Name="rbY" Content="Paralela ao eixo Y" TabIndex="3"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Conteudo da vista" Margin="0,0,0,12">
+                    <StackPanel Margin="8">
+                        <CheckBox x:Name="chkEixos" Content="Mostrar eixos do projeto" IsChecked="True" Margin="0,4" TabIndex="10"/>
+                        <CheckBox x:Name="chkCotas" Content="Adicionar cotas entre eixos consecutivos" IsChecked="True" Margin="0,4" TabIndex="11"/>
+                        <CheckBox x:Name="chkTags" Content="Adicionar tags com marca de fabricacao (Mark)" IsChecked="True" Margin="0,4" TabIndex="12"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Cotagem adicional" Margin="0,0,0,12">
+                    <StackPanel Margin="8">
+                        <CheckBox x:Name="chkCotasVerticais" Content="Cotas verticais (alturas) com SpotElevation" IsChecked="True" Margin="0,4" TabIndex="13"/>
+                        <CheckBox x:Name="chkCotaTotal" Content="Cota total do conjunto (eixo a eixo extremo)" IsChecked="True" Margin="0,4" TabIndex="14"/>
+                        <CheckBox x:Name="chkMostrarNiveis" Content="Mostrar Levels do projeto (simbolo de nivel)" IsChecked="True" Margin="0,4" TabIndex="15"/>
+                        <CheckBox x:Name="chkComprimentos" Content="Comprimentos individuais por peca (EXPERIMENTAL — pode poluir)" IsChecked="False" Margin="0,4" TabIndex="16"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Inserir em folha (opcional)" Margin="0,0,0,12">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <CheckBox x:Name="chkFolha" Grid.Row="0" Grid.ColumnSpan="2"
+                                  Content="Criar folha (ViewSheet) com TitleBlock + Viewport"
+                                  IsChecked="False" Margin="0,0,0,8" TabIndex="17"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Numero:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtNumeroFolha" Grid.Row="1" Grid.Column="1"
+                                 Text="EM-XX" Margin="4,0,0,4" Padding="4" TabIndex="20"/>
+
+                        <Label Grid.Row="2" Grid.Column="0" Content="Nome:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtNomeFolha" Grid.Row="2" Grid.Column="1"
+                                 Text="" Margin="4,0,0,0" Padding="4" TabIndex="21"/>
+                    </Grid>
+                </GroupBox>
+
+                <Border Style="{StaticResource SubtleCardBorder}" Margin="0,0,0,4">
+                    <TextBlock x:Name="txtResumo" TextWrapping="Wrap" Padding="8"/>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
 </Window>
