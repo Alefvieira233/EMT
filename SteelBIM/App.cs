@@ -226,8 +226,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLancarPipeRack",
                 "Gera a Fase 1 do pipe rack com pilares, vigas, treliça superior, pentes e contraventamento básico.",
-                "piperack_large.png",
-                "piperack_small.png"
+                "pipe_rack_32_light.png",
+                "pipe_rack_16_light.png"
             );
 
             AddButton(
@@ -237,8 +237,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLancarEscada",
                 "Gera longarinas inclinadas e degraus horizontais de uma escada convencional entre dois pontos.",
-                "escada_large.png",
-                "escada_small.png"
+                "escada_32_light.png",
+                "escada_32_light.png"
             );
 
             AddButton(
@@ -248,8 +248,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLancarGuardaCorpo",
                 "Lança guarda-corpo por dois pontos com altura configurável e postes automáticos.",
-                "guardaropo_large.png",
-                "guardaropo_small.png"
+                "guardacorpo_32_light.png",
+                "guardacorpo_32_light.png"
             );
 
             // --- Estrutura Metálica ---
@@ -260,8 +260,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarTercasPlano",
                 "Permite definir o plano pelo plano de trabalho atual da vista ou por face plana e gera as terças com opção de divisão nos banzos.",
-                "tercas_large.png",
-                "tercas_small.png"
+                "gerar_tercas_32_light.png",
+                "gerar_tercas_32_light.png"
             );
 
             AddButton(
@@ -271,8 +271,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarTravamentos",
                 "Gera tirantes e frechais a partir das terças selecionadas.",
-                "travamentos_large.png",
-                "travamentos_small.png"
+                "travamento_32_light.png",
+                "travamento_32_light.png"
             );
 
             AddButton(
@@ -328,8 +328,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAjustarEncontroVigas",
                 "Ajusta encontros entre viga principal e viga ou pilar a partir do ponto clicado, priorizando uniao, referencia de extremidade e coping.",
-                "viga_encontro_large.png",
-                "viga_encontro_small.png"
+                "ajustar_encontro_32_light.png",
+                "ajustar_encontro_32_light.png"
             );
 
             AddButton(
@@ -339,8 +339,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdCortarPerfilPorInterferencia",
                 "Seleciona uma viga e varios elementos de referencia para gerar multiplos cortes de uma vez.",
-                "viga_dividida_large.png",
-                "viga_dividida_small.png"
+                "seccionar_viga_32_light.png",
+                "seccionar_viga_32_light.png"
             );
 
             AddStackedButtons(
@@ -350,14 +350,14 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdDesabilitarUniaoVigasSelecao",
                 "Desabilita a união nos dois extremos das vigas selecionadas.",
-                "viga_sem_uniao_selecao_large.png",
-                "viga_sem_uniao_selecao_small.png",
+                "sem_uniao_selecao_32_light.png",
+                "sem_uniao_selecao_32_light.png",
                 "btnDesabilitarUniaoVigasVista",
                 "Sem União\nVista",
                 "SteelBIM.Commands.CmdDesabilitarUniaoVigasVista",
                 "Desabilita a união nos dois extremos de todas as vigas da vista ativa.",
-                "viga_sem_uniao_vista_large.png",
-                "viga_sem_uniao_vista_small.png"
+                "sem_uniao_vista_32_light.png",
+                "sem_uniao_vista_32_light.png"
             );
 
             // --- Conexões ---
@@ -368,8 +368,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarConexao",
                 "Gera conexões metálicas (chapa de ponta, dupla cantoneira, chapa gusset) entre vigas e pilares ou entre vigas. Calcula bolt count para integração com lista de materiais.",
-                "viga_encontro_large.png",
-                "viga_encontro_small.png"
+                "link_large.png",
+                "link_small.png"
             );
 
             // --- PF Construção ---
@@ -475,8 +475,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdIsolarVigasEstruturais",
                 "Isola temporariamente apenas as vigas estruturais na vista ativa.",
-                "beam_isolar_large.png",
-                "beam_isolar_small.png"
+                "isolar_vigas_32_light.png",
+                "isolar_vigas_32_light.png"
             );
 
             AddButton(
@@ -486,8 +486,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdIsolarPilaresEstruturais",
                 "Isola temporariamente apenas os pilares estruturais na vista ativa.",
-                "column_line_large.png",
-                "column_line_small.png"
+                "isolar_pilares_32_light.png",
+                "isolar_pilares_32_light.png"
             );
 
             AddButton(
@@ -519,8 +519,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAgruparPilaresPorTipo",
                 "Agrupa pilares iguais por tipo com destaque visual por conjunto, evitando grupos nativos que possam conflitar com eixos.",
-                "agruparpilares_large.png",
-                "agruparpilares_small.png"
+                "agrupar_pilares_32_light.png",
+                "agrupar_pilares_32_light.png"
             );
 
             AddButton(
@@ -530,8 +530,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAgruparVigasPorTipo",
                 "Agrupa vigas iguais por tipo, colore cada conjunto e cria grupos EMT.",
-                "agruparvigas_large.png",
-                "agruparvigas_small.png"
+                "agrupar_vigas_32_light.png",
+                "agrupar_vigas_32_light.png"
             );
 
             AddButton(
@@ -541,8 +541,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLimparAgrupamentosVisuais",
                 "Remove as cores aplicadas na vista ativa e desfaz os grupos EMT criados para pilares e vigas.",
-                "broom_large.png",
-                "broom_small.png"
+                "limpar_cor_32_light.png",
+                "limpar_cor_32_light.png"
             );
         }
 
@@ -601,8 +601,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarCotasPorAlinhamento",
                 "Selecione os elementos e clique no lado onde a cota deve ficar. A ferramenta agrupa os alinhamentos automaticamente e gera as cotas na vista ativa.",
-                "ruler_large.png",
-                "ruler_small.png"
+                "cotas_alinhamento_32_light.png",
+                "cotas_alinhamento_32_light.png"
             );
 
             // Sprint 1 (Bug B5): registrar CmdGerarCotasPorEixo (estava orfao)
@@ -647,8 +647,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdNumerarItens",
                 "Numera elementos manualmente por ordem de clique com filtros, avanço/retrocesso e destaque visual dos itens já processados.",
-                "tag_large.png",
-                "tag_small.png"
+                "numerar_itens_32_light.png",
+                "numerar_itens_32_light.png"
             );
 
             AddButton(
@@ -714,8 +714,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdExportarListaMateriais",
                 "Exporta uma lista de materiais estruturais para Excel com abas de perfis lineares, chapas/conexões e resumo consolidado.",
-                "sheets_large.png",
-                "sheets_small.png"
+                "exportar_materiais_32_light.png",
+                "exportar_materiais_32_light.png"
             );
 
             // --- Montagem e Sequenciamento ---
@@ -794,6 +794,34 @@ namespace SteelBIM
             return app.CreateRibbonPanel(tabName, panelName);
         }
 
+        // =============================================================
+        // ICONES DO RIBBON — convencao oficial v2.6.3
+        // =============================================================
+        // Padrao novo (lucide_blue): produzido pelo Victor a partir do
+        // set lucide.dev com paleta unificada outline #6BB7FF + fill #1E5BC6.
+        //
+        //   Nomenclatura: snake_case_<size>_<theme>.png
+        //   - <size>: _32_light (large, 32x32) e _16_light (small, 16x16)
+        //   - <theme>: por enquanto so "_light" (futuro: "_dark" pra dark mode Revit)
+        //   - HiDPI: variantes opcionais _32_light_hidpi.png / _16_light_hidpi.png
+        //            adjacentes — Revit detecta automaticamente via convencao SDK
+        //
+        // Quando NAO houver _16_light regular ainda (caso atual em ~16 botoes),
+        // passar o mesmo _32_light em ambos argumentos do AddButton — Revit
+        // faz downscale. Trade-off documentado: small fica levemente borrado
+        // em algumas resolucoes, mas paleta visual consistente (vs misturar
+        // 32_light novo + _small antigo).
+        //
+        // Padrao legado (em fade-out): <nome>_large.png / <nome>_small.png.
+        // NAO criar arquivos novos no padrao antigo. Substituicoes acontecem
+        // conforme Victor entrega refacoes ao set lucide_blue.
+        //
+        // Backups historicos de redesigns ficam em SteelBIM/Resources/_backup_*
+        // — gitignored, workspace local apenas (.gitignore linha ~127).
+        //
+        // Ver tambem CHANGELOG v2.6.3 "Known follow-ups" para a lista de
+        // botoes ainda no padrao antigo e variantes _16_light pendentes.
+        // =============================================================
         private void AddButton(
             RibbonPanel panel,
             string internalName,
