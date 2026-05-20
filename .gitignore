@@ -122,3 +122,9 @@ FerramentaEMT_Patch_DropIn.zip
 *.zip
 # Nota: backups locais (.bak, .bak-alef-v1.5, etc.) ja cobertos pelo
 # pattern *.bak* na secao "Outputs locais" acima.
+
+# --- v2.6.3: snapshots de redesigns de icones do Victor ---
+# Quando o Victor refaz a paleta de icones do ribbon, mantem snapshot
+# local em SteelBIM/Resources/_backup_<nome>_<data>/ pra comparar
+# antes/depois. NAO commitar — workspace local apenas.
+SteelBIM/Resources/_backup_*/
