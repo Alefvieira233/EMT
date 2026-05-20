@@ -15,6 +15,42 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.2] - 2026-05-20
+
+### Fixed (UX)
+- **DiagramaMontagemWindow** agora exibe SEMPRE os botoes "Gerar Diagrama" e
+  "Cancelar" no rodape, independente de resolucao ou DPI. Antes (v2.6.1-):
+  janela tinha `Height=600` rigido + `ResizeMode=NoResize`; em DPI 125%/150%
+  ou laptop ~768px com taskbar+ribbon Revit, o conteudo (titulo + 4 GroupBoxes)
+  excedia 600px e empurrava os botoes pra fora da viewport, tornando a feature
+  carro-chefe inutilizavel. Bug reportado pelo Alef em smoke test v2.6.1.
+
+  Fix estrutural (XAML-only): root `Grid` (7 rows) trocado por `DockPanel`
+  com footer `Dock=Bottom` (sempre visivel) + conteudo em `ScrollViewer`
+  (auto-scroll se passar `MaxHeight=800`). Window agora usa `SizeToContent=Height`
+  + `MinHeight=520` + `ResizeMode=CanResize` + `WindowStartupLocation=CenterOwner`.
+
+  Acabamento defensivo: `btnGerar IsDefault=True` (Enter dispara), `btnCancel
+  IsCancel=True` (Esc dispara), `TabIndex` explicito em todos os 14 inputs
+  (radios 1-3, checkboxes 10-17, textboxes 20-21, botoes 98-99), estilo
+  `ActionBarBorder` no footer (consistente com restante do plugin).
+
+### Compatibilidade
+- Modelos, templates, licencas v2.6.1 continuam validos.
+- Zero mudancas em comandos, services, models ou code-behind do DiagramaMontagem
+  — so layout XAML. Contrato `DialogResult` preservado.
+- Demais 20 dialogs do plugin nao afetados (16 ja usam o pattern saudavel
+  `SizeToContent=Height + MaxHeight`).
+
+### Notes
+- Cross-check da PHASE 1 identificou `BlocoFundacaoArmaduraWindow.xaml` com
+  o mesmo pattern de risco (`Width=720 Height=680 + NoResize + Row=*`). Sem
+  bug reportado ainda; deferido para "UX consistency pass" em v2.7.0.
+- **Smoke visual no Revit mandatorio antes de promover GA** (DPI 100% /
+  125% / 150% se possivel). Hotfix sai como prerelease.
+
+---
+
 ## [2.6.1] - 2026-05-19
 
 ### Fixed (CRITICAL)
