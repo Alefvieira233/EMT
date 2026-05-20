@@ -15,6 +15,100 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.3] - 2026-05-20
+
+### Fixed (UX)
+- **17 icones do ribbon migrados para padrao lucide_blue do Victor**
+  (14 do plano original + 3 bonus descobertos no inventario que ja
+  estavam entregues mas sem mapping):
+
+  | # | Comando | Antigo | Novo |
+  |---|---------|--------|------|
+  | 1 | CmdLancarPipeRack | `piperack_large/small.png` | `pipe_rack_32_light.png` + `pipe_rack_16_light.png` (unico com small 16 real) |
+  | 2 | CmdLancarEscada | `escada_large/small.png` | `escada_32_light.png` |
+  | 3 | CmdLancarGuardaCorpo | `guardaropo_large/small.png` | `guardacorpo_32_light.png` |
+  | 4 | CmdGerarTercasPlano | `tercas_large/small.png` | `gerar_tercas_32_light.png` |
+  | 5 | CmdGerarTravamentos | `travamentos_large/small.png` | `travamento_32_light.png` |
+  | 6 | CmdAjustarEncontroVigas | `viga_encontro_large/small.png` | `ajustar_encontro_32_light.png` |
+  | 7 | CmdCortarPerfilPorInterferencia | `viga_dividida_large/small.png` | `seccionar_viga_32_light.png` |
+  | 8 | CmdDesabilitarUniaoVigasSelecao | `viga_sem_uniao_selecao_*.png` | `sem_uniao_selecao_32_light.png` |
+  | 9 | CmdDesabilitarUniaoVigasVista | `viga_sem_uniao_vista_*.png` | `sem_uniao_vista_32_light.png` |
+  | 10 | CmdIsolarVigasEstruturais | `beam_isolar_large/small.png` | `isolar_vigas_32_light.png` |
+  | 11 | CmdIsolarPilaresEstruturais | `column_line_large/small.png` | `isolar_pilares_32_light.png` |
+  | 12 | CmdAgruparPilaresPorTipo | `agruparpilares_large/small.png` | `agrupar_pilares_32_light.png` |
+  | 13 | CmdAgruparVigasPorTipo | `agruparvigas_large/small.png` | `agrupar_vigas_32_light.png` |
+  | 14 | CmdLimparAgrupamentosVisuais | `broom_large/small.png` | `limpar_cor_32_light.png` |
+  | 15 | CmdGerarCotasPorAlinhamento | `ruler_large/small.png` | `cotas_alinhamento_32_light.png` |
+  | 16 | CmdNumerarItens | `tag_large/small.png` | `numerar_itens_32_light.png` |
+  | 17 | CmdExportarListaMateriais | `sheets_large/small.png` | `exportar_materiais_32_light.png` |
+
+- **Bug visual de duplicacao corrigido**: "Encontro" e "Gerar Conexao"
+  agora usam icones diferentes. Antes (v2.6.2-): ambos compartilhavam
+  `viga_encontro_large.png` — usuario via dois botoes adjacentes no
+  ribbon com mesmo simbolo. Encontro migrou pro lucide_blue
+  `ajustar_encontro_32_light.png`; Gerar Conexao usa placeholder
+  `link_large.png` (decisao Alef no checkpoint v2.6.3, ver Known
+  follow-ups).
+
+### Chore
+- Removidas **2 pastas legadas** `Resources/_backup_lucide_redesign_2026-04-27/`
+  e `Resources/_backup_uniform_blue_2026-04-27/` (118 PNGs combinados —
+  snapshots de redesigns de paleta de 26 dias atras, tracked no git
+  desde entao sem uso). Auditoria senior 2026-05-19 PHASE 2 listou
+  como ALTO.
+- Removidos **arquivos orfaos** `beam.png` (10079 bytes) + `beam (1).png`
+  (9426 bytes — duplicata acidental do Explorer). Cross-check confirma
+  zero referencias em XAML/CS. Sizes diferentes indicam divergencia
+  visual real entre os 2, mas como nenhum era usado, ambos foram
+  deletados.
+- **Renomeados 6 arquivos** com sufixo "(1)" do Explorer:
+  `escada_{16,32}_light_hidpi (1).png`,
+  `guardacorpo_{16,32}_light_hidpi (1).png`,
+  `travamento_{16,32}_light_hidpi (1).png` viraram
+  `<nome>_{16,32}_light.png` (sem `_hidpi` e sem `(1)`).
+  Razao: Victor entregou esses 3 grupos apenas como HiDPI duplicado pelo
+  Explorer. Renomeacao deixa o 32x32 servir como universal — em DPI 100%
+  identico, em DPI 125/150% Revit upscale levemente. Aceitavel ate
+  Victor entregar variantes regulares + HiDPI ajustadas.
+- `.gitignore` recebe pattern `SteelBIM/Resources/_backup_*/` para
+  prevenir reintroducao acidental de snapshots locais de redesign.
+- Adicionado bloco de comentario de **convencao oficial dos icones** (v2.6.3)
+  acima do helper `AddButton` em `SteelBIM/App.cs`: nomenclatura
+  `snake_case_<size>_<theme>.png`, sizes 32/16, HiDPI variants opcionais,
+  padrao legado `<nome>_large.png` em fade-out, referencia para
+  CHANGELOG "Known follow-ups".
+- Adicionado `docs/audits/AUDITORIA-SENIOR-2026-05-19-v2.6.0.md` (773
+  linhas) que estava untracked desde a task de auditoria — relatorio
+  origem dos P0 enderecados em v2.6.1 e dos P1 enderecados em v2.6.2 /
+  v2.6.3. Adicao bonus do cleanup commit.
+
+### Known follow-ups (v2.6.4+ — aguardando icones do Victor)
+- **"Gerar Conexao"** usa `link_large.png` temporariamente — aguardando
+  `gerar_conexao_32_light.png` (chapa de ponta + parafusos seria ideal).
+- **Variantes `_16_light` regulares pendentes** para 16 dos 17 botoes
+  migrados: `ajustar_encontro`, `agrupar_pilares`, `agrupar_vigas`,
+  `gerar_tercas`, `cotas_alinhamento`, `numerar_itens`, `isolar_pilares`,
+  `isolar_vigas`, `limpar_cor`, `exportar_materiais`, `seccionar_viga`,
+  `escada`, `guardacorpo`, `travamento`, `sem_uniao_selecao`,
+  `sem_uniao_vista`. Atualmente o `_32_light` e passado como small
+  tambem (Revit faz downscale; small fica levemente borrado em algumas
+  resolucoes). Unico com `_16_light` regular hoje: `pipe_rack`.
+- **~32 comandos restantes** ainda usam icones do padrao antigo
+  (`<nome>_large.png` / `<nome>_small.png`) aguardando refacao do Victor.
+
+### Sem mudancas
+- Logica de comando algum, services, models — intacta.
+- Estrutura do ribbon (abas + paineis) — preservada.
+- Helper `AddButton` / `AddStackedButtons` — apenas comentario adicionado, codigo intacto.
+
+### Compatibilidade
+- Modelos, templates, licencas v2.6.2 continuam validos.
+- v2.6.2 NAO esta marcada AFETADA — e funcionalmente correta, so
+  visualmente datada. v2.6.3 e recomendada por coerencia visual mas
+  nao corrige bug critico.
+
+---
+
 ## [2.6.2] - 2026-05-20
 
 ### Fixed (UX)
