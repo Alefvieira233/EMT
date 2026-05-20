@@ -133,6 +133,9 @@
              Link="LinkedSources\Models\IdentificarPerfilConfig.cs" />
     <Compile Include="..\SteelBIM\Models\MarcarPecasConfig.cs"
              Link="LinkedSources\Models\MarcarPecasConfig.cs" />
+    <!-- v2.6.1 hotfix P0 DETERMINISMO: helper puro extraido do MarcarPecasService -->
+    <Compile Include="..\SteelBIM\Services\MarcarPecasSignatureBuilder.cs"
+             Link="LinkedSources\Services\MarcarPecasSignatureBuilder.cs" />
     <Compile Include="..\SteelBIM\Models\TagearTrelicaConfig.cs"
              Link="LinkedSources\Models\TagearTrelicaConfig.cs" />
 

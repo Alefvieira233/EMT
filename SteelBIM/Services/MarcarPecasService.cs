@@ -376,29 +376,44 @@ namespace SteelBIM.Services
             // Categoria
             sb.Append("CAT=").Append(categoriaLogica).Append('|');
 
-            // Tipo (ID garante que mesmo perfil = mesmo tipo)
-            sb.Append("TYPE=").Append(tipo?.Id?.Value ?? elem.GetTypeId().Value).Append('|');
+            // v2.6.1 (hotfix P0 DETERMINISMO): chave estavel cross-document.
+            // Antes: tipo.Id.Value (numerico, varia entre docs e quebra
+            // deduplicacao inter-projeto). Agora: FamilyName + Name (string
+            // estavel). Helper testado em MarcarPecasSignatureBuilderTests.
+            sb.Append("TYPE=").Append(
+                MarcarPecasSignatureBuilder.BuildTypeKey(tipo?.FamilyName, tipo?.Name)).Append('|');
 
-            // Material
-            sb.Append("MAT=").Append(material?.Id?.Value ?? -1).Append('|');
+            // v2.6.1 (hotfix P0 DETERMINISMO): material.Id.Value tambem era
+            // per-document — trocado por material.Name (string estavel).
+            sb.Append("MAT=").Append(
+                MarcarPecasSignatureBuilder.BuildMaterialKey(material?.Name)).Append('|');
 
             // Comprimento de corte (arredondado)
             if (comprimentoM > 0.0)
                 sb.Append("CUT=").Append(FormatarNumero(comprimentoM)).Append('|');
 
-            // Parametros dimensionais do tipo
-            AppendParametrosDimensao(sb, "T", tipo as Element);
-
-            // Parametros dimensionais da instancia
-            AppendParametrosDimensao(sb, "I", elem as Element);
+            // v2.6.1 (hotfix P0 DETERMINISMO): parametros em ordem alfabetica.
+            // Antes: Element.Parameters iteration — ordem nao deterministica
+            // entre versoes/sessoes/projetos. Helper ordena por nome (Ordinal)
+            // e ignora vazios — garantindo signature reproduzivel.
+            sb.Append(MarcarPecasSignatureBuilder.BuildParameterSection("T", ExtrairParametrosRelevantes(tipo as Element)));
+            sb.Append(MarcarPecasSignatureBuilder.BuildParameterSection("I", ExtrairParametrosRelevantes(elem as Element)));
 
             return sb.ToString();
         }
 
-        private static void AppendParametrosDimensao(StringBuilder sb, string prefixo, Element? elemento)
+        /// <summary>
+        /// Extrai parametros dimensionais relevantes de um Element como
+        /// tuplas (nome normalizado, valor). A ordem da enumeracao espelha
+        /// Element.Parameters (nao deterministica) — quem consome
+        /// (MarcarPecasSignatureBuilder.BuildParameterSection) ordena
+        /// alfabeticamente. v2.6.1: substitui o antigo AppendParametrosDimensao
+        /// que escrevia direto no StringBuilder sem ordenar.
+        /// </summary>
+        private static IEnumerable<(string Name, string Value)> ExtrairParametrosRelevantes(Element? elemento)
         {
             if (elemento == null)
-                return;
+                yield break;
 
             foreach (Parameter param in elemento.Parameters.Cast<Parameter>())
             {
@@ -411,9 +426,7 @@ namespace SteelBIM.Services
                 if (string.IsNullOrWhiteSpace(valor))
                     continue;
 
-                sb.Append(prefixo).Append(':')
-                  .Append(Normalizar(param.Definition.Name)).Append('=')
-                  .Append(valor).Append('|');
+                yield return (Normalizar(param.Definition.Name), valor);
             }
         }
 
