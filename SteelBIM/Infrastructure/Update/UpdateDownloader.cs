@@ -80,8 +80,12 @@ namespace SteelBIM.Infrastructure.Update
         /// <summary>Construtor para testes (permite redirecionar diretorio).</summary>
         public UpdateDownloader(HttpClient httpClient, string updatesDirectory)
         {
-            if (httpClient == null)
-                throw new ArgumentNullException("httpClient");
+            // v2.6.1 (hotfix P0 SECURITY-1): validar Timeout do HttpClient
+            // antes de aceitar. Default eh 100s ou Infinite — caller que
+            // injetar sem cuidar do Timeout permitia freeze de UI por
+            // minutos sob ataque slowloris. Regra extraida e testada em
+            // HttpClientTimeoutValidator (pura, sem deps de Logger).
+            HttpClientTimeoutValidator.Validate(httpClient, "httpClient");
             if (string.IsNullOrWhiteSpace(updatesDirectory))
                 throw new ArgumentException("updatesDirectory obrigatorio", "updatesDirectory");
             _http = httpClient;

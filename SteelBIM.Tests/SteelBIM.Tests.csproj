@@ -203,6 +203,10 @@
              Link="LinkedSources\Infrastructure\Update\ApplyResult.cs" />
     <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateApplier.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateApplier.cs" />
+    <!-- v2.6.1 hotfix P0 SECURITY-1: validador puro do HttpClient.Timeout
+         injetado em UpdateDownloader (sem deps de Logger/Serilog). -->
+    <Compile Include="..\SteelBIM\Infrastructure\Update\HttpClientTimeoutValidator.cs"
+             Link="LinkedSources\Infrastructure\Update\HttpClientTimeoutValidator.cs" />
     <Compile Include="..\SteelBIM\Models\Privacy\ConsentState.cs"
              Link="LinkedSources\Models\Privacy\ConsentState.cs" />
     <Compile Include="..\SteelBIM\Models\Privacy\PrivacySettings.cs"
