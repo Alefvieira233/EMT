@@ -15,6 +15,87 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.5] - 2026-05-20
+
+### Fixed (Feature — Diagrama de Montagem)
+- **`CriarComprimentosIndividuais` agora cria `Dimension` real** (antes:
+  `TextNote` experimental herdado do v2.4.0). A cota individual passa a
+  ser uma anotacao nativa do Revit que:
+  - Move junto com a peca quando o modelo muda
+  - Pode ser editada/formatada como qualquer outra cota da vista
+  - Exporta corretamente para PDF/DWG/IFC com hierarquia de anotacao
+  - Aceita override de valor quando geometrico diverge de fabricacao
+
+- **Padrao perpendicular-a-peca** (clone do
+  `CotarPecaFabricacaoService.CriarCotaViaFamilyRefs`) em vez de
+  perpendicular-a-vista. Cota terca horizontal, montante vertical e
+  diagonal inclinada na mesma Section View, com offset perpendicular
+  a cada peca individualmente:
+
+  | Peca | Direcao da cota | Offset perpendicular |
+  |---|---|---|
+  | Terca horizontal | ao longo de X | +Z (200mm acima) |
+  | Montante vertical | ao longo de Z | -X (200mm a esquerda) |
+  | Diagonal 30 graus | ao longo da peca | normal a peca, 200mm |
+
+- **`ValueOverride` automatico quando geometrico diverge >5mm do
+  STRUCTURAL_FRAME_CUT_LENGTH** (sugestao da auditoria Cowork). Sem
+  override, uma diagonal modelada em 1224mm mas cortada em fabrica
+  para 1215mm mostraria 1224 na prancha — agora mostra 1215 (valor
+  de fabricacao). Threshold 5mm e tolerancia normal de modelagem;
+  sub-5mm nao vale poluir com override.
+
+- **Stagger par/impar** (alterna offset entre 200mm e 300mm) para
+  evitar colisao visual entre cotas de pecas proximas ou paralelas
+  (ex: duas tercas no mesmo plano).
+
+### Added
+- **`DimensionPlanCalculator` helper puro** em
+  `Services/DiagramaMontagem/` (~140 linhas) — calculadora vetorial pura
+  (`Vec3` interno, sem dependencia de `Autodesk.Revit.DB`) de:
+  - `CalcularPlanoCota(p1, p2, viewNormal, offsetFt, staggerExtra)`
+    -> `(origem, direcao)` da `Line` da cota
+  - `DeveAplicarOverride(lengthGeomFt, lengthFabFt, threshold)` ->
+    bool (regra do 5mm acima)
+  - Detecta caso degenerado: peca paralela ao viewNormal -> caller
+    pula + loga warn (era falha silenciosa em v2.4.0)
+- **15 testes unitarios** novos via xUnit Theory + Fact, incluindo o
+  cenario real reportado pelo Alef (diagonal U75x40x2.66:
+  geom=1224mm, cut=1215mm => `ValueOverride="1215"` deve disparar).
+
+### Sem mudancas
+- Fluxo do command intacto: continua chamando `Executar(uidoc, ids, config)`.
+- `DiagramaMontagemWindow` (XAML + code-behind): apenas texto do
+  checkbox (removido "(EXPERIMENTAL — pode poluir)"); contrato e
+  DialogResult preservados.
+- `DiagramaMontagemConfig.AdicionarComprimentosIndividuais` continua
+  `false` por default — opt-in deliberado.
+
+### Compatibilidade
+- Modelos, templates, licencas v2.6.4 continuam validos.
+- v2.6.4 NAO marcada AFETADA — o caminho v2.4.0->v2.6.4 funcionava
+  como `TextNote`, so era pior em fluidez de prancha. v2.6.5 e
+  upgrade de experiencia, nao correcao de bug funcional critico.
+
+### Padrao de testes (nota de processo)
+- O helper foi extraido como **pure C#** (sem `Autodesk.Revit.DB`)
+  para ficar 100% testavel via xUnit — alinhado com o padrao
+  consolidado em v2.6.1: `PfStirrupHookRules`,
+  `MarcarPecasSignatureBuilder`, `HttpClientTimeoutValidator`. A
+  auditoria senior 2026-05-19 criticou o pattern antigo de
+  `[Fact(Skip="Requer Revit")]`; ja somos zero Skips no projeto.
+
+### Known follow-ups (v2.7.0+)
+- Stagger 3 niveis (banzo sup / banzo inf / diagonais) requer
+  classificacao de peca por categoria/orientacao — out-of-scope
+  desta release, entrara junto com CAA NBR 6118 que tambem
+  precisa tocar dominio de pecas estruturais.
+- `DimensionType` configuravel via `DiagramaMontagemConfig`
+  (hoje usa default da vista) — pode ser util para escritorios
+  com varias DimensionStyles.
+
+---
+
 ## [2.6.4] - 2026-05-20
 
 ### Fixed (UX)
