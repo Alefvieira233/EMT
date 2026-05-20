@@ -732,55 +732,96 @@ namespace SteelBIM.Services.DiagramaMontagem
         }
 
         // ============================================
-        // 2K. COMPRIMENTOS INDIVIDUAIS (experimental) — v2.4.0
+        // 2K. COMPRIMENTOS INDIVIDUAIS — v2.4.0 (TextNote) -> v2.6.5 (Dimension real)
         // ============================================
         /// <summary>
-        /// Cria TextNote com comprimento (cm) ao lado de cada peca estrutural.
-        /// Le STRUCTURAL_FRAME_CUT_LENGTH -> INSTANCE_LENGTH_PARAM -> comprimento
-        /// da LocationCurve (mesmo fallback do DstvHeaderBuilder). EXPERIMENTAL.
+        /// Cria uma <see cref="Dimension"/> REAL ao lado de cada peca estrutural,
+        /// usando <see cref="FamilyInstance.GetReferences"/>(Left/Right) — mesmo
+        /// padrao do <c>CotarPecaFabricacaoService.CriarCotaViaFamilyRefs</c>.
+        /// O calculo do plano da cota (origem + direcao da Line) e delegado ao
+        /// helper puro <see cref="DimensionPlanCalculator"/>, totalmente testado
+        /// via xUnit (perpendicular-a-peca, stagger par/impar).
+        ///
+        /// Quando o comprimento medido divergir mais de 5mm do comprimento de
+        /// fabricacao (STRUCTURAL_FRAME_CUT_LENGTH), aplica <c>ValueOverride</c>
+        /// para mostrar o valor de fabricacao — evitando que cotas mostrem
+        /// 1224mm quando a peca sera cortada em 1215mm.
         /// </summary>
         private int CriarComprimentosIndividuais(Document doc, ViewSection vista, List<Element> elementos)
         {
-            // Buscar TextNoteType default
-            TextNoteType defaultType = new FilteredElementCollector(doc)
-                .OfClass(typeof(TextNoteType))
-                .Cast<TextNoteType>()
-                .FirstOrDefault();
-            if (defaultType == null)
-                return 0;
-
             int criados = 0;
+            int indice = 0;
+
+            // Offset perpendicular base (200mm) + stagger extra (100mm) alternado
+            // para nao colidir entre pecas proximas/paralelas. Justificativa do
+            // valor menor que AutoVistaService.CotarLongitudinal (500mm): aqui
+            // sao N cotas locais por peca, nao uma cota global da vista.
+            double offsetFt = UnitUtils.ConvertToInternalUnits(200.0, UnitTypeId.Millimeters);
+
+            // viewNormal = direcao perpendicular ao plano da vista (ViewDirection
+            // aponta para fora do plano da Section View).
+            XYZ vd = vista.ViewDirection;
+            Vec3 viewNormal = new Vec3(vd.X, vd.Y, vd.Z);
+
             foreach (Element e in elementos)
             {
+                indice++;
                 try
                 {
-                    double lenFt = 0;
-                    Parameter pCut = e.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
-                    Parameter pLen = e.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
-                    if (pCut != null && pCut.StorageType == StorageType.Double && pCut.AsDouble() > 0)
-                        lenFt = pCut.AsDouble();
-                    else if (pLen != null && pLen.StorageType == StorageType.Double && pLen.AsDouble() > 0)
-                        lenFt = pLen.AsDouble();
-                    else if (e.Location is LocationCurve lc && lc.Curve != null)
-                        lenFt = lc.Curve.Length;
-
-                    if (lenFt <= 0)
+                    if (!(e is FamilyInstance elem))
+                        continue;
+                    if (!(e.Location is LocationCurve lc) || lc.Curve == null)
                         continue;
 
-                    double lenCm = UnitUtils.ConvertFromInternalUnits(lenFt, UnitTypeId.Centimeters);
+                    // Endpoints da peca (em coords do modelo)
+                    XYZ pa = lc.Curve.GetEndPoint(0);
+                    XYZ pb = lc.Curve.GetEndPoint(1);
+                    Vec3 p1 = new Vec3(pa.X, pa.Y, pa.Z);
+                    Vec3 p2 = new Vec3(pb.X, pb.Y, pb.Z);
 
-                    BoundingBoxXYZ bb = e.get_BoundingBox(vista);
-                    if (bb == null)
+                    // Plano da Line de cota (origem + direcao) — calculo puro
+                    PlanoCotaResult plano;
+                    try
+                    {
+                        plano = DimensionPlanCalculator.CalcularPlanoCota(
+                            p1, p2, viewNormal, offsetFt, staggerExtra: (indice % 2 == 0));
+                    }
+                    catch (Exception exGeom)
+                    {
+                        Logger.Warn(exGeom, "[DiagramaMontagem] Peca {Id} sem geometria valida para cota — pulando", e.Id);
                         continue;
-                    XYZ centro = (bb.Min + bb.Max) * 0.5;
+                    }
 
-                    TextNoteOptions opts = new TextNoteOptions(defaultType.Id);
-                    opts.Rotation = 0;
-                    opts.HorizontalAlignment = HorizontalTextAlignment.Center;
+                    XYZ origem = new XYZ(plano.Origem.X, plano.Origem.Y, plano.Origem.Z);
+                    XYZ direcao = new XYZ(plano.Direcao.X, plano.Direcao.Y, plano.Direcao.Z);
+                    Line dimLine = Line.CreateUnbound(origem, direcao);
 
-                    TextNote tn = TextNote.Create(doc, vista.Id, centro, $"L={lenCm:F0}cm", opts);
-                    if (tn != null)
-                        criados++;
+                    // FamilyInstance.GetReferences(Left/Right) — refs canonicas
+                    Dimension dim = CriarCotaViaFamilyRefs(doc, vista, elem, dimLine);
+                    if (dim == null)
+                    {
+                        Logger.Warn("[DiagramaMontagem] Peca {Id} sem refs Left/Right — pulando", e.Id);
+                        continue;
+                    }
+
+                    // Override se geometrico diverge da fabricacao > 5mm
+                    double lengthFabFt = LerComprimentoFabricacao(e);
+                    if (lengthFabFt > 0)
+                    {
+                        double lengthGeomFt = lc.Curve.Length;
+                        if (DimensionPlanCalculator.DeveAplicarOverride(lengthGeomFt, lengthFabFt))
+                        {
+                            double lengthFabMm = UnitUtils.ConvertFromInternalUnits(lengthFabFt, UnitTypeId.Millimeters);
+                            try
+                            { dim.ValueOverride = $"{lengthFabMm:F0}"; }
+                            catch (Exception exOv)
+                            {
+                                Logger.Warn(exOv, "[DiagramaMontagem] Falha ao aplicar ValueOverride na peca {Id}", e.Id);
+                            }
+                        }
+                    }
+
+                    criados++;
                 }
                 catch (Exception ex)
                 {
@@ -788,6 +829,52 @@ namespace SteelBIM.Services.DiagramaMontagem
                 }
             }
             return criados;
+        }
+
+        /// <summary>
+        /// Clone local do padrao <c>CotarPecaFabricacaoService.CriarCotaViaFamilyRefs</c>
+        /// — cota usando FamilyInstance.GetReferences(Left) + .GetReferences(Right).
+        /// Retorna null se a peca nao tiver os tipos de Reference solicitados
+        /// (caller pula silenciosamente + loga warn).
+        /// </summary>
+        private Dimension CriarCotaViaFamilyRefs(Document doc, View view, FamilyInstance elem, Line dimLine)
+        {
+            try
+            {
+                IList<Reference> refsLeft = elem.GetReferences(FamilyInstanceReferenceType.Left);
+                IList<Reference> refsRight = elem.GetReferences(FamilyInstanceReferenceType.Right);
+                if (refsLeft == null || refsLeft.Count == 0)
+                    return null;
+                if (refsRight == null || refsRight.Count == 0)
+                    return null;
+
+                ReferenceArray arr = new ReferenceArray();
+                arr.Append(refsLeft[0]);
+                arr.Append(refsRight[0]);
+
+                return doc.Create.NewDimension(view, dimLine, arr);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Le o comprimento de fabricacao da peca: STRUCTURAL_FRAME_CUT_LENGTH
+        /// (primario, gerado pelo Revit para Cut Length) -> INSTANCE_LENGTH_PARAM
+        /// (fallback). Retorna 0 se nenhum dos dois tem valor — caller usa
+        /// length geometrico nesse caso (sem override).
+        /// </summary>
+        private double LerComprimentoFabricacao(Element e)
+        {
+            Parameter pCut = e.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
+            if (pCut != null && pCut.StorageType == StorageType.Double && pCut.AsDouble() > 0)
+                return pCut.AsDouble();
+            Parameter pLen = e.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
+            if (pLen != null && pLen.StorageType == StorageType.Double && pLen.AsDouble() > 0)
+                return pLen.AsDouble();
+            return 0;
         }
 
         // ============================================

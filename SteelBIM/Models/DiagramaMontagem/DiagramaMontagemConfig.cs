@@ -47,9 +47,14 @@
         /// <summary>Nome/titulo da folha (preenche sheet.Name). Vazio = usa nome da vista.</summary>
         public string NomeFolha { get; set; } = "";
 
-        // === Comprimentos individuais (experimental v2.4.0) ===
+        // === Comprimentos individuais (v2.6.5: Dimension real) ===
 
-        /// <summary>Adiciona TextNote com comprimento (cm) ao lado de cada peca. EXPERIMENTAL - pode poluir.</summary>
+        /// <summary>
+        /// Cria uma <c>Dimension</c> por peca usando FamilyInstance.GetReferences(Left/Right).
+        /// Quando o length geometrico diverge mais de 5mm do STRUCTURAL_FRAME_CUT_LENGTH,
+        /// aplica <c>ValueOverride</c> para mostrar o comprimento de fabricacao.
+        /// Refatorado em v2.6.5 (antes v2.4.0 criava TextNote experimental).
+        /// </summary>
         public bool AdicionarComprimentosIndividuais { get; set; } = false;
     }
 }

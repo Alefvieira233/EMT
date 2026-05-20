@@ -82,7 +82,7 @@
                         <CheckBox x:Name="chkCotasVerticais" Content="Cotas verticais (alturas) com SpotElevation" IsChecked="True" Margin="0,4" TabIndex="13"/>
                         <CheckBox x:Name="chkCotaTotal" Content="Cota total do conjunto (eixo a eixo extremo)" IsChecked="True" Margin="0,4" TabIndex="14"/>
                         <CheckBox x:Name="chkMostrarNiveis" Content="Mostrar Levels do projeto (simbolo de nivel)" IsChecked="True" Margin="0,4" TabIndex="15"/>
-                        <CheckBox x:Name="chkComprimentos" Content="Comprimentos individuais por peca (EXPERIMENTAL — pode poluir)" IsChecked="False" Margin="0,4" TabIndex="16"/>
+                        <CheckBox x:Name="chkComprimentos" Content="Comprimentos individuais por peca (Dimension real, com override de Cut Length)" IsChecked="False" Margin="0,4" TabIndex="16"/>
                     </StackPanel>
                 </GroupBox>
 

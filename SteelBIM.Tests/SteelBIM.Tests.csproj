@@ -73,6 +73,11 @@
              Link="LinkedSources\Models\Montagem\ColorRGB.cs" />
     <Compile Include="..\SteelBIM\Models\DiagramaMontagem\DiagramaMontagemConfig.cs"
              Link="LinkedSources\Models\DiagramaMontagem\DiagramaMontagemConfig.cs" />
+    <!-- v2.6.5 hotfix: calculadora pura de plano de cota (Vec3 + perpendicular +
+         stagger + threshold override) extraida do DiagramaMontagemService.
+         CriarComprimentosIndividuais. -->
+    <Compile Include="..\SteelBIM\Services\DiagramaMontagem\DimensionPlanCalculator.cs"
+             Link="LinkedSources\Services\DiagramaMontagem\DimensionPlanCalculator.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"
