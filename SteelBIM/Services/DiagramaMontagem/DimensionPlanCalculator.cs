@@ -58,7 +58,7 @@ namespace SteelBIM.Services.DiagramaMontagem
 
     /// <summary>
     /// Calculadora pura do plano da cota individual de uma peca para o
-    /// Diagrama de Montagem (v2.6.5). Sem dependencia de Autodesk.Revit.DB,
+    /// Diagrama de Montagem. Sem dependencia de Autodesk.Revit.DB,
     /// 100% testavel via xUnit Theory.
     ///
     /// Padrao perpendicular-a-peca (clone do
@@ -66,25 +66,66 @@ namespace SteelBIM.Services.DiagramaMontagem
     /// perpendicular-a-vista — funciona corretamente para pecas com
     /// orientacoes variadas (terca horizontal, montante vertical, diagonal
     /// inclinada) na mesma Section View.
+    ///
+    /// v2.6.6: offset ADAPTATIVO baseado na seccao real do perfil
+    /// (STRUCTURAL_SECTION_COMMON_HEIGHT/WIDTH lidos no caller a partir do
+    /// FamilySymbol). Substitui offset fixo de 200mm + stagger da v2.6.5.
+    /// Rejeitada abordagem bbox-based: AABB world-space de peca diagonal
+    /// inclui projecao do COMPRIMENTO da peca, gerando half-section dezenas
+    /// de vezes maior que a real (ex: diagonal U75 a 45 graus -> bbox 935mm
+    /// em vez de 75mm).
     /// </summary>
     public static class DimensionPlanCalculator
     {
         /// <summary>
-        /// Offset extra (em pes / Revit internal units) aplicado quando
-        /// <c>staggerExtra=true</c>. ~100mm, calculado em ft: 100/304.8.
+        /// Fallback de half-section (ft) usado quando ambos depth e width sao
+        /// zero (familia sem parametros STRUCTURAL_SECTION_COMMON_*). 100mm
+        /// e defensivo — gera offset visivel sem colidir com perfis comuns
+        /// que estariam na faixa 50-300mm.
         /// </summary>
-        public const double StaggerExtraFt = 100.0 / 304.8;
+        public const double FallbackHalfSectionMm = 100.0;
+
+        /// <summary>
+        /// Conversao mm -> ft (Revit internal units). 1 ft = 304.8 mm.
+        /// </summary>
+        private const double FtToMm = 304.8;
+
+        /// <summary>
+        /// Calcula half-section perpendicular a partir das dimensoes da
+        /// seccao bruta do perfil (lidas do FamilySymbol via
+        /// BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT/WIDTH). Usa
+        /// <c>Math.Max(depth, width)</c> para cobrir orientacao desconhecida
+        /// do perfil — trade-off conservador: em alguns casos o offset sera
+        /// ~10-30mm maior que o ideal preciso (otimizacao orientation-aware
+        /// fica como follow-up v2.7.0+).
+        /// </summary>
+        /// <param name="sectionDepthFt">Section Depth — <c>STRUCTURAL_SECTION_COMMON_HEIGHT</c> (ft).</param>
+        /// <param name="sectionWidthFt">Section Width — <c>STRUCTURAL_SECTION_COMMON_WIDTH</c> (ft).</param>
+        /// <returns>Half-section em feet. Se ambos forem &lt;= 0, retorna fallback de <see cref="FallbackHalfSectionMm"/>mm em ft.</returns>
+        public static double CalcularHalfSectionPerp(double sectionDepthFt, double sectionWidthFt)
+        {
+            if (sectionDepthFt <= 0 && sectionWidthFt <= 0)
+                return FallbackHalfSectionMm / FtToMm;
+
+            double maxDimFt = Math.Max(sectionDepthFt, sectionWidthFt);
+            return maxDimFt / 2.0;
+        }
 
         /// <summary>
         /// Calcula (origem, direcao) da Line de cota para uma peca cujos
         /// endpoints sao <paramref name="p1"/> e <paramref name="p2"/>, numa
         /// vista cujo plano tem normal <paramref name="viewNormal"/>.
+        ///
+        /// Offset total = <c>halfSectionPerp(depth, width) + clearance</c>.
+        /// A linha da cota fica sempre a <c>clearance</c> mm da face externa
+        /// do perfil — independente do tamanho da seccao.
         /// </summary>
         /// <param name="p1">Endpoint inicial (ft).</param>
         /// <param name="p2">Endpoint final (ft).</param>
         /// <param name="viewNormal">Normal do plano da vista (unitario).</param>
-        /// <param name="offsetFt">Offset perpendicular base (ft) do midpoint.</param>
-        /// <param name="staggerExtra">true = adiciona <see cref="StaggerExtraFt"/> ao offset (alternar par/impar).</param>
+        /// <param name="sectionDepthFt">Section Depth do perfil (ft) — <c>STRUCTURAL_SECTION_COMMON_HEIGHT</c>.</param>
+        /// <param name="sectionWidthFt">Section Width do perfil (ft) — <c>STRUCTURAL_SECTION_COMMON_WIDTH</c>.</param>
+        /// <param name="clearanceFt">Folga (ft) entre face externa do perfil e linha da cota.</param>
         /// <returns>Origem e direcao da Line da cota.</returns>
         /// <exception cref="ArgumentException">p1 == p2 (peca degenerada).</exception>
         /// <exception cref="InvalidOperationException">Peca paralela ao viewNormal (cota colapsa).</exception>
@@ -92,8 +133,9 @@ namespace SteelBIM.Services.DiagramaMontagem
             Vec3 p1,
             Vec3 p2,
             Vec3 viewNormal,
-            double offsetFt,
-            bool staggerExtra)
+            double sectionDepthFt,
+            double sectionWidthFt,
+            double clearanceFt)
         {
             Vec3 delta = p2 - p1;
             if (delta.Length < 1e-9)
@@ -108,10 +150,11 @@ namespace SteelBIM.Services.DiagramaMontagem
                     "Caller deve pular esta peca e logar warn.");
             perp = perp.Normalize();
 
-            double offsetTotal = offsetFt + (staggerExtra ? StaggerExtraFt : 0.0);
+            double halfSectionPerpFt = CalcularHalfSectionPerp(sectionDepthFt, sectionWidthFt);
+            double offsetTotalFt = halfSectionPerpFt + clearanceFt;
 
             Vec3 midpoint = (p1 + p2) * 0.5;
-            Vec3 origem = midpoint + perp * offsetTotal;
+            Vec3 origem = midpoint + perp * offsetTotalFt;
 
             return new PlanoCotaResult(origem, direcao);
         }
@@ -130,7 +173,6 @@ namespace SteelBIM.Services.DiagramaMontagem
         {
             if (lengthFabFt <= 0)
                 return false;
-            const double FtToMm = 304.8;
             double divergenciaMm = Math.Abs(lengthGeomFt - lengthFabFt) * FtToMm;
             return divergenciaMm > thresholdMm;
         }
