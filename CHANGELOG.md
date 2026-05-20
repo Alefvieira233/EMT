@@ -15,6 +15,23 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.7] - 2026-05-20
+
+### Changed (UX micro-fix)
+- `DiagramaMontagemWindow`: dimensoes aumentadas para dar mais ar natural ao
+  conteudo antes do `ScrollViewer` ativar em DPI alto:
+  - `Width`: 540 -> **600** (mais ar horizontal nos labels)
+  - `MinHeight`: 520 -> **640** (cabe conteudo em DPI 100% sem scroll)
+  - `MaxHeight`: 800 -> **1000** (DPI alto: ~200px extras antes do scroll)
+- Estrutura interna intacta (DockPanel + footer Dock=Bottom + ScrollViewer
+  preservada da v2.6.2). Sem mudancas em controles, handlers, ou logica.
+
+### Compatibilidade
+- 100% compativel com v2.6.6.
+- v2.6.6 NAO marcada AFETADA (funcionalmente correta, so apertada em DPI alto).
+
+---
+
 ## [2.6.6] - 2026-05-20
 
 ### Changed (UX refinement — Diagrama de Montagem)
