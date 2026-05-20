@@ -3,13 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Lançar Pipe Rack"
         Width="920"
-        Height="640"
         MinWidth="820"
         MinHeight="560"
         MaxHeight="760"
+        SizeToContent="Height"
         Background="{DynamicResource WindowBackgroundBrush}"
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResizeWithGrip">
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <!--
+        v2.6.4 (hotfix UX): janela ja tinha root DockPanel + ScrollViewer +
+        ActionBarBorder (estrutura saudavel desde origem) mas mantinha Height=640
+        fixo + CenterScreen. Refactor minimo: SizeToContent=Height (Grid interno
+        tem rows Auto, da pra informar altura) + CenterOwner + IsDefault/IsCancel/
+        TabIndex defensivos nos botoes.
+    -->
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -21,8 +28,14 @@
     <DockPanel LastChildFill="True">
         <Border DockPanel.Dock="Bottom" Style="{StaticResource ActionBarBorder}">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="btnCancel" Content="Cancelar" Width="96" Height="32" Margin="0,0,8,0" Style="{StaticResource SecondaryActionButton}"/>
-                <Button x:Name="btnCreate" Content="Criar" Width="96" Height="32" Style="{StaticResource PrimaryActionButton}"/>
+                <Button x:Name="btnCancel" Content="Cancelar" Width="96" Height="32" Margin="0,0,8,0"
+                        Style="{StaticResource SecondaryActionButton}"
+                        IsCancel="True"
+                        TabIndex="98"/>
+                <Button x:Name="btnCreate" Content="Criar" Width="96" Height="32"
+                        Style="{StaticResource PrimaryActionButton}"
+                        IsDefault="True"
+                        TabIndex="99"/>
             </StackPanel>
         </Border>
 
