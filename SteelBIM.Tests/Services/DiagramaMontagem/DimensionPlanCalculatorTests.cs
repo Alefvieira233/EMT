@@ -6,15 +6,18 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
 {
     /// <summary>
     /// Testes puros do <see cref="DimensionPlanCalculator"/> (sem Revit).
-    /// Cobre geometria vetorial do plano de cota individual usado pelo
-    /// Diagrama de Montagem (v2.6.5) — perpendicular-a-peca em vez de
-    /// perpendicular-a-vista, com stagger par/impar e detecao de caso
-    /// degenerado.
+    /// Cobre:
+    /// 1. Geometria vetorial do plano de cota (perpendicular-a-peca);
+    /// 2. v2.6.6: offset adaptativo baseado em sectionDepth + sectionWidth
+    ///    (max/2 + clearance) — substitui offset fixo + stagger da v2.6.5;
+    /// 3. Threshold de ValueOverride (5mm, sugestao Cowork).
     /// </summary>
     public class DimensionPlanCalculatorTests
     {
         private const double Tol = 1e-6;
         private const double MmToFt = 1.0 / 304.8;
+
+        private static double Mm(double mm) => mm * MmToFt;
 
         private static void AssertVecEqual(Vec3 esperado, Vec3 obtido, double tol = Tol)
         {
@@ -24,60 +27,102 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
         }
 
         // ============================================================
-        // PHASE 2 CHECKPOINT — Cowork sugeriu 5-6 InlineData cobrindo
-        // peca horizontal, vertical, inclinada 30, stagger par/impar e
-        // caso degenerado.
+        // CalcularHalfSectionPerp — sub-helper publico v2.6.6
+        // ============================================================
+
+        /// <summary>
+        /// Validacoes nominais do calculo half-section pra perfis usados na
+        /// pratica do escritorio + cenario degenerado (sem params).
+        /// max(depth, width) / 2 (conservador: cobre orientacao desconhecida).
+        /// </summary>
+        [Theory]
+        [InlineData(75.0, 40.0, 37.5)]       // U75x40 -> half = 75/2
+        [InlineData(100.0, 50.0, 50.0)]      // U100x50 -> half = 100/2
+        [InlineData(360.0, 172.0, 180.0)]    // W360x57.8 -> half = 360/2
+        [InlineData(50.0, 50.0, 25.0)]       // HSS50x50 quadrado -> half = 50/2
+        [InlineData(40.0, 75.0, 37.5)]       // U75x40 rotacionado (width > depth)
+        [InlineData(0.0, 0.0, 100.0)]        // fallback: sem params standard -> 100mm
+        public void CalcularHalfSectionPerp_MaxDimDividePor2(double depthMm, double widthMm, double expectedHalfMm)
+        {
+            double depthFt = Mm(depthMm);
+            double widthFt = Mm(widthMm);
+            double expectedHalfFt = Mm(expectedHalfMm);
+
+            double obtidoFt = DimensionPlanCalculator.CalcularHalfSectionPerp(depthFt, widthFt);
+
+            Assert.Equal(expectedHalfFt, obtidoFt, 6);
+        }
+
+        [Fact]
+        public void CalcularHalfSectionPerp_NegativosTratadosComoZero_DispOFallback()
+        {
+            double obtidoFt = DimensionPlanCalculator.CalcularHalfSectionPerp(-5 * MmToFt, -3 * MmToFt);
+            Assert.Equal(Mm(100.0), obtidoFt, 6);
+        }
+
+        // ============================================================
+        // CalcularPlanoCota — geometria vetorial + offset adaptativo
         // ============================================================
 
         [Fact]
-        public void TercaHorizontal_OffsetPerpendicularNaDirecaoY()
+        public void TercaHorizontal_U75x40_OffsetTotal72dot5mmEmZ()
         {
-            // Terca tipica em Section View XZ (viewNormal = +Y):
+            // Terca U75x40 em Section View XZ (viewNormal = +Y):
             // peca de 1000mm ao longo de X, centrada na origem
+            // halfSection = max(75,40)/2 = 37.5mm; clearance 35mm; offset total 72.5mm
             Vec3 p1 = new Vec3(0, 0, 0);
-            Vec3 p2 = new Vec3(1000 * MmToFt, 0, 0);
+            Vec3 p2 = new Vec3(Mm(1000), 0, 0);
             Vec3 vn = new Vec3(0, 1, 0);
-            double offset = 200 * MmToFt;
 
-            var r = DimensionPlanCalculator.CalcularPlanoCota(p1, p2, vn, offset, staggerExtra: false);
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: Mm(75), sectionWidthFt: Mm(40),
+                clearanceFt: Mm(35));
 
             // direcao = +X
             AssertVecEqual(new Vec3(1, 0, 0), r.Direcao);
             // perp = direcao x viewNormal = +X x +Y = +Z
-            // origem = midpoint + perp * offset = (500mm, 0, 0) + (0, 0, 200mm)
-            AssertVecEqual(new Vec3(500 * MmToFt, 0, 200 * MmToFt), r.Origem);
+            // origem = midpoint + perp * 72.5mm = (500mm, 0, 0) + (0, 0, 72.5mm)
+            AssertVecEqual(new Vec3(Mm(500), 0, Mm(72.5)), r.Origem);
         }
 
         [Fact]
-        public void MontanteVertical_OffsetPerpendicularNaDirecaoX()
+        public void MontanteVertical_U100x50_OffsetTotal85mmEmMinusX()
         {
-            // Montante vertical 1500mm na mesma vista XZ (viewNormal = +Y)
+            // Montante U100x50 vertical 1500mm na mesma vista XZ (viewNormal = +Y)
+            // halfSection = max(100,50)/2 = 50mm; clearance 35mm; offset total 85mm
             Vec3 p1 = new Vec3(0, 0, 0);
-            Vec3 p2 = new Vec3(0, 0, 1500 * MmToFt);
+            Vec3 p2 = new Vec3(0, 0, Mm(1500));
             Vec3 vn = new Vec3(0, 1, 0);
-            double offset = 200 * MmToFt;
 
-            var r = DimensionPlanCalculator.CalcularPlanoCota(p1, p2, vn, offset, staggerExtra: false);
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: Mm(100), sectionWidthFt: Mm(50),
+                clearanceFt: Mm(35));
 
             // direcao = +Z
             AssertVecEqual(new Vec3(0, 0, 1), r.Direcao);
             // perp = +Z x +Y = -X
-            // origem = midpoint (0, 0, 750mm) + (-X * 200mm) = (-200mm, 0, 750mm)
-            AssertVecEqual(new Vec3(-200 * MmToFt, 0, 750 * MmToFt), r.Origem);
+            // origem = midpoint (0, 0, 750mm) + (-X * 85mm) = (-85mm, 0, 750mm)
+            AssertVecEqual(new Vec3(-Mm(85), 0, Mm(750)), r.Origem);
         }
 
         [Fact]
-        public void DiagonalInclinada_DirecaoUnitariaEOrigemForaDaPeca()
+        public void DiagonalInclinada_OrigemAOffsetAdaptativoDoMidpoint()
         {
-            // Diagonal 1000mm a 45 graus no plano XZ (viewNormal = +Y)
-            double comp = 1000 * MmToFt;
+            // Diagonal U75x40 de 1000mm a 45 graus no plano XZ (viewNormal = +Y)
+            // halfSection = max(75,40)/2 = 37.5mm; clearance 35mm; offset total 72.5mm
+            double comp = Mm(1000);
             double cat = comp / Math.Sqrt(2);
             Vec3 p1 = new Vec3(0, 0, 0);
             Vec3 p2 = new Vec3(cat, 0, cat);
             Vec3 vn = new Vec3(0, 1, 0);
-            double offset = 200 * MmToFt;
+            double expectedOffsetFt = Mm(72.5);
 
-            var r = DimensionPlanCalculator.CalcularPlanoCota(p1, p2, vn, offset, staggerExtra: false);
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: Mm(75), sectionWidthFt: Mm(40),
+                clearanceFt: Mm(35));
 
             // direcao normalizada = (1/sqrt(2), 0, 1/sqrt(2))
             Assert.Equal(1.0 / Math.Sqrt(2), r.Direcao.X, 6);
@@ -87,30 +132,95 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
             // direcao tem comprimento unitario
             Assert.Equal(1.0, r.Direcao.Length, 6);
 
-            // origem deve estar a `offset` do midpoint (mesma distancia perpendicular)
+            // origem deve estar a `expectedOffsetFt` do midpoint, na perpendicular
             Vec3 mid = new Vec3(cat * 0.5, 0, cat * 0.5);
             Vec3 deslocamento = r.Origem - mid;
-            Assert.Equal(offset, deslocamento.Length, 6);
+            Assert.Equal(expectedOffsetFt, deslocamento.Length, 6);
         }
 
+        /// <summary>
+        /// Cenario real do Alef: diagonal U75x40x2.66 numa Section View tipica.
+        /// Validacao do offset adaptativo na orientacao real do escritorio.
+        /// </summary>
         [Fact]
-        public void StaggerPar_OffsetExtraDe100mm()
+        public void DiagonalU75x40_OffsetTotalIgualA72dot5mm()
         {
-            // Mesma peca de TercaHorizontal mas com staggerExtra=true
+            // Peca diagonal qualquer — so verificando que offset total = 72.5mm
             Vec3 p1 = new Vec3(0, 0, 0);
-            Vec3 p2 = new Vec3(1000 * MmToFt, 0, 0);
+            Vec3 p2 = new Vec3(Mm(800), 0, Mm(600));
             Vec3 vn = new Vec3(0, 1, 0);
-            double offset = 200 * MmToFt;
 
-            var rNormal = DimensionPlanCalculator.CalcularPlanoCota(p1, p2, vn, offset, staggerExtra: false);
-            var rStagger = DimensionPlanCalculator.CalcularPlanoCota(p1, p2, vn, offset, staggerExtra: true);
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: Mm(75), sectionWidthFt: Mm(40),
+                clearanceFt: Mm(35));
 
-            // Diferenca entre origens = 100mm na direcao perpendicular (+Z aqui)
-            Vec3 dif = rStagger.Origem - rNormal.Origem;
-            Assert.Equal(100 * MmToFt, dif.Length, 6);
+            Vec3 mid = (p1 + p2) * 0.5;
+            double offsetMedido = (r.Origem - mid).Length;
+            Assert.Equal(Mm(72.5), offsetMedido, 6);
+        }
 
-            // Direcao nao muda com stagger
-            AssertVecEqual(rNormal.Direcao, rStagger.Direcao);
+        /// <summary>
+        /// Cenario real do Alef: montante U100x50x3.04. Offset esperado 85mm.
+        /// </summary>
+        [Fact]
+        public void MontanteU100x50_OffsetTotalIgualA85mm()
+        {
+            Vec3 p1 = new Vec3(0, 0, 0);
+            Vec3 p2 = new Vec3(0, 0, Mm(1082));
+            Vec3 vn = new Vec3(0, 1, 0);
+
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: Mm(100), sectionWidthFt: Mm(50),
+                clearanceFt: Mm(35));
+
+            Vec3 mid = (p1 + p2) * 0.5;
+            double offsetMedido = (r.Origem - mid).Length;
+            Assert.Equal(Mm(85.0), offsetMedido, 6);
+        }
+
+        /// <summary>
+        /// Peca em familia sem parametros STRUCTURAL_SECTION_COMMON_*: usa
+        /// fallback 100mm + clearance configurado. Caller deve logar Debug.
+        /// </summary>
+        [Fact]
+        public void SemParamsStandard_FallbackHalf100mmMaisClearance()
+        {
+            Vec3 p1 = new Vec3(0, 0, 0);
+            Vec3 p2 = new Vec3(Mm(1000), 0, 0);
+            Vec3 vn = new Vec3(0, 1, 0);
+
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: 0.0, sectionWidthFt: 0.0,
+                clearanceFt: Mm(35));
+
+            // fallback half = 100mm; offset total = 100 + 35 = 135mm
+            Vec3 mid = (p1 + p2) * 0.5;
+            double offsetMedido = (r.Origem - mid).Length;
+            Assert.Equal(Mm(135.0), offsetMedido, 6);
+        }
+
+        /// <summary>
+        /// Clearance zero: cota cola exatamente na face externa do perfil
+        /// (offset = halfSectionPerp). Edge case util pra cliente avancado.
+        /// </summary>
+        [Fact]
+        public void ClearanceZero_CotaColaNaFaceExterna_U75()
+        {
+            Vec3 p1 = new Vec3(0, 0, 0);
+            Vec3 p2 = new Vec3(Mm(1000), 0, 0);
+            Vec3 vn = new Vec3(0, 1, 0);
+
+            var r = DimensionPlanCalculator.CalcularPlanoCota(
+                p1, p2, vn,
+                sectionDepthFt: Mm(75), sectionWidthFt: Mm(40),
+                clearanceFt: 0.0);
+
+            Vec3 mid = (p1 + p2) * 0.5;
+            double offsetMedido = (r.Origem - mid).Length;
+            Assert.Equal(Mm(37.5), offsetMedido, 6);
         }
 
         [Fact]
@@ -118,11 +228,14 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
         {
             // Caso degenerado: peca ao longo de Y, vista com normal Y => perpendicular colapsa
             Vec3 p1 = new Vec3(0, 0, 0);
-            Vec3 p2 = new Vec3(0, 1000 * MmToFt, 0);
+            Vec3 p2 = new Vec3(0, Mm(1000), 0);
             Vec3 vn = new Vec3(0, 1, 0);
 
             Assert.Throws<InvalidOperationException>(() =>
-                DimensionPlanCalculator.CalcularPlanoCota(p1, p2, vn, 200 * MmToFt, false));
+                DimensionPlanCalculator.CalcularPlanoCota(
+                    p1, p2, vn,
+                    sectionDepthFt: Mm(75), sectionWidthFt: Mm(40),
+                    clearanceFt: Mm(35)));
         }
 
         [Fact]
@@ -130,11 +243,14 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
         {
             Vec3 p = new Vec3(1, 2, 3);
             Assert.Throws<ArgumentException>(() =>
-                DimensionPlanCalculator.CalcularPlanoCota(p, p, new Vec3(0, 1, 0), 200 * MmToFt, false));
+                DimensionPlanCalculator.CalcularPlanoCota(
+                    p, p, new Vec3(0, 1, 0),
+                    sectionDepthFt: Mm(75), sectionWidthFt: Mm(40),
+                    clearanceFt: Mm(35)));
         }
 
         // ============================================================
-        // DeveAplicarOverride — threshold 5mm (sugestao Cowork)
+        // DeveAplicarOverride — threshold 5mm (logica intacta da v2.6.5)
         // ============================================================
 
         [Theory]
@@ -143,11 +259,9 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
         [InlineData(1.0, 1.01, false)]      // diferenca 3.05mm < 5mm
         [InlineData(1.0, 1.02, true)]       // diferenca 6.1mm > 5mm
         [InlineData(2.0, 1.999, false)]     // diferenca 0.3mm < 5mm
-        [InlineData(2.0, 1.98, true)]       // diferenca 6.1mm > 5mm (mesma diff em peca de 600mm vs 300mm)
+        [InlineData(2.0, 1.98, true)]       // diferenca 6.1mm > 5mm
         public void DeveAplicarOverride_RespeitaThresholdDe5mm(double geomFt, double fabFt, bool esperado)
         {
-            // Os inlines acima estao em FT (Revit internal). Converter para mm so para clareza
-            // de doc — o codigo trabalha em ft + threshold em mm internamente.
             Assert.Equal(esperado, DimensionPlanCalculator.DeveAplicarOverride(geomFt, fabFt));
         }
 
@@ -160,15 +274,14 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
         [Fact]
         public void DeveAplicarOverride_DiagonalU75_Geom1224mm_Fab1215mm_DispOverride()
         {
-            double geomFt = 1224.0 * MmToFt;
-            double fabFt = 1215.0 * MmToFt;
+            double geomFt = Mm(1224.0);
+            double fabFt = Mm(1215.0);
             Assert.True(DimensionPlanCalculator.DeveAplicarOverride(geomFt, fabFt));
         }
 
         [Fact]
         public void DeveAplicarOverride_FabZeroOuNegativo_NaoAplica()
         {
-            // Se nao temos lengthFab valido, nao podemos sugerir override
             Assert.False(DimensionPlanCalculator.DeveAplicarOverride(1.0, 0));
             Assert.False(DimensionPlanCalculator.DeveAplicarOverride(1.0, -0.5));
         }
@@ -176,9 +289,8 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
         [Fact]
         public void DeveAplicarOverride_ThresholdCustomizavel()
         {
-            // Diferenca 6mm: deve aplicar com threshold 5mm, mas nao com 10mm
             double geomFt = 1.0;
-            double fabFt = 1.0 + 6 * MmToFt;
+            double fabFt = 1.0 + Mm(6);
             Assert.True(DimensionPlanCalculator.DeveAplicarOverride(geomFt, fabFt, thresholdMm: 5));
             Assert.False(DimensionPlanCalculator.DeveAplicarOverride(geomFt, fabFt, thresholdMm: 10));
         }

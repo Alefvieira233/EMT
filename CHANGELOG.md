@@ -15,6 +15,81 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.6] - 2026-05-20
+
+### Changed (UX refinement — Diagrama de Montagem)
+
+- **Cotas individuais agora com offset ADAPTATIVO**: posicionadas a 35mm da
+  face externa de cada perfil (lido de `STRUCTURAL_SECTION_COMMON_HEIGHT/WIDTH`
+  do `FamilySymbol`), em vez de offset fixo de 200mm do eixo (v2.6.5).
+  Cotas ficam consistentes e legiveis independente do tamanho do perfil:
+
+  | Perfil | depth | width | half-section | clearance | offset total |
+  |---|---|---|---|---|---|
+  | U75x40x2.66 | 75mm | 40mm | 37.5mm | 35mm | **72.5mm** |
+  | U100x50x3.04 | 100mm | 50mm | 50mm | 35mm | **85mm** |
+  | W360x57.8 | 360mm | 172mm | 180mm | 35mm | **215mm** |
+  | HSS50x50 | 50mm | 50mm | 25mm | 35mm | **60mm** |
+  | Sem params standard | 0 | 0 | 100mm (fallback) | 35mm | **135mm** |
+
+- **Clearance configuravel** via `DiagramaMontagemConfig.ClearanceCotaIndividualMm`
+  (default 35mm). UI dedicada fica pra v2.7.0+; campo no DTO ja deixa configuravel
+  pra cliente avancado.
+
+- **Stagger removido**: o offset adaptativo ja garante espacamento natural entre
+  pecas vizinhas de perfis diferentes. Stagger anterior (200/300mm alternado)
+  era cosmetic-only.
+
+### Rejeitado (analise tecnica registrada)
+
+- **Abordagem bbox-based** (calcular halfSectionPerp projetando os 8 vertices do
+  `BoundingBoxXYZ` no eixo perpendicular) foi proposta inicialmente. Analise
+  matematica do Cowork mostrou que **falha catastroficamente em pecas inclinadas**:
+  uma diagonal U75 a 45 graus tem AABB world-space de ~935mm na perpendicular
+  (porque inclui projecao do comprimento de 1000mm), gerando offset de 467mm
+  em vez de 37.5mm. Leitura direta dos parametros standard da familia
+  (`STRUCTURAL_SECTION_COMMON_*`) e **independente da orientacao da peca**
+  porque le a secao bruta antes do placement.
+
+### Added
+
+- `DimensionPlanCalculator.CalcularHalfSectionPerp(depthFt, widthFt)` sub-helper
+  publico testavel isoladamente. Usa `Math.Max(depth, width) / 2` (conservador,
+  cobre orientacao desconhecida do perfil). Fallback 100mm quando ambos
+  parametros sao zero.
+- 10 testes unitarios novos cobrindo:
+  - Theory CalcularHalfSectionPerp com 6 perfis (U75, U100, W360, HSS50,
+    U75 rotacionado, sem-params)
+  - U75 valores reais do escritorio (offset = 72.5mm)
+  - U100 valores reais (offset = 85mm)
+  - Fallback (offset = 135mm)
+  - Clearance zero (cota cola na face externa, offset = halfSection)
+- Suite total: **866 -> 876 verdes** (zero Skips, zero ignored).
+
+### Compatibilidade
+
+- Modelos, templates, licencas v2.6.5 continuam validos.
+- Pranchas de obra geradas em v2.6.5 nao recotam automaticamente — efeito so em
+  proximas execucoes do Diagrama de Montagem.
+- Familias sem `STRUCTURAL_SECTION_COMMON_*` (ex: in-place, generic model)
+  recebem fallback 100mm + warning no log (`Logger.Debug`). Considerar usar
+  familias estruturais padrao se ocorrer frequentemente.
+- v2.6.5 **NAO marcada AFETADA** — funcionalmente correta, so com posicionamento
+  default nao-ideal (200mm fixo do eixo, gerando inconsistencia visual entre
+  perfis pequenos e grandes).
+
+### Known follow-ups (v2.7.0+)
+
+- **Orientation-aware**: hoje usa `max(depth, width)` (conservador). Detectar
+  orientacao real da peca (transform local) permitiria offset preciso por face
+  (alma vs aba). Ganho estimado: -10 a -30mm em alguns casos.
+- **UI de clearance**: campo numerico opcional no `DiagramaMontagemWindow`
+  abaixo do checkbox de comprimentos individuais.
+- **Fallback secundario**: testar `STRUCTURAL_SECTION_COMMON_OUTSIDE_HEIGHT/WIDTH`
+  antes do fallback de 100mm, pra cobrir familias customizadas de escritorios.
+
+---
+
 ## [2.6.5] - 2026-05-20
 
 ### Fixed (Feature — Diagrama de Montagem)

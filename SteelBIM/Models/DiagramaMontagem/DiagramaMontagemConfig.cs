@@ -47,7 +47,7 @@
         /// <summary>Nome/titulo da folha (preenche sheet.Name). Vazio = usa nome da vista.</summary>
         public string NomeFolha { get; set; } = "";
 
-        // === Comprimentos individuais (v2.6.5: Dimension real) ===
+        // === Comprimentos individuais (v2.6.5: Dimension real; v2.6.6: offset adaptativo) ===
 
         /// <summary>
         /// Cria uma <c>Dimension</c> por peca usando FamilyInstance.GetReferences(Left/Right).
@@ -56,5 +56,18 @@
         /// Refatorado em v2.6.5 (antes v2.4.0 criava TextNote experimental).
         /// </summary>
         public bool AdicionarComprimentosIndividuais { get; set; } = false;
+
+        /// <summary>
+        /// Folga (mm) entre a face externa do perfil e a linha da cota individual no
+        /// Diagrama de Montagem. Default 35mm garante leitura confortavel sem colidir
+        /// com o perfil, independente da seccao (U75, U100, W360, etc).
+        /// </summary>
+        /// <remarks>
+        /// v2.6.6: substitui offset fixo de 200mm da v2.6.5 por offset adaptativo
+        /// <c>max(sectionDepth, sectionWidth)/2 + clearance</c>. Lido do FamilySymbol
+        /// via BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT/WIDTH.
+        /// Configuravel via codigo; UI fica pra v2.7.0+.
+        /// </remarks>
+        public double ClearanceCotaIndividualMm { get; set; } = 35.0;
     }
 }

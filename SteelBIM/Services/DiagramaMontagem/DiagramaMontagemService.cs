@@ -141,13 +141,13 @@ namespace SteelBIM.Services.DiagramaMontagem
                     }
                 }
 
-                // 11) Comprimentos individuais (experimental)
+                // 11) Comprimentos individuais (v2.6.6: offset adaptativo + clearance configuravel)
                 if (config.AdicionarComprimentosIndividuais)
                 {
                     using (Transaction tx9 = new Transaction(doc, "Comprimentos individuais"))
                     {
                         tx9.Start();
-                        resultado.ComprimentosCriados = CriarComprimentosIndividuais(doc, vista, elementos);
+                        resultado.ComprimentosCriados = CriarComprimentosIndividuais(doc, vista, elementos, config);
                         tx9.Commit();
                     }
                 }
@@ -732,31 +732,33 @@ namespace SteelBIM.Services.DiagramaMontagem
         }
 
         // ============================================
-        // 2K. COMPRIMENTOS INDIVIDUAIS — v2.4.0 (TextNote) -> v2.6.5 (Dimension real)
+        // 2K. COMPRIMENTOS INDIVIDUAIS
+        //   v2.4.0: TextNote experimental
+        //   v2.6.5: Dimension real + ValueOverride 5mm threshold
+        //   v2.6.6: offset ADAPTATIVO (halfSectionPerp + clearance configuravel)
         // ============================================
         /// <summary>
         /// Cria uma <see cref="Dimension"/> REAL ao lado de cada peca estrutural,
         /// usando <see cref="FamilyInstance.GetReferences"/>(Left/Right) — mesmo
         /// padrao do <c>CotarPecaFabricacaoService.CriarCotaViaFamilyRefs</c>.
-        /// O calculo do plano da cota (origem + direcao da Line) e delegado ao
-        /// helper puro <see cref="DimensionPlanCalculator"/>, totalmente testado
-        /// via xUnit (perpendicular-a-peca, stagger par/impar).
+        ///
+        /// v2.6.6: a linha da cota fica sempre a <c>config.ClearanceCotaIndividualMm</c>
+        /// (default 35mm) da face externa do perfil — independente do tamanho da
+        /// seccao. Le <c>STRUCTURAL_SECTION_COMMON_HEIGHT/WIDTH</c> do FamilySymbol
+        /// e delega o calculo do offset ao helper puro <see cref="DimensionPlanCalculator"/>.
         ///
         /// Quando o comprimento medido divergir mais de 5mm do comprimento de
         /// fabricacao (STRUCTURAL_FRAME_CUT_LENGTH), aplica <c>ValueOverride</c>
         /// para mostrar o valor de fabricacao — evitando que cotas mostrem
         /// 1224mm quando a peca sera cortada em 1215mm.
         /// </summary>
-        private int CriarComprimentosIndividuais(Document doc, ViewSection vista, List<Element> elementos)
+        private int CriarComprimentosIndividuais(Document doc, ViewSection vista, List<Element> elementos, DiagramaMontagemConfig config)
         {
             int criados = 0;
-            int indice = 0;
 
-            // Offset perpendicular base (200mm) + stagger extra (100mm) alternado
-            // para nao colidir entre pecas proximas/paralelas. Justificativa do
-            // valor menor que AutoVistaService.CotarLongitudinal (500mm): aqui
-            // sao N cotas locais por peca, nao uma cota global da vista.
-            double offsetFt = UnitUtils.ConvertToInternalUnits(200.0, UnitTypeId.Millimeters);
+            // clearance da config -> ft (Revit internal units)
+            double clearanceFt = UnitUtils.ConvertToInternalUnits(
+                config.ClearanceCotaIndividualMm, UnitTypeId.Millimeters);
 
             // viewNormal = direcao perpendicular ao plano da vista (ViewDirection
             // aponta para fora do plano da Section View).
@@ -765,7 +767,6 @@ namespace SteelBIM.Services.DiagramaMontagem
 
             foreach (Element e in elementos)
             {
-                indice++;
                 try
                 {
                     if (!(e is FamilyInstance elem))
@@ -779,12 +780,28 @@ namespace SteelBIM.Services.DiagramaMontagem
                     Vec3 p1 = new Vec3(pa.X, pa.Y, pa.Z);
                     Vec3 p2 = new Vec3(pb.X, pb.Y, pb.Z);
 
-                    // Plano da Line de cota (origem + direcao) — calculo puro
+                    // v2.6.6: ler seccao real do perfil (STRUCTURAL_SECTION_COMMON_*)
+                    // -> offset adaptativo. Caller passa 0/0 se nao encontrar params
+                    // standard; helper aplica fallback de 100mm.
+                    double depthFt = LerSectionCommonParam(elem, BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT);
+                    double widthFt = LerSectionCommonParam(elem, BuiltInParameter.STRUCTURAL_SECTION_COMMON_WIDTH);
+                    if (depthFt <= 0 && widthFt <= 0)
+                    {
+                        Logger.Debug(
+                            "[DiagramaMontagem] Peca {Id} sem parametros standard de secao (STRUCTURAL_SECTION_COMMON_*). " +
+                            "Usando fallback 100mm. Considerar usar familia estrutural padrao.",
+                            e.Id);
+                    }
+
+                    // Plano da Line de cota (origem + direcao) — calculo puro adaptativo
                     PlanoCotaResult plano;
                     try
                     {
                         plano = DimensionPlanCalculator.CalcularPlanoCota(
-                            p1, p2, viewNormal, offsetFt, staggerExtra: (indice % 2 == 0));
+                            p1, p2, viewNormal,
+                            sectionDepthFt: depthFt,
+                            sectionWidthFt: widthFt,
+                            clearanceFt: clearanceFt);
                     }
                     catch (Exception exGeom)
                     {
@@ -829,6 +846,30 @@ namespace SteelBIM.Services.DiagramaMontagem
                 }
             }
             return criados;
+        }
+
+        /// <summary>
+        /// Le um parametro STRUCTURAL_SECTION_COMMON_* do FamilySymbol da peca.
+        /// Retorna 0.0 se a familia nao expoe esse parametro (helper trata como
+        /// "sem params" e usa fallback).
+        /// </summary>
+        private double LerSectionCommonParam(FamilyInstance elem, BuiltInParameter bip)
+        {
+            try
+            {
+                FamilySymbol sym = elem.Symbol;
+                if (sym == null)
+                    return 0.0;
+                Parameter p = sym.get_Parameter(bip);
+                if (p == null || p.StorageType != StorageType.Double)
+                    return 0.0;
+                double v = p.AsDouble();
+                return v > 0 ? v : 0.0;
+            }
+            catch
+            {
+                return 0.0;
+            }
         }
 
         /// <summary>
