@@ -15,6 +15,82 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.9] - 2026-05-21
+
+### Added (feature — Diagrama de Montagem)
+
+- **Vista superior (planta) no Diagrama de Montagem.** Nova opcao
+  `Superior (planta)` no radio "Orientacao da vista" que gera `ViewSection`
+  com `ViewDirection = -Z` (observador olhando de cima pra baixo), `up = +Y`
+  mundial (norte). Reusa toda a infra atual: cotas entre eixos consecutivos
+  (agora em ambas as direcoes X e Y do grid), tags com marca, cotagem
+  individual (Dimension real com Override Cut Length da v2.6.5/v2.6.6 +
+  offset adaptativo da v2.6.6 — `DimensionPlanCalculator` intacto).
+
+  Use case: detalhamento de planos de cobertura, mezanino, lajes,
+  fundacoes — qualquer projeto onde vista de planta e mais informativa
+  que elevacao lateral.
+
+  Nome contextual da vista no Project Browser: "Diagrama de Montagem (Planta)"
+  quando `Superior` selecionada; padrao "Diagrama de Montagem" nas elevacoes.
+
+- **`SectionBoxBuilder` helper puro** em `Services/DiagramaMontagem/`
+  (~160 linhas) extraido do `DiagramaMontagemService.DetectarPlanoSelecao`.
+  Reusa o `Vec3` da v2.6.6 e expoe 2 metodos publicos:
+  - `CalcularElevacao(bbMin, bbMax, margemFt, paraleloAoX)` — comportamento
+    original v2.3.0+
+  - `CalcularPlanta(bbMin, bbMax, margemFt)` — novo na v2.6.9
+  Retorna `SectionBoxData` struct (Vec3 Origem + 3 Basis + Min/Max local).
+
+- **8 testes unitarios novos** cobrindo:
+  - 3 planta (10x10m, 10x3m retangular, margem Theory com 3 inlines)
+  - 1 degenerado (bbox nulo, 1 elemento isolado)
+  - **2 regressao retroativa** das elevacoes `ParaleloEixoX` e `ParaleloEixoY`
+    — feature v2.3.0+ que nao tinha cobertura ate v2.6.9. Ganho bonus do
+    helper extraido: qualquer mudanca futura no calculo de elevacao quebra
+    teste em vez de regressao silenciosa.
+
+  Suite: **876 -> 884 verdes** (zero Skips, zero ignored).
+
+### Changed (UX)
+
+- "Cotas verticais (alturas) com SpotElevation" desabilitada automaticamente
+  quando "Superior (planta)" selecionada (handler `RbSuperior_Checked` no
+  code-behind seta `IsEnabled=false` + tooltip explicativo). SpotElevation
+  mostra altura Z — conceito sem sentido em planta XY. Reabilita ao trocar
+  pra qualquer orientacao de elevacao.
+
+### Defensivo
+
+- `CriarSectionView` agora verifica se `view.UpDirection` apos
+  `ViewSection.CreateSection` bate com o `BasisY` do Transform pedido.
+  Revit as vezes recalcula o BasisY quando o Transform tem orientacao
+  incomum (ex: vista superior com `BasisZ=-Z`). Discrepancia loga
+  `Logger.Debug` mas nao aborta — smoke visual valida orientacao.
+
+### Compatibilidade
+
+- 100% compativel com v2.6.8.
+- Pranchas geradas em v2.6.8 continuam validas.
+- Configuracoes salvas (`OrientacaoDiagrama`) com valor antigo
+  (`Auto`/`ParaleloEixoX`/`ParaleloEixoY`) continuam funcionando — `Superior`
+  e adicao (`= 3`), nao breaking change.
+- v2.6.8 **NAO marcada AFETADA** — v2.6.9 e adicao de feature, nao fix.
+
+### Trade-offs aceitos (smoke valida)
+
+- **Bbox Z centralizado**: bbox local Z fica `[-profundidade/2, +profundidade/2]`
+  em torno do centroZ dos elementos. Em modelos com peca muito alta/baixa pode
+  mostrar "ar" entre o observador e o topo do elemento mais alto. Considerado
+  minor — se incomodar visualmente no smoke, ajuste pra `[0, profundidade]`
+  (origem no topo) fica como follow-up v2.6.10.
+- **Conservador `max(depth,width)`** do `DimensionPlanCalculator` v2.6.6
+  continua valendo em planta — pecas estruturais com aba horizontal podem
+  ter offset um pouco maior que o ideal preciso. Otimizacao orientation-aware
+  fica como follow-up v2.7.0+ (mesmo trade-off documentado na v2.6.6).
+
+---
+
 ## [2.6.8] - 2026-05-20
 
 ### Fixed (UX critico — REVERT de v2.6.3)
