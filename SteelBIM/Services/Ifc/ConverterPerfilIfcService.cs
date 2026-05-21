@@ -129,6 +129,42 @@ namespace SteelBIM.Services.Ifc
         }
 
         /// <summary>
+        /// v2.7.1: identifica se um elemento e um perfil estrutural linear
+        /// (vigas/pilares/terças) — usado pelo filtro UX do
+        /// <c>ConverterPerfilIfcWindow</c> para esconder acessorios IFC
+        /// nao-conversiveis (armaduras, chapas, ganchos, BoltArrays).
+        ///
+        /// Aceita por DOIS criterios (OR):
+        /// <list type="number">
+        /// <item>Categoria estrutural nativa do Revit (Framing/Columns)</item>
+        /// <item>DirectShape generico com geometria linear (bbox razao &gt;= 3:1)</item>
+        /// </list>
+        ///
+        /// Delega o calculo geometrico ao helper puro <see cref="IfcStructuralFilterPure"/>
+        /// — preserva testabilidade do criterio dimensional.
+        /// </summary>
+        public static bool EhPerfilEstruturalLinear(Element e)
+        {
+            if (e == null)
+                return false;
+
+            long catId = e.Category?.Id?.Value ?? 0;
+            if (catId == (long)BuiltInCategory.OST_StructuralFraming)
+                return true;
+            if (catId == (long)BuiltInCategory.OST_StructuralColumns)
+                return true;
+
+            BoundingBoxXYZ bbox = e.get_BoundingBox(null);
+            if (bbox == null)
+                return false;
+
+            double dx = bbox.Max.X - bbox.Min.X;
+            double dy = bbox.Max.Y - bbox.Min.Y;
+            double dz = bbox.Max.Z - bbox.Min.Z;
+            return IfcStructuralFilterPure.EhLinearPorBbox(dx, dy, dz);
+        }
+
+        /// <summary>
         /// Coleta todos os parametros cujo nome comeca com "Ifc" e tem valor string nao vazio.
         /// </summary>
         public static Dictionary<string, string> ColetarParametrosIfc(Element e)
