@@ -71,6 +71,11 @@ namespace SteelBIM.Utils
         public string LastNumeracaoSuffix { get; set; } = string.Empty;
         public bool LastNumeracaoKeepHighlight { get; set; } = true;
 
+        // ---------- Converter IFC -> Nativo (v2.7.0) ----------
+        public string LastConverterIfcParamIfc { get; set; } = string.Empty;
+        public string LastConverterIfcNivelPadrao { get; set; } = string.Empty;
+        public bool LastConverterIfcDeletarOriginal { get; set; } = true;
+
         // ---------- PF Nomeacao ----------
         public string LastPfNamingTarget { get; set; } = "Pilares";
         public string LastPfNamingScope { get; set; } = "VistaAtiva";
