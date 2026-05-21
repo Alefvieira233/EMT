@@ -15,6 +15,55 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.3] - 2026-05-21
+
+### Fixed (CRITICAL)
+
+- **Conversor IFC: crash ao abrir dialog** (`XamlParseException:
+  System.Windows.Controls.Primitives.ToggleButton.IsChecked iniciou uma
+  excecao`). Bug introduzido em v2.7.1 com o checkbox
+  `chkApenasEstruturais IsChecked="True"`.
+
+  **Causa raiz**: WPF dispara o evento `Checked` durante `InitializeComponent`
+  ao aplicar `IsChecked="True"`, ANTES dos campos do construtor
+  (`_todosElementos`, `_doc`) serem atribuidos. O handler
+  `ChkApenasEstruturais_Toggled` **ja tinha** o guard
+  `if (_carregando) return;`, mas a flag `_carregando` valia `false`
+  (default de bool, nunca inicializada `true` antes do InitializeComponent).
+  Handler seguia, chamava `AplicarFiltroEstrutural`, que tentava
+  `_todosElementos.ToList()` com null → `ArgumentNullException` → WPF
+  embrulha em `XamlParseException`.
+
+  **Fix**: 1 linha — setar `_carregando = true;` como primeira instrucao
+  do construtor (antes de `InitializeComponent`). `LoadData` ja zera
+  `false` no final, entao o ciclo de vida fica correto. Handlers ficam
+  "mudos" durante boot, voltam a funcionar apos boot completar.
+
+  Stack trace original do crash (de
+  `%LOCALAPPDATA%\SteelBIM\logs\emt-20260521.log`):
+  ```
+  System.ArgumentNullException: Value cannot be null. (Parameter 'source')
+     at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+     at ConverterPerfilIfcWindow.AplicarFiltroEstrutural() :line 143
+     at ConverterPerfilIfcWindow.ChkApenasEstruturais_Toggled(...) :line 151
+     at ConverterPerfilIfcWindow.InitializeComponent() :line 1
+     at ConverterPerfilIfcWindow..ctor(...) :line 60
+  ```
+
+### Versoes AFETADAS
+
+- **v2.7.1** (introduziu o checkbox sem inicializar `_carregando = true` no boot)
+- **v2.7.2** (mesma estrutura — bug nao foi tocado)
+
+Conversor IFC **nao abre** nessas versoes. Atualizar IMEDIATAMENTE para v2.7.3.
+
+### Sem mudancas
+
+- Toda logica intacta. So 1 linha adicionada no construtor.
+- 944/944 testes verdes preservados.
+
+---
+
 ## [2.7.2] - 2026-05-21
 
 ### Changed (Vista de Peca — cotagem modernizada)

@@ -57,6 +57,16 @@ namespace SteelBIM.Views
             List<Level> niveis,
             AppSettings settings)
         {
+            // v2.7.3 HOTFIX: bloqueia handlers durante boot.
+            // Sem essa linha, IsChecked="True" do chkApenasEstruturais no XAML
+            // dispara Checked event ja durante InitializeComponent, ANTES dos
+            // campos (_todosElementos, _doc) serem inicializados nas linhas
+            // abaixo. Handler ChkApenasEstruturais_Toggled JA tem guard
+            // `if (_carregando) return;` — mas a flag e false (default bool)
+            // quando o handler dispara, entao o guard nao protege.
+            // Setar true aqui faz o guard funcionar; LoadData seta false no fim.
+            _carregando = true;
+
             InitializeComponent();
             RevitWindowThemeService.Attach(this);
 
