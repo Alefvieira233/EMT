@@ -68,6 +68,24 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!-- v2.7.2: anotacoes automaticas na vista longitudinal -->
+                <GroupBox Header="Anotações automáticas (vista longitudinal)">
+                    <StackPanel>
+                        <CheckBox x:Name="chkCotagemLongitudinal"
+                                  Content="Cotagem longitudinal automática (Dimension com Override Cut Length)"
+                                  IsChecked="True"
+                                  ToolTip="Cria Dimension paralela ao eixo da peca, valor = STRUCTURAL_FRAME_CUT_LENGTH quando divergir do geom em mais de 5mm (peca cortada com cope/notch). Offset adaptativo 35mm da face externa do perfil (mesmo padrao da v2.6.6 no Diagrama de Montagem)."
+                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+
+                        <CheckBox x:Name="chkTagComMarca"
+                                  Content="Tag com marca da peça (parâmetro Mark)"
+                                  IsChecked="True"
+                                  Margin="0,6,0,0"
+                                  ToolTip="Cria IndependentTag no centro da peca exibindo o parametro Mark. Pecas sem Mark sao puladas silenciosamente. Fallback TextNote se nenhuma familia de Structural Framing Tag estiver carregada no projeto."
+                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
                 <!-- Configuracoes -->
                 <GroupBox Header="Configurações">
                     <Grid>

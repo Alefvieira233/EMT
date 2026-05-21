@@ -8,6 +8,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
+using SteelBIM.Services.DiagramaMontagem;
 using SteelBIM.Utils;
 
 namespace SteelBIM.Services
@@ -75,6 +76,10 @@ namespace SteelBIM.Services
 
             int vistasCriadas = 0;
             int folhasCriadas = 0;
+            // v2.7.2: contadores das anotacoes automaticas
+            int cotasCriadas = 0;
+            int tagsCriadas = 0;
+            int tagsSemMark = 0;
             List<string> falhas = new();
 
             foreach (FamilyInstance elem in elementos)
@@ -110,6 +115,17 @@ namespace SteelBIM.Services
                             {
                                 vistasGeradas.Add(vistaLong);
                                 vistasCriadas++;
+
+                                // v2.7.2: anotacoes automaticas (opt-in via config)
+                                if (config.AdicionarCotagemLongitudinal)
+                                    cotasCriadas += CotarLongitudinal(doc, vistaLong, elem);
+
+                                if (config.AdicionarTagComMarca)
+                                {
+                                    (int tagCreated, int semMark) = CriarTagComMarca(doc, vistaLong, elem);
+                                    tagsCriadas += tagCreated;
+                                    tagsSemMark += semMark;
+                                }
                             }
                             else
                             {
@@ -160,6 +176,16 @@ namespace SteelBIM.Services
 
             if (config.CriarFolha)
                 resumo += $"\nFolhas criadas: {folhasCriadas}";
+
+            // v2.7.2: contadores das anotacoes automaticas (so mostra se ativadas)
+            if (config.AdicionarCotagemLongitudinal)
+                resumo += $"\nCotas longitudinais: {cotasCriadas}";
+            if (config.AdicionarTagComMarca)
+            {
+                resumo += $"\nTags com marca: {tagsCriadas}";
+                if (tagsSemMark > 0)
+                    resumo += $" (peças sem Mark puladas: {tagsSemMark})";
+            }
 
             if (falhas.Count > 0)
                 resumo += "\n\nObservações:\n• " + string.Join("\n• ", falhas);
@@ -395,8 +421,9 @@ namespace SteelBIM.Services
                 // Isolar apenas a peca selecionada
                 IsolarElementoNaVista(view, elem);
 
-                // Cotar automaticamente (comprimento)
-                CotarLongitudinal(doc, view, elem);
+                // v2.7.2: cotagem + tag agora sao opt-in via config, chamadas no
+                // caller `Executar` apos esta funcao retornar a vista criada.
+                // Antes a cotagem era chamada incondicionalmente aqui.
 
                 return view;
             }
@@ -512,32 +539,252 @@ namespace SteelBIM.Services
         /// <summary>
         /// Cota de comprimento na vista longitudinal usando FamilyInstanceReferenceType.Left/Right.
         /// Essas refs apontam para FACES da peca, nao para pontos isolados.
+        ///
+        /// v2.7.2: reformulada para usar offset adaptativo (35mm da face externa,
+        /// reusa <see cref="DimensionPlanCalculator"/> da v2.6.6) e
+        /// <c>ValueOverride</c> com Cut Length quando geom diverge do fab > 5mm
+        /// (padrao v2.6.5). Antes usava offset fixo de 500mm do eixo e nao
+        /// aplicava Override — pecas cortadas com cope/notch mostravam o
+        /// comprimento geometrico (ex: 1224mm) em vez do Cut Length real
+        /// (ex: 1215mm).
+        ///
+        /// Retorna 1 se Dimension criada, 0 caso contrario (peca sem refs
+        /// Left/Right, geometria degenerada, etc).
         /// </summary>
-        private void CotarLongitudinal(Document doc, ViewSection view, FamilyInstance elem)
+        private int CotarLongitudinal(Document doc, ViewSection view, FamilyInstance elem)
         {
             try
             {
                 IList<Reference>? refsLeft = elem.GetReferences(FamilyInstanceReferenceType.Left);
                 IList<Reference>? refsRight = elem.GetReferences(FamilyInstanceReferenceType.Right);
                 if (refsLeft == null || refsLeft.Count == 0)
-                    return;
+                    return 0;
                 if (refsRight == null || refsRight.Count == 0)
-                    return;
+                    return 0;
+
+                // Endpoints da LocationCurve — necessario pro calculo do plano
+                if (elem.Location is not LocationCurve lc || lc.Curve == null)
+                    return 0;
+                XYZ pa = lc.Curve.GetEndPoint(0);
+                XYZ pb = lc.Curve.GetEndPoint(1);
+                if (pa.DistanceTo(pb) < 1e-6)
+                {
+                    Logger.Debug("[AutoVista] Peca {Id} com LocationCurve degenerada — cota pulada", elem.Id);
+                    return 0;
+                }
+
+                // v2.7.2: ler seccao do Symbol para offset adaptativo (v2.6.6)
+                double depthFt = LerSecParam(elem, BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT);
+                double widthFt = LerSecParam(elem, BuiltInParameter.STRUCTURAL_SECTION_COMMON_WIDTH);
+                double clearanceFt = UnitUtils.ConvertToInternalUnits(35.0, UnitTypeId.Millimeters);
+
+                // Calcular plano via helper puro v2.6.6
+                Vec3 p1 = new Vec3(pa.X, pa.Y, pa.Z);
+                Vec3 p2 = new Vec3(pb.X, pb.Y, pb.Z);
+                XYZ vd = view.ViewDirection;
+                Vec3 viewNormal = new Vec3(vd.X, vd.Y, vd.Z);
+
+                PlanoCotaResult plano;
+                try
+                {
+                    plano = DimensionPlanCalculator.CalcularPlanoCota(
+                        p1, p2, viewNormal, depthFt, widthFt, clearanceFt);
+                }
+                catch (Exception exGeom)
+                {
+                    Logger.Debug(
+                        "[AutoVista] Peca {Id} sem plano de cota valido ({Msg}) — pulando",
+                        elem.Id, exGeom.Message);
+                    return 0;
+                }
+
+                XYZ origem = new XYZ(plano.Origem.X, plano.Origem.Y, plano.Origem.Z);
+                XYZ direcao = new XYZ(plano.Direcao.X, plano.Direcao.Y, plano.Direcao.Z);
+                Line dimLine = Line.CreateUnbound(origem, direcao);
 
                 var refArr = new ReferenceArray();
                 refArr.Append(refsLeft[0]);
                 refArr.Append(refsRight[0]);
 
-                double offset = UnitUtils.ConvertToInternalUnits(500, UnitTypeId.Millimeters);
-                XYZ linhaPoint = view.Origin - view.UpDirection * offset;
-                Line dimLine = Line.CreateUnbound(linhaPoint, view.RightDirection);
+                Dimension dim = doc.Create.NewDimension(view, dimLine, refArr);
+                if (dim == null)
+                    return 0;
 
-                doc.Create.NewDimension(view, dimLine, refArr);
+                // v2.7.2: ValueOverride com Cut Length quando geom diverge > 5mm
+                double lengthFabFt = LerCutLength(elem);
+                if (lengthFabFt > 0)
+                {
+                    double lengthGeomFt = lc.Curve.Length;
+                    if (DimensionPlanCalculator.DeveAplicarOverride(lengthGeomFt, lengthFabFt))
+                    {
+                        double mm = UnitUtils.ConvertFromInternalUnits(lengthFabFt, UnitTypeId.Millimeters);
+                        try
+                        { dim.ValueOverride = $"{mm:F0}"; }
+                        catch (Exception exOv)
+                        {
+                            // NOTA 3 v2.7.2: log Debug minimo com Element ID + razao,
+                            // sem catch vazio. Revit pode bloquear quando
+                            // associatividade da Dimension nao permite override.
+                            Logger.Debug(
+                                "[AutoVista] ValueOverride rejeitado para peca {Id}: {Msg} — " +
+                                "cota mantida com valor geometrico",
+                                elem.Id, exOv.Message);
+                        }
+                    }
+                }
+
+                return 1;
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "AutoVistaService.CotarLongitudinal: falha silenciada");
+                Logger.Warn(ex, "[AutoVista] CotarLongitudinal: falha silenciada Id {Id}", elem.Id);
+                return 0;
             }
+        }
+
+        /// <summary>
+        /// v2.7.2: cria <see cref="IndependentTag"/> com o parametro Mark da peca.
+        /// Pecas sem Mark sao puladas silenciosamente (Logger.Debug). Fallback
+        /// <see cref="TextNote"/> quando nenhum FamilySymbol de
+        /// <c>OST_StructuralFramingTags</c>/<c>OST_StructuralColumnTags</c>
+        /// estiver carregado no projeto.
+        /// </summary>
+        /// <returns>Tupla (criadas, semMark):
+        /// criadas = 1 se tag/textnote criada, 0 caso contrario.
+        /// semMark = 1 se peca nao tem Mark preenchido, 0 caso contrario.
+        /// </returns>
+        private (int criadas, int semMark) CriarTagComMarca(Document doc, ViewSection view, FamilyInstance elem)
+        {
+            try
+            {
+                Parameter pMark = elem.LookupParameter("Mark");
+                string? mark = pMark?.AsString();
+                if (string.IsNullOrWhiteSpace(mark))
+                {
+                    Logger.Debug("[AutoVista] Peca {Id} sem Mark — tag pulada", elem.Id);
+                    return (0, 1);
+                }
+
+                if (elem.Location is not LocationCurve lc || lc.Curve == null)
+                    return (0, 0);
+
+                // Posicao da tag: midpoint da peca + offset vertical (oposto a linha
+                // de cota — esta fica em uma direcao do perpendicular, tag fica na
+                // outra). Offset 120mm pra nao colidir com a cota nem com o perfil.
+                XYZ centro = lc.Curve.Evaluate(0.5, true);
+                double offsetFt = UnitUtils.ConvertToInternalUnits(120, UnitTypeId.Millimeters);
+                XYZ pos = centro - view.UpDirection * offsetFt;
+
+                // Tentativa 1: FamilySymbol de Structural Framing Tag carregado
+                FamilySymbol? tagSym = AcharTagSymbol(doc, elem);
+                if (tagSym != null)
+                {
+                    if (!tagSym.IsActive)
+                    {
+                        tagSym.Activate();
+                        doc.Regenerate();
+                    }
+                    IndependentTag.Create(
+                        doc, tagSym.Id, view.Id,
+                        new Reference(elem),
+                        addLeader: false,
+                        TagOrientation.Horizontal,
+                        pos);
+                    return (1, 0);
+                }
+
+                // Fallback: TextNote com o texto do Mark
+                TextNoteType? ttype = new FilteredElementCollector(doc)
+                    .OfClass(typeof(TextNoteType))
+                    .Cast<TextNoteType>()
+                    .FirstOrDefault();
+                if (ttype != null)
+                {
+                    TextNote.Create(doc, view.Id, pos, mark, ttype.Id);
+                    Logger.Debug(
+                        "[AutoVista] Peca {Id}: tag estrutural ausente no projeto, fallback TextNote com Mark '{Mark}'",
+                        elem.Id, mark);
+                    return (1, 0);
+                }
+
+                Logger.Warn("[AutoVista] Peca {Id}: nem FamilySymbol de tag nem TextNoteType disponivel", elem.Id);
+                return (0, 0);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[AutoVista] CriarTagComMarca: falha silenciada Id {Id}", elem.Id);
+                return (0, 0);
+            }
+        }
+
+        /// <summary>
+        /// v2.7.2: acha o FamilySymbol de tag estrutural mais apropriado para a
+        /// peca. Preferencia: tag da categoria especifica (Framing vs Columns);
+        /// fallback para qualquer tag estrutural; ultimo recurso null (caller
+        /// usa TextNote).
+        /// </summary>
+        private FamilySymbol? AcharTagSymbol(Document doc, FamilyInstance elem)
+        {
+            long catId = elem.Category?.Id?.Value ?? 0;
+            BuiltInCategory tagCat = catId == (long)BuiltInCategory.OST_StructuralColumns
+                ? BuiltInCategory.OST_StructuralColumnTags
+                : BuiltInCategory.OST_StructuralFramingTags;
+
+            FamilySymbol? preferido = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilySymbol))
+                .OfCategory(tagCat)
+                .Cast<FamilySymbol>()
+                .FirstOrDefault();
+            if (preferido != null)
+                return preferido;
+
+            // Fallback: qualquer outra tag estrutural carregada
+            BuiltInCategory outra = tagCat == BuiltInCategory.OST_StructuralFramingTags
+                ? BuiltInCategory.OST_StructuralColumnTags
+                : BuiltInCategory.OST_StructuralFramingTags;
+            return new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilySymbol))
+                .OfCategory(outra)
+                .Cast<FamilySymbol>()
+                .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// v2.7.2: le parametro de seccao do FamilySymbol (Height ou Width).
+        /// Adapter trivial — retorna 0 em qualquer falha (Symbol null, parametro
+        /// ausente, storage type errado). Caller pro CalcularPlanoCota cobre
+        /// fallback de 100mm internamente.
+        /// </summary>
+        private double LerSecParam(FamilyInstance elem, BuiltInParameter bip)
+        {
+            try
+            {
+                FamilySymbol? sym = elem.Symbol;
+                if (sym == null)
+                    return 0.0;
+                Parameter? p = sym.get_Parameter(bip);
+                if (p == null || p.StorageType != StorageType.Double)
+                    return 0.0;
+                double v = p.AsDouble();
+                return v > 0 ? v : 0.0;
+            }
+            catch { return 0.0; }
+        }
+
+        /// <summary>
+        /// v2.7.2: le Cut Length de fabricacao da peca (instance parameter).
+        /// Fallback INSTANCE_LENGTH_PARAM se Cut Length ausente. 0 se nada
+        /// disponivel — caller pula Override.
+        /// </summary>
+        private double LerCutLength(FamilyInstance elem)
+        {
+            Parameter? pCut = elem.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
+            if (pCut != null && pCut.StorageType == StorageType.Double && pCut.AsDouble() > 0)
+                return pCut.AsDouble();
+            Parameter? pLen = elem.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
+            if (pLen != null && pLen.StorageType == StorageType.Double && pLen.AsDouble() > 0)
+                return pLen.AsDouble();
+            return 0;
         }
 
         /// <summary>

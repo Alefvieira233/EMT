@@ -56,6 +56,23 @@ namespace SteelBIM.Models
         /// <summary>Filtro opcional de categoria usado por fluxos automatizados PF.</summary>
         public VistaPecaCategoriaFiltro FiltroCategoria { get; set; } = VistaPecaCategoriaFiltro.Todos;
 
+        /// <summary>
+        /// v2.7.2: criar Dimension paralela ao eixo da peca na vista longitudinal,
+        /// com offset adaptativo (35mm da face externa, padrao v2.6.6) e
+        /// Override Cut Length quando geom diverge do fab > 5mm (padrao v2.6.5).
+        /// Default true — usuario pode desligar caso prefira cotar manualmente.
+        /// </summary>
+        public bool AdicionarCotagemLongitudinal { get; set; } = true;
+
+        /// <summary>
+        /// v2.7.2: criar IndependentTag no centro da peca na vista longitudinal,
+        /// exibindo o parametro Mark. Pecas sem Mark sao puladas silenciosamente
+        /// (Logger.Debug). Fallback TextNote se nenhum FamilySymbol de
+        /// Structural Framing Tag estiver carregado no projeto.
+        /// Default true.
+        /// </summary>
+        public bool AdicionarTagComMarca { get; set; } = true;
+
         public bool TemVistasSelecionadas()
         {
             return CriarVistaLongitudinal || CriarCorteTransversal;
