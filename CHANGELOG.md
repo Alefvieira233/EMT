@@ -15,6 +15,91 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.1] - 2026-05-21
+
+### Changed (UX critico do Conversor IFC)
+
+- **Dialog do Conversor IFC agora e Modeless**. Usuario pode clicar nas
+  linhas do DataGrid e ver a peca destacada (selecionada + zoom + isola)
+  na vista 3D ativa do Revit, **sem fechar o dialog**. Antes era modal
+  (ShowDialog) que bloqueava toda interacao com o 3D — impedia o usuario
+  de identificar "quem e quem" no projeto antes de converter.
+
+  Implementacao via 2 `IExternalEventHandler` (padrao Revit SDK):
+  - `IfcSelectionHandler`: dispara `Selection.SetElementIds` +
+    `UIDocument.ShowElements` no thread API quando o usuario clica linha
+  - `IfcConversionHandler`: dispara `service.Executar` no thread API
+    quando o usuario clica "Converter" (precisa thread API pra abrir
+    Transaction). Callback `OnFinished` retorna ao thread WPF via
+    `Dispatcher.Invoke` pra mostrar resultado + fechar window.
+
+- **Filtro "Mostrar apenas perfis estruturais lineares"** marcado por
+  default. Esconde acessorios IFC nao-conversiveis (armaduras, chapas,
+  ganchos, BoltArrays) que vieram do CYPE mas nao sao perfis estruturais.
+
+  Reduz lista de centenas para o que realmente importa converter:
+  galpao real do Alef tinha **6.983 elementos** importados, ~5.000 sao
+  acessorios — filtro reduz pra ~vigas/pilares apenas.
+
+  Criterio aceita por OR:
+  1. Categoria estrutural nativa do Revit (`OST_StructuralFraming`
+     ou `OST_StructuralColumns`) → true imediato
+  2. `DirectShape` generico com **razao bbox >= 3:1** (peca mais longa
+     que larga) → true
+
+### Added
+
+- `IfcStructuralFilterPure` helper puro (`Services/Ifc/`) com
+  `EhLinearPorBbox(dxFt, dyFt, dzFt) -> bool`. Threshold 3.0,
+  epsilon 1mm. 100% testavel sem Revit.
+- `ConverterPerfilIfcService.EhPerfilEstruturalLinear(Element)`
+  wrapper Revit que combina categoria + criterio dimensional.
+- `IfcSelectionHandler` + `IfcConversionHandler`
+  (`Services/Ifc/`) — implementam `IExternalEventHandler`.
+- **11 testes unitarios novos** em `IfcStructuralFilterPureTests`:
+  - Theory razao 5:1 / 3.0 exato / 2.5 / 1.2 / 10:1
+  - Bbox degenerado (qualquer dimensao zero)
+  - Bbox quadrado unitario
+  - Bbox negativo tratado como magnitude
+  - Epsilon (0.1mm rejeitado)
+  - Caso real do Alef: diagonal U75x40 1200mm
+  - Caso fronteira: chapa fina aceita como linear (documentado)
+
+### Defensivos
+
+- **Race-condition guard** `_isClosing` flag impede callback de
+  conversao tocar Window ja fechada (caso usuario clique X durante
+  Execute).
+- **Cleanup OnClosed** zera referencias dos handlers
+  (`PendingIds`, `Config`, `Doc`, `OnFinished`) — evita leak de
+  ElementIds + Document entre sessoes.
+- Botoes Converter/Cancelar desabilitam durante conversao em
+  andamento (evita duplo-disparo).
+
+### Sem mudancas
+
+- Logica de conversao (`ConverterPerfilIfcService.Executar`,
+  `IfcMaterialParser`, scoring) — **intacta** da v2.7.0.
+- Helpers `SectionAxisExtractor`, `LevelMatcher` — **intactos**.
+- 100% compativel com v2.7.0.
+
+### Compatibilidade
+
+- Modelos IFC importados em v2.7.0 podem ser convertidos em v2.7.1
+  sem reimportar.
+- Settings persistidos (`LastConverterIfc*`) continuam validos.
+- v2.7.0 **NAO marcada AFETADA** — funcionalmente correta, so com
+  UX modal que impedia interacao com 3D + lista densa.
+
+### Stats
+
+- Build Release: 0/0
+- Tests: **933 -> 944 verdes** (+11 do helper puro)
+- Format: exit 0
+- Diff escopo: 4 fontes Ifc + Window xaml/cs + Command + AssemblyInfo + CHANGELOG + README
+
+---
+
 ## [2.7.0] - 2026-05-21
 
 ### Added (FEATURE MAIOR — Conversor IFC -> Perfis Nativos do Revit)
