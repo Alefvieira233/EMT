@@ -15,6 +15,101 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.2] - 2026-05-21
+
+### Changed (Vista de Peca — cotagem modernizada)
+
+- **Cotagem longitudinal reformulada** ao padrao v2.6.6. Offset adaptativo
+  (35mm da face externa do perfil, reusa `DimensionPlanCalculator`) substituiu
+  o offset fixo de 500mm do eixo que a feature usava desde sua criacao.
+  Cota fica visualmente mais perto da peca e consistente com o padrao do
+  Diagrama de Montagem.
+
+  Trabalha por (lookup automatico):
+  - Le `STRUCTURAL_SECTION_COMMON_HEIGHT/WIDTH` do `FamilySymbol`
+  - `halfSectionPerp = max(depth, width) / 2`
+  - `offsetTotal = halfSectionPerp + 35mm clearance`
+  - Fallback 100mm quando familia nao expoe Section params
+
+  Tabela de exemplos (mesmas do Diagrama):
+  | Perfil | offset total |
+  |---|---|
+  | U75x40x2.66 | 72.5mm |
+  | U100x50x3.04 | 85mm |
+  | W360x57.8 | 215mm |
+
+- **Override Cut Length aplicado** quando geom diverge do fab > 5mm (padrao
+  v2.6.5). Em pecas cortadas com cope/notch, a cota agora exibe o
+  comprimento de fabricacao real (ex: 1215mm) em vez do comprimento
+  geometrico bruto (ex: 1224mm).
+
+  Sem o Override, o operador de fabricacao via 1224 na prancha e cortava
+  no comprimento errado — corrigido. Override pode ser rejeitado pelo
+  Revit quando associatividade nao permite (raro); nesse caso a cota
+  mantem o valor geometrico e o evento e logado em `Logger.Debug` com
+  Element ID + razao.
+
+- Novo checkbox **"Cotagem longitudinal automatica"** no dialog (default ON).
+  Permite ao usuario desligar caso prefira cotar manualmente.
+
+### Added (Vista de Peca — tag automatica)
+
+- **Tag com marca automatica** ao gerar Vista de Peca (default ON).
+
+  Cria `IndependentTag` no centro da peca exibindo o parametro `Mark`.
+  Localizada com offset 120mm abaixo do midpoint (lado oposto a linha de
+  cota acima — sem colisao visual).
+
+  Sequencia de fallback do FamilySymbol da tag:
+  1. `OST_StructuralFramingTags` se peca eh viga
+  2. `OST_StructuralColumnTags` se peca eh pilar
+  3. Categoria oposta (Framing<->Columns) caso a especifica nao exista
+  4. Ultimo recurso: `TextNote` com o texto do Mark (Logger.Debug avisa)
+
+  Pecas sem `Mark` preenchido sao **puladas silenciosamente** (Logger.Debug
+  + contador `tagsSemMark` no resumo final). Nao bloqueia conversao das
+  demais pecas.
+
+### Workflow tipico
+
+1. Selecionar peca estrutural (viga, pilar, terça)
+2. **SteelBIM | Detalhamento -> Vistas -> Vista de Peca**
+3. Dialog abre com os 2 novos checkboxes marcados por default
+4. Clicar Gerar -> vista longitudinal sai pronta com cota adaptativa + tag
+5. Resumo final mostra `Cotas longitudinais: N` + `Tags com marca: N`
+   (+ `peças sem Mark puladas: K` se houver)
+
+### Sem mudancas
+
+- Helpers `DimensionPlanCalculator`, `SectionAxisExtractor`, `LevelMatcher` —
+  intactos da v2.7.0/v2.6.x.
+- Corte transversal — comportamento original preservado (cotagem
+  Top/Bottom + Front/Back nao tocada).
+- Logica core de criacao das vistas — preservada.
+
+### Compatibilidade
+
+- 100% compativel com v2.7.1. v2.7.1 **NAO marcada AFETADA** (feature
+  funcionava, so com padrao de cotagem antigo).
+- Configs antigas continuam validas — defaults seguros nos 2 campos novos
+  (`AdicionarCotagemLongitudinal = true`, `AdicionarTagComMarca = true`).
+- **Atencao usuarios v2.7.1**: proximas Vistas de Peca geradas terao
+  cotas visualmente diferentes (mais perto da peca + valor pode mudar em
+  pecas cortadas pra refletir Cut Length). Vistas ja existentes na
+  sessao **nao** sao re-cotadas.
+
+### Stats
+
+- Build Release: 0/0
+- Tests: **944/944 verdes** (sem novos — substituicao de `CotarLongitudinal`
+  ja coberta indiretamente pelos 25 testes existentes do
+  `DimensionPlanCalculator` que ela passa a usar; helpers de leitura de
+  param sao adapters triviais inline)
+- Format: exit 0
+- Diff escopo: 5 fontes (Config + Window xaml/cs + Service) + metadata
+
+---
+
 ## [2.7.1] - 2026-05-21
 
 ### Changed (UX critico do Conversor IFC)

@@ -61,7 +61,9 @@ namespace SteelBIM.Views
                 PrefixoNome = txtPrefixo.Text?.Trim() ?? "SD",
                 CriarFolha = chkCriarFolha.IsChecked == true,
                 FamiliaFolhaTitulo = titleBlockFamily,
-                TipoFolhaTitulo = titleBlockType
+                TipoFolhaTitulo = titleBlockType,
+                AdicionarCotagemLongitudinal = chkCotagemLongitudinal?.IsChecked == true,
+                AdicionarTagComMarca = chkTagComMarca?.IsChecked == true
             };
         }
 
