@@ -215,6 +215,11 @@ namespace SteelBIM
             RibbonPanel panelOperacoesVigas = GetOrCreatePanel(application, tabName, "Operações em Vigas");
             RibbonPanel panelConexoes = GetOrCreatePanel(application, tabName, "Conexões");
             RibbonPanel panelPfConstrucao = GetOrCreatePanel(application, tabName, "PF Construção");
+            // v2.7.0: painel Importacao posicionado apos PF Construcao por afinidade
+            // semantica (importacao de IFC -> compoe fluxo de modelagem + fundacao).
+            // Nome ASCII deliberado: deixa margem pra futuros imports (Tekla XML,
+            // AutoCAD DWG, etc) sem rebatizar painel.
+            RibbonPanel panelImportacao = GetOrCreatePanel(application, tabName, "Importacao");
             RibbonPanel panelPfArmaduras = GetOrCreatePanel(application, tabName, "PF Armaduras");
             RibbonPanel panelVisualizacao = GetOrCreatePanel(application, tabName, "Visualização");
 
@@ -388,6 +393,22 @@ namespace SteelBIM
                 "Localiza a base dos pilares e lanca a fundacao estrutural selecionada no centro dos pilares da selecao atual ou de todos os pilares visiveis na vista.",
                 "foundation_piles_large.png",
                 "foundation_piles_small.png"
+            );
+
+            // --- Importacao (v2.7.0) ---
+            // Conversor IFC -> Perfis Nativos (co-autor 50/50 com Victor).
+            // Converte DirectShape importado de IFC em FamilyInstance editavel.
+            AddButton(
+                panelImportacao,
+                "btnConverterPerfilIfc",
+                "Converter\nIFC -> Nativo",
+                assemblyPath,
+                "SteelBIM.Commands.CmdConverterPerfilIfc",
+                "Converte elementos importados de IFC (DirectShape com parametros Ifc*) em " +
+                "FamilyInstance nativos do Revit, agrupando por seccao + material e atribuindo " +
+                "perfis correspondentes do projeto. Requer importacao previa do IFC via Insert > IFC.",
+                "ifc_large.png",
+                "ifc_small.png"
             );
 
             // --- PF Armaduras ---

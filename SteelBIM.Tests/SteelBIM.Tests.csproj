@@ -83,6 +83,18 @@
          DimensionPlanCalculator. -->
     <Compile Include="..\SteelBIM\Services\DiagramaMontagem\SectionBoxBuilder.cs"
              Link="LinkedSources\Services\DiagramaMontagem\SectionBoxBuilder.cs" />
+
+    <!-- v2.7.0: Conversor IFC -> Perfis Nativos. Helpers puros do servico de
+         conversao (parser de IfcMaterial + calculadores de eixo via caps/PCA +
+         level matcher). Reusam o Vec3 do DimensionPlanCalculator (v2.6.6). -->
+    <Compile Include="..\SteelBIM\Services\Ifc\IfcMaterialParser.cs"
+             Link="LinkedSources\Services\Ifc\IfcMaterialParser.cs" />
+    <Compile Include="..\SteelBIM\Services\Ifc\SectionAxisCalculators.cs"
+             Link="LinkedSources\Services\Ifc\SectionAxisCalculators.cs" />
+    <!-- LevelMatcherPure: logica isolada (sem Autodesk.Revit.DB.Level) que o
+         LevelMatcher Revit-facing delega — permite testes puros. -->
+    <Compile Include="..\SteelBIM\Services\Ifc\LevelMatcherPure.cs"
+             Link="LinkedSources\Services\Ifc\LevelMatcherPure.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"
