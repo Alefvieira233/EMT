@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 using SteelBIM.Forms;
 using SteelBIM.Models;
 using SteelBIM.Models.Ifc;
@@ -11,16 +14,43 @@ using SteelBIM.Utils;
 
 namespace SteelBIM.Views
 {
+    /// <summary>
+    /// Window do Conversor IFC. v2.7.1: agora **modeless** (usuario pode
+    /// interagir com Revit 3D enquanto dialog aberto) usando 2
+    /// <see cref="IExternalEventHandler"/>:
+    /// <list type="bullet">
+    /// <item><see cref="IfcSelectionHandler"/>: click linha -> highlight + zoom</item>
+    /// <item><see cref="IfcConversionHandler"/>: BtnConverter -> service.Executar</item>
+    /// </list>
+    /// Tambem v2.7.1: filtro <c>chkApenasEstruturais</c> esconde acessorios
+    /// IFC nao-conversiveis (armaduras, chapas, ganchos) via
+    /// <see cref="ConverterPerfilIfcService.EhPerfilEstruturalLinear"/>.
+    /// </summary>
     public partial class ConverterPerfilIfcWindow : Window
     {
-        private readonly List<ElementoIfcViewModel> _elementos;
+        // Estado original (toda a lista) preservado para toggle do filtro
+        private readonly List<ElementoIfcViewModel> _todosElementos;
+        private List<ElementoIfcViewModel> _elementosVisiveis;
         private readonly List<string> _paramsDisponiveis;
         private readonly List<Level> _niveis;
         private readonly AppSettings _settings;
+        private readonly UIDocument _uidoc;
+        private readonly Document _doc;
+
         private List<GrupoIfcViewModel> _grupos;
         private bool _carregando;
 
+        // v2.7.1 modeless: 2 ExternalEvents + handlers
+        private readonly ExternalEvent _selectionEvent;
+        private readonly IfcSelectionHandler _selectionHandler;
+        private readonly ExternalEvent _conversionEvent;
+        private readonly IfcConversionHandler _conversionHandler;
+
+        // v2.7.1: race-condition guard (window fechada antes do Execute terminar)
+        private volatile bool _isClosing;
+
         public ConverterPerfilIfcWindow(
+            UIDocument uidoc,
             List<ElementoIfcViewModel> elementos,
             List<string> paramsDisponiveis,
             string paramInicial,
@@ -30,10 +60,19 @@ namespace SteelBIM.Views
             InitializeComponent();
             RevitWindowThemeService.Attach(this);
 
-            _elementos = elementos;
+            _uidoc = uidoc;
+            _doc = uidoc?.Document;
+            _todosElementos = elementos ?? new List<ElementoIfcViewModel>();
+            _elementosVisiveis = _todosElementos.ToList();
             _paramsDisponiveis = paramsDisponiveis;
             _niveis = niveis;
             _settings = settings;
+
+            // v2.7.1 modeless: instanciar handlers + ExternalEvents
+            _selectionHandler = new IfcSelectionHandler();
+            _selectionEvent = ExternalEvent.Create(_selectionHandler);
+            _conversionHandler = new IfcConversionHandler { Doc = _doc };
+            _conversionEvent = ExternalEvent.Create(_conversionHandler);
 
             LoadData(paramInicial);
 
@@ -80,19 +119,64 @@ namespace SteelBIM.Views
 
             _carregando = false;
 
+            // v2.7.1: aplica filtro inicial (chkApenasEstruturais=true por default no XAML)
+            AplicarFiltroEstrutural();
             ReConstruirGrupos();
         }
 
+        // ─── v2.7.1: filtro estrutural ────────────────────────────────────────
+
+        private void AplicarFiltroEstrutural()
+        {
+            if (chkApenasEstruturais?.IsChecked == true && _doc != null)
+            {
+                _elementosVisiveis = _todosElementos
+                    .Where(vm =>
+                    {
+                        Element e = _doc.GetElement(vm.ElementId);
+                        return ConverterPerfilIfcService.EhPerfilEstruturalLinear(e);
+                    })
+                    .ToList();
+            }
+            else
+            {
+                _elementosVisiveis = _todosElementos.ToList();
+            }
+        }
+
+        private void ChkApenasEstruturais_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (_carregando)
+                return;
+            AplicarFiltroEstrutural();
+            ReConstruirGrupos();
+        }
+
+        // ─── v2.7.1: click linha -> highlight via ExternalEvent ───────────────
+
+        private void GridElementos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isClosing || _selectionEvent == null || _selectionHandler == null)
+                return;
+
+            if (gridElementos.SelectedItem is GrupoIfcViewModel grupo && grupo.ElementIds.Count > 0)
+            {
+                _selectionHandler.PendingIds = new List<ElementId>(grupo.ElementIds);
+                _selectionEvent.Raise();
+            }
+        }
+
+        // ─── Agrupamento (usa _elementosVisiveis em vez de _todosElementos) ───
+
         private void ReConstruirGrupos()
         {
-            IReadOnlyList<SymbolItem> allPerfis = _elementos.Count > 0
-                ? _elementos[0].AllPerfis
+            IReadOnlyList<SymbolItem> allPerfis = _todosElementos.Count > 0
+                ? _todosElementos[0].AllPerfis
                 : new List<SymbolItem>();
 
-            // v2.7.0 BUG 3: agrupar por tupla (SecaoSugerida, NomeMaterial) — antes
-            // agrupava so por secao, juntando galvanizado com pintado num mesmo grupo
-            // mesmo quando o usuario quer trata-los como conjuntos distintos.
-            _grupos = _elementos
+            // v2.7.0 BUG 3: agrupar por tupla (SecaoSugerida, NomeMaterial)
+            // v2.7.1: agora sobre _elementosVisiveis (apos filtro estrutural)
+            _grupos = _elementosVisiveis
                 .GroupBy(vm => (
                     Secao: vm.SecaoSugerida ?? string.Empty,
                     Material: IfcMaterialParser.ExtrairNomeMaterial(vm.IfcMaterial) ?? string.Empty
@@ -151,9 +235,12 @@ namespace SteelBIM.Views
             if (_carregando || cmbParamIfc.SelectedItem is not string nomeParam)
                 return;
 
-            foreach (ElementoIfcViewModel vm in _elementos)
+            // RecalcularSugestao roda sobre _todosElementos (mantem cache pra todos,
+            // mesmo escondidos) e em seguida reconstroi grupos pelo filtro vigente.
+            foreach (ElementoIfcViewModel vm in _todosElementos)
                 vm.RecalcularSugestao(nomeParam);
 
+            AplicarFiltroEstrutural();
             ReConstruirGrupos();
         }
 
@@ -180,13 +267,19 @@ namespace SteelBIM.Views
                 .Where(g => g.Selecionado && g.PerfilSelecionado != null)
                 .Sum(g => g.Quantidade);
 
+            // v2.7.1: incluir indicador de filtro ativo no label
+            string filtroInfo = chkApenasEstruturais?.IsChecked == true
+                ? $" (filtro estrutural ativo: {_elementosVisiveis.Count}/{_todosElementos.Count} elementos)"
+                : string.Empty;
+
             lblContagem.Text =
                 $"{gruposSel}/{totalGrupos} grupos selecionados  " +
                 $"({elemSel}/{totalElementos} elementos)  -  " +
-                $"{comPerfil} grupos com perfil atribuido ({elemComPerfil} elementos)";
+                $"{comPerfil} grupos com perfil atribuido ({elemComPerfil} elementos)" +
+                filtroInfo;
         }
 
-        public ConverterPerfilIfcConfig BuildConfig()
+        private ConverterPerfilIfcConfig BuildConfig()
         {
             Level nivelPadrao = (cmbNivelPadrao.SelectedItem as LevelItem)?.Level;
 
@@ -213,6 +306,8 @@ namespace SteelBIM.Views
 
             return config;
         }
+
+        // ─── v2.7.1: BtnConverter via ExternalEvent (modeless) ────────────────
 
         private void BtnConverter_Click(object sender, RoutedEventArgs e)
         {
@@ -258,12 +353,72 @@ namespace SteelBIM.Views
             _settings.LastConverterIfcDeletarOriginal = chkDeletarOriginal.IsChecked == true;
             _settings.Save();
 
-            DialogResult = true;
+            // v2.7.1: dispara conversao via ExternalEvent — Revit invoca
+            // IfcConversionHandler.Execute no thread API, permitindo Transaction.
+            ConverterPerfilIfcConfig config = BuildConfig();
+            _conversionHandler.Config = config;
+            _conversionHandler.OnFinished = OnConversionFinished;
+
+            // Desabilitar botoes pra evitar duplo-disparo enquanto Execute roda
+            btnConverter.IsEnabled = false;
+            btnCancelar.IsEnabled = false;
+
+            _conversionEvent.Raise();
+        }
+
+        /// <summary>
+        /// Callback invocado pelo <see cref="IfcConversionHandler.Execute"/>
+        /// (thread Revit API). Mostra resultado + fecha Window via Dispatcher.
+        /// </summary>
+        private void OnConversionFinished(int convertidos, int ignorados)
+        {
+            if (_isClosing)
+                return;
+
+            // Marshall pra UI thread (Dispatcher) — Execute roda em thread API
+            Dispatcher.Invoke(() =>
+            {
+                if (_isClosing)
+                    return;
+
+                AppDialogService.ShowInfo(
+                    "Converter Perfis IFC",
+                    $"Conversao concluida.\n\n" +
+                    $"Convertidos: {convertidos}\n" +
+                    $"Ignorados (sem eixo ou nivel detectavel): {ignorados}",
+                    "Conversao concluida");
+
+                Close();
+            });
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            Close();
+        }
+
+        // ─── v2.7.1: race-condition guard + cleanup dos handlers ──────────────
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            _isClosing = true;
+            base.OnClosing(e);
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            // Limpa referencias pra evitar leak entre sessoes — ExternalEvent
+            // nao expoe Dispose publico no Revit API, mas zerar campos dos
+            // handlers e suficiente pra liberar ElementIds + Doc + callback.
+            if (_selectionHandler != null)
+                _selectionHandler.PendingIds = null;
+            if (_conversionHandler != null)
+            {
+                _conversionHandler.Config = null;
+                _conversionHandler.Doc = null;
+                _conversionHandler.OnFinished = null;
+            }
+            base.OnClosed(e);
         }
     }
 }

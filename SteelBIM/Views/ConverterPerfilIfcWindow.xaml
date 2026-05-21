@@ -56,11 +56,20 @@
                 <Label Grid.Column="3" Content="Nivel padrao (fallback):" VerticalAlignment="Center"/>
                 <ComboBox x:Name="cmbNivelPadrao" Grid.Column="4" Margin="4,0" Height="26"/>
 
-                <CheckBox x:Name="chkDeletarOriginal"
-                          Grid.Column="6"
-                          Content="Deletar elementos IFC originais apos a conversao"
-                          VerticalAlignment="Center"
-                          IsChecked="True"/>
+                <StackPanel Grid.Column="6" Orientation="Vertical" VerticalAlignment="Center">
+                    <CheckBox x:Name="chkDeletarOriginal"
+                              Content="Deletar elementos IFC originais apos a conversao"
+                              IsChecked="True"
+                              Margin="0,0,0,4"/>
+                    <!-- v2.7.1: filtro estrutural reduz lista de centenas (~6983 elementos
+                         em galpao do Alef) para o que realmente importa converter. -->
+                    <CheckBox x:Name="chkApenasEstruturais"
+                              Content="Mostrar apenas perfis estruturais lineares (vigas/pilares)"
+                              IsChecked="True"
+                              ToolTip="Esconde acessorios IFC nao-conversiveis (armaduras, chapas, ganchos, BoltArrays) que vieram do CYPE mas nao sao perfis estruturais. Desmarque pra ver TODOS os elementos importados."
+                              Checked="ChkApenasEstruturais_Toggled"
+                              Unchecked="ChkApenasEstruturais_Toggled"/>
+                </StackPanel>
             </Grid>
         </GroupBox>
 
@@ -88,7 +97,8 @@
                   HeadersVisibility="Column"
                   RowHeaderWidth="0"
                   FontSize="12"
-                  Margin="0,0,0,10">
+                  Margin="0,0,0,10"
+                  SelectionChanged="GridElementos_SelectionChanged">
             <DataGrid.Columns>
 
                 <DataGridCheckBoxColumn Header="Converter"

@@ -69,29 +69,12 @@ namespace SteelBIM.Commands
                 .OrderBy(p => p)
                 .ToList();
 
-            var wnd = new ConverterPerfilIfcWindow(viewModels, paramsDisponiveis, paramInicial, niveis, settings);
-            bool? resultado = wnd.ShowDialog();
-            if (resultado != true)
-                return Result.Cancelled;
-
-            ConverterPerfilIfcConfig config = wnd.BuildConfig();
-            if (config == null || config.Conversoes.Count == 0)
-            {
-                AppDialogService.ShowWarning(
-                    CommandName,
-                    "Nenhum elemento selecionado para converter ou nenhum perfil de destino atribuido.",
-                    "Nada a converter");
-                return Result.Cancelled;
-            }
-
-            (int convertidos, int ignorados) = service.Executar(doc, config);
-
-            AppDialogService.ShowInfo(
-                CommandName,
-                $"Conversao concluida.\n\n" +
-                $"Convertidos: {convertidos}\n" +
-                $"Ignorados (sem eixo ou nivel detectavel): {ignorados}",
-                "Conversao concluida");
+            // v2.7.1: dialog modeless — Window encapsula service.Executar via
+            // IfcConversionHandler (ExternalEvent.Raise). Command nao bloqueia
+            // o thread do Revit, usuario pode interagir com 3D (click linha ->
+            // highlight) enquanto dialog aberto.
+            var wnd = new ConverterPerfilIfcWindow(uidoc, viewModels, paramsDisponiveis, paramInicial, niveis, settings);
+            wnd.Show();
 
             return Result.Succeeded;
         }
