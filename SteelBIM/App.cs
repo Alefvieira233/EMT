@@ -226,8 +226,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLancarPipeRack",
                 "Gera a Fase 1 do pipe rack com pilares, vigas, treliça superior, pentes e contraventamento básico.",
-                "pipe_rack_32_light.png",
-                "pipe_rack_16_light.png"
+                "piperack_large.png",
+                "piperack_small.png"
             );
 
             AddButton(
@@ -237,8 +237,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLancarEscada",
                 "Gera longarinas inclinadas e degraus horizontais de uma escada convencional entre dois pontos.",
-                "escada_32_light.png",
-                "escada_32_light.png"
+                "escada_large.png",
+                "escada_small.png"
             );
 
             AddButton(
@@ -248,8 +248,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLancarGuardaCorpo",
                 "Lança guarda-corpo por dois pontos com altura configurável e postes automáticos.",
-                "guardacorpo_32_light.png",
-                "guardacorpo_32_light.png"
+                "guardaropo_large.png",
+                "guardaropo_small.png"
             );
 
             // --- Estrutura Metálica ---
@@ -260,8 +260,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarTercasPlano",
                 "Permite definir o plano pelo plano de trabalho atual da vista ou por face plana e gera as terças com opção de divisão nos banzos.",
-                "gerar_tercas_32_light.png",
-                "gerar_tercas_32_light.png"
+                "tercas_large.png",
+                "tercas_small.png"
             );
 
             AddButton(
@@ -271,6 +271,9 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarTravamentos",
                 "Gera tirantes e frechais a partir das terças selecionadas.",
+                // v2.6.8: NAO revertido pra travamentos_large — esse icone ja esta em uso
+                // por btnGerarContraventamentoPlano. Travamento != Contraventamento (secundario
+                // transversal vs diagonal rigidez lateral). Aguardando Victor entregar icone proprio.
                 "travamento_32_light.png",
                 "travamento_32_light.png"
             );
@@ -328,8 +331,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAjustarEncontroVigas",
                 "Ajusta encontros entre viga principal e viga ou pilar a partir do ponto clicado, priorizando uniao, referencia de extremidade e coping.",
-                "ajustar_encontro_32_light.png",
-                "ajustar_encontro_32_light.png"
+                "viga_encontro_large.png",
+                "viga_encontro_small.png"
             );
 
             AddButton(
@@ -339,8 +342,10 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdCortarPerfilPorInterferencia",
                 "Seleciona uma viga e varios elementos de referencia para gerar multiplos cortes de uma vez.",
-                "seccionar_viga_32_light.png",
-                "seccionar_viga_32_light.png"
+                // v2.6.8: viga_dividida_large compartilhado com btnCortarElementos (semantico OK:
+                // ambos sao operacoes de corte). Decisao OPCAO B do revert v2.6.3 -> Victor lucide_blue.
+                "viga_dividida_large.png",
+                "viga_dividida_small.png"
             );
 
             AddStackedButtons(
@@ -350,14 +355,14 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdDesabilitarUniaoVigasSelecao",
                 "Desabilita a união nos dois extremos das vigas selecionadas.",
-                "sem_uniao_selecao_32_light.png",
-                "sem_uniao_selecao_32_light.png",
+                "viga_sem_uniao_selecao_large.png",
+                "viga_sem_uniao_selecao_small.png",
                 "btnDesabilitarUniaoVigasVista",
                 "Sem União\nVista",
                 "SteelBIM.Commands.CmdDesabilitarUniaoVigasVista",
                 "Desabilita a união nos dois extremos de todas as vigas da vista ativa.",
-                "sem_uniao_vista_32_light.png",
-                "sem_uniao_vista_32_light.png"
+                "viga_sem_uniao_vista_large.png",
+                "viga_sem_uniao_vista_small.png"
             );
 
             // --- Conexões ---
@@ -475,8 +480,10 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdIsolarVigasEstruturais",
                 "Isola temporariamente apenas as vigas estruturais na vista ativa.",
-                "isolar_vigas_32_light.png",
-                "isolar_vigas_32_light.png"
+                // v2.6.8: beam_isolar_large compartilhado com btnPfIsolarLajes (semantico OK:
+                // ambos sao operacoes de "isolar"). Decisao OPCAO B do revert v2.6.3 -> Victor lucide_blue.
+                "beam_isolar_large.png",
+                "beam_isolar_small.png"
             );
 
             AddButton(
@@ -486,6 +493,9 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdIsolarPilaresEstruturais",
                 "Isola temporariamente apenas os pilares estruturais na vista ativa.",
+                // v2.6.8: NAO revertido pra column_line_large — esse icone ja esta em uso por
+                // 4 outros botoes (placas base, estribos pilar, acos consolo, isolar P+Cons.).
+                // 5o uso seria tech debt visual. Aguardando Victor entregar icone proprio.
                 "isolar_pilares_32_light.png",
                 "isolar_pilares_32_light.png"
             );
@@ -519,8 +529,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAgruparPilaresPorTipo",
                 "Agrupa pilares iguais por tipo com destaque visual por conjunto, evitando grupos nativos que possam conflitar com eixos.",
-                "agrupar_pilares_32_light.png",
-                "agrupar_pilares_32_light.png"
+                "agruparpilares_large.png",
+                "agruparpilares_small.png"
             );
 
             AddButton(
@@ -530,6 +540,11 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAgruparVigasPorTipo",
                 "Agrupa vigas iguais por tipo, colore cada conjunto e cria grupos EMT.",
+                // v2.6.8: NAO revertido pra agruparvigas_large — esse icone ja esta usado como
+                // placeholder por btnDiagramaMontagem e btnSequenciamentoBim. Reverter aqui faria
+                // 3 botoes com mesmo icone (Agrupar Vigas + Diagrama + Sequenciamento), confundindo
+                // mais que ajudando. Victor precisa criar 2 icones: um pra Diagrama (prancha de
+                // obra) e outro pra Sequenciamento (BIM 4D); ai libera agruparvigas pro botao real.
                 "agrupar_vigas_32_light.png",
                 "agrupar_vigas_32_light.png"
             );
@@ -541,8 +556,11 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdLimparAgrupamentosVisuais",
                 "Remove as cores aplicadas na vista ativa e desfaz os grupos EMT criados para pilares e vigas.",
-                "limpar_cor_32_light.png",
-                "limpar_cor_32_light.png"
+                // v2.6.8: broom_large compartilhado com btnVerificarModelo (semantico OK:
+                // vassoura = limpeza/manutencao, "verificar" e parente proximo). Decisao OPCAO B
+                // do revert v2.6.3 -> Victor lucide_blue.
+                "broom_large.png",
+                "broom_small.png"
             );
         }
 
@@ -601,6 +619,10 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarCotasPorAlinhamento",
                 "Selecione os elementos e clique no lado onde a cota deve ficar. A ferramenta agrupa os alinhamentos automaticamente e gera as cotas na vista ativa.",
+                // v2.6.8: NAO revertido pra cotas_eixo_large — mapeamento semantico duvidoso
+                // (Alinhamento no Revit = linha de referencia arquitetonica; Eixo = grid
+                // estrutural; nao sao a mesma coisa). Aguardando Victor confirmar mapeamento
+                // correto OU entregar icone cotas_alinhamento proprio.
                 "cotas_alinhamento_32_light.png",
                 "cotas_alinhamento_32_light.png"
             );
@@ -647,8 +669,10 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdNumerarItens",
                 "Numera elementos manualmente por ordem de clique com filtros, avanço/retrocesso e destaque visual dos itens já processados.",
-                "numerar_itens_32_light.png",
-                "numerar_itens_32_light.png"
+                // v2.6.8: numeracao_large compartilhado com btnPfNomearElementos (semantico OK:
+                // "numerar" e "nomear" sao primos diretos). Decisao OPCAO B do revert v2.6.3.
+                "numeracao_large.png",
+                "numeracao_small.png"
             );
 
             AddButton(
@@ -714,8 +738,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdExportarListaMateriais",
                 "Exporta uma lista de materiais estruturais para Excel com abas de perfis lineares, chapas/conexões e resumo consolidado.",
-                "exportar_materiais_32_light.png",
-                "exportar_materiais_32_light.png"
+                "exportar_xls_large.png",
+                "exportar_xls_small.png"
             );
 
             // --- Montagem e Sequenciamento ---

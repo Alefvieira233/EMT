@@ -15,6 +15,77 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.6.8] - 2026-05-20
+
+### Fixed (UX critico — REVERT de v2.6.3)
+
+- **13 icones do ribbon revertidos para os originais lucide_blue do Victor**
+  (paineis Modelagem Geral, Estrutura Metalica, Operacoes em Vigas parcial,
+  Visualizacao parcial, Anotacao parcial, Fabricacao CNC).
+
+  A v2.6.3 substituiu indevidamente 17 referencias do `App.cs` de `_large/_small`
+  (icones detalhados lucide_blue do Victor, 700-950 bytes) por `_32_light/_16_light`
+  (placeholders genericos Material Icons, 150-400 bytes — mesma dimensao 32x32 px,
+  mas sem identidade visual). Confirmado pelo Victor via WhatsApp e validado
+  matematicamente pelo Cowork: hash MD5 dos `_large` bate 100% com o zip do Victor.
+
+  Esta release reverte **13 das 17** referencias. As outras 4 ficam como
+  `_32_light` por decisao tecnica (ver follow-ups abaixo). Cada uma das 4 tem
+  comentario inline no `App.cs` explicando a razao da decisao.
+
+### Decisao OPCAO B (escolhida)
+
+Em vez de reverter todos os 17 indiscriminadamente (OPCAO A), o Alef + Cowork
+optaram por **reverter 13 + manter 4 placeholders** porque:
+
+- **#5 Travamentos**: `travamentos_large` ja em uso por `btnGerarContraventamentoPlano`.
+  Travamento != Contraventamento (secundario transversal vs diagonal de rigidez
+  lateral). Reverter aqui faria 2 acoes estruturais distintas com mesmo icone.
+- **#11 Isolar Pilares Estruturais**: `column_line_large` ja em uso por 4 botoes
+  (placas de base, estribos pilar, acos consolo, isolar P+Cons.). 5o uso seria
+  tech debt visual.
+- **#13 Agrupar Vigas por Tipo**: `agruparvigas_large` ja em uso como placeholder
+  por `btnDiagramaMontagem` e `btnSequenciamentoBim`. Reverter aqui faria 3
+  botoes com mesmo icone (Agrupar + Diagrama + Sequenciamento). Victor precisa
+  criar icones especificos pra Diagrama (prancha de obra) e Sequenciamento
+  (BIM 4D) antes de liberar `agruparvigas` pro botao original.
+- **#15 Cotas por Alinhamento**: mapeamento `cotas_alinhamento` -> `cotas_eixo`
+  e semanticamente esquisito (Alinhamento no Revit = linha de referencia
+  arquitetonica; Eixo = grid estrutural; nao sao a mesma coisa).
+
+### 4 colisoes aceitas como semanticamente OK (revertidas mesmo compartilhando)
+
+- `viga_dividida_large`: `btnCortarElementos` + `btnCortarPerfilInterferencia`
+  (ambos sao cortes)
+- `beam_isolar_large`: `btnPfIsolarLajes` + `btnIsolarVigasEstruturais` (ambos
+  sao "isolar")
+- `broom_large`: `btnVerificarModelo` + `btnLimparAgrupamentosVisuais` (vassoura
+  = limpeza, "verificar" e parente proximo)
+- `numeracao_large`: `btnPfNomearElementos` + `btnNumerarItens` ("numerar" e
+  "nomear" sao primos diretos)
+
+### Compatibilidade
+
+- Sem mudancas funcionais. 100% compativel com v2.6.7. So visual.
+- v2.6.7 NAO marcada AFETADA (funcionalmente correta, so com identidade visual
+  errada nos 13 botoes — agora resolvida).
+
+### Known follow-ups (v2.7.0+ — aguardando Victor)
+
+- "Travamentos" — Victor entregar icone proprio diferente de Contraventamento
+- "Isolar Pilares Estruturais" — Victor entregar `isolar_pilares` proprio
+- "Agrupar Vigas" — Victor entregar 2 icones novos: Diagrama de Montagem
+  (prancha de obra) e Sequenciamento BIM (4D phasing)
+- "Cotas por Alinhamento" — Victor confirmar mapeamento OU entregar icone
+  proprio
+
+### Cleanup pendente (fora de escopo desta release)
+
+- Arquivos `_32_light` orfaos em `Resources/` permanecem (cleanup massivo
+  fica para v2.7.0 — esta release foca so em desfazer o bug do `App.cs`).
+
+---
+
 ## [2.6.7] - 2026-05-20
 
 ### Changed (UX micro-fix)
