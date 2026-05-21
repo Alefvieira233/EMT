@@ -15,6 +15,99 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.0] - 2026-05-21
+
+### Added (FEATURE MAIOR — Conversor IFC -> Perfis Nativos do Revit)
+
+Nova feature que converte elementos estruturais importados de IFC (via
+Insert > IFC nativo do Revit) em `FamilyInstance` nativas editaveis,
+schedulables, com perfis mapeados de bibliotecas Revit do projeto.
+
+**Workflow:**
+1. Importar arquivo .ifc via Revit (Insert > IFC) — cria DirectShape com parametros Ifc*
+2. Aba SteelBIM | Modelagem -> painel **Importacao** -> "Converter IFC -> Nativo"
+3. Dialog mostra elementos IFC encontrados, agrupados por **(seccao + material)**
+4. Escolher parametro IFC de origem (IfcMaterial / IfcName / IfcObjectType)
+5. Sistema sugere automaticamente perfis Revit compativeis (scoring por tipo + 2 dimensoes)
+6. Usuario revisa, ajusta familia/tipo, clica Converter
+7. `FamilyInstance` nativos criados (originais IFC deletados opcionalmente)
+
+**Suporta:**
+- Steel: A36 / A572 / AISC (W, HP, U, L, RHS, SHS, CHS, etc)
+- CYPE 3D / CYPECAD output IFC2x3 e IFC4
+- Multiplos perfis por modelo (~241 elementos validados em galpao real pelo Victor)
+- Concreto: pseudo-secoes (R_M1, SQ_M1, 12phi10) sao detectadas e nao
+  oferecidas como perfis estruturais (BUG 3 abaixo)
+
+**Limitacoes conhecidas (v2.7.0):**
+- Pecas curvas (arco/spline) caem em fallback PCA
+- Conexoes parametricas (chapa + parafusos) NAO sao convertidas
+- Cargas estruturais / analise sao IGNORADAS (preservar import + analise no Revit)
+
+### Architecture
+
+- Codigo baseado em MVP entregue por Victor (co-autor 50/50, 1.316 linhas)
+- Adaptado de FerramentaEMT v1.4.0 -> SteelBIM v2.7.0 (namespaces + classes auxiliares)
+- 4 helpers puros novos extraidos (`SectionAxisExtractor` que coordena
+  `CapsAxisCalculator` + `PcaAxisCalculator`, mais `LevelMatcherPure`,
+  `IfcMaterialParser`) com 49 testes
+- Reusa `Vec3` da v2.6.6 (`DimensionPlanCalculator`)
+- Sem dependencias externas (xBIM/IfcOpenShell) — usa Revit IFC Import nativo
+
+### Fixed (em cima do MVP do Victor — 4 bugs criticos)
+
+- **BUG 1: inclinacao 3D preservada** ao extrair eixo de DirectShape. Approach
+  principal: identificar caps via `PlanarFace` extremas (anti-paralelas, areas
+  similares, maior distancia entre centroides). Fallback PCA sobre vertices
+  quando caps ambiguos. Antes: AABB world-aligned destruia diagonais (diagonal
+  de tesoura a 45 graus virava linha horizontal). Validado por **9 testes**.
+
+- **BUG 2: nivel atribuido por proximidade Z** do bbox da peca em vez de cair
+  no `config.NivelPadrao` fixo. Pecas em pisos diferentes agora ficam
+  associadas aos niveis corretos em modelos multi-pavimento. Validado por
+  **9 testes** (Theory com 7 inlines + 2 facts).
+
+- **BUG 3: pseudo-secoes de concreto rejeitadas** (`R_M1`, `S_M1`, `SQ_M1`,
+  `RQ_M2`, `12phi10`, `200/400`) — 3 regex aplicados antes de aceitar
+  candidato como `SecaoSugerida`. Pilares de concreto nao aparecem mais como
+  falsos perfis estruturais a converter. Tambem: agrupamento agora por
+  `(SecaoSugerida, NomeMaterial)` — galvanizado e pintado com mesma secao
+  ficam em grupos separados. ScoreMinimo 50 -> 60 (mais conservador, evita
+  match dimensional fraco). Validado por **15 testes** novos no
+  `IfcMaterialParserTests`.
+
+- **BUG 5: label visivel + tooltip** no dropdown "Ler perfil do parametro IFC"
+  (`cmbParamIfc`). Funcionalidade ja existia, faltava visibilidade UX.
+
+### Compatibilidade
+
+- **100% compativel** com v2.6.9. Sem mudanca em features existentes.
+- Modelos com IFC ja importado em v2.6.9 podem ser convertidos em v2.7.0 sem
+  reimportar.
+- `AppSettings` ganha 3 campos novos (`LastConverterIfcParamIfc`,
+  `LastConverterIfcNivelPadrao`, `LastConverterIfcDeletarOriginal`) — settings
+  antigos continuam validos (JSON deserialization tolerante).
+- v2.6.9 **NAO marcada AFETADA** — v2.7.0 e adicao de feature, nao fix de bug.
+
+### Stats
+
+- Build Release: 0/0
+- Tests: **884 -> 933 verdes** (+49 novos do helper IFC, zero Skips)
+- Format: exit 0
+- Total de linhas portadas: 1.316 (Victor) + ~620 (helpers + fixes) + ~500 (testes)
+
+### Ribbon
+
+Novo painel **Importacao** na aba SteelBIM | Modelagem, posicionado apos
+PF Construcao por afinidade semantica (import IFC -> compoe fluxo de
+modelagem + fundacao). Nome ASCII deliberado: deixa margem pra futuros
+imports (Tekla XML, AutoCAD DWG, etc) sem rebatizar painel.
+
+Botao com icones `ifc_large.png` (492B) + `ifc_small.png` (307B) lucide-style
+do Victor.
+
+---
+
 ## [2.6.9] - 2026-05-21
 
 ### Added (feature — Diagrama de Montagem)
