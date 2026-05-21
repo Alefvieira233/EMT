@@ -95,6 +95,11 @@
          LevelMatcher Revit-facing delega — permite testes puros. -->
     <Compile Include="..\SteelBIM\Services\Ifc\LevelMatcherPure.cs"
              Link="LinkedSources\Services\Ifc\LevelMatcherPure.cs" />
+    <!-- v2.7.1: IfcStructuralFilterPure (helper puro de bbox razao linear) que
+         o wrapper Revit ConverterPerfilIfcService.EhPerfilEstruturalLinear
+         delega — permite testes puros do criterio dimensional sem Revit. -->
+    <Compile Include="..\SteelBIM\Services\Ifc\IfcStructuralFilterPure.cs"
+             Link="LinkedSources\Services\Ifc\IfcStructuralFilterPure.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"
