@@ -46,11 +46,17 @@ namespace SteelBIM.Services.DiagramaMontagem
                 DetectarPlanoSelecao(elementos, config, out sectionTransform, out sectionBbox);
 
                 // 3) Criar Section View (em transaction propria — Revit exige)
+                // v2.6.9: nome contextual quando vista superior (planta) — facilita
+                // identificacao no Project Browser.
+                string nomeBase = config.Orientacao == OrientacaoDiagrama.Superior
+                    ? $"{config.NomeVista} (Planta)"
+                    : config.NomeVista;
+
                 ViewSection vista;
                 using (Transaction tx1 = new Transaction(doc, "Criar vista do Diagrama de Montagem"))
                 {
                     tx1.Start();
-                    vista = CriarSectionView(doc, sectionBbox, config.NomeVista);
+                    vista = CriarSectionView(doc, sectionBbox, nomeBase);
                     if (vista == null)
                     {
                         tx1.RollBack();
@@ -108,7 +114,9 @@ namespace SteelBIM.Services.DiagramaMontagem
                 }
 
                 // 8) Cotas verticais (SpotElevation em niveis clusterizados)
-                if (config.AdicionarCotasVerticais)
+                // v2.6.9: skip em vista superior (planta) — SpotElevation mostra
+                // altura Z, conceito que nao faz sentido em planta XY.
+                if (config.AdicionarCotasVerticais && config.Orientacao != OrientacaoDiagrama.Superior)
                 {
                     using (Transaction tx6 = new Transaction(doc, "Cotas verticais"))
                     {
@@ -117,6 +125,10 @@ namespace SteelBIM.Services.DiagramaMontagem
                             doc, vista, elementos, config.ToleranciaClusterizacaoMm);
                         tx6.Commit();
                     }
+                }
+                else if (config.AdicionarCotasVerticais && config.Orientacao == OrientacaoDiagrama.Superior)
+                {
+                    Logger.Debug("[DiagramaMontagem] SpotElevation skip — vista superior (planta) nao suporta cotas verticais.");
                 }
 
                 // 9) Cota total do conjunto
@@ -251,55 +263,43 @@ namespace SteelBIM.Services.DiagramaMontagem
 
             double extX = maxX - minX;
             double extY = maxY - minY;
-            double extZ = maxZ - minZ;
 
-            // Decidir orientacao do plano de secao
-            // Plano de secao mostra a vista de elevacao — direcao "para frente"
-            // do observador eh normal a vista
-            bool paraleloAoX;
-            if (config.Orientacao == OrientacaoDiagrama.Auto)
-            {
-                // Se elementos extendem mais em X, observador olha de Y (secao paralela a X)
-                paraleloAoX = extX >= extY;
-            }
-            else
-            {
-                paraleloAoX = (config.Orientacao == OrientacaoDiagrama.ParaleloEixoX);
-            }
-
-            XYZ origem = new XYZ((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
-            XYZ rightDir, viewDir;
-
-            if (paraleloAoX)
-            {
-                // Vista "frontal" — observador em Y- olhando para Y+
-                rightDir = XYZ.BasisX;
-                viewDir = -XYZ.BasisY; // direcao de visualizacao
-            }
-            else
-            {
-                rightDir = XYZ.BasisY;
-                viewDir = XYZ.BasisX;
-            }
-
-            XYZ upDir = XYZ.BasisZ;
-
-            sectionTransform = Transform.Identity;
-            sectionTransform.Origin = origem;
-            sectionTransform.BasisX = rightDir;
-            sectionTransform.BasisY = upDir;
-            sectionTransform.BasisZ = viewDir;
-
-            // BBox da section em coords locais (rightDir, upDir, viewDir)
+            // v2.6.9: calculo do Transform + bbox local delegado ao helper puro
+            // SectionBoxBuilder (testavel sem Revit). Mantem 2 branches:
+            //  - Superior: vista de planta (-Z observador)
+            //  - Elevacao: comportamento v2.3.0+ (Paralelo X ou Y)
             double margemFt = UnitUtils.ConvertToInternalUnits(config.MargemMm, UnitTypeId.Millimeters);
-            double largura = (paraleloAoX ? extX : extY) + 2 * margemFt;
-            double altura = extZ + 2 * margemFt;
-            double profundidade = (paraleloAoX ? extY : extX) + 2 * margemFt;
+            Vec3 bbMin = new Vec3(minX, minY, minZ);
+            Vec3 bbMax = new Vec3(maxX, maxY, maxZ);
+            SectionBoxData boxData;
+
+            if (config.Orientacao == OrientacaoDiagrama.Superior)
+            {
+                boxData = SectionBoxBuilder.CalcularPlanta(bbMin, bbMax, margemFt);
+            }
+            else
+            {
+                // Decidir entre Paralelo X / Paralelo Y (Auto = baseia na geometria).
+                bool paraleloAoX;
+                if (config.Orientacao == OrientacaoDiagrama.Auto)
+                    paraleloAoX = extX >= extY;
+                else
+                    paraleloAoX = (config.Orientacao == OrientacaoDiagrama.ParaleloEixoX);
+
+                boxData = SectionBoxBuilder.CalcularElevacao(bbMin, bbMax, margemFt, paraleloAoX);
+            }
+
+            // Materializa SectionBoxData (puro) em Transform + BoundingBoxXYZ do Revit
+            sectionTransform = Transform.Identity;
+            sectionTransform.Origin = new XYZ(boxData.OrigemTransform.X, boxData.OrigemTransform.Y, boxData.OrigemTransform.Z);
+            sectionTransform.BasisX = new XYZ(boxData.BasisX.X, boxData.BasisX.Y, boxData.BasisX.Z);
+            sectionTransform.BasisY = new XYZ(boxData.BasisY.X, boxData.BasisY.Y, boxData.BasisY.Z);
+            sectionTransform.BasisZ = new XYZ(boxData.BasisZ.X, boxData.BasisZ.Y, boxData.BasisZ.Z);
 
             sectionBbox = new BoundingBoxXYZ();
             sectionBbox.Transform = sectionTransform;
-            sectionBbox.Min = new XYZ(-largura / 2, -altura / 2, -profundidade / 2);
-            sectionBbox.Max = new XYZ(largura / 2, altura / 2, profundidade / 2);
+            sectionBbox.Min = new XYZ(boxData.BboxMin.X, boxData.BboxMin.Y, boxData.BboxMin.Z);
+            sectionBbox.Max = new XYZ(boxData.BboxMax.X, boxData.BboxMax.Y, boxData.BboxMax.Z);
         }
 
         // ============================================
@@ -321,6 +321,33 @@ namespace SteelBIM.Services.DiagramaMontagem
             ViewSection section = ViewSection.CreateSection(doc, vft.Id, sectionBbox);
             if (section == null)
                 return null;
+
+            // v2.6.9: Revit as vezes recalcula BasisY apos CreateSection quando o
+            // Transform tem orientacao incomum (ex: vista superior com BasisZ=-Z).
+            // Verificamos se UpDirection bate com o BasisY do Transform que
+            // pedimos; se nao bater, tentamos forcar. Setter publico pode nao
+            // estar disponivel — try/catch silencioso, smoke visual confirma.
+            try
+            {
+                XYZ expectedUp = sectionBbox.Transform?.BasisY;
+                if (expectedUp != null && section.UpDirection != null)
+                {
+                    XYZ actualUp = section.UpDirection;
+                    if (Math.Abs(actualUp.X - expectedUp.X) > 1e-6 ||
+                        Math.Abs(actualUp.Y - expectedUp.Y) > 1e-6 ||
+                        Math.Abs(actualUp.Z - expectedUp.Z) > 1e-6)
+                    {
+                        Logger.Debug(
+                            "[DiagramaMontagem] UpDirection da vista divergiu do BasisY pedido " +
+                            "({Actual} vs {Expected}). Smoke visual valida orientacao.",
+                            actualUp, expectedUp);
+                    }
+                }
+            }
+            catch (Exception exUp)
+            {
+                Logger.Debug("[DiagramaMontagem] Falha ao verificar UpDirection: {Msg} — ignorando", exUp.Message);
+            }
 
             // Renomear (Revit pode rejeitar nome duplicado — fallback com sufixo)
             string nomeFinal = nomeBase;

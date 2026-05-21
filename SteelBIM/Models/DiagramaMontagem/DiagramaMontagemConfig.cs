@@ -5,12 +5,16 @@
     /// AUTO = plugin decide com base na geometria dos elementos selecionados.
     /// XZ = secao paralela ao eixo X (corte na direcao Y, util para vista frontal/lateral)
     /// YZ = secao paralela ao eixo Y (corte na direcao X, util para vista lateral)
+    /// SUPERIOR = vista de cima pra baixo (planta) — v2.6.9. Observador olha -Z,
+    ///            up da vista = +Y mundial (norte). Ideal para detalhamento de
+    ///            planos de cobertura, mezanino, lajes e fundacoes.
     /// </summary>
     public enum OrientacaoDiagrama
     {
         Auto = 0,
         ParaleloEixoX = 1,
-        ParaleloEixoY = 2
+        ParaleloEixoY = 2,
+        Superior = 3
     }
 
     public sealed class DiagramaMontagemConfig

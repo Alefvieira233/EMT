@@ -25,8 +25,10 @@ namespace SteelBIM.Views
         {
             var c = new DiagramaMontagemConfig();
 
-            // Orientacao (existente)
-            if (rbX.IsChecked == true)
+            // Orientacao (Superior v2.6.9 + 3 originais)
+            if (rbSuperior.IsChecked == true)
+                c.Orientacao = OrientacaoDiagrama.Superior;
+            else if (rbX.IsChecked == true)
                 c.Orientacao = OrientacaoDiagrama.ParaleloEixoX;
             else if (rbY.IsChecked == true)
                 c.Orientacao = OrientacaoDiagrama.ParaleloEixoY;
@@ -54,5 +56,27 @@ namespace SteelBIM.Views
 
         private void BtnGerar_Click(object sender, RoutedEventArgs e) => DialogResult = true;
         private void BtnCancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+        // ============================================
+        // v2.6.9: UX gating do chkCotasVerticais (SpotElevation nao faz sentido
+        // em vista superior — so em elevacao lateral).
+        // ============================================
+
+        private void RbSuperior_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chkCotasVerticais == null)
+                return;
+            chkCotasVerticais.IsChecked = false;
+            chkCotasVerticais.IsEnabled = false;
+            chkCotasVerticais.ToolTip = "Indisponivel em vista superior (planta) — SpotElevation mostra altura Z, conceito sem sentido em planta XY.";
+        }
+
+        private void RbElevacao_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chkCotasVerticais == null)
+                return;
+            chkCotasVerticais.IsEnabled = true;
+            chkCotasVerticais.ToolTip = null;
+        }
     }
 }

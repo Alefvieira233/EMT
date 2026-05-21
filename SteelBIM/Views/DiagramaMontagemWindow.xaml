@@ -66,10 +66,18 @@
                 </StackPanel>
 
                 <GroupBox Header="Orientacao da vista" Margin="0,0,0,12">
+                    <!-- v2.6.9: 4o radio "Superior (planta)" adicionado. rbAuto continua default
+                         (IsChecked="True") preservando comportamento. Handlers Checked nos 4 radios
+                         coordenam o gating de chkCotasVerticais (SpotElevation desabilita em planta). -->
                     <StackPanel Orientation="Horizontal" Margin="8">
-                        <RadioButton x:Name="rbAuto" Content="Automatica" IsChecked="True" Margin="0,0,16,0" TabIndex="1"/>
-                        <RadioButton x:Name="rbX" Content="Paralela ao eixo X" Margin="0,0,16,0" TabIndex="2"/>
-                        <RadioButton x:Name="rbY" Content="Paralela ao eixo Y" TabIndex="3"/>
+                        <RadioButton x:Name="rbAuto" Content="Automatica" IsChecked="True" Margin="0,0,16,0" TabIndex="1"
+                                     Checked="RbElevacao_Checked"/>
+                        <RadioButton x:Name="rbX" Content="Paralela ao eixo X" Margin="0,0,16,0" TabIndex="2"
+                                     Checked="RbElevacao_Checked"/>
+                        <RadioButton x:Name="rbY" Content="Paralela ao eixo Y" Margin="0,0,16,0" TabIndex="3"
+                                     Checked="RbElevacao_Checked"/>
+                        <RadioButton x:Name="rbSuperior" Content="Superior (planta)" TabIndex="4"
+                                     Checked="RbSuperior_Checked"/>
                     </StackPanel>
                 </GroupBox>
 

@@ -78,6 +78,11 @@
          CriarComprimentosIndividuais. -->
     <Compile Include="..\SteelBIM\Services\DiagramaMontagem\DimensionPlanCalculator.cs"
              Link="LinkedSources\Services\DiagramaMontagem\DimensionPlanCalculator.cs" />
+    <!-- v2.6.9: SectionBoxBuilder puro (Transform + bbox local pra elevacao OU planta)
+         extraido do DiagramaMontagemService.DetectarPlanoSelecao. Reusa o Vec3 do
+         DimensionPlanCalculator. -->
+    <Compile Include="..\SteelBIM\Services\DiagramaMontagem\SectionBoxBuilder.cs"
+             Link="LinkedSources\Services\DiagramaMontagem\SectionBoxBuilder.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"
