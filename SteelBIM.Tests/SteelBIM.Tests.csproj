@@ -100,6 +100,12 @@
          delega — permite testes puros do criterio dimensional sem Revit. -->
     <Compile Include="..\SteelBIM\Services\Ifc\IfcStructuralFilterPure.cs"
              Link="LinkedSources\Services\Ifc\IfcStructuralFilterPure.cs" />
+    <!-- v2.7.4: SectionOrientationExtractor (helper puro do Victor) — extrai
+         vetor de referencia da secao transversal a partir de List<FaceData>
+         + eixo, usado por ConverterPerfilIfcService.TentarAplicarRotacaoSecao
+         para preservar rotacao IFC ao criar FamilyInstance nativa. -->
+    <Compile Include="..\SteelBIM\Services\Ifc\SectionOrientationExtractor.cs"
+             Link="LinkedSources\Services\Ifc\SectionOrientationExtractor.cs" />
     <Compile Include="..\SteelBIM\Models\Montagem\PlanoMontagemReport.cs"
              Link="LinkedSources\Models\Montagem\PlanoMontagemReport.cs" />
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
+using SteelBIM.Infrastructure;
 using SteelBIM.Models;
+using SteelBIM.Services.DiagramaMontagem;
 using SteelBIM.Utils;
 
 namespace SteelBIM.Services.Ifc
@@ -55,11 +57,37 @@ namespace SteelBIM.Services.Ifc
 
                         FamilyInstance nova;
                         if (ehColuna)
-                            nova = doc.Create.NewFamilyInstance(
-                                linha.GetEndPoint(0), simbolo, nivel, StructuralType.Column);
+                        {
+                            XYZ start = linha.GetEndPoint(0);
+                            XYZ end = linha.GetEndPoint(1);
+                            XYZ dir = (end - start).Normalize();
+                            bool vertical = Math.Abs(dir.Z) > Math.Cos(5.0 * Math.PI / 180.0);
+
+                            if (vertical)
+                            {
+                                nova = doc.Create.NewFamilyInstance(
+                                    start, simbolo, nivel, StructuralType.Column);
+
+                                // Ajustar topo para o endpoint Z do IFC
+                                Parameter topOffset = nova.get_Parameter(
+                                    BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
+                                if (topOffset != null && !topOffset.IsReadOnly)
+                                    topOffset.Set(end.Z - nivel.Elevation);
+                            }
+                            else
+                            {
+                                // Coluna inclinada ou diagonal: preservar linha 3D completa
+                                nova = doc.Create.NewFamilyInstance(
+                                    linha, simbolo, nivel, StructuralType.Brace);
+                            }
+                        }
                         else
+                        {
                             nova = doc.Create.NewFamilyInstance(
                                 linha, simbolo, nivel, StructuralType.Beam);
+                        }
+
+                        TentarAplicarRotacaoSecao(nova, origem, linha, doc);
 
                         string ifcMaterial = origem.LookupParameter("IfcMaterial")?.AsString();
                         if (!string.IsNullOrWhiteSpace(ifcMaterial))
@@ -191,6 +219,74 @@ namespace SteelBIM.Services.Ifc
             return p != null
                 && p.StorageType == StorageType.String
                 && !string.IsNullOrWhiteSpace(p.AsString());
+        }
+
+        /// <summary>
+        /// Preserva a rotacao da secao transversal do elemento IFC na FamilyInstance
+        /// criada no Revit. Extrai o vetor de referencia da maior face lateral do IFC
+        /// via <see cref="SectionOrientationExtractor"/> e rotaciona o elemento para
+        /// alinhar com esse vetor, partindo da orientacao padrao do Revit.
+        ///
+        /// Orientacao padrao Revit: para eixo nao-vertical, a referencia e a projecao
+        /// de Z-global perpendicular ao eixo (flanges ficam "para cima" por padrao).
+        /// Para eixo quase-vertical (coluna), a referencia padrao e X-global no plano XY.
+        ///
+        /// Operacao silenciosa: qualquer falha e logada em Debug e ignorada, sem
+        /// impactar o elemento ja criado.
+        /// </summary>
+        private void TentarAplicarRotacaoSecao(
+            FamilyInstance nova,
+            Element origem,
+            Line linha,
+            Document doc)
+        {
+            List<FaceData> faces = SectionAxisExtractor.ColetarFaces(origem);
+            if (faces.Count < 3)
+                return;
+
+            XYZ eixoDir = (linha.GetEndPoint(1) - linha.GetEndPoint(0)).Normalize();
+            Vec3 eixoVec = new Vec3(eixoDir.X, eixoDir.Y, eixoDir.Z);
+
+            Vec3? ifcRef = SectionOrientationExtractor.ExtrairReferenciaSecao(faces, eixoVec);
+            if (!ifcRef.HasValue)
+                return;
+
+            // Referencia padrao Revit: componente de Z-global (ou X-global para eixo vertical)
+            // projetada no plano perpendicular ao eixo do elemento.
+            XYZ globalRef = Math.Abs(eixoDir.Z) > 0.99 ? XYZ.BasisX : XYZ.BasisZ;
+            double dotGlobal = globalRef.DotProduct(eixoDir);
+            XYZ revitRef = globalRef - eixoDir.Multiply(dotGlobal);
+            if (revitRef.GetLength() < 1e-9)
+                return;
+            revitRef = revitRef.Normalize();
+
+            XYZ ifcRefXyz = new XYZ(ifcRef.Value.X, ifcRef.Value.Y, ifcRef.Value.Z).Normalize();
+
+            double dot = Math.Max(-1.0, Math.Min(1.0, revitRef.DotProduct(ifcRefXyz)));
+            double angulo = Math.Acos(dot);
+            if (angulo < 0.5 * Math.PI / 180.0)
+                return; // diferenca < 0.5 graus — dentro da tolerancia
+
+            // Sinal: produto vetorial determina sentido da rotacao
+            XYZ cross = revitRef.CrossProduct(ifcRefXyz);
+            if (cross.DotProduct(eixoDir) < 0)
+                angulo = -angulo;
+
+            try
+            {
+                Line eixoRot = Line.CreateBound(
+                    linha.GetEndPoint(0),
+                    linha.GetEndPoint(0) + eixoDir);
+                ElementTransformUtils.RotateElement(doc, nova.Id, eixoRot, angulo);
+
+                Logger.Debug("[ConverterPerfilIfc] {Id}: rotacao secao aplicada {Deg:F1} graus",
+                    nova.Id, angulo * 180.0 / Math.PI);
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("[ConverterPerfilIfc] {Id}: rotacao secao ignorada — {Msg}",
+                    nova.Id, ex.Message);
+            }
         }
 
         private void TentarAplicarMaterial(FamilyInstance instancia, string ifcMaterial, Document doc)
