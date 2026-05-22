@@ -15,6 +15,108 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.4] - 2026-05-22
+
+### Fixed (Conversor IFC — rotacao secao + coluna inclinada)
+
+Co-autoria 50/50 com Victor — ele ajustou v2.7.3 em sua copia local e
+validou no Revit ("inacreditavel, funcionando perfeitamente"). Cowork
+(Opus 4.7) analisou diff cirurgico, confirmou que UI top da v2.7.1
+(modeless + click-highlight + filtro estrutural) + hotfix v2.7.3 (race-
+condition _carregando) permanecem 100% intactas, e portou as 3 mudancas
+do service core mantendo testabilidade.
+
+3 bugs visuais corrigidos:
+
+- **Rotacao da secao transversal preservada** ao converter IFC ->
+  FamilyInstance nativa. Perfis U/L/T que estavam "deitados" no IFC
+  vinham "em pe" no Revit (orientacao errada — flange/alma 90 graus
+  rotacionados). Agora rotacao IFC e preservada via novo
+  `SectionOrientationExtractor` + `ElementTransformUtils.RotateElement`.
+  Tolerancia 0.5 graus pra evitar rotacao desnecessaria.
+
+- **Colunas inclinadas/diagonais preservam linha 3D completa**. Antes:
+  todas as colunas (mesmo diagonais de treliça com 30/45/60 graus) eram
+  criadas como `StructuralType.Column` — que so aceita eixo vertical —
+  resultando em peca horizontal sem inclinacao. Agora detecta via
+  `\|dot(dir, Z)\| > cos(5deg)`: vertical -> `Column`; inclinada ou
+  diagonal -> `StructuralType.Brace` (preserva linha 3D).
+
+- **Colunas verticais com topo correto**. Agora ajusta
+  `FAMILY_TOP_LEVEL_OFFSET_PARAM` = `end.Z - nivel.Elevation` (topo bate
+  com endpoint Z do IFC). Antes: topo da coluna nativa ficava flutuante
+  no offset default do FamilySymbol.
+
+### Architecture
+
+- **`SectionAxisExtractor.cs`**: substituido (141 -> 171 linhas).
+  Adiciona metodo publico `ColetarFaces(Element) -> List<FaceData>` que
+  reaproveita a travessia do Solid ja existente. Usado por
+  `SectionOrientationExtractor` sem duplicar parsing.
+
+- **`SectionOrientationExtractor.cs`**: novo helper puro (85 linhas)
+  testavel sem Revit. Recebe `IReadOnlyList<FaceData>` + `Vec3` (eixo),
+  retorna `Vec3?` (vetor de referencia da secao). Critério "face
+  lateral": `\|dot(n, eixo)\| <= 0.85` exclui caps; entre as laterais
+  validas, maior area vence; normal projetada no plano perpendicular ao
+  eixo e normalizada.
+
+- **`ConverterPerfilIfcService.cs`**: substituido (306 -> 402 linhas).
+  Branch coluna vertical/inclinada no `Executar()` + novo metodo privado
+  `TentarAplicarRotacaoSecao` (60 linhas) que combina
+  `SectionAxisExtractor.ColetarFaces` + `SectionOrientationExtractor`
+  + `ElementTransformUtils.RotateElement` com try/catch silencioso.
+
+- **10 testes unitarios novos** em `SectionOrientationExtractorTests`:
+  - 3 Theory inlines: eixos +X / +Y / +Z (faces laterais validas)
+  - Threshold 0.85 (cap excluida vs face lateral aceita)
+  - Maior area vence
+  - Todas caps -> null
+  - Lista vazia/null -> null
+  - Area zero ignorada
+
+  Suite total: **944 -> 954 verdes** (zero Skips, zero ignored).
+
+### Sem mudancas — UI/UX da v2.7.1 + hotfix v2.7.3 preservados 100%
+
+Victor manteve **TODOS** os seguintes arquivos identicos ao nosso main:
+- `Views/ConverterPerfilIfcWindow.xaml(.cs)` (modeless + filtro + hotfix _carregando)
+- `Commands/CmdConverterPerfilIfc.cs` (modeless `wnd.Show()`)
+- `IfcSelectionHandler.cs` + `IfcConversionHandler.cs` (ExternalEvent)
+- `IfcStructuralFilterPure.cs` (filtro estrutural)
+- `IfcMaterialParser.cs` (parser concreto v2.7.0)
+- `Models/` (DTOs IFC)
+- `LevelMatcher.cs` + `LevelMatcherPure.cs` (v2.7.0)
+- `SectionAxisCalculators.cs` (`FaceData` + `Vec3` + Caps + PCA)
+
+Diff git desta release toca **apenas 3 fontes em Services/Ifc/** + 1 teste
++ csproj + metadata. Zero mudanca em Views/Commands/Handlers.
+
+### Compatibilidade
+
+- 100% compativel com v2.7.3.
+- Conversoes ja feitas em v2.7.3 nao precisam refazer (mas terao
+  orientacao/inclinacao incorretas — refazer pra obter perfis corretos).
+- Proximas conversoes terao orientacao e inclinacao corretas automaticamente.
+- v2.7.3 **NAO marcada AFETADA** (Conversor IFC funciona e nao crasha;
+  v2.7.4 e melhoria visual sobre conversao funcional).
+
+### Zona de validacao manual no smoke
+
+Entre **5 e 8 graus** de inclinacao da coluna existe inconsistencia sutil
+de thresholds:
+- Linha 64 (`Executar`): detecta vertical com `cos(5deg) ~ 0.996`
+- Linha 256 (`TentarAplicarRotacaoSecao`): escolhe referencia global com
+  `\|eixoDir.Z\| > 0.99 ~ cos(8deg)`
+
+Colunas com 5-8 graus de inclinacao sao criadas como `Column` mas a
+rotacao usa `XYZ.BasisZ` como referencia. Pode ou nao gerar regressao
+visual — manter como Victor escreveu (ele validou no Revit dele). Se
+aparecer regressao em coluna nessa faixa estreita, alinhar os 2
+thresholds em release futura.
+
+---
+
 ## [2.7.3] - 2026-05-21
 
 ### Fixed (CRITICAL)

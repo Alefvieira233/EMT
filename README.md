@@ -1,9 +1,9 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.3-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.4-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-944%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-954%20passing-brightgreen)
 
 Plugin Revit 2025 para detalhamento estrutural brasileiro. NBR 6118
 nativo, export DSTV/NC1 para CNC, Diagrama de Montagem completo no
