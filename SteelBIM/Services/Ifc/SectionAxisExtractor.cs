@@ -137,5 +137,36 @@ namespace SteelBIM.Services.Ifc
                 return null;
             return Line.CreateBound(start, end);
         }
+
+        /// <summary>
+        /// Coleta as faces planares do elemento em uma unica passagem de geometria.
+        /// Usado por <see cref="SectionOrientationExtractor"/> para extrair a
+        /// orientacao da secao transversal sem repetir a travessia do Solid.
+        /// </summary>
+        public static List<FaceData> ColetarFaces(Element elemento)
+        {
+            var faces = new List<FaceData>();
+            var vertices = new List<Vec3>();
+
+            if (elemento == null)
+                return faces;
+
+            Options opts = new Options
+            {
+                ComputeReferences = false,
+                IncludeNonVisibleObjects = false,
+                DetailLevel = ViewDetailLevel.Fine
+            };
+
+            GeometryElement geo;
+            try
+            { geo = elemento.get_Geometry(opts); }
+            catch { return faces; }
+
+            if (geo != null)
+                ColetarGeometria(geo, faces, vertices);
+
+            return faces;
+        }
     }
 }
