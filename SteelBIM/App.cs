@@ -514,11 +514,11 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdIsolarPilaresEstruturais",
                 "Isola temporariamente apenas os pilares estruturais na vista ativa.",
-                // v2.6.8: NAO revertido pra column_line_large — esse icone ja esta em uso por
-                // 4 outros botoes (placas base, estribos pilar, acos consolo, isolar P+Cons.).
-                // 5o uso seria tech debt visual. Aguardando Victor entregar icone proprio.
-                "isolar_pilares_32_light.png",
-                "isolar_pilares_32_light.png"
+                // v2.7.6: migrado de isolar_pilares_32_light (legado) pra columns canonico.
+                // columns (plural) estava no set canonico aprovado e nenhum botao usava —
+                // semanticamente perfeito pra "isolar pilares" (multiplas colunas).
+                "columns_large.png",
+                "columns_small.png"
             );
 
             AddButton(
@@ -561,13 +561,11 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdAgruparVigasPorTipo",
                 "Agrupa vigas iguais por tipo, colore cada conjunto e cria grupos EMT.",
-                // v2.6.8: NAO revertido pra agruparvigas_large — esse icone ja esta usado como
-                // placeholder por btnDiagramaMontagem e btnSequenciamentoBim. Reverter aqui faria
-                // 3 botoes com mesmo icone (Agrupar Vigas + Diagrama + Sequenciamento), confundindo
-                // mais que ajudando. Victor precisa criar 2 icones: um pra Diagrama (prancha de
-                // obra) e outro pra Sequenciamento (BIM 4D); ai libera agruparvigas pro botao real.
-                "agrupar_vigas_32_light.png",
-                "agrupar_vigas_32_light.png"
+                // v2.7.6: dono semantico do icone canonico agruparvigas. Liberado depois que
+                // btnDiagramaMontagem e btnSequenciamentoBim migraram pra blueprint/inspection
+                // (saiu o placeholder de 3 botoes -> 1).
+                "agruparvigas_large.png",
+                "agruparvigas_small.png"
             );
 
             AddButton(
@@ -649,6 +647,8 @@ namespace SteelBIM
             );
 
             // Sprint 1 (Bug B5): registrar CmdGerarCotasPorEixo (estava orfao)
+            // v2.7.6: migrado de ruler -> cotas_eixo (icone canonico semanticamente perfeito,
+            // estava livre na pasta de referencia). ruler agora dedicado a CotarTrelica.
             AddButton(
                 panelCotagem,
                 "btnGerarCotasEixo",
@@ -656,8 +656,8 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.CmdGerarCotasPorEixo",
                 "Gera cotas automaticas perpendiculares aos eixos do projeto. Detecta interseccoes com vigas e pilares na vista ativa.",
-                "ruler_large.png",
-                "ruler_small.png"
+                "cotas_eixo_large.png",
+                "cotas_eixo_small.png"
             );
 
             AddButton(
@@ -764,6 +764,8 @@ namespace SteelBIM
             );
 
             // --- Montagem e Sequenciamento ---
+            // v2.7.6: agruparvigas era placeholder semantico. Diagrama de Montagem =
+            // prancha de elevacao -> blueprint (icone canonico de prancha tecnica).
             AddButton(
                 panelMontagem,
                 "btnDiagramaMontagem",
@@ -777,10 +779,12 @@ namespace SteelBIM
                 "estrutural ao pessoal de obra. Escala padrao 1:75. " +
                 "v2.3.0 = MVP (eixos+cotas+tags); cotas verticais e folha com " +
                 "title block na v2.3.1+.",
-                "agruparvigas_large.png",
-                "agruparvigas_small.png"
+                "blueprint_large.png",
+                "blueprint_small.png"
             );
 
+            // v2.7.6: agruparvigas era placeholder semantico. Sequenciamento BIM = 4D phasing
+            // (inspecionar/acompanhar progresso por fase) -> inspection (icone canonico).
             AddButton(
                 panelMontagem,
                 "btnSequenciamentoBim",
@@ -793,8 +797,8 @@ namespace SteelBIM
                 "exporta relatorio para Excel. Util para planejamento 4D, " +
                 "coordenacao de cronograma de obra, integracao com Synchro/Navisworks " +
                 "Timeliner e simulacao de sequencia construtiva.",
-                "agruparvigas_large.png",
-                "agruparvigas_small.png"
+                "inspection_large.png",
+                "inspection_small.png"
             );
 
             // --- Verificação ---

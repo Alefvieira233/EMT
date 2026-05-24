@@ -15,6 +15,54 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.6] - 2026-05-24
+
+### Changed (Ribbon — canonicalizacao de icones, resultado da auditoria)
+
+Auditoria completa dos 49 botoes do ribbon contra a pasta canonica de
+referencia `c:\Users\User\Downloads\Resources` (40 pares aprovados).
+Resultado: 84% ja seguia o canonico; 5 botoes corrigidos nesta release.
+
+Sem mudanca de logica — apenas substituicoes de string de nome de
+arquivo de icone em [App.cs](SteelBIM/App.cs):
+
+- **`btnIsolarPilaresEstruturais`** (Visualizacao): `isolar_pilares_32_light.png`
+  (legado, fora do canonico) -> `columns_large/small.png` (canonico).
+- **`btnAgruparVigasPorTipo`** (Visualizacao): `agrupar_vigas_32_light.png`
+  (legado) -> `agruparvigas_large/small.png` (canonico, agora liberado
+  apos a remocao dos placeholders abaixo).
+- **`btnDiagramaMontagem`** (Montagem): `agruparvigas_large/small.png`
+  (placeholder semanticamente errado) -> `blueprint_large/small.png`
+  (prancha tecnica, semantica correta).
+- **`btnSequenciamentoBim`** (Montagem): `agruparvigas_large/small.png`
+  (placeholder duplicado) -> `inspection_large/small.png` (4D phasing
+  = acompanhamento por fase).
+- **`btnGerarCotasEixo`** (Cotagem): `ruler_large/small.png` (generico)
+  -> `cotas_eixo_large/small.png` (canonico semantico). `ruler` agora
+  dedicado a btnCotarTrelica.
+
+**Resultado quantitativo:**
+- Botoes em padrao legado `_32_light`: 4 -> 2 (restam Travamentos e
+  CotasAlinhamento — aguardando icone proprio do Victor)
+- Botoes com `agruparvigas`: 3 (placeholder confuso) -> 1 (dono semantico)
+- Botoes com `ruler`: 2 -> 1
+- 0% mudanca de comportamento; testes 954/954, build 0 warnings.
+
+### Notes
+
+Pendencias herdadas da auditoria (nao corrigidas nesta release, requerem
+decisao do Alef ou entrega do Victor):
+- 4 icones do plugin nao existem na pasta canonica de referencia
+  (`viga_encontro`, `viga_sem_uniao_selecao`, `viga_sem_uniao_vista`,
+  `ifc`) — provavelmente entregas do Victor pos-aprovacao do set.
+  Decidir se sincroniza pra Downloads/Resources ou substitui.
+- 3 PNGs orfaos no plugin sem nenhum botao usando (`viga_rotula`,
+  `limpar_*`, `cotas_*` sem sufixo eixo) — candidatos a delete.
+- 2 botoes ainda em legado aguardando icones proprios do Victor:
+  `btnGerarTravamentos`, `btnGerarCotasAlinhamento`.
+
+---
+
 ## [2.7.5] - 2026-05-24
 
 ### Fixed (Conversor IFC — dialog: botoes e combos cortados)
