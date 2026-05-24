@@ -15,6 +15,32 @@ Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`)
 
 ---
 
+## [2.7.5] - 2026-05-24
+
+### Fixed (Conversor IFC — dialog: botoes e combos cortados)
+
+Hotfix visual no dialog "Converter Perfis IFC para Perfis Nativos do
+Revit". Reportado pelo Alef em prod: botoes "Selecionar tudo" /
+"Deselecionar tudo" apareciam com texto clipado pelo Border. Causa:
+overrides locais de `Height` que ignoravam o padding interno do style
+base de `Button` (Padding="14,8" em [AppTheme.Base.xaml](SteelBIM/Views/Themes/AppTheme.Base.xaml)
+exige conteudo minimo ~34px; o XAML forcava Height=28).
+
+Mudancas em [ConverterPerfilIfcWindow.xaml](SteelBIM/Views/ConverterPerfilIfcWindow.xaml):
+
+- `btnSelecionarTodos` / `btnDeselecionarTodos`: removido `Height="28"`
+  (texto clipado, bug visivel). Agora herdam Height=36 do style.
+- `btnCancelar` / `btnConverter`: removido `Height="32"` (leve corte,
+  inconsistente com restante das janelas).
+- `cmbParamIfc` / `cmbNivelPadrao`: removido `Height="26"`; adicionado
+  `VerticalAlignment="Center"` pra centralizar na linha do label.
+
+Logica do conversor (filtro estrutural, modeless, ExternalEvents,
+guard `_carregando` do v2.7.3, fixes do Victor v2.7.4) **100% intacta**.
+Mudanca puramente XAML — nenhum code-behind ou service tocado.
+
+---
+
 ## [2.7.4] - 2026-05-22
 
 ### Fixed (Conversor IFC — rotacao secao + coluna inclinada)
