@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -8,6 +9,34 @@ namespace SteelBIM.Services.Ifc
 {
     public static class IfcMaterialParser
     {
+        // v2.7.8 (auditoria 2026-05-25 #003 perf): cache de ExtrairTipoEDimensoes.
+        // Hot path: CalcularScore eh chamada N×M vezes em ReConstruirGrupos do
+        // Conversor IFC (Alef relatou 400 grupos × 59 perfis Revit = 24k calls).
+        // Cada call faz 2 invocacoes de ExtrairTipoEDimensoes (regex + parse).
+        //
+        // Cache colapsa para ~unique strings (tipicamente 59 perfis Revit +
+        // 400 secoes IFC ~= 459 entries no max). ConcurrentDictionary garante
+        // thread-safety mesmo Revit sendo single-threaded (defensivo p/ futura
+        // execucao em sub-thread). Entries imutaveis — IReadOnlyList<double>
+        // previne mutacao acidental do cache pelo caller.
+        //
+        // Memory footprint: ~500 entries × ~50 bytes = 25KB worst case. OK.
+        private static readonly ConcurrentDictionary<string, (string tipo, IReadOnlyList<double> dims)> _extracaoCache
+            = new ConcurrentDictionary<string, (string tipo, IReadOnlyList<double> dims)>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// v2.7.8: limpa cache de extracao. Uso esperado: testes que precisam
+        /// de estado limpo entre cenarios. Em producao nunca chamado — cache
+        /// vive durante toda a sessao do Revit.
+        /// </summary>
+        internal static void ResetCacheForTests() => _extracaoCache.Clear();
+
+        /// <summary>
+        /// v2.7.8: count atual de entries no cache. Internal para testes
+        /// poderem assertar comportamento de memoization.
+        /// </summary>
+        internal static int CacheCount => _extracaoCache.Count;
+
         // Parametros IFC lidos por esta ferramenta:
         // IfcMaterial  -> secao transversal + norma + material
         // IfcName      -> nome do membro (ex: "Member 80")
@@ -159,8 +188,8 @@ namespace SteelBIM.Services.Ifc
             if (string.IsNullOrWhiteSpace(nomeSecaoIfc) || string.IsNullOrWhiteSpace(nomeTipoPerfil))
                 return 0;
 
-            (string tipoS, List<double> dimsS) = ExtrairTipoEDimensoes(nomeSecaoIfc);
-            (string tipoP, List<double> dimsP) = ExtrairTipoEDimensoes(nomeTipoPerfil);
+            (string tipoS, IReadOnlyList<double> dimsS) = ExtrairTipoEDimensoes(nomeSecaoIfc);
+            (string tipoP, IReadOnlyList<double> dimsP) = ExtrairTipoEDimensoes(nomeTipoPerfil);
 
             int tipoScore = ScoreTipo(tipoS, tipoP);
             if (tipoScore == 0)
@@ -218,11 +247,22 @@ namespace SteelBIM.Services.Ifc
         private static readonly Regex RxNums = new Regex(@"\d+(?:[.,]\d+)?", RegexOptions.Compiled);
         private static readonly Regex RxTipo = new Regex(@"^([A-Za-z]+)", RegexOptions.Compiled);
 
-        private static (string tipo, List<double> dims) ExtrairTipoEDimensoes(string nome)
+        // v2.7.8: empty fallback compartilhado pra evitar alocar List vazio em cada miss.
+        private static readonly IReadOnlyList<double> EmptyDims = Array.Empty<double>();
+
+        private static (string tipo, IReadOnlyList<double> dims) ExtrairTipoEDimensoes(string nome)
         {
             if (string.IsNullOrWhiteSpace(nome))
-                return (string.Empty, new List<double>());
+                return (string.Empty, EmptyDims);
 
+            // v2.7.8: cache hit comum (mesmo perfil aparece ~400× em galpao).
+            // GetOrAdd eh atomico (ConcurrentDictionary) e factory so executa
+            // em miss — sem trabalho duplicado em corrida thread (defensivo).
+            return _extracaoCache.GetOrAdd(nome, ParseSemCache);
+        }
+
+        private static (string tipo, IReadOnlyList<double> dims) ParseSemCache(string nome)
+        {
             string tipo = string.Empty;
             Match mTipo = RxTipo.Match(nome.Trim());
             if (mTipo.Success)
@@ -236,7 +276,10 @@ namespace SteelBIM.Services.Ifc
                     dims.Add(d);
             }
 
-            return (tipo, dims);
+            // Devolve IReadOnlyList pra prevenir mutacao acidental do cache pelo caller.
+            // dims.Count == 0 reusa EmptyDims (sem alloc); senao a List<double> propria
+            // (ja imutavel via interface readonly — caller nao tem refs com List<>).
+            return (tipo, dims.Count == 0 ? EmptyDims : (IReadOnlyList<double>)dims);
         }
     }
 }

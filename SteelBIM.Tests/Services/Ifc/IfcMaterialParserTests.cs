@@ -106,5 +106,88 @@ namespace SteelBIM.Tests.Services.Ifc
             int score = IfcMaterialParser.CalcularScore("W 200x15", "L 100x100x8");
             Assert.Equal(0, score);
         }
+
+        // ============================================================
+        // v2.7.8 (auditoria 2026-05-25 #003 perf): memoization cache
+        // de ExtrairTipoEDimensoes. Cobertos:
+        // - cache popula em miss
+        // - cache hit nao recomputa (sem side-effect)
+        // - reset limpa
+        // - strings distintas geram entries distintos
+        // - whitespace/null nao polui cache (skipped no early-return)
+        // ============================================================
+
+        [Fact]
+        public void Cache_ResetForTests_LimpaContador()
+        {
+            IfcMaterialParser.ResetCacheForTests();
+            Assert.Equal(0, IfcMaterialParser.CacheCount);
+
+            IfcMaterialParser.CalcularScore("W 360x44.6", "W360X44");
+            Assert.True(IfcMaterialParser.CacheCount > 0, "Cache deve ter entries apos uma chamada");
+
+            IfcMaterialParser.ResetCacheForTests();
+            Assert.Equal(0, IfcMaterialParser.CacheCount);
+        }
+
+        [Fact]
+        public void Cache_RepeatedCalls_NaoCresceContador()
+        {
+            IfcMaterialParser.ResetCacheForTests();
+
+            // Primeira call popula 2 entries (secao + perfil)
+            IfcMaterialParser.CalcularScore("W 360x44.6", "W360X44");
+            int countAfter1 = IfcMaterialParser.CacheCount;
+
+            // 100 calls iguais nao adicionam entries novos (cache hit)
+            for (int i = 0; i < 100; i++)
+                IfcMaterialParser.CalcularScore("W 360x44.6", "W360X44");
+
+            Assert.Equal(countAfter1, IfcMaterialParser.CacheCount);
+        }
+
+        [Fact]
+        public void Cache_StringsDistintas_GeramEntriesDistintas()
+        {
+            IfcMaterialParser.ResetCacheForTests();
+
+            IfcMaterialParser.CalcularScore("W 360x44.6", "W360X44");
+            int afterPrimeiro = IfcMaterialParser.CacheCount;
+
+            // String diferente (mesmo tipo W mas dim diferente) deve adicionar entry
+            IfcMaterialParser.CalcularScore("W 200x15", "W200X22");
+            Assert.True(IfcMaterialParser.CacheCount > afterPrimeiro,
+                "Strings novas devem expandir cache");
+        }
+
+        [Fact]
+        public void Cache_NullOuWhitespace_NaoPolui()
+        {
+            IfcMaterialParser.ResetCacheForTests();
+
+            // CalcularScore com null/empty retorna 0 ANTES de tocar cache
+            int s1 = IfcMaterialParser.CalcularScore(null, "W360X44");
+            int s2 = IfcMaterialParser.CalcularScore("", "W360X44");
+            int s3 = IfcMaterialParser.CalcularScore("   ", "W360X44");
+
+            Assert.Equal(0, s1);
+            Assert.Equal(0, s2);
+            Assert.Equal(0, s3);
+            Assert.Equal(0, IfcMaterialParser.CacheCount); // nenhuma entrada poluindo
+        }
+
+        [Fact]
+        public void Cache_NaoQuebraCalculoSemantico_ComparaComBaseline()
+        {
+            // Smoke regression: cache NAO deve mudar o resultado de CalcularScore.
+            // Computa baseline limpo, depois roda 10x e compara.
+            IfcMaterialParser.ResetCacheForTests();
+            int baseline = IfcMaterialParser.CalcularScore("W 360x44.6", "W360x44.6");
+
+            for (int i = 0; i < 10; i++)
+            {
+                Assert.Equal(baseline, IfcMaterialParser.CalcularScore("W 360x44.6", "W360x44.6"));
+            }
+        }
     }
 }
