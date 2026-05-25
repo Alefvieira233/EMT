@@ -27,17 +27,46 @@ namespace SteelBIM.Infrastructure.Update
     {
         public const int MaxAttempts = 3;
 
+        /// <summary>
+        /// Nome do DLL principal do plugin — verificado pelo Authenticode
+        /// hook quando ele esta ativo (auditoria 2026-05-25 §5.3).
+        /// Centralizado aqui porque o ApplyPending grava o ZIP por cima
+        /// do install dir e o ".rvt addin manifest" sempre referencia
+        /// SteelBIM.dll por nome fixo.
+        /// </summary>
+        public const string MainAssemblyName = "SteelBIM.dll";
+
         private readonly string _pendingDirectory;
         private readonly string _installDirectory;
+        private readonly IAuthenticodeVerifier _authenticodeVerifier;
 
-        /// <summary>Construtor para producao.</summary>
+        /// <summary>Construtor para producao (sem verificacao Authenticode).</summary>
         public UpdateApplier()
-            : this(GetDefaultPendingDirectory(), GetDefaultInstallDirectory())
+            : this(GetDefaultPendingDirectory(), GetDefaultInstallDirectory(), null)
+        {
+        }
+
+        /// <summary>
+        /// v2.7.10 (auditoria §5.3): construtor pra producao com Authenticode habilitado.
+        /// Wirado em App.cs quando <c>AppSettings.AuthenticodeVerifyEnabled = true</c>.
+        /// </summary>
+        public UpdateApplier(IAuthenticodeVerifier authenticodeVerifier)
+            : this(GetDefaultPendingDirectory(), GetDefaultInstallDirectory(), authenticodeVerifier)
         {
         }
 
         /// <summary>Construtor para testes (permite redirecionar diretorios).</summary>
         public UpdateApplier(string pendingDirectory, string installDirectory)
+            : this(pendingDirectory, installDirectory, null)
+        {
+        }
+
+        /// <summary>
+        /// Construtor completo: diretorios + verifier injetavel.
+        /// <paramref name="authenticodeVerifier"/> <c>null</c> = skip verify
+        /// (backward compat com calls existentes).
+        /// </summary>
+        public UpdateApplier(string pendingDirectory, string installDirectory, IAuthenticodeVerifier authenticodeVerifier)
         {
             if (string.IsNullOrWhiteSpace(pendingDirectory))
                 throw new ArgumentException("pendingDirectory obrigatorio", "pendingDirectory");
@@ -46,6 +75,7 @@ namespace SteelBIM.Infrastructure.Update
 
             _pendingDirectory = pendingDirectory;
             _installDirectory = installDirectory;
+            _authenticodeVerifier = authenticodeVerifier;
         }
 
         public static string GetDefaultPendingDirectory()
@@ -219,6 +249,37 @@ namespace SteelBIM.Infrastructure.Update
                 return ApplyResult.InvalidMarker;
             }
 
+            // v2.7.10 (auditoria 2026-05-25 §5.3): defense-in-depth Authenticode.
+            // Roda APOS extract bem-sucedido, ANTES do cleanup do backup. Se a
+            // verificacao reprovar, fazemos rollback completo + retornamos
+            // SignatureInvalid pra que o caller mostre mensagem clara.
+            // Skip silencioso quando verifier == null (backward compat com
+            // calls que nao passam IAuthenticodeVerifier).
+            if (_authenticodeVerifier != null)
+            {
+                AuthenticodeVerifyResult sigResult = VerifyExtractedAssembly();
+                if (sigResult != AuthenticodeVerifyResult.Verified
+                    && sigResult != AuthenticodeVerifyResult.NotSupported)
+                {
+                    UpdateLog.Warn(
+                        "[Update] assinatura Authenticode invalida ({0}) — rollback do update",
+                        new object[] { sigResult });
+                    RestoreBackup(backupDir);
+                    TryDelete(chosen.ZipPath);
+                    TryDelete(chosenPath);
+                    return ApplyResult.SignatureInvalid;
+                }
+
+                if (sigResult == AuthenticodeVerifyResult.NotSupported)
+                {
+                    // Soft-pass: log mas permite o swap. Acontece em Linux CI
+                    // ou em hosts sem wintrust.dll. Producao Windows nunca cai aqui.
+                    UpdateLog.Warn(
+                        "[Update] WinVerifyTrust nao disponivel no host — Authenticode pulado (soft-pass)",
+                        EmptyArgs);
+                }
+            }
+
             try
             { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); }
             catch { /* best effort */ }
@@ -229,6 +290,34 @@ namespace SteelBIM.Infrastructure.Update
             UpdateLog.Info("[Update] aplicado com sucesso para versao {0}",
                 new object[] { chosen.Version });
             return ApplyResult.Applied;
+        }
+
+        /// <summary>
+        /// Chama o verifier injetado contra o DLL principal no install dir.
+        /// Se o DLL nao existir (ZIP corrompido nao deveria ter passado pelo
+        /// SHA256, mas defensivo), retorna SignatureBroken pra forcar rollback.
+        /// </summary>
+        private AuthenticodeVerifyResult VerifyExtractedAssembly()
+        {
+            try
+            {
+                string mainDll = Path.Combine(_installDirectory, MainAssemblyName);
+                if (!File.Exists(mainDll))
+                {
+                    UpdateLog.Warn(
+                        "[Update] {0} nao encontrado pos-extract — tratando como SignatureBroken",
+                        new object[] { MainAssemblyName });
+                    return AuthenticodeVerifyResult.SignatureBroken;
+                }
+                return _authenticodeVerifier.VerifyFile(mainDll);
+            }
+            catch (Exception ex)
+            {
+                UpdateLog.WarnException(ex,
+                    "[Update] exception inesperada no verifier — tratando como Error",
+                    EmptyArgs);
+                return AuthenticodeVerifyResult.Error;
+            }
         }
 
         private ApplyResult IncrementAttemptOrAbort(UpdateMarker chosen, string markerPath)

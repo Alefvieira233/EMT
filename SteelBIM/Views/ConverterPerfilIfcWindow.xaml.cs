@@ -391,7 +391,8 @@ namespace SteelBIM.Views
             };
             _progressWindow.Cancelled += (_, __) =>
             {
-                try { _cts?.Cancel(); }
+                try
+                { _cts?.Cancel(); }
                 catch (ObjectDisposedException) { /* ignorado — CTS ja disposed */ }
             };
 
@@ -400,7 +401,8 @@ namespace SteelBIM.Views
             // chamar progress.Report(...).
             _conversionHandler.Progress = new Progress<ProgressReport>(report =>
             {
-                if (_isClosing || _progressWindow == null) return;
+                if (_isClosing || _progressWindow == null)
+                    return;
                 _progressWindow.UpdateProgress(report);
             });
             _conversionHandler.CancellationToken = _cts.Token;
@@ -503,11 +505,13 @@ namespace SteelBIM.Views
             // dispara cancelamento do servico em curso; service rollback transaction.
             if (_progressWindow != null && _progressWindow.IsVisible)
             {
-                try { _progressWindow.Close(); }
+                try
+                { _progressWindow.Close(); }
                 catch (InvalidOperationException) { /* ignorado */ }
             }
             _progressWindow = null;
-            try { _cts?.Cancel(); }
+            try
+            { _cts?.Cancel(); }
             catch (ObjectDisposedException) { /* ignorado */ }
             _cts?.Dispose();
             _cts = null;

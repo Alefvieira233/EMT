@@ -76,6 +76,16 @@ namespace SteelBIM.Utils
         public string LastConverterIfcNivelPadrao { get; set; } = string.Empty;
         public bool LastConverterIfcDeletarOriginal { get; set; } = true;
 
+        // ---------- Update / seguranca (v2.7.10) ----------
+        /// <summary>
+        /// v2.7.10 (auditoria 2026-05-25 §5.3): habilita verificacao Authenticode
+        /// do DLL principal pos-extract no auto-update (defense-in-depth supply chain).
+        /// Default FALSE porque o cert ainda nao foi adquirido (ADR-009 skeleton).
+        /// Quando Alef ativar o cert, mudar pra TRUE via settings.json manualmente
+        /// (ou bump da default em v2.7.11 quando a release oficial assinada sair).
+        /// </summary>
+        public bool AuthenticodeVerifyEnabled { get; set; } = false;
+
         // ---------- PF Nomeacao ----------
         public string LastPfNamingTarget { get; set; } = "Pilares";
         public string LastPfNamingScope { get; set; } = "VistaAtiva";

@@ -59,7 +59,23 @@ namespace SteelBIM
             int updateAppliedAttempts = 0;
             try
             {
-                UpdateApplier applier = new UpdateApplier();
+                // v2.7.10 (auditoria §5.3): Authenticode verify opt-in via setting.
+                // Default false enquanto cert nao foi adquirido (ADR-009).
+                IAuthenticodeVerifier verifier = null;
+                try
+                {
+                    AppSettings settings = AppSettings.Load();
+                    if (settings != null && settings.AuthenticodeVerifyEnabled)
+                    {
+                        verifier = new WinTrustAuthenticodeVerifier();
+                    }
+                }
+                catch (Exception settingsEx)
+                {
+                    Logger.Warn(settingsEx, "[Update] falha ao carregar AppSettings — Authenticode pulado");
+                }
+
+                UpdateApplier applier = new UpdateApplier(verifier);
                 ApplyResult applyResult = applier.ApplyPendingIfAny();
                 if (applyResult == ApplyResult.Applied)
                 {
@@ -67,6 +83,15 @@ namespace SteelBIM
                     updateAppliedFromVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown";
                     updateAppliedToVersion = applier.LastVersionAttempted ?? "unknown";
                     updateAppliedAttempts = applier.LastAttemptCount;
+                }
+                else if (applyResult == ApplyResult.SignatureInvalid)
+                {
+                    // v2.7.10 §5.3: Authenticode reprovou o DLL extraido —
+                    // rollback ja foi feito, log error pra forensics e seguir boot
+                    // com versao antiga (mais segura que abortar boot).
+                    Logger.Error(
+                        "[Update] assinatura Authenticode INVALIDA na versao {Version} — rollback aplicado, boot continua com versao antiga",
+                        applier.LastVersionAttempted ?? "desconhecida");
                 }
             }
             catch (Exception updEx)

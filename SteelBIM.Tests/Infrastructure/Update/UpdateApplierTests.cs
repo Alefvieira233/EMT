@@ -184,6 +184,117 @@ namespace SteelBIM.Tests.Infrastructure.Update
             UpdateApplier.IsFileInUseException(null).Should().BeFalse();
         }
 
+        // ---------- v2.7.10 Authenticode hook (F4) ----------
+
+        [Fact]
+        public void Verifier_null_mantem_comportamento_atual_aplica_normalmente()
+        {
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "ok.zip"), "any-stub-dll-bytes");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, authenticodeVerifier: null);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.Applied);
+
+            File.Exists(Path.Combine(_installDir, UpdateApplier.MainAssemblyName)).Should().BeTrue();
+            Directory.Exists(_installDir + ".bak").Should().BeFalse();
+        }
+
+        [Fact]
+        public void Verifier_Verified_libera_o_swap()
+        {
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "ok.zip"), "signed-stub");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.Verified);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.Applied);
+
+            verifier.LastVerifiedPath.Should().EndWith(UpdateApplier.MainAssemblyName);
+            File.Exists(Path.Combine(_installDir, UpdateApplier.MainAssemblyName)).Should().BeTrue();
+        }
+
+        [Fact]
+        public void Verifier_NotSupported_eh_soft_pass_e_aplica_mesmo_assim()
+        {
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "ok.zip"), "linux-ci-stub");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.NotSupported);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.Applied);
+
+            File.Exists(Path.Combine(_installDir, UpdateApplier.MainAssemblyName)).Should().BeTrue();
+        }
+
+        [Fact]
+        public void Verifier_SignatureBroken_retorna_SignatureInvalid_e_restaura_backup()
+        {
+            // Pre-condicao: install dir tem conteudo antigo (que vai pra .bak).
+            string oldFile = Path.Combine(_installDir, "old-marker.txt");
+            File.WriteAllText(oldFile, "previous-install");
+
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "evil.zip"), "tampered-dll");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.SignatureBroken);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            ApplyResult result = applier.ApplyPendingIfAny();
+
+            result.Should().Be(ApplyResult.SignatureInvalid);
+            // Backup restaurado — arquivo antigo voltou.
+            File.Exists(oldFile).Should().BeTrue();
+            // Novo DLL nao deve estar la (foi removido pelo rollback).
+            File.Exists(Path.Combine(_installDir, UpdateApplier.MainAssemblyName)).Should().BeFalse();
+            // .bak limpo (Restore moveu de volta).
+            Directory.Exists(_installDir + ".bak").Should().BeFalse();
+        }
+
+        [Fact]
+        public void Verifier_UntrustedRoot_retorna_SignatureInvalid()
+        {
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "untrusted.zip"), "third-party-signed");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.UntrustedRoot);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.SignatureInvalid);
+        }
+
+        [Fact]
+        public void Verifier_NoSignature_retorna_SignatureInvalid()
+        {
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "unsigned.zip"), "no-sig-dll");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.NoSignature);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.SignatureInvalid);
+        }
+
+        [Fact]
+        public void Verifier_Expired_retorna_SignatureInvalid()
+        {
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "expired.zip"), "old-cert-dll");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.Expired);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.SignatureInvalid);
+        }
+
+        [Fact]
+        public void Verifier_Error_retorna_SignatureInvalid_fail_closed()
+        {
+            // Fail-closed: qualquer Error/UntrustedRoot/SignatureBroken/NoSignature/Expired
+            // dispara rollback. Soft-pass eh APENAS NotSupported (Linux CI sem WinTrust).
+            string zipPath = CreateZipWithMainDll(Path.Combine(_tempRoot, "weird.zip"), "unknown-error-dll");
+            WriteValidMarker(zipPath, "v2.7.10");
+
+            FakeAuthenticodeVerifier verifier = new FakeAuthenticodeVerifier(AuthenticodeVerifyResult.Error);
+            UpdateApplier applier = new UpdateApplier(_pendingDir, _installDir, verifier);
+            applier.ApplyPendingIfAny().Should().Be(ApplyResult.SignatureInvalid);
+        }
+
         // ---------- helpers ----------
 
         private static string CreateValidZip(string path, string entryName, string content)
@@ -199,6 +310,45 @@ namespace SteelBIM.Tests.Infrastructure.Update
                 }
             }
             return path;
+        }
+
+        /// <summary>
+        /// Zip com o DLL principal (SteelBIM.dll) — necessario porque o
+        /// verifier Authenticode busca ele por nome fixo no install dir.
+        /// </summary>
+        private static string CreateZipWithMainDll(string path, string content)
+        {
+            return CreateValidZip(path, UpdateApplier.MainAssemblyName, content);
+        }
+
+        private void WriteValidMarker(string zipPath, string version)
+        {
+            UpdateMarker marker = new UpdateMarker
+            {
+                Version = version,
+                ZipPath = zipPath,
+                Sha256 = ComputeSha256(zipPath),
+                DownloadedAtUtc = DateTime.UtcNow,
+            };
+            string mp = Path.Combine(_pendingDir, version + ".marker");
+            File.WriteAllText(mp, UpdateMarkerJson.Serialize(marker));
+        }
+
+        private sealed class FakeAuthenticodeVerifier : IAuthenticodeVerifier
+        {
+            private readonly AuthenticodeVerifyResult _result;
+            public string LastVerifiedPath { get; private set; }
+
+            public FakeAuthenticodeVerifier(AuthenticodeVerifyResult result)
+            {
+                _result = result;
+            }
+
+            public AuthenticodeVerifyResult VerifyFile(string filePath)
+            {
+                LastVerifiedPath = filePath;
+                return _result;
+            }
         }
 
         private static string ComputeSha256(string path)

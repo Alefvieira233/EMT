@@ -29,5 +29,16 @@
         /// Marker + zip deletados. Caller pode logar warn e seguir boot.
         /// </summary>
         InvalidMarker = 4,
+
+        /// <summary>
+        /// v2.7.10 (auditoria 2026-05-25 §5.3): assinatura Authenticode do DLL extraido
+        /// nao bate com publisher esperado (UntrustedRoot, SignatureBroken, Expired
+        /// sem timestamp valido, NoSignature). Backup foi restaurado, ZIP + marker
+        /// deletados. Caller deve logar error + mostrar dialog "Atualizacao rejeitada
+        /// por motivo de seguranca — instale manualmente de github.com/.../releases".
+        /// So eh retornado se <see cref="UpdateApplier"/> foi construido com
+        /// <see cref="IAuthenticodeVerifier"/> nao-nulo.
+        /// </summary>
+        SignatureInvalid = 5,
     }
 }

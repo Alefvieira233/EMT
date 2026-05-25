@@ -246,6 +246,13 @@
              Link="LinkedSources\Infrastructure\Update\ApplyResult.cs" />
     <Compile Include="..\SteelBIM\Infrastructure\Update\UpdateApplier.cs"
              Link="LinkedSources\Infrastructure\Update\UpdateApplier.cs" />
+    <!-- v2.7.10 F4 (auditoria 2026-05-25 §5.3): Authenticode verify pos-extract -->
+    <Compile Include="..\SteelBIM\Infrastructure\Update\AuthenticodeVerifyResult.cs"
+             Link="LinkedSources\Infrastructure\Update\AuthenticodeVerifyResult.cs" />
+    <Compile Include="..\SteelBIM\Infrastructure\Update\IAuthenticodeVerifier.cs"
+             Link="LinkedSources\Infrastructure\Update\IAuthenticodeVerifier.cs" />
+    <Compile Include="..\SteelBIM\Infrastructure\Update\WinTrustAuthenticodeVerifier.cs"
+             Link="LinkedSources\Infrastructure\Update\WinTrustAuthenticodeVerifier.cs" />
     <!-- v2.6.1 hotfix P0 SECURITY-1: validador puro do HttpClient.Timeout
          injetado em UpdateDownloader (sem deps de Logger/Serilog). -->
     <Compile Include="..\SteelBIM\Infrastructure\Update\HttpClientTimeoutValidator.cs"

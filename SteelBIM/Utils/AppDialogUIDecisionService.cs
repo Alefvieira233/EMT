@@ -1,4 +1,4 @@
-using SteelBIM.Core;
+﻿using SteelBIM.Core;
 
 namespace SteelBIM.Utils
 {
