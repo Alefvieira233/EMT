@@ -8,10 +8,118 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Roadmap remanescente da auditoria de mercado (`AUDITORIA-MERCADO-2026-04-27.md`):
-- Code signing efetivamente assinado (esqueleto já mergeado em v1.7.0; falta certificado)
-- Revisão jurídica formal dos documentos legais (EULA + PRIVACY + TOS)
-- Migração ADR-003 dos 7 services restantes que ainda usam AppDialogService
+Roadmap v2.8.0 production-grade (~10 semanas após v2.7.7, ver
+[docs/ROADMAP.md](docs/ROADMAP.md)):
+
+- **Sprint 1** Hardening security: code signing efetivo (cert Sectigo OV pendente), Authenticode verify pós-extract no auto-update, EULA/Privacy/TOS revisados e ativados, Sentry breadcrumbs scrubbing (LGPD)
+- **Sprint 2** Arquitetura ADR-003: AutoVistaService como template + ViewModels top-3 windows + ListaMateriaisExportService Strangler Fig + quick wins (delete `ExecutarCotagemAlinhada`, `CoordinateParsingService`, `#nullable enable` top 20)
+- **Sprint 3** Testes + performance: PfRebarServiceTests 100+ tests, hot path caches, ExternalEvent em 5-10 commands >1s, CT compliance batch (target 80% ADR-004), `#nullable enable` 100%, E2E tests
+- **Sprint 4** Release v2.8.0 + GTM: pricing público, screenshots, landing page, Dependabot, packages.lock.json
+
+---
+
+## [2.7.7] - 2026-05-25
+
+### Sprint 0 do roadmap v2.8.0 — 6 PRs em 1 dia (auditoria 2026-05-25)
+
+Após auditoria completa do plugin (5 dimensões + 3 senior reviewers,
+artefatos em `.audit/` gitignored), executados os 6 itens "quick wins"
+do Sprint 0. Mudanças cirúrgicas, backward-compatible, zero regressão.
+
+#### Changed (CI hardening — PR #20)
+
+Adaptado patch `CI-HARDENING-APPLY-MANUALLY.patch` (37 dias parado por
+ser pré-rebrand v2.0.0) à estrutura atual do `build.yml`:
+
+- `concurrency` group cancela runs obsoletos no mesmo ref
+- `env` block top-level: `DOTNET_NOLOGO`, `DOTNET_CLI_TELEMETRY_OPTOUT`
+- `timeout-minutes` por job (15/20/10/10)
+- `actions/cache@v4` para NuGet em cada job (reduz restore 45s → 8s)
+- Novo job `build-tool` dedicado ao `tools/EmtKeyGen` (com cache + artifact)
+- `dorny/test-reporter@v1` publica xUnit como check inline na PR
+- `if-no-files-found: error` nos uploads (auditoria #005)
+- TODO multi-Revit matrix preservado para v3.0
+- Deletados: `docs/CI-HARDENING-APPLY-MANUALLY.patch` + `docs/CI-HARDENING-README.md` (obsoletos)
+
+#### Changed (release publish workflow — PR #22)
+
+`release.yml` agora publica `setup.exe` + `checksums.txt` como **Release
+Asset** (visível na página Releases) via `softprops/action-gh-release@v2`.
+Antes só fazia upload como Actions Artifact (Actions UI, 90 dias).
+
+Política preservada: step de publish está atrás do secret-gate de code
+signing. Releases sem cert continuam sem assets (workflow falha em
+"Validate signing secrets"). **Não publicamos release oficial unsigned.**
+
+Novo input `tag_name` em `workflow_dispatch` permite re-publicar release
+antiga quando cert chegar: `gh workflow run release.yml -f tag_name=v2.7.6`.
+
+#### Docs (README sync — PR #21)
+
+3 dessincronizações corrigidas:
+- Linha 105: "851 testes" → "954 testes" (depois "979" no bump v2.7.7)
+- Seção "Versão atual": v2.6.4 → v2.7.6 (depois "v2.7.7") com histórico real
+- Seção "Status": informação stale v2.5 ("8 PASS / 5 WARN") substituída por
+  reflexo honesto da auditoria 2026-05-25
+
+Nova seção "Roadmap & Pricing" com TODO de pricing público em definição
+para v2.8.0 (sem cravar valor — decisão de produto).
+
+#### Docs (ROADMAP rewrite — PR #23)
+
+`docs/ROADMAP.md` reescrita do zero. Antes era 100% obsoleto: refere
+v0.9.0, 22 commands, "8 sprints até v1.0" (real: v2.7.6, 49 commands).
+Substituído por roadmap alinhado a v2.x → v2.8.0 → v3.0 com 5 sprints
+e 12 métricas de sucesso.
+
+#### Test (smoke tests reais — PR #24)
+
+`SteelBIM.Tests/Smoke/SmokeTests.cs` era literal `2 + 2 == 4` + 4
+InlineData de soma. CI verde não validava NADA do plugin.
+
+Substituído por 30 tests reais (6 [Fact] + 1 [Theory] × 25 casos)
+cobrindo 7 áreas: Licensing (boot deps), Core (ADR-001/004 pattern),
+Infrastructure (Sentry/PostHog/Update), Privacy (LGPD), Conversor IFC
+(flagship v2.7.x), PF (módulo crítico), CNC/Trelica/Conexoes.
+
+Suite: 954 → 979 testes, todos passando em 907ms. Build 0 warnings.
+
+#### Feat (IFC Progress + CancellationToken — PR #25)
+
+[ConverterPerfilIfcService.Executar](SteelBIM/Services/Ifc/ConverterPerfilIfcService.cs)
+ganha params opcionais `IProgress<ProgressReport>` + `CancellationToken`.
+Defaults preservam comportamento v2.7.6 100% (backward-compatible).
+
+Loop emite `ProgressReport` a cada 25 elementos (throttle). Cancelamento
+via `ct.ThrowIfCancellationRequested()` → `OperationCanceledException` →
+`Transaction.Dispose()` rollback automático. Tudo commit ou tudo rollback,
+nunca estado parcial.
+
+`IfcConversionHandler` expõe props opt-in (Progress, CancellationToken).
+`ConverterPerfilIfcWindow` **não tocada** — UI wiring (ProgressWindow +
+botão Cancel) fica para Sprint 1/2 v2.8.0. Esta release entrega a API
+correta; próximas PRs consomem via WPF.
+
+Resolve auditoria #008: antes Conversor IFC travava Revit 30-120s em
+galpões com 6000+ elementos sem feedback nem cancel. ADR-004 cumprido.
+
+#### Auditoria 2026-05-25
+
+Auditoria técnica completa de 5 dimensões (Architecture, Testing,
+Security, Performance/UX, Build/CI/Docs) com 3 senior reviewers (Tech
+Lead, Product/GTM, Security/DevOps). 221 achados (22 críticos/altos),
+roadmap consolidado de 10 semanas até v2.8.0 production-grade.
+
+Artefatos em `.audit/` (gitignored — workspace local, contém opiniões
+internas). README atualizado reflete o estado real e aponta para o
+roadmap público em `docs/ROADMAP.md`.
+
+### Não modificado
+
+- `App.cs`, `Commands/*`, `Views/*` (incluindo `ConverterPerfilIfcWindow`
+  e `ProgressWindow`) — preservação intencional do hotfix v2.7.5
+- Estrutura de jobs do CI (preservados os 3 jobs originais + 1 novo)
+- Política "no unsigned in release oficial" (release.yml gating intacto)
 
 ---
 
