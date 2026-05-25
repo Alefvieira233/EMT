@@ -88,14 +88,14 @@ namespace SteelBIM.Views
                 BarTypeSuperiorName = (cmbBarSup.SelectedItem as PfRebarBarTypeOption)?.Name ?? string.Empty,
                 BarTypeInferiorName = (cmbBarInf.SelectedItem as PfRebarBarTypeOption)?.Name ?? string.Empty,
                 BarTypeLateralName = (cmbBarLat.SelectedItem as PfRebarBarTypeOption)?.Name ?? string.Empty,
-                CobrimentoCm = ParseDouble(txtCover.Text, 3.0),
+                CobrimentoCm = NumberParsing.ParseDoubleOrDefault(txtCover.Text, 3.0),
                 ModoLancamento = tabModo.SelectedIndex == 1
                     ? PfRebarPlacementMode.Coordenadas
                     : PfRebarPlacementMode.Automatico,
                 QuantidadeSuperior = ParseInt(txtQtdSup.Text, 2),
                 QuantidadeInferior = ParseInt(txtQtdInf.Text, 2),
                 QuantidadeLateral = ParseInt(txtQtdLat.Text, 0),
-                ComprimentoGanchoCm = ParseDouble(txtGancho.Text, 10.0),
+                ComprimentoGanchoCm = NumberParsing.ParseDoubleOrDefault(txtGancho.Text, 10.0),
                 ModoPonta = cmbModoPonta.SelectedIndex == 0 ? PfBeamBarEndMode.Reta : PfBeamBarEndMode.DobraInterna
             };
 
@@ -182,12 +182,6 @@ namespace SteelBIM.Views
                 : fallback;
         }
 
-        private static double ParseDouble(string text, double fallback)
-        {
-            return TryParseDouble(text, out double value)
-                ? value
-                : fallback;
-        }
 
         private static List<PfBeamBarCoordinate> ParseCoordinates(PfBeamBarsConfig config, string text, out string error)
         {
@@ -211,8 +205,8 @@ namespace SteelBIM.Views
                     return new List<PfBeamBarCoordinate>();
                 }
 
-                if (!TryParseDouble(parts[0].Trim(), out double xCm) ||
-                    !TryParseDouble(parts[1].Trim(), out double yCm))
+                if (!NumberParsing.TryParseDouble(parts[0].Trim(), out double xCm) ||
+                    !NumberParsing.TryParseDouble(parts[1].Trim(), out double yCm))
                 {
                     error = $"Linha {i + 1}: X e Y precisam ser numeros em centimetros.";
                     return new List<PfBeamBarCoordinate>();
@@ -272,21 +266,6 @@ namespace SteelBIM.Views
             return string.Empty;
         }
 
-        private static bool TryParseDouble(string text, out double value)
-        {
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
-                return true;
-
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                return true;
-
-            return double.TryParse(
-                text.Replace(',', '.'),
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out value);
-        }
-
         private void ConfigureLapInputs()
         {
             foreach (int fck in new[] { 20, 25, 30, 35, 40, 45, 50 })
@@ -313,14 +292,14 @@ namespace SteelBIM.Views
         private void FillLapConfig(PfLapSpliceConfig lap)
         {
             lap.Enabled = chkTraspasse.IsChecked == true;
-            lap.ConcreteFckMpa = ParseDouble(cmbFck.SelectedItem as string, 25.0);
+            lap.ConcreteFckMpa = NumberParsing.ParseDoubleOrDefault(cmbFck.SelectedItem as string, 25.0);
             lap.SteelFykMpa = SelectedSteelFyk();
             lap.BarSurface = SelectedBarSurface();
             lap.BondZone = cmbBondZone.SelectedIndex == 1 ? PfBondZone.Ruim : PfBondZone.Boa;
             lap.AnchorageType = SelectedAnchorageType();
-            lap.SplicePercentage = ParseDouble(txtSplicePercent.Text, 50.0);
-            lap.MaxBarLengthCm = ParseDouble(txtMaxBarLength.Text, 1200.0);
-            lap.BarSpacingCm = ParseDouble(txtBarSpacing.Text, 8.0);
+            lap.SplicePercentage = NumberParsing.ParseDoubleOrDefault(txtSplicePercent.Text, 50.0);
+            lap.MaxBarLengthCm = NumberParsing.ParseDoubleOrDefault(txtMaxBarLength.Text, 1200.0);
+            lap.BarSpacingCm = NumberParsing.ParseDoubleOrDefault(txtBarSpacing.Text, 8.0);
         }
 
         private double SelectedSteelFyk()
