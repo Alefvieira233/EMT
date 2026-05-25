@@ -187,6 +187,9 @@
     <!-- v2.4.1 hotfix: regra NBR 6118 9.4.6.1 do rabo de gancho de estribo -->
     <Compile Include="..\SteelBIM\Services\PF\PfStirrupHookRules.cs"
              Link="LinkedSources\Services\PF\PfStirrupHookRules.cs" />
+    <!-- v2.7.9 (auditoria #1): logica pura extraida do PfRebarService (2178 LOC) -->
+    <Compile Include="..\SteelBIM\Services\PF\PfRebarServicePure.cs"
+             Link="LinkedSources\Services\PF\PfRebarServicePure.cs" />
     <Compile Include="..\SteelBIM\Models\PF\PfRebarConfigs.cs"
              Link="LinkedSources\Models\PF\PfRebarConfigs.cs" />
 
