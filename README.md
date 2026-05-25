@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.9-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.10-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-1080%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
@@ -177,15 +177,11 @@ verificação Authenticode.
 
 ## Versão atual
 
-**v2.7.9** (2026-05-25) — histórico completo em [CHANGELOG.md](CHANGELOG.md).
-
-Próxima release: **v2.7.10** (em integração) — Wave 1 da auditoria
-2026-05-25: Conversor IFC com progresso/cancelamento, breadcrumbs Sentry
-sem PII (LGPD), Authenticode verify pós-extract (flag-gated),
-build reproduzível via packages.lock + Dependabot.
+**v2.7.10** (2026-05-25) — histórico completo em [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.7.10** — Wave 1 da auditoria 2026-05-25 (6 PRs cirúrgicos): Conversor IFC com progresso/cancelamento (F1), build reproduzível packages.lock + Dependabot (F2), breadcrumbs Sentry sem PII pra LGPD (F3), Authenticode verify pós-extract flag-gated no auto-update (F4), README marketing-ready (F8), SECURITY.md + SUPPORT.md + fix de templates quebrados (F9). +32 testes (1048 → 1080).
 - **v2.7.9** — Sprint 2/3 estrutural: Nullable annotations projeto-wide + AutoVistaService template ADR-003 (IUIDecisionService injetada) + PfRebarServicePure extraction (resolve auditoria #1 bloqueador crítico, 58 testes novos)
 - **v2.7.8** — Sprint 2/3 quick wins: dead code removal (-219 LOC) + NumberParsing dedup (-43 LOC) + IfcMaterialParser cache (perf hot path Conversor IFC, -240ms)
 - **v2.7.7** — Sprint 0 do roadmap v2.8.0: CI hardening + release publish workflow + smoke tests reais + IFC Progress/Cancel API + ROADMAP+README sync (6 PRs em 1 dia)

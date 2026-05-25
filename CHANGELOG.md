@@ -10,10 +10,92 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 Roadmap v2.8.0 production-grade (ver [docs/ROADMAP.md](docs/ROADMAP.md)):
 
-- **Sprint 1** Hardening security: code signing efetivo (cert Sectigo OV — aguarda Alef encomendar), Authenticode verify pós-extract no auto-update, EULA/Privacy/TOS revisados (aguarda advogado TI), Sentry breadcrumbs scrubbing (LGPD)
-- **Sprint 4** Release v2.8.0 + GTM: pricing público, screenshots, landing page, Dependabot, packages.lock.json
-- **Wave 2 ADR-003:** aplicar template `IUIDecisionService` (de AutoVistaService v2.7.9) em 14 services restantes
-- **PfRebar Strangler Fig completion:** refactor original pra delegar pros 7 métodos do Pure (remove duplicação)
+- **Wave 2** (v2.7.11): PfRebar Strangler Fig completion (delegate ao Pure), ADR-003 template em 5 services restantes (Tercas/PipeRack/Escada/GuardaCorpo/Contraventamento), Pure extractions adicionais NBR PfRebar
+- **Wave 3** (v2.8.0): migração de 3 windows pra MVVM (PfColumnBars/PfBeamBars/NumeracaoItens), refactor DiagramaMontagem, i18n EN/ES (condicional a decisão LATAM)
+- **External-dependent (paralelo):** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
+
+---
+
+## [2.7.10] - 2026-05-25
+
+### Wave 1 da auditoria 2026-05-25 — 6 PRs cirúrgicos consolidados
+
+Auditoria senior identificou 22 achados críticos/altos; Wave 1 fecha
+4 itens de código + 2 de docs/processo, todos LOW-MEDIUM risk e sem
+breaking change.
+
+#### Added
+
+- **(F1) Conversor IFC com Progress + Cancellation** — `ConverterPerfilIfcWindow.xaml.cs`
+  wira `ProgressWindow` (modeless) + `CancellationTokenSource` ao
+  `IfcConversionHandler`. Resolve queixa #1: dialog travava 30-120s sem
+  feedback em modelos > 5000 elementos. Cancel agora interrompe a transação
+  com rollback aplicado. (PR #35)
+
+- **(F2) Build reproduzível** — `RestorePackagesWithLockFile=true` em
+  `SteelBIM.csproj`, `SteelBIM.Tests.csproj` e `tools/EmtKeyGen/EmtKeyGen.csproj`,
+  com `packages.lock.json` commitados (3 arquivos). Dependabot config em
+  `.github/dependabot.yml`: GitHub Actions weekly (SHA pinning) + NuGet
+  monthly em 3 diretórios. (PR #36)
+
+- **(F3) PII scrubbing em breadcrumbs do Sentry (LGPD)** — auditoria §5.4
+  identificou gap: `PiiScrubber` rodava em `SentryEvent.Message` + Exception
+  values + ServerName + stack frame paths, mas NÃO em breadcrumbs (que
+  frequentemente carregam `.rvt` filenames de cliente, paths `C:\Users\<nome>\`,
+  emails). Novo hook `SetBeforeBreadcrumb` em `SentryOptionsBuilder` cria nova
+  instância scrubbed via ctor público (Breadcrumb é imutável em SDK 5.x).
+  +8 testes. (PR #37)
+
+- **(F4) Authenticode verify pós-extract no auto-update (flag-gated)** —
+  auditoria §5.3 defense-in-depth supply chain. SHA256 do ZIP já valida
+  "veio do GitHub release", mas se o repo for comprometido o atacante troca
+  ZIP+manifesto juntos. Novo `WinTrustAuthenticodeVerifier` (P/Invoke
+  `WinVerifyTrust`) verifica chain + hash + timestamp do `SteelBIM.dll`
+  extraído antes do swap. Se inválido → rollback do backup + `ApplyResult.SignatureInvalid`.
+  Flag `AppSettings.AuthenticodeVerifyEnabled` default **FALSE** (cert Sectigo
+  OV em aquisição; ativar quando primeira release assinada sair em v2.7.11).
+  +16 testes. (PR #38)
+
+- **(F9) Política de segurança + canais de suporte** — `SECURITY.md`
+  (disclosure coordenado, SLA 48h, threat model com 6 vetores e mitigations,
+  bug bounty policy) e `SUPPORT.md` (canais por tipo de problema, checklist
+  pré-issue, SLA por tier futuro, beta program, FAQ). Novo issue template
+  `security_disclosure_reminder.yml` redireciona reports públicos pros canais
+  privados. (PR #40)
+
+#### Fixed
+
+- **(F9) Links quebrados nos issue templates** — `config.yml` apontava pra
+  `Alefvieira233/SteelBIM` (repo inexistente); correto é `Alefvieira233/EMT`
+  (3 links quebrados). `bug_report.yml` removeu opções de Revit 2024/2026
+  (só 2025 suportada por TFM), placeholder versão `"1.2.0"` → `"v2.7.10"`,
+  novo dropdown estado da licença. `PULL_REQUEST_TEMPLATE.md` substituiu
+  referência `FerramentaEMT.Tests` (projeto antigo) → `SteelBIM.Tests` +
+  adicionou Release build check + dotnet format check. (PR #40)
+
+#### Changed
+
+- **(F8) README marketing-ready** — tagline em blockquote, seção "Por que
+  SteelBIM existe" (problem statement), tabela de comparação Revit puro /
+  Tekla / SteelBIM em 7 cenários (cotagem treliça BR, estribo NBR §9.4.6.1,
+  EM-08, marcação, DSTV/NC1, cobertura NBR, custo), seção Licenciamento
+  dedicada (trial 7d, perpétua per-machine, HMAC offline), beta program CTA.
+  Badge testes 1048 → 1080. (PR #39)
+
+#### Internal
+
+- Format housekeeping: `dotnet format` auto-fix em 3 arquivos pré-existentes
+  (`ConverterPerfilIfcWindow.xaml.cs`, `IfcConversionHandler.cs`,
+  `AppDialogUIDecisionService.cs`) — artefato da F1 que não pegou no CI
+  por ser stricter check agora.
+
+#### Test counts
+
+1048 → **1080 testes verde** (+32 novos: 8 F3 + 16 F4 + 8 já consolidados).
+
+#### Migração / breaking
+
+Nenhuma. Wave 1 inteira é additive ou flag-gated default-off.
 
 ---
 
