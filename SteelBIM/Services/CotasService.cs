@@ -34,12 +34,9 @@ namespace SteelBIM.Services
 
         /// <summary>
         /// Entry-point chamado por <c>CmdGerarCotasPorAlinhamento</c>.
+        /// Delega para <see cref="ExecutarCotagemAutomatica"/> — ramo "alinhada"
+        /// foi removido em v2.7.8 (era dead code confirmado por 2 auditorias).
         /// </summary>
-        /// <remarks>
-        /// NB (2026-04-29): hoje delega para <see cref="ExecutarCotagemAutomatica"/>,
-        /// nao para <see cref="ExecutarCotagemAlinhada"/> — comportamento herdado, possivel
-        /// dead-code em <c>ExecutarCotagemAlinhada</c>. Issue separada para revisar.
-        /// </remarks>
         public Result<CotagemResumo> Executar(UIDocument uidoc)
         {
             return ExecutarCotagemAutomatica(uidoc);
@@ -49,39 +46,6 @@ namespace SteelBIM.Services
         public Result<CotagemResumo> ExecutarAutomatico(UIDocument uidoc)
         {
             return ExecutarCotagemAutomatica(uidoc);
-        }
-
-        private Result<CotagemResumo> ExecutarCotagemAlinhada(UIDocument uidoc)
-        {
-            if (uidoc is null)
-                return Result<CotagemResumo>.Fail("UIDocument nulo.");
-
-            Document doc = uidoc.Document;
-            View view = doc.ActiveView;
-
-            if (!VistaSuportada(view))
-                return Result<CotagemResumo>.Fail("Este comando funciona em plantas, cortes e elevacoes.");
-
-            List<Element> elementos = ObterElementosSelecionados(uidoc, doc);
-            if (elementos.Count == 0)
-                elementos = PedirSelecaoDeElementos(uidoc, doc);
-
-            if (elementos.Count == 0)
-                return Result<CotagemResumo>.Fail("Nenhum elemento valido selecionado.");
-
-            if (!TentarObterLinhaDeCota(uidoc, elementos, view, out DadosLinhaCota? dadosLinha, out string? erroLinha) || dadosLinha is null)
-            {
-                // user cancelou (Esc) -> erroLinha == null; trecho invalido -> erroLinha preenchido
-                return string.IsNullOrEmpty(erroLinha)
-                    ? Result<CotagemResumo>.Ok(CotagemResumo.CanceladoPeloUsuario())
-                    : Result<CotagemResumo>.Fail(erroLinha);
-            }
-
-            ModoCota? modo = PedirModoCota();
-            if (modo is null)
-                return Result<CotagemResumo>.Ok(CotagemResumo.CanceladoPeloUsuario());
-
-            return CriarCotaAlinhada(uidoc, doc, view, elementos, dadosLinha, "Cotas por Linha", true, modo.Value);
         }
 
         // ---------------------------------------------------------
@@ -154,98 +118,6 @@ namespace SteelBIM.Services
             });
         }
 
-        private Result<CotagemResumo> CriarCotaAlinhada(
-            UIDocument uidoc,
-            Document doc,
-            View view,
-            List<Element> elementos,
-            DadosLinhaCota dadosLinha,
-            string titulo,
-            bool exibirDicasTrecho,
-            ModoCota modoCota)
-        {
-            List<List<ReferenciaCota>> candidatos = modoCota == ModoCota.Faces
-                ? new List<List<ReferenciaCota>> { RemoverDuplicadasPorPosicao(ColetarReferenciasDaLinha(doc, view, elementos, dadosLinha)) }
-                : ColetarCandidatosDeReferenciasDosEixos(doc, view, elementos, dadosLinha);
-
-            bool permitirFallbackAuxiliar = modoCota == ModoCota.Eixos && view is ViewSection;
-            if ((candidatos.Count == 0 || candidatos.All(r => r.Count < 2)) && !permitirFallbackAuxiliar)
-            {
-                string mensagem = "Não foram encontradas referências suficientes para criar a cota.\n\n" +
-                                  "Dicas:\n" +
-                                  "• Verifique se os elementos estão visíveis na vista ativa.\n" +
-                                  "• Elementos sem geometria sólida (p.ex. símbolos 2D) não são suportados.";
-
-                mensagem += exibirDicasTrecho
-                    ? "\n• Clique nos dois extremos do trecho, alinhado com a direção da cota."
-                    : "\n• Se a seleção tiver mais de um alinhamento, rode o comando por grupos.";
-
-                return Result<CotagemResumo>.Fail(mensagem);
-            }
-
-            Dimension? dimensaoCriada = null;
-            string? ultimoErro = null;
-            List<ReferenciaCota>? referenciasUsadas = null;
-            string? erroAuxiliar = null;
-
-            foreach (List<ReferenciaCota> candidato in candidatos.Where(r => r.Count >= 2))
-            {
-                if (TentarCriarDimensao(doc, view, elementos, dadosLinha.Linha, titulo, candidato, out Dimension? dim, out string? erro))
-                {
-                    dimensaoCriada = dim;
-                    referenciasUsadas = candidato;
-                    break;
-                }
-
-                ultimoErro = erro;
-            }
-
-            if (dimensaoCriada is null &&
-                modoCota == ModoCota.Eixos &&
-                view is ViewSection &&
-                TentarCriarDimensaoPorPlanosAuxiliares(doc, view, elementos, dadosLinha, titulo, out Dimension? dimAuxiliar, out erroAuxiliar))
-            {
-                dimensaoCriada = dimAuxiliar;
-                referenciasUsadas = new List<ReferenciaCota>();
-            }
-            else if (dimensaoCriada is null && modoCota == ModoCota.Eixos && view is ViewSection)
-            {
-                ultimoErro = erroAuxiliar;
-            }
-
-            if (dimensaoCriada is null || referenciasUsadas is null)
-            {
-                return Result<CotagemResumo>.Fail(
-                    $"Falha ao criar a cota:\n{ultimoErro ?? "nenhuma combinacao de referencias foi aceita pela API."}");
-            }
-
-            uidoc.Selection.SetElementIds(new List<ElementId> { dimensaoCriada.Id });
-
-            string modoStr = modoCota == ModoCota.Faces ? "Faces" : "Eixos";
-            string resumoSucesso =
-                $"Cota criada com sucesso!\n" +
-                $"Modo              : {modoStr}\n" +
-                $"Elementos cotados : {elementos.Count}\n" +
-                $"Referencias usadas: {referenciasUsadas.Count}";
-
-            return Result<CotagemResumo>.Ok(new CotagemResumo
-            {
-                CotasCriadas = 1,
-                ElementosCotados = elementos.Count,
-                MensagemSucessoFormatada = resumoSucesso,
-            });
-        }
-
-        private ModoCota? PedirModoCota()
-        {
-            CotasModoWindow window = new CotasModoWindow();
-            bool? result = window.ShowDialog();
-            if (result != true)
-                return null;
-
-            return window.UsarFaces ? ModoCota.Faces : ModoCota.Eixos;
-        }
-
         private List<Element> ObterElementosSelecionados(UIDocument uidoc, Document doc)
         {
             return uidoc.Selection.GetElementIds()
@@ -272,97 +144,8 @@ namespace SteelBIM.Services
             }
             catch (Autodesk.Revit.Exceptions.OperationCanceledException ex)
             {
-                Logger.Warn(ex, "CotasService.CriarCotaAlinhada: erro silenciado");
+                Logger.Warn(ex, "CotasService.PedirSelecaoDeElementos: erro silenciado");
                 return new List<Element>();
-            }
-        }
-
-        /// <summary>
-        /// Coleta dois pontos do usuario e devolve a linha de cota correspondente.
-        /// Retorno: <c>true</c> = linha valida; <c>false</c> = (a) user cancelou via Esc
-        /// (<paramref name="erro"/> = null) ou (b) trecho invalido (<paramref name="erro"/>
-        /// com mensagem amigavel). O caller distingue cancel vs erro pela flag de mensagem.
-        /// </summary>
-        private bool TentarObterLinhaDeCota(
-            UIDocument uidoc,
-            List<Element> elementos,
-            View view,
-            out DadosLinhaCota? dadosLinha,
-            out string? erro)
-        {
-            dadosLinha = null;
-            erro = null;
-
-            try
-            {
-                XYZ p1 = uidoc.Selection.PickPoint(
-                    ObjectSnapTypes.Midpoints | ObjectSnapTypes.Endpoints | ObjectSnapTypes.Intersections,
-                    "Clique no PRIMEIRO ponto do trecho a cotar");
-
-                XYZ p2 = uidoc.Selection.PickPoint(
-                    ObjectSnapTypes.Midpoints | ObjectSnapTypes.Endpoints | ObjectSnapTypes.Intersections,
-                    "Clique no SEGUNDO ponto do trecho a cotar");
-
-                XYZ eixoHorizontal = ObterEixoHorizontalDaVista(view);
-                XYZ eixoVertical = ObterEixoVerticalDaVista(view);
-                XYZ delta = p2 - p1;
-                double deltaHorizontal = ProjetarNoEixo(delta, eixoHorizontal);
-                double deltaVertical = ProjetarNoEixo(delta, eixoVertical);
-
-                if (Math.Abs(deltaHorizontal) < 1e-9 && Math.Abs(deltaVertical) < 1e-9)
-                {
-                    erro = "Os pontos informados sao coincidentes.";
-                    return false;
-                }
-
-                XYZ eixo;
-                XYZ normal;
-                double absX = Math.Abs(deltaHorizontal);
-                double absY = Math.Abs(deltaVertical);
-
-                if (absX >= absY)
-                {
-                    eixo = eixoHorizontal;
-                    normal = eixoVertical;
-                    p2 = p1 + eixo.Multiply(deltaHorizontal);
-                }
-                else
-                {
-                    eixo = eixoVertical;
-                    normal = eixoHorizontal;
-                    p2 = p1 + eixo.Multiply(deltaVertical);
-                }
-
-                double proj1 = ProjetarNoEixo(p1, eixo);
-                double proj2 = ProjetarNoEixo(p2, eixo);
-                double eixoMin = Math.Min(proj1, proj2) - ExtensaoLinha;
-                double eixoMax = Math.Max(proj1, proj2) + ExtensaoLinha;
-
-                double sinalLado = DefinirLadoDaCota(elementos, view, p1, p2, normal);
-                double extremoNormal = ObterExtremoNaNormal(elementos, view, normal, sinalLado);
-                double posicaoLinha = extremoNormal + sinalLado * OffsetLinha;
-
-                XYZ pontoInicial = ConstruirPontoNoPlano(eixoMin, posicaoLinha, eixo, normal, p1);
-                XYZ pontoFinal = ConstruirPontoNoPlano(eixoMax, posicaoLinha, eixo, normal, p1);
-
-                if (pontoInicial.DistanceTo(pontoFinal) < 1e-6)
-                {
-                    erro = "O trecho definido e pequeno demais para criar uma cota.";
-                    return false;
-                }
-
-                dadosLinha = new DadosLinhaCota(
-                    Line.CreateBound(pontoInicial, pontoFinal),
-                    eixo, normal, ObterNormalDaVista(view), p1, sinalLado,
-                    Math.Min(proj1, proj2) - ToleranciaIntervalo,
-                    Math.Max(proj1, proj2) + ToleranciaIntervalo);
-
-                return true;
-            }
-            catch (Autodesk.Revit.Exceptions.OperationCanceledException ex)
-            {
-                Logger.Warn(ex, "CotasService.TentarObterLinhaDeCota: erro silenciado");
-                return false;
             }
         }
 
@@ -1362,8 +1145,6 @@ namespace SteelBIM.Services
             el.Category is not null &&
             !el.ViewSpecific &&
             el.get_BoundingBox(null) is not null;
-
-        private enum ModoCota { Faces, Eixos }
 
         private sealed class DadosLinhaCota
         {
