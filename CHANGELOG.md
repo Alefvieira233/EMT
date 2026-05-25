@@ -8,13 +8,132 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Roadmap v2.8.0 production-grade (~10 semanas após v2.7.7, ver
-[docs/ROADMAP.md](docs/ROADMAP.md)):
+Roadmap v2.8.0 production-grade (ver [docs/ROADMAP.md](docs/ROADMAP.md)):
 
-- **Sprint 1** Hardening security: code signing efetivo (cert Sectigo OV pendente), Authenticode verify pós-extract no auto-update, EULA/Privacy/TOS revisados e ativados, Sentry breadcrumbs scrubbing (LGPD)
-- **Sprint 2** Arquitetura ADR-003: AutoVistaService como template + ViewModels top-3 windows + ListaMateriaisExportService Strangler Fig + quick wins (delete `ExecutarCotagemAlinhada`, `CoordinateParsingService`, `#nullable enable` top 20)
-- **Sprint 3** Testes + performance: PfRebarServiceTests 100+ tests, hot path caches, ExternalEvent em 5-10 commands >1s, CT compliance batch (target 80% ADR-004), `#nullable enable` 100%, E2E tests
+- **Sprint 1** Hardening security: code signing efetivo (cert Sectigo OV — aguarda Alef encomendar), Authenticode verify pós-extract no auto-update, EULA/Privacy/TOS revisados (aguarda advogado TI), Sentry breadcrumbs scrubbing (LGPD)
 - **Sprint 4** Release v2.8.0 + GTM: pricing público, screenshots, landing page, Dependabot, packages.lock.json
+- **Wave 2 ADR-003:** aplicar template `IUIDecisionService` (de AutoVistaService v2.7.9) em 14 services restantes
+- **PfRebar Strangler Fig completion:** refactor original pra delegar pros 7 métodos do Pure (remove duplicação)
+
+---
+
+## [2.7.9] - 2026-05-25
+
+### Sprint 2/3 estrutural do roadmap v2.8.0 — 3 PRs cirúrgicos
+
+3 itens deferred da v2.7.8 (Sprint 2/3 estruturais) executados em sessão
+dedicada. Auditoria 2026-05-25 reportou estes como itens de maior valor
+arquitetural restantes antes da v2.8.0 production-grade.
+
+#### Changed (Nullable annotations projeto-wide — PR #31)
+
+`SteelBIM.csproj` e `SteelBIM.Tests.csproj`: `<Nullable>disable</Nullable>`
+→ `<Nullable>annotations</Nullable>`. Sintaxe `T?` disponível em qualquer
+arquivo do projeto; warnings ficam OFF por default — arquivos individuais
+opt-in com `#nullable enable` no topo para ganhar proteção completa.
+
+Escopo original (enable global) era inviável: build gerou 1250 warnings
+em 302 arquivos (~40h de triagem manual). Estratégia pragmática preserva
+caminho aberto pra null-safety sem big-bang.
+
+**8 bugs latentes** surface-detected e corrigidos:
+
+- `ProgressReporter` constructors: param `inner` agora `IProgress<>?`
+  (comment na linha 51 documentava "null permitido — fica no-op"; agora
+  signature reflete)
+- `Logger.{Debug,Info,Warn,Error,Fatal}` com `params object[]`: mudado pra
+  `params object?[]` (Serilog aceita null args; callsites como
+  `Logger.Warn("...{Id}", elem.Id?.Value)` agora compilam sem cast)
+- `MarcarPecasSignatureBuilder.{BuildTypeKey,BuildMaterialKey}`: params
+  agora `string?` (métodos já tratavam null via `IsNullOrWhiteSpace`)
+
+**14 warnings xUnit1012** em test files: `[InlineData(null, ...)]` com
+params declarados `string` — mudado pra `string?` em 8 arquivos.
+
+#### Refactored (AutoVistaService template ADR-003 — PR #32)
+
+PRIMEIRO service do projeto a desacoplar `AppDialogService` static via
+interface injetada. Estabelece template pra outros 14 services seguirem.
+
+**Novos:**
+
+- `SteelBIM/Core/IUIDecisionService.cs` — interface public com 4 métodos:
+  `Info`, `Warn`, `Error` (fire-and-forget) + `Confirm` (retorna `bool`)
+- `SteelBIM/Utils/AppDialogUIDecisionService.cs` — internal sealed
+  adapter que implementa via `AppDialogService` static (produção)
+- 6 testes provando que interface é mockável via Moq
+  (`SteelBIM.Tests/Core/IUIDecisionServiceTests.cs`)
+
+**Refactor AutoVistaService:**
+
+- Constructor opcional aceita `IUIDecisionService?` (default = adapter
+  de produção — backward-compat 100% com 3 callers existentes:
+  `CmdGerarVistaPeca`, `CmdPfElevacaoFormaVigas`, `CmdPfElevacaoFormaPilares`)
+- 5 chamadas diretas `AppDialogService.Show*` → `_ui.*`
+- Zero diff funcional pro usuário; service agora testável via mock
+
+#### Tests (PfRebarServicePure extraction — PR #33)
+
+Auditoria #1 (bloqueador crítico): `PfRebarService` (2178 LOC, núcleo PF)
+tinha **zero testes diretos** — engenheiro pode entregar armadura errada
+e parede desabar. Inicia cobertura via Strangler Fig.
+
+**Análise prévia** (Explore agent dedicado): 86% do service é Revit-bound
+(`Document`/`Element`/`Transaction`), 6.5% (141 LOC) é lógica pura extraível.
+
+**Novo `SteelBIM/Services/PF/PfRebarServicePure.cs`** (200 LOC):
+
+- `public static class`, 100% sem deps Revit
+- Contract: tudo em milímetros (mm); caller converte feet↔mm
+- `BarRange` readonly struct
+- 2 constantes documentadas: `MinSegmentMm=50`, `MinPieceMm=300`
+- 7 métodos puros: `BuildLapRangesMm`, `DistributePositionsMm`,
+  `NormalizeText`, `LimparMensagem`, `FormatDiameterToken`,
+  `RadiansToDegrees`, `DegreesToRadians`
+
+**`SteelBIM.Tests/Services/PF/PfRebarServicePureTests.cs`** (346 LOC):
+
+- **58 testes** (29 Fact + Theory casos), todos verdes em 31ms
+- BuildLapRanges: 8 testes cobrindo trecho-vazio, cabe-inteiro, multi-pieces,
+  stagger 0/1/negativo, config inválida (throw), invariante max-length,
+  invariante overlap=lap
+- DistributePositions: 6 testes cobrindo count<=0, range pequeno, count=1/2,
+  espaçamento uniforme
+- NormalizeText: 12 InlineData (case, diacríticos, cedilha, whitespace,
+  especiais, null/empty)
+- LimparMensagem: 8 InlineData (trim, quebras de linha, null/empty fallback)
+- FormatDiameterToken: 6 Theory + 1 regression test pt-BR
+- RadiansToDegrees/DegreesToRadians: 12 Theory + roundtrip
+- Constantes: 2 fact documentando MinSegmentMm/MinPieceMm
+
+**Strangler Fig intencional:** `PfRebarService.cs` continua com código
+original intacto (2178 LOC, zero risco regressão). Pure existe paralelo
+— futura PR pode refatorar original pra delegar pro Pure, removendo
+duplicação.
+
+#### Stats
+
+- Build Release: **0 erros / 0 warnings** (TreatWarningsAsErrors)
+- Testes: **984 → 1048 verdes** (+64: 6 IUIDecisionService + 58 PfRebar)
+- Suite roda em 847ms
+- ADR-003 compliance: AutoVistaService = 1º service do template
+- PfRebar cobertura: 0% → ~15% (parte pura agora testada)
+
+#### Não modificado (preservação intencional)
+
+- `PfRebarService.cs` (2178 LOC) — Strangler Fig deixa original intacto
+- `App.cs`, `Commands/*`, `Views/*` (incluindo `ConverterPerfilIfcWindow`,
+  `ProgressWindow`) — hotfix v2.7.5 IFC dialog preservado
+- 14 outros services com `AppDialogService` direto — backlog wave 2
+
+#### Deferred (não cabia no escopo cirúrgico)
+
+- Refactor `PfRebarService` pra delegar pros 7 métodos do Pure
+  (Strangler Fig completion — remove duplicação)
+- Wave 2 ADR-003: 14 outros services (TercasService, PipeRackService,
+  EscadaService, TrelicaService, GuardaCorpoService, etc.)
+- `ValidateMinimumBarSpacing` extraction (usa `XYZ` Revit type — requer
+  refactor pra primitive tuples, fora do contrato Pure atual)
 
 ---
 
