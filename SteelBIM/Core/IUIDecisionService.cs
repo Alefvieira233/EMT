@@ -1,4 +1,4 @@
-namespace SteelBIM.Core
+﻿namespace SteelBIM.Core
 {
     /// <summary>
     /// v2.7.9 (ADR-003 template): abstracao pra dialogo com usuario via UI,
