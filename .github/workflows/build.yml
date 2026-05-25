@@ -7,10 +7,27 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+# v2.7.7 hardening: cancela runs obsoletos no mesmo ref pra economizar minutos.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# v2.7.7 hardening: silencia banner do dotnet em logs + opt-out de telemetria
+# nos runners (acelera startup minor + privacidade).
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # TODO (v2.7.7+): ativar secret apos configurar LICENSE_HMAC_SECRET em
+  # GitHub > Settings > Secrets > Actions. Sem isso, LicenseSecretProvider
+  # cai no fallback DEV_ONLY (logs emitem warning [Licensing] Segredo HMAC
+  # nao externalizado, mas build continua verde).
+  # EMT_LICENSE_SECRET: ${{ secrets.LICENSE_HMAC_SECRET }}
+
 jobs:
   build-main:
     name: Build SteelBIM (Release)
     runs-on: windows-latest
+    timeout-minutes: 15
     env:
       # Sinaliza pro csproj usar PackageReference Nice3point em vez do
       # HintPath local do Revit 2025. Ver docs/ADR/ADR-005-ci-revit-stubs.md.
@@ -24,6 +41,14 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
+
+      # v2.7.7: cache NuGet acelera restore de ~45s -> ~8s em PRs repetidos.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-main-${{ hashFiles('SteelBIM/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-main-
 
       - name: Show .NET info
         run: dotnet --info
@@ -39,6 +64,7 @@ jobs:
   build-tests:
     name: Build & Test SteelBIM.Tests
     runs-on: windows-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -48,6 +74,14 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
+
+      # v2.7.7: cache NuGet (key separada de build-main por hashFiles distinto).
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-tests-${{ hashFiles('SteelBIM.Tests/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-tests-
 
       - name: Restore Tests
         working-directory: SteelBIM.Tests
@@ -59,7 +93,12 @@ jobs:
 
       - name: Run Tests
         working-directory: SteelBIM.Tests
-        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+        run: >
+          dotnet test --configuration Release --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --logger "console;verbosity=normal"
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
 
       - name: Upload test results
         uses: actions/upload-artifact@v6
@@ -67,10 +106,59 @@ jobs:
         with:
           name: test-results
           path: SteelBIM.Tests/TestResults/
+          # v2.7.7 hardening (auditoria #005): se Test step crashar antes de
+          # criar TestResults/, upload silencia (exit 0) e PR fica verde
+          # apesar de testes quebrados. 'error' faz upload falhar em vez de
+          # silenciar — bug fica visivel no CI summary.
+          if-no-files-found: error
+          retention-days: 14
+
+      # v2.7.7: publica resultado xUnit como check inline na PR (sumario visivel
+      # sem precisar baixar artifact). continue-on-error pq plugin do dorny
+      # pode falhar em parsing edge cases — nao queremos quebrar build por isso.
+      - name: Test summary (report)
+        uses: dorny/test-reporter@v1
+        if: always()
+        continue-on-error: true
+        with:
+          name: xUnit Tests
+          path: SteelBIM.Tests/TestResults/*.trx
+          reporter: dotnet-trx
+
+  # v2.7.7: job dedicado ao EmtKeyGen (tool em tools/EmtKeyGen). Antes era
+  # compilado implicitamente pelo build da solution; agora tem job proprio
+  # com cache + artifact upload (uteis pra auditoria HMAC offline).
+  build-tool:
+    name: Build EmtKeyGen
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-keygen-${{ hashFiles('tools/EmtKeyGen/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-keygen-
+      - name: Restore
+        run: dotnet restore tools/EmtKeyGen/EmtKeyGen.csproj
+      - name: Build EmtKeyGen (Release)
+        run: dotnet build tools/EmtKeyGen/EmtKeyGen.csproj -c Release --no-restore
+      - name: Upload EmtKeyGen artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: EmtKeyGen-${{ github.sha }}
+          path: tools/EmtKeyGen/bin/Release/
+          retention-days: 7
+          if-no-files-found: error
 
   lint:
     name: Code Quality (dotnet format)
     runs-on: windows-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -82,3 +170,8 @@ jobs:
         # Removido continue-on-error em v2.0.2 - apos limpeza de formatting
         # em SteelBIM.Tests. Build deve falhar honesto se formatting quebrar.
         run: dotnet format --verify-no-changes --verbosity diagnostic
+
+# TODO (multi-Revit, v3.0 fase 1): job matrix building against Revit 2024 /
+# 2025 / 2026 reference assemblies. Depende de converter SteelBIM.csproj
+# para multi-target (net48;net8.0-windows) e publicar/shimar RevitAPI.dll
+# por versao. Plano herdado do patch original 2026-04-18.
