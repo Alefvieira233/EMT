@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using Sentry;
 using SteelBIM.Infrastructure.CrashReporting;
@@ -164,6 +165,133 @@ namespace SteelBIM.Tests.Infrastructure.CrashReporting
             scrubbed.Should().Contain("<EMAIL>");
             scrubbed.Should().Contain(@"<USER>\AppData\file.log");
             scrubbed.Should().NotContain("maria");
+        }
+
+        // ---------- ScrubBreadcrumb(...) — v2.7.10 LGPD ----------
+
+        [Fact]
+        public void ScrubBreadcrumb_returns_null_when_input_is_null()
+        {
+            Breadcrumb result = SentryOptionsBuilder.ScrubBreadcrumb(null);
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_substitutes_email_in_message()
+        {
+            Breadcrumb original = new Breadcrumb(
+                message: "Usuario joao@empresa.com abriu modelo",
+                type: "default");
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            scrubbed.Should().NotBeNull();
+            scrubbed.Message.Should().Contain("<EMAIL>");
+            scrubbed.Message.Should().NotContain("joao@empresa.com");
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_substitutes_windows_path_and_rvt_filename_in_message()
+        {
+            Breadcrumb original = new Breadcrumb(
+                message: "Abriu C:\\Users\\joao\\Desktop\\ProjetoCliente.rvt",
+                type: "default");
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            scrubbed.Should().NotBeNull();
+            scrubbed.Message.Should().Contain(@"<USER>\Desktop\<REVIT_FILE>.rvt");
+            scrubbed.Message.Should().NotContain("joao");
+            scrubbed.Message.Should().NotContain("ProjetoCliente");
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_preserves_type_category_and_level()
+        {
+            Breadcrumb original = new Breadcrumb(
+                message: "msg sem PII",
+                type: "navigation",
+                data: null,
+                category: "ui.click",
+                level: BreadcrumbLevel.Warning);
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            scrubbed.Should().NotBeNull();
+            scrubbed.Type.Should().Be("navigation");
+            scrubbed.Category.Should().Be("ui.click");
+            scrubbed.Level.Should().Be(BreadcrumbLevel.Warning);
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_scrubs_pii_in_data_values()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>
+            {
+                { "user", "alef@emt.com.br" },
+                { "path", "C:\\Users\\alef\\AppData\\Local\\app.log" },
+                { "level", "warning" },
+            };
+            Breadcrumb original = new Breadcrumb(
+                message: "no pii",
+                type: "default",
+                data: data);
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            scrubbed.Should().NotBeNull();
+            scrubbed.Data.Should().NotBeNull();
+            scrubbed.Data["user"].Should().Be("<EMAIL>");
+            scrubbed.Data["path"].Should().Be(@"<USER>\AppData\Local\app.log");
+            scrubbed.Data["level"].Should().Be("warning"); // sem PII, intocado
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_preserves_data_keys()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>
+            {
+                { "email_address", "joao@x.com" },
+                { "user_path", "C:\\Users\\joao\\file.log" },
+            };
+            Breadcrumb original = new Breadcrumb(
+                message: "msg",
+                type: "default",
+                data: data);
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            // Keys sao identificadores (nao PII) — preservados intactos.
+            scrubbed.Data.Keys.Should().Contain("email_address");
+            scrubbed.Data.Keys.Should().Contain("user_path");
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_handles_null_data_dictionary()
+        {
+            Breadcrumb original = new Breadcrumb(
+                message: "joao@x.com falhou",
+                type: "default",
+                data: null);
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            scrubbed.Should().NotBeNull();
+            scrubbed.Message.Should().Contain("<EMAIL>");
+            scrubbed.Data.Should().BeNull();
+        }
+
+        [Fact]
+        public void ScrubBreadcrumb_handles_null_message()
+        {
+            Breadcrumb original = new Breadcrumb(
+                message: null,
+                type: "default");
+
+            Breadcrumb scrubbed = SentryOptionsBuilder.ScrubBreadcrumb(original);
+
+            scrubbed.Should().NotBeNull();
+            scrubbed.Message.Should().BeNull();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Sentry;
@@ -62,6 +63,15 @@ namespace SteelBIM.Infrastructure.CrashReporting
                 string licenseState = ResolveLicenseStateSafely(licenseStateProvider);
                 return ScrubAndTag(evt, release, licenseState);
             });
+
+            // v2.7.10 (auditoria 2026-05-25 #5.4): scrub PII em breadcrumbs.
+            // Hook publico SetBeforeBreadcrumb roda quando o breadcrumb e
+            // adicionado (vs BeforeSend que e no envio do evento) — mais
+            // cedo, menos chance de leak via path codepath alternativo.
+            // Resolve gap LGPD: breadcrumbs nao passavam pelo PiiScrubber,
+            // podendo levar filename do cliente (".rvt") ou path de usuario
+            // em mensagens de log que viravam breadcrumbs.
+            options.SetBeforeBreadcrumb(ScrubBreadcrumb);
 
             return options;
         }
@@ -191,6 +201,68 @@ namespace SteelBIM.Infrastructure.CrashReporting
             {
                 // Defensivo — Sentry.SentryStackFrame API surface pode variar.
             }
+        }
+
+        /// <summary>
+        /// v2.7.10 (auditoria 2026-05-25 #5.4): scrub PII em breadcrumbs
+        /// individuais. Hook registrado em <see cref="Build"/> via
+        /// SetBeforeBreadcrumb — roda no momento da adicao do breadcrumb.
+        ///
+        /// Breadcrumb e imutavel em Sentry SDK 5.x (Message/Data sao init-only,
+        /// Type/Category/Level/Timestamp sao read-only). Por isso retornamos
+        /// uma NOVA instancia construida via ctor publico, preservando
+        /// type/category/level/data-keys mas scrubbing Message + values de Data.
+        ///
+        /// Trade-off: o ctor publico nao aceita timestamp, entao o novo
+        /// breadcrumb tem timestamp = "agora". Como o hook roda no momento
+        /// da adicao (~ms apos a criacao do original), a perda de precisao
+        /// e sub-segundo — irrelevante para ordering cronologico em crash report.
+        ///
+        /// Retorna null se input for null (defensivo). Nunca filtra (sempre
+        /// retorna instancia, nao descarta breadcrumbs).
+        /// </summary>
+        public static Breadcrumb ScrubBreadcrumb(Breadcrumb original)
+        {
+            if (original == null)
+                return null;
+
+            try
+            {
+                string scrubbedMessage = PiiScrubber.Scrub(original.Message);
+                IReadOnlyDictionary<string, string> scrubbedData = ScrubBreadcrumbData(original.Data);
+
+                return new Breadcrumb(
+                    message: scrubbedMessage,
+                    type: original.Type,
+                    data: scrubbedData,
+                    category: original.Category,
+                    level: original.Level);
+            }
+            catch
+            {
+                // Sentry SDK pode mudar API entre patches. Falha aqui nao
+                // deve quebrar a captura do crash — retorna original
+                // (PII pode passar, mas crash report continua chegando).
+                return original;
+            }
+        }
+
+        /// <summary>
+        /// Helper para scrub do dicionario Data do breadcrumb. Aplica
+        /// PiiScrubber em cada value (keys sao identificadores, nao PII).
+        /// Null/vazio -> null/vazio (nao aloca dicionario novo).
+        /// </summary>
+        private static IReadOnlyDictionary<string, string> ScrubBreadcrumbData(IReadOnlyDictionary<string, string> data)
+        {
+            if (data == null || data.Count == 0)
+                return data;
+
+            Dictionary<string, string> scrubbed = new Dictionary<string, string>(data.Count);
+            foreach (KeyValuePair<string, string> kv in data)
+            {
+                scrubbed[kv.Key] = PiiScrubber.Scrub(kv.Value);
+            }
+            return scrubbed;
         }
 
         private static string ResolveLicenseStateSafely(Func<string> provider)
