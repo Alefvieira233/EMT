@@ -10,9 +10,62 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 Roadmap v2.8.0 production-grade (ver [docs/ROADMAP.md](docs/ROADMAP.md)):
 
-- **Wave 2** (v2.7.11): PfRebar Strangler Fig completion (delegate ao Pure), ADR-003 template em 5 services restantes (Tercas/PipeRack/Escada/GuardaCorpo/Contraventamento), Pure extractions adicionais NBR PfRebar
 - **Wave 3** (v2.8.0): migração de 3 windows pra MVVM (PfColumnBars/PfBeamBars/NumeracaoItens), refactor DiagramaMontagem, i18n EN/ES (condicional a decisão LATAM)
 - **External-dependent (paralelo):** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
+- **F7 dropped:** MSI WiX cancelado por decisão do escritório (mantém setup .exe atual indefinidamente)
+
+---
+
+## [2.7.11] - 2026-05-25
+
+### Wave 2 da auditoria 2026-05-25 — 3 PRs estruturais
+
+Wave 2 foca em **redução de duplicação + ADR-003 'services mudos'**.
+Plano original tinha F7 (MSI WiX) mas foi descartado nesta sessão por
+decisão do escritório (mantém setup .exe). Wave 2 entrega F5 + F6 + F10.
+
+#### Refactored
+
+- **(F5) PfRebar Strangler Fig completion** ([#42](https://github.com/Alefvieira233/EMT/pull/42)) —
+  auditoria #1 bloqueador. v2.7.9 extraiu `PfRebarServicePure` mas o
+  `PfRebarService.cs` original ainda tinha a **lógica duplicada** como
+  `private static`. F5 fecha o Strangler Fig: lógica vive apenas no Pure,
+  original delega via wrappers feet↔mm. Substituídos 7 métodos + 1 const
+  (`MinSegmentMm` agora aponta pra `PfRebarServicePure.MinSegmentMm`).
+  Net **-30 LOC**.
+
+- **(F6) ADR-003 template em 4 services** ([#43](https://github.com/Alefvieira233/EMT/pull/43)) —
+  `TercasService`, `PipeRackService`, `EscadaService`, `GuardaCorpoService`
+  migrados pra `IUIDecisionService` injetável (template de `AutoVistaService`
+  v2.7.9). `ContraventamentoPlanoService` já era ADR-003 compliant pré-F6
+  (usava callback `Func<bool>`). **20 callsites refatorados em 4 services.**
+  Ctor opcional preserva backward compat com `new XService()` sem args.
+
+- **(F10) Extrações NBR adicionais no Pure** ([#44](https://github.com/Alefvieira233/EMT/pull/44)) —
+  5 novos métodos puros cobrindo regras NBR 6118: `ClampCoverCm` (§7.4.7.1),
+  `EffectiveCoverCm` (§7.4.7.5), `MinimumClearSpacingMm` (§18.3.2.2),
+  `IsBarSpacingValid`, `CalculateLinearSpacingMm`, `CalculateMaxSpacingFallback`.
+  `ValidateMinimumBarSpacing` + `ApplyLinearLayout` + `ApplyMaximumSpacingLayout`
+  delegam pros Pure (loop O(n²) de menor distância XYZ fica no service
+  por depender de Revit).
+
+#### Test counts
+
+1080 → **1110 testes verde** (+30 novos no `PfRebarServicePureTests`).
+`PfRebarServicePure` tests passam de 58 → 88.
+
+#### Migração / breaking
+
+Nenhuma. Wave 2 é 100% refactor: comportamento end-to-end preservado.
+Tests do Pure (58→88) garantem o algoritmo; tests dos services
+inalterados porque a interface pública não mudou.
+
+#### Roadmap deferido
+
+- **F7 (MSI installer WiX)** — descartado nesta sessão por decisão do
+  escritório (mantém setup .exe indefinidamente). 12-20h economizadas.
+- **Authenticode flag default TRUE** — adiado pra release após cert
+  Sectigo OV ser ativado. Por ora continua `false` em v2.7.11.
 
 ---
 
