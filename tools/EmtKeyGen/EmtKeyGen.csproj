@@ -11,6 +11,8 @@
     <PlatformTarget>x64</PlatformTarget>
     <!-- Necessario para acessar Microsoft.Win32.Registry e DPAPI -->
     <UseWindowsForms>false</UseWindowsForms>
+    <!-- v2.7.10: build reproducivel via lock file. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <!--

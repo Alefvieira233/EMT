@@ -1,0 +1,66 @@
+# v2.7.10 (auditoria 2026-05-25 #003): Dependabot config.
+#
+# Automatiza:
+# - GitHub Actions: auto-pin SHA das third-party actions (vs @v5 mutavel)
+# - NuGet: alerta sobre updates dos packages monthly
+#
+# Configuracao conservadora: weekly pra GitHub Actions (mais agil — vulnerabilidade
+# de action espalha rapido), monthly pra NuGet (changes maiores, prefere review
+# manual). Limites baixos pra evitar PR storm.
+
+version: 2
+updates:
+  # GitHub Actions — pin SHA + alerta de breaking changes
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  # NuGet packages do plugin
+  - package-ecosystem: "nuget"
+    directory: "/SteelBIM"
+    schedule:
+      interval: "monthly"
+      day: "first"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "nuget"
+
+  # NuGet packages dos testes
+  - package-ecosystem: "nuget"
+    directory: "/SteelBIM.Tests"
+    schedule:
+      interval: "monthly"
+      day: "first"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "nuget"
+      - "tests"
+
+  # NuGet packages do EmtKeyGen tool
+  - package-ecosystem: "nuget"
+    directory: "/tools/EmtKeyGen"
+    schedule:
+      interval: "monthly"
+      day: "first"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "nuget"
+      - "tools"

@@ -18,6 +18,10 @@
 		<PlatformTarget>x64</PlatformTarget>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<!-- v2.7.10: gera packages.lock.json pra build reproducivel.
+		     Versoes NuGet ficam pinned no lock file; restore com lock mode strict
+		     falha se houver discrepancia (caso PackageReference mude sem regenerar lock). -->
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<DeployDir>$(MSBuildProjectDirectory)\artifacts\deploy\$(Configuration)\$(TargetFramework)\</DeployDir>
 		<!-- Quality gates -->
 		<TreatWarningsAsErrors Condition="'$(Configuration)'=='Release'">true</TreatWarningsAsErrors>

@@ -12,6 +12,8 @@
     <PlatformTarget>x64</PlatformTarget>
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <!-- v2.7.10: build reproducivel via lock file. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>
