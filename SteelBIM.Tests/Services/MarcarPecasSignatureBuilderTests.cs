@@ -23,7 +23,7 @@ namespace SteelBIM.Tests.Services
         [InlineData(null, "Default", "?|Default")]
         [InlineData("W12X26", null, "W12X26|?")]
         [InlineData("  W12X26  ", "  Default  ", "W12X26|Default")]
-        public void BuildTypeKey_TratasNulosEWhitespace(string fam, string nome, string esperado)
+        public void BuildTypeKey_TratasNulosEWhitespace(string? fam, string? nome, string esperado)
         {
             Assert.Equal(esperado, MarcarPecasSignatureBuilder.BuildTypeKey(fam, nome));
         }
@@ -38,7 +38,7 @@ namespace SteelBIM.Tests.Services
         [InlineData("  ", "<sem>")]
         [InlineData("Aco A36", "Aco A36")]
         [InlineData("  Aco A36  ", "Aco A36")]
-        public void BuildMaterialKey_TratasNulosEWhitespace(string mat, string esperado)
+        public void BuildMaterialKey_TratasNulosEWhitespace(string? mat, string esperado)
         {
             Assert.Equal(esperado, MarcarPecasSignatureBuilder.BuildMaterialKey(mat));
         }

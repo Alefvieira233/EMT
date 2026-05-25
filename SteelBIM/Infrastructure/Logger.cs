@@ -99,24 +99,28 @@ namespace SteelBIM.Infrastructure
         // Atalhos delegados (para nao precisar fazer using Serilog em todo lado)
         // ---------------------------------------------------------------
 
+        // v2.7.9: params arrays anotados como object?[] — Serilog aceita null args
+        // naturalmente em template interpolation. Necessario pra projeto rodar em
+        // <Nullable>annotations</Nullable> sem forcar callers a fazer null-coalesce
+        // em todos os logs (ex: elem.Id?.Value vira object? quando boxed).
         public static void Debug(string message) => Log.Debug(message);
-        public static void Debug(string template, params object[] args) => Log.Debug(template, args);
+        public static void Debug(string template, params object?[] args) => Log.Debug(template, args);
 
         public static void Info(string message) => Log.Information(message);
-        public static void Info(string template, params object[] args) => Log.Information(template, args);
+        public static void Info(string template, params object?[] args) => Log.Information(template, args);
 
         public static void Warn(string message) => Log.Warning(message);
-        public static void Warn(string template, params object[] args) => Log.Warning(template, args);
+        public static void Warn(string template, params object?[] args) => Log.Warning(template, args);
         public static void Warn(Exception ex, string message) => Log.Warning(ex, message);
-        public static void Warn(Exception ex, string template, params object[] args) => Log.Warning(ex, template, args);
+        public static void Warn(Exception ex, string template, params object?[] args) => Log.Warning(ex, template, args);
 
         public static void Error(string message) => Log.Error(message);
-        public static void Error(string template, params object[] args) => Log.Error(template, args);
+        public static void Error(string template, params object?[] args) => Log.Error(template, args);
         public static void Error(Exception ex, string message) => Log.Error(ex, message);
-        public static void Error(Exception ex, string template, params object[] args) => Log.Error(ex, template, args);
+        public static void Error(Exception ex, string template, params object?[] args) => Log.Error(ex, template, args);
 
         public static void Fatal(string message) => Log.Fatal(message);
         public static void Fatal(Exception ex, string message) => Log.Fatal(ex, message);
-        public static void Fatal(Exception ex, string template, params object[] args) => Log.Fatal(ex, template, args);
+        public static void Fatal(Exception ex, string template, params object?[] args) => Log.Fatal(ex, template, args);
     }
 }

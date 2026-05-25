@@ -4,7 +4,15 @@
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF> <!-- enable WPF assemblies for BitmapImage -->
 		<UseWindowsForms>true</UseWindowsForms> <!-- v2.2.0: ColorDialog do seletor de cor por fase (Sequenciamento BIM) -->
-		<Nullable>disable</Nullable>
+		<!-- v2.7.9 (auditoria 2026-05-25): nullable annotations ativadas projeto-wide
+		     (sintaxe T? disponivel em qualquer arquivo). Warnings ficam OFF por
+		     default — arquivos individuais opt-in com '#nullable enable' no topo
+		     pra ganhar protecao completa. Migracao gradual; tentativa de big-bang
+		     gerava 1250 warnings em 302 arquivos (~40h de triagem).
+		     Opt-in atual: Core/, Utils/NumberParsing, Licensing/ (parcial),
+		     Services modulares (IfcMaterialParser, CotasService refatorada), e
+		     Models/* nesta release. -->
+		<Nullable>annotations</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<LangVersion>latest</LangVersion>
 		<PlatformTarget>x64</PlatformTarget>

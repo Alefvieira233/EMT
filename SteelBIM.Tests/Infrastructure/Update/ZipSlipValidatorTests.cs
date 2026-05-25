@@ -46,7 +46,7 @@ namespace SteelBIM.Tests.Infrastructure.Update
         [Theory]
         [InlineData("")]
         [InlineData(null)]
-        public void IsSafeEntryName_rejeita_nome_vazio_ou_null(string name)
+        public void IsSafeEntryName_rejeita_nome_vazio_ou_null(string? name)
         {
             ZipSlipValidator.IsSafeEntryName(name).Should().BeFalse();
         }

@@ -41,7 +41,7 @@ namespace SteelBIM.Tests.Infrastructure.Update
         [InlineData("v")]
         [InlineData("-1.0.0")]
         [InlineData("1.-2.0")]
-        public void TryParse_rejeita_formatos_invalidos(string raw)
+        public void TryParse_rejeita_formatos_invalidos(string? raw)
         {
             bool ok = SemVerComparer.TryParse(raw, out SemVer _);
             ok.Should().BeFalse();

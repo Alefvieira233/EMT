@@ -35,18 +35,20 @@ namespace SteelBIM.Core
     /// </summary>
     public sealed class ProgressReporter
     {
-        private readonly IProgress<ProgressReport> _inner;
+        // v2.7.9: nullable annotated. inner aceita null (comportamento no-op) — contract
+        // explicitado na assinatura agora que o projeto esta em <Nullable>annotations</Nullable>.
+        private readonly IProgress<ProgressReport>? _inner;
         private readonly int _throttleMs;
         private readonly Stopwatch _watch;
         private readonly CancellationToken _ct;
         private long _lastEmitMs;
 
-        public ProgressReporter(IProgress<ProgressReport> inner, int throttleMs = 100)
+        public ProgressReporter(IProgress<ProgressReport>? inner, int throttleMs = 100)
             : this(inner, throttleMs, CancellationToken.None)
         {
         }
 
-        public ProgressReporter(IProgress<ProgressReport> inner, int throttleMs, CancellationToken cancellationToken)
+        public ProgressReporter(IProgress<ProgressReport>? inner, int throttleMs, CancellationToken cancellationToken)
         {
             _inner = inner; // null permitido — fica no-op (uso mais simples do caller)
             _throttleMs = throttleMs < 0 ? 0 : throttleMs;

@@ -31,7 +31,7 @@ namespace SteelBIM.Tests.Services.Ifc
         [InlineData("", "")]
         [InlineData("   ", "")]
         [InlineData(null, "")]
-        public void ExtrairNomeSecao_AceitaPerfisDeAco(string entrada, string esperado)
+        public void ExtrairNomeSecao_AceitaPerfisDeAco(string? entrada, string esperado)
         {
             Assert.Equal(esperado, IfcMaterialParser.ExtrairNomeSecao(entrada));
         }

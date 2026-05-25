@@ -32,7 +32,11 @@ namespace SteelBIM.Services
         /// per-document e duas pecas idênticas em projetos diferentes
         /// recebem IDs diferentes, quebrando dedup inter-projeto.
         /// </summary>
-        public static string BuildTypeKey(string familyName, string typeName)
+        // v2.7.9: params marcados como string? — metodos JA tratam null/empty
+        // via IsNullOrWhiteSpace fallback. Signature agora explicita semantica
+        // que estava implicita no body (callers passam Revit names que podem
+        // ser null em casos raros).
+        public static string BuildTypeKey(string? familyName, string? typeName)
         {
             string fn = string.IsNullOrWhiteSpace(familyName) ? "?" : familyName.Trim();
             string tn = string.IsNullOrWhiteSpace(typeName) ? "?" : typeName.Trim();
@@ -42,7 +46,7 @@ namespace SteelBIM.Services
         /// <summary>
         /// Constroi chave estavel para identificar um Material por nome.
         /// </summary>
-        public static string BuildMaterialKey(string materialName)
+        public static string BuildMaterialKey(string? materialName)
         {
             return string.IsNullOrWhiteSpace(materialName) ? "<sem>" : materialName.Trim();
         }

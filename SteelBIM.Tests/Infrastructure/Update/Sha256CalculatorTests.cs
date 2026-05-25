@@ -115,7 +115,7 @@ namespace SteelBIM.Tests.Infrastructure.Update
         [InlineData("")]
         [InlineData("   ")]
         [InlineData(null)]
-        public void FindHashForFile_conteudo_vazio_retorna_null(string content)
+        public void FindHashForFile_conteudo_vazio_retorna_null(string? content)
         {
             Sha256Calculator.FindHashForFile(content, "arquivo.zip").Should().BeNull();
         }

@@ -38,7 +38,7 @@ namespace SteelBIM.Tests.Utils
         [InlineData("   ")]
         [InlineData("abc")]
         [InlineData("3.5m")]
-        public void TryParseDouble_returns_false_for_invalid_input(string input)
+        public void TryParseDouble_returns_false_for_invalid_input(string? input)
         {
             NumberParsing.TryParseDouble(input, out double value).Should().BeFalse();
             value.Should().Be(0);
@@ -55,7 +55,7 @@ namespace SteelBIM.Tests.Utils
         [InlineData(null, 42.0)]
         [InlineData("", 42.0)]
         [InlineData("abc", 42.0)]
-        public void ParseDoubleOrDefault_returns_fallback_for_invalid_input(string input, double fallback)
+        public void ParseDoubleOrDefault_returns_fallback_for_invalid_input(string? input, double fallback)
         {
             NumberParsing.ParseDoubleOrDefault(input, fallback).Should().Be(fallback);
         }

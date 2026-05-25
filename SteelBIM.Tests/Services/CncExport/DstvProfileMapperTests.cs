@@ -81,7 +81,7 @@ namespace SteelBIM.Tests.Services.CncExport
         [InlineData(null, null, DstvProfileType.SO)]
         [InlineData("", "", DstvProfileType.SO)]
         [InlineData("CustomFamily", "CustomType", DstvProfileType.SO)]
-        public void Map_Desconhecido_RetornaSO(string family, string type, DstvProfileType esperado)
+        public void Map_Desconhecido_RetornaSO(string? family, string? type, DstvProfileType esperado)
         {
             DstvProfileMapper.Map(family, type).Should().Be(esperado);
         }

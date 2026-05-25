@@ -40,7 +40,7 @@ namespace SteelBIM.Tests.Infrastructure.Update
         [InlineData("")]
         [InlineData("   ")]
         [InlineData(null)]
-        public void DeserializeOrNull_vazio_retorna_null(string json)
+        public void DeserializeOrNull_vazio_retorna_null(string? json)
         {
             UpdateMarkerJson.DeserializeOrNull(json).Should().BeNull();
         }

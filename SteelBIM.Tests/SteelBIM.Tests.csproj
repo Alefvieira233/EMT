@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>disable</Nullable>
+    <!-- v2.7.9: alinhado com SteelBIM.csproj (annotations). Permite que arquivos
+         incluidos via &lt;Compile Include&gt; usem sintaxe nullable sem warning CS8632. -->
+    <Nullable>annotations</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
