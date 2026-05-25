@@ -5,23 +5,36 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using SteelBIM.Models;
 using SteelBIM.Utils;
+using IUIDecisionService = SteelBIM.Core.IUIDecisionService;
 
 namespace SteelBIM.Services
 {
     public class TercasService
     {
+        private const string Titulo = "Gerar Terças por Plano";
+
+        private readonly IUIDecisionService _ui;
+
+        // v2.7.11 F6 (ADR-003 Wave 2): construtor com IUIDecisionService injetavel.
+        // Sem injecao cai em AppDialogUIDecisionService — backward compat com
+        // callers que faziam new TercasService() sem argumentos.
+        public TercasService(IUIDecisionService? ui = null)
+        {
+            _ui = ui ?? new AppDialogUIDecisionService();
+        }
+
         public Result Executar(UIDocument uidoc, Document doc, TercasConfig config, Plane plane)
         {
             if (plane == null)
             {
-                AppDialogService.ShowError("Gerar Terças por Plano", "Nao foi possivel obter um plano valido para gerar as tercas.");
+                _ui.Error(Titulo, "Nao foi possivel obter um plano valido para gerar as tercas.");
                 return Result.Failed;
             }
             // Guard: config.Quantidade >= 1 (evita div/0 em step = 1.0/(Quantidade+1))
             if (config == null || config.Quantidade < 1)
             {
-                AppDialogService.ShowError(
-                    "Gerar Terças por Plano",
+                _ui.Error(
+                    Titulo,
                     "A quantidade de terças intermediárias precisa ser pelo menos 1.",
                     "Configuração inválida");
                 return Result.Failed;
@@ -31,12 +44,12 @@ namespace SteelBIM.Services
             Line lineAraw, lineBraw;
             if (!RevitUtils.TryGetLineFromPickedElement(uidoc, "Selecione a LINHA LIMITE INICIAL", out elLimA, out lineAraw))
             {
-                AppDialogService.ShowError("Gerar Terças por Plano", "Nao foi possivel obter a linha limite inicial.");
+                _ui.Error(Titulo, "Nao foi possivel obter a linha limite inicial.");
                 return Result.Failed;
             }
             if (!RevitUtils.TryGetLineFromPickedElement(uidoc, "Selecione a LINHA LIMITE FINAL", out elLimB, out lineBraw))
             {
-                AppDialogService.ShowError("Gerar Terças por Plano", "Nao foi possivel obter a linha limite final.");
+                _ui.Error(Titulo, "Nao foi possivel obter a linha limite final.");
                 return Result.Failed;
             }
 
@@ -44,7 +57,7 @@ namespace SteelBIM.Services
             Line lineB = RevitUtils.ProjectLineOntoPlane(lineBraw, plane);
             if (lineA == null || lineB == null)
             {
-                AppDialogService.ShowError("Gerar Terças por Plano", "Uma das linhas limite nao pode ser projetada corretamente no plano.");
+                _ui.Error(Titulo, "Uma das linhas limite nao pode ser projetada corretamente no plano.");
                 return Result.Failed;
             }
 
@@ -69,7 +82,7 @@ namespace SteelBIM.Services
                 }
                 if (refsBanzos == null || refsBanzos.Count == 0)
                 {
-                    AppDialogService.ShowWarning("Gerar Terças por Plano", "Nenhum banzo foi selecionado para divisao.", "Selecao vazia");
+                    _ui.Warn(Titulo, "Nenhum banzo foi selecionado para divisao.", "Selecao vazia");
                     return Result.Failed;
                 }
                 foreach (Reference r in refsBanzos)
@@ -81,7 +94,7 @@ namespace SteelBIM.Services
                 }
                 if (curvasBanzos.Count == 0)
                 {
-                    AppDialogService.ShowError("Gerar Terças por Plano", "Nao foi possivel obter curvas validas dos banzos selecionados.");
+                    _ui.Error(Titulo, "Nao foi possivel obter curvas validas dos banzos selecionados.");
                     return Result.Failed;
                 }
             }
@@ -89,7 +102,7 @@ namespace SteelBIM.Services
             Level nivel = RevitUtils.GetElementLevel(doc, elLimA);
             if (nivel == null)
             {
-                AppDialogService.ShowError("Gerar Terças por Plano", "Nao foi possivel determinar o nivel de referencia.");
+                _ui.Error(Titulo, "Nao foi possivel determinar o nivel de referencia.");
                 return Result.Failed;
             }
 
@@ -129,7 +142,7 @@ namespace SteelBIM.Services
                 }
                 t.Commit();
             }
-            AppDialogService.ShowInfo("Gerar Terças por Plano", "Tercas criadas por plano com sucesso.", "Lancamento concluido");
+            _ui.Info(Titulo, "Tercas criadas por plano com sucesso.", "Lancamento concluido");
             return Result.Succeeded;
         }
 

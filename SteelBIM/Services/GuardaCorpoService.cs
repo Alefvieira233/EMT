@@ -5,11 +5,23 @@ using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Models;
 using SteelBIM.Utils;
+using IUIDecisionService = SteelBIM.Core.IUIDecisionService;
 
 namespace SteelBIM.Services
 {
     public class GuardaCorpoService
     {
+        private const string Titulo = "Guarda-Corpo";
+
+        private readonly IUIDecisionService _ui;
+
+        // v2.7.11 F6 (ADR-003 Wave 2): construtor com IUIDecisionService injetavel.
+        // Sem injecao cai em AppDialogUIDecisionService — backward compat.
+        public GuardaCorpoService(IUIDecisionService? ui = null)
+        {
+            _ui = ui ?? new AppDialogUIDecisionService();
+        }
+
         public void Executar(UIDocument uidoc, Document doc, GuardaCorpoConfig config)
         {
             XYZ pontoInicial;
@@ -27,7 +39,7 @@ namespace SteelBIM.Services
 
             if (pontoInicial.DistanceTo(pontoFinal) < RevitUtils.EPS)
             {
-                AppDialogService.ShowWarning("Guarda-Corpo", "Os pontos informados são coincidentes.", "Pontos inválidos");
+                _ui.Warn(Titulo, "Os pontos informados são coincidentes.", "Pontos inválidos");
                 return;
             }
 
@@ -40,7 +52,7 @@ namespace SteelBIM.Services
 
             if (RevitUtils.IsZeroVector(lateral))
             {
-                AppDialogService.ShowWarning("Guarda-Corpo", "Não foi possível determinar o offset lateral para o trecho selecionado.", "Direção inválida");
+                _ui.Warn(Titulo, "Não foi possível determinar o offset lateral para o trecho selecionado.", "Direção inválida");
                 return;
             }
 
@@ -131,8 +143,8 @@ namespace SteelBIM.Services
 
             uidoc.Selection.SetElementIds(new List<ElementId>(instanciasCriadas.ConvertAll(i => i.Id)));
 
-            AppDialogService.ShowInfo(
-                "Guarda-Corpo",
+            _ui.Info(
+                Titulo,
                 "Guarda-corpo criado com sucesso.\n\n" +
                 "Tipo: " + config.SymbolSelecionado.FamilyName + " : " + config.SymbolSelecionado.Name + "\n" +
                 "Altura do corrimão: " + config.AlturaCorrimaoCm + " cm\n" +

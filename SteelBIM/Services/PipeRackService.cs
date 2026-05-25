@@ -6,11 +6,23 @@ using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Models;
 using SteelBIM.Utils;
+using IUIDecisionService = SteelBIM.Core.IUIDecisionService;
 
 namespace SteelBIM.Services
 {
     public class PipeRackService
     {
+        private const string Titulo = "Pipe Rack";
+
+        private readonly IUIDecisionService _ui;
+
+        // v2.7.11 F6 (ADR-003 Wave 2): construtor com IUIDecisionService injetavel.
+        // Sem injecao cai em AppDialogUIDecisionService — backward compat.
+        public PipeRackService(IUIDecisionService? ui = null)
+        {
+            _ui = ui ?? new AppDialogUIDecisionService();
+        }
+
         public void Executar(UIDocument uidoc, Document doc, PipeRackConfig config)
         {
             XYZ origem;
@@ -33,7 +45,7 @@ namespace SteelBIM.Services
 
             if (RevitUtils.IsZeroVector(dirLong))
             {
-                AppDialogService.ShowWarning("Pipe Rack", "Não foi possível determinar a direção longitudinal.", "Direção inválida");
+                _ui.Warn(Titulo, "Não foi possível determinar a direção longitudinal.", "Direção inválida");
                 return;
             }
 
@@ -45,20 +57,20 @@ namespace SteelBIM.Services
             double alturaTotalMm = (config.NivelTopoPilares.Elevation - config.NivelBase.Elevation) / RevitUtils.FT_PER_MM;
             if (alturaTotalMm <= 0)
             {
-                AppDialogService.ShowWarning("Pipe Rack", "O nível de topo precisa estar acima do nível de base.", "Níveis incompatíveis");
+                _ui.Warn(Titulo, "O nível de topo precisa estar acima do nível de base.", "Níveis incompatíveis");
                 return;
             }
 
             if (config.QuantidadeModulos <= 0)
             {
-                AppDialogService.ShowWarning("Pipe Rack", "A quantidade de módulos precisa ser maior que zero.", "Quantidade inválida");
+                _ui.Warn(Titulo, "A quantidade de módulos precisa ser maior que zero.", "Quantidade inválida");
                 return;
             }
 
             double alturaTrelicaMm = config.AlturaModuloMm * config.QuantidadeModulos;
             if (config.AlturaModuloMm <= 0 || alturaTrelicaMm >= alturaTotalMm)
             {
-                AppDialogService.ShowWarning("Pipe Rack", "A altura total da treliça precisa ser positiva e menor que a altura total dos pilares.", "Altura inválida");
+                _ui.Warn(Titulo, "A altura total da treliça precisa ser positiva e menor que a altura total dos pilares.", "Altura inválida");
                 return;
             }
 
@@ -82,8 +94,8 @@ namespace SteelBIM.Services
                 t.Commit();
             }
 
-            AppDialogService.ShowInfo(
-                "Pipe Rack",
+            _ui.Info(
+                Titulo,
                 "Pipe rack gerado com sucesso.\n\n" +
                 $"Pórticos: {xPos.Count}\n" +
                 $"Linhas transversais: {yPos.Count}\n" +

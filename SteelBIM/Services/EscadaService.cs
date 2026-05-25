@@ -5,12 +5,23 @@ using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Models;
 using SteelBIM.Utils;
+using IUIDecisionService = SteelBIM.Core.IUIDecisionService;
 
 namespace SteelBIM.Services
 {
     public class EscadaService
     {
         private const double StepAssemblyHeightReductionCm = 5.0;
+        private const string Titulo = "Escada";
+
+        private readonly IUIDecisionService _ui;
+
+        // v2.7.11 F6 (ADR-003 Wave 2): construtor com IUIDecisionService injetavel.
+        // Sem injecao cai em AppDialogUIDecisionService — backward compat.
+        public EscadaService(IUIDecisionService? ui = null)
+        {
+            _ui = ui ?? new AppDialogUIDecisionService();
+        }
 
         public void Executar(UIDocument uidoc, Document doc, EscadaConfig config)
         {
@@ -32,14 +43,14 @@ namespace SteelBIM.Services
             StairValidationResult validacao = ValidarEntradas(pontoA, pontoB, config);
             if (!validacao.IsValid)
             {
-                AppDialogService.ShowWarning("Escada", validacao.Message, "Não foi possível criar a escada");
+                _ui.Warn(Titulo, validacao.Message, "Não foi possível criar a escada");
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(validacao.WarningMessage))
             {
-                if (!AppDialogService.ShowConfirmation(
-                    "Escada",
+                if (!_ui.Confirm(
+                    Titulo,
                     validacao.WarningMessage + "\n\nDeseja continuar mesmo assim?",
                     "Blondel fora da faixa recomendada",
                     "Continuar",
@@ -118,8 +129,8 @@ namespace SteelBIM.Services
             double passoCmReal = Math.Round(stepData.RunPerStepFt / RevitUtils.FT_PER_CM, 1);
             double blondelCm = Math.Round((2.0 * stepData.RiserHeightFt + stepData.RunPerStepFt) / RevitUtils.FT_PER_CM, 1);
 
-            AppDialogService.ShowInfo(
-                "Escada",
+            _ui.Info(
+                Titulo,
                 "Escada criada com sucesso.\n\n" +
                 "Longarina: " + config.SymbolLongarina.FamilyName + " : " + config.SymbolLongarina.Name + "\n" +
                 "Degrau: " + ObterDescricaoDegrau(config) + "\n\n" +
