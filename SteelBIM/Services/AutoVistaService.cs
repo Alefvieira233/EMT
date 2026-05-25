@@ -6,6 +6,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using SteelBIM.Core;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
 using SteelBIM.Services.DiagramaMontagem;
@@ -16,10 +17,31 @@ namespace SteelBIM.Services
     /// <summary>
     /// Gera vistas de detalhe (longitudinal e transversal) para pecas estruturais,
     /// voltadas para shop drawings de fabricacao metalica.
+    ///
+    /// v2.7.9 (ADR-003 template): primeiro service do projeto a injetar
+    /// <see cref="IUIDecisionService"/> via construtor — desacopla das
+    /// chamadas diretas a <c>AppDialogService</c> static, permitindo testes
+    /// com mock. Constructor default preserva backward-compat: callers
+    /// existentes (3 commands) continuam fazendo <c>new AutoVistaService()</c>
+    /// e o service auto-instancia <see cref="AppDialogUIDecisionService"/>
+    /// (adapter de producao).
+    ///
+    /// **Padrao replicavel:** outros services seguindo ADR-003 devem copiar
+    /// este modelo de constructor.
     /// </summary>
     public class AutoVistaService
     {
         private const string Titulo = "Auto-Vista de Peça";
+
+        // v2.7.9 (ADR-003): UI injetada pra eliminar coupling com AppDialogService
+        // static. Default = adapter de producao (AppDialogUIDecisionService) pra
+        // backward-compat com callers que fazem 'new AutoVistaService()'.
+        private readonly IUIDecisionService _ui;
+
+        public AutoVistaService(IUIDecisionService? ui = null)
+        {
+            _ui = ui ?? new AppDialogUIDecisionService();
+        }
 
         // ================================================================
         //  Ponto de entrada
@@ -32,7 +54,7 @@ namespace SteelBIM.Services
             List<FamilyInstance> elementos = ObterElementos(uidoc, doc, config);
             if (elementos.Count == 0)
             {
-                AppDialogService.ShowWarning(Titulo,
+                _ui.Warn(Titulo,
                     "Nenhum elemento estrutural válido encontrado na seleção.",
                     "Seleção vazia");
                 return;
@@ -40,7 +62,7 @@ namespace SteelBIM.Services
 
             if (!config.TemVistasSelecionadas())
             {
-                AppDialogService.ShowWarning(Titulo,
+                _ui.Warn(Titulo,
                     "Selecione ao menos um tipo de vista para gerar.",
                     "Nenhuma vista selecionada");
                 return;
@@ -50,7 +72,7 @@ namespace SteelBIM.Services
             ViewFamilyType? vftSection = ObterViewFamilyType(doc, ViewFamily.Section);
             if (vftSection == null)
             {
-                AppDialogService.ShowError(Titulo,
+                _ui.Error(Titulo,
                     "Não foi encontrado um ViewFamilyType para Section no projeto.",
                     "Tipo de vista ausente");
                 return;
@@ -63,7 +85,7 @@ namespace SteelBIM.Services
                 titleBlock = ObterTitleBlock(doc, config.FamiliaFolhaTitulo, config.TipoFolhaTitulo);
                 if (titleBlock == null)
                 {
-                    AppDialogService.ShowWarning(Titulo,
+                    _ui.Warn(Titulo,
                         "Nenhuma família de folha de título encontrada. As vistas serão criadas sem folha.",
                         "Folha de título ausente");
                     config.CriarFolha = false;
@@ -190,7 +212,7 @@ namespace SteelBIM.Services
             if (falhas.Count > 0)
                 resumo += "\n\nObservações:\n• " + string.Join("\n• ", falhas);
 
-            AppDialogService.ShowInfo(Titulo, resumo, "Vistas geradas com sucesso");
+            _ui.Info(Titulo, resumo, "Vistas geradas com sucesso");
         }
 
         // ================================================================
