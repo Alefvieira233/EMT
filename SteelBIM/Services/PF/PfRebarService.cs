@@ -47,7 +47,10 @@ namespace SteelBIM.Services.PF
     internal sealed class PfRebarService
     {
         private const double DefaultCoverMm = 30.0;
-        private const double MinSegmentMm = 50.0;
+        // v2.7.11 F5 (auditoria 2026-05-25 #1): const agora aponta pra Pure como
+        // source of truth. Pre-F5 essa logica + valor estava duplicada nos dois
+        // arquivos sem garantia de sync.
+        private const double MinSegmentMm = PfRebarServicePure.MinSegmentMm;
         private const double MaxSupportZoneMm = 1000.0;
 
         public Result ExecuteColumnStirrups(UIDocument uidoc, PfColumnStirrupsConfig config)
@@ -1356,42 +1359,25 @@ namespace SteelBIM.Services.PF
             return PfNbr6118AnchorageService.Calculate(diameterMm, lapConfig);
         }
 
+        // v2.7.11 F5 (auditoria 2026-05-25 #1): Strangler Fig completo — toda
+        // a logica algoritmica vive em PfRebarServicePure.BuildLapRangesMm
+        // (testada via xUnit). Aqui ficou so a casca de conversao feet↔mm.
+        // Risco: round-trip introduz erro de ponto flutuante sub-micrometro
+        // — irrelevante pra precisao NBR (tolerancia ±5mm em pratica).
         private static List<BarRange> BuildLapRanges(double start, double end, double maxPieceLength, double lapLength, int staggerIndex)
         {
-            double totalLength = end - start;
-            if (totalLength <= ToFeetMm(MinSegmentMm))
-                return new List<BarRange>();
+            double startMm = ToMillimeters(start);
+            double endMm = ToMillimeters(end);
+            double maxPieceMm = ToMillimeters(maxPieceLength);
+            double lapMm = ToMillimeters(lapLength);
 
-            if (maxPieceLength <= ToFeetMm(MinSegmentMm) || totalLength <= maxPieceLength + ToFeetMm(1.0))
-                return new List<BarRange> { new BarRange(start, end) };
+            List<PfRebarServicePure.BarRange> pureRanges = PfRebarServicePure.BuildLapRangesMm(
+                startMm, endMm, maxPieceMm, lapMm, staggerIndex);
 
-            double minPiece = ToFeetMm(300.0);
-            if (maxPieceLength <= lapLength + minPiece)
-                throw new InvalidOperationException("O comprimento maximo da barra precisa ser maior que o traspasse calculado.");
-
-            List<BarRange> ranges = new List<BarRange>();
-            double usefulStep = maxPieceLength - lapLength;
-            double staggerStep = Math.Min(lapLength / 2.0, usefulStep / 3.0);
-            double firstReduction = (Math.Abs(staggerIndex) % 3) * staggerStep;
-            double currentStart = start;
-            double currentEnd = Math.Min(end, start + maxPieceLength - firstReduction);
-
-            while (currentEnd < end - ToFeetMm(1.0))
-            {
-                if (currentEnd - currentStart < minPiece)
-                    currentEnd = Math.Min(end, currentStart + minPiece);
-
-                ranges.Add(new BarRange(currentStart, currentEnd));
-                currentStart = currentEnd - lapLength;
-                currentEnd = Math.Min(end, currentStart + maxPieceLength);
-            }
-
-            if (end - currentStart >= ToFeetMm(MinSegmentMm))
-                ranges.Add(new BarRange(currentStart, end));
-
-            return ranges.Count == 0
-                ? new List<BarRange> { new BarRange(start, end) }
-                : ranges;
+            List<BarRange> ranges = new List<BarRange>(pureRanges.Count);
+            foreach (PfRebarServicePure.BarRange r in pureRanges)
+                ranges.Add(new BarRange(ToFeetMm(r.StartMm), ToFeetMm(r.EndMm)));
+            return ranges;
         }
 
         private static void AnnotateAnchorage(Rebar rebar, PfAnchorageResult anchorage, bool hasLap, int pieceIndex, int pieceCount)
@@ -1703,15 +1689,8 @@ namespace SteelBIM.Services.PF
                    parameter.AsDouble() > ToFeetMm(10);
         }
 
-        private static string NormalizeText(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return string.Empty;
-
-            string normalized = value.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
-            normalized = new string(normalized.Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark).ToArray());
-            return new string(normalized.Where(char.IsLetterOrDigit).ToArray());
-        }
+        // v2.7.11 F5 (auditoria 2026-05-25 #1): delegado pra Pure.
+        private static string NormalizeText(string value) => PfRebarServicePure.NormalizeText(value);
 
         private static XYZ GetColumnOrigin(FamilyInstance column)
         {
@@ -2045,21 +2024,17 @@ namespace SteelBIM.Services.PF
                 unique[key] = point;
         }
 
+        // v2.7.11 F5 (auditoria 2026-05-25 #1): delegado pra Pure.
         private static List<double> DistributePositions(int count, double min, double max)
         {
-            count = Math.Max(1, count);
-            if (max - min <= ToFeetMm(10))
-                return new List<double> { (min + max) / 2.0 };
+            double minMm = ToMillimeters(min);
+            double maxMm = ToMillimeters(max);
+            List<double> mmValues = PfRebarServicePure.DistributePositionsMm(count, minMm, maxMm);
 
-            if (count == 1)
-                return new List<double> { (min + max) / 2.0 };
-
-            List<double> values = new List<double>();
-            double step = (max - min) / (count - 1);
-            for (int i = 0; i < count; i++)
-                values.Add(min + (step * i));
-
-            return values;
+            List<double> feetValues = new List<double>(mmValues.Count);
+            foreach (double v in mmValues)
+                feetValues.Add(ToFeetMm(v));
+            return feetValues;
         }
 
         private static XYZ NormalizeHorizontal(XYZ vector)
@@ -2091,29 +2066,24 @@ namespace SteelBIM.Services.PF
             return UnitUtils.ConvertFromInternalUnits(value, UnitTypeId.Centimeters);
         }
 
-        private static double RadiansToDegrees(double value)
+        // v2.7.11 F5: novo helper feet→mm (faltava o inverso de ToFeetMm).
+        // Necessario pros wrappers que delegam pra PfRebarServicePure
+        // (que trabalha em mm) — sem ele as conversoes do BuildLapRanges/
+        // DistributePositions ficariam inline e ilegiveis.
+        private static double ToMillimeters(double feetValue)
         {
-            return value * 180.0 / Math.PI;
+            return UnitUtils.ConvertFromInternalUnits(feetValue, UnitTypeId.Millimeters);
         }
 
-        private static double DegreesToRadians(double value)
-        {
-            return value * Math.PI / 180.0;
-        }
+        // v2.7.11 F5 (auditoria 2026-05-25 #1): math/string helpers
+        // delegados pra Pure (source of truth, testado direto via xUnit).
+        private static double RadiansToDegrees(double value) => PfRebarServicePure.RadiansToDegrees(value);
 
-        private static string FormatDiameterToken(double diameterMm)
-        {
-            return diameterMm.ToString("0.###", CultureInfo.InvariantCulture)
-                .Replace(".", string.Empty)
-                .Replace(",", string.Empty);
-        }
+        private static double DegreesToRadians(double value) => PfRebarServicePure.DegreesToRadians(value);
 
-        private static string LimparMensagem(string value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? "falha desconhecida."
-                : value.Replace("\r", " ").Replace("\n", " ").Trim();
-        }
+        private static string FormatDiameterToken(double diameterMm) => PfRebarServicePure.FormatDiameterToken(diameterMm);
+
+        private static string LimparMensagem(string value) => PfRebarServicePure.LimparMensagem(value);
 
         private sealed class BarRange
         {
