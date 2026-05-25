@@ -1,9 +1,9 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.7-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.8-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-979%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-984%20passing-brightgreen)
 
 Plugin Revit 2025 para detalhamento estrutural brasileiro. NBR 6118
 nativo, export DSTV/NC1 para CNC, Diagrama de Montagem completo no
@@ -102,17 +102,18 @@ Plugin estruturado em camadas, com decisões registradas em `docs/ADR/`:
 - **ADR-007** — Crash reporting via Sentry com `PiiScrubber`
 - **ADR-008** — Telemetria PostHog HTTP-direct (não SDK)
 
-São 979 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
+São 984 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
 zoneamento de armadura NBR, formatadores culture-invariant, validação
 de configuração e regras de domínio.
 
 ## Versão atual
 
-**v2.7.7** (2026-05-25) — histórico completo de releases em
+**v2.7.8** (2026-05-25) — histórico completo de releases em
 [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.7.8** — Sprint 2/3 quick wins: dead code removal (-219 LOC) + NumberParsing dedup (-43 LOC) + IfcMaterialParser cache (perf hot path Conversor IFC, -240ms)
 - **v2.7.7** — Sprint 0 do roadmap v2.8.0: CI hardening + release publish workflow + smoke tests reais + IFC Progress/Cancel API + ROADMAP+README sync (6 PRs em 1 dia)
 - **v2.7.6** — Canonicalização de ícones do ribbon (5 swaps em [App.cs](SteelBIM/App.cs); 84% → 88% conformidade canônica)
 - **v2.7.5** — Hotfix visual Conversor IFC (botões e combos com texto cortado por `Height` override)

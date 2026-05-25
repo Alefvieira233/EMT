@@ -18,6 +18,104 @@ Roadmap v2.8.0 production-grade (~10 semanas após v2.7.7, ver
 
 ---
 
+## [2.7.8] - 2026-05-25
+
+### Sprint 2/3 quick wins do roadmap v2.8.0 — 3 PRs cirurgicos
+
+3 itens "quick wins" do plano de Sprint 2/3 (auditoria 2026-05-25) executados.
+Total: -262 LOC dead/duplicado + cache de hot path do Conversor IFC.
+Zero regressao funcional.
+
+#### Removed (dead code — PR #27)
+
+[CotasService.cs](SteelBIM/Services/CotasService.cs): removido cascade dead
+code do ramo "cotagem alinhada" (-219 LOC, -15% no arquivo):
+
+- `ExecutarCotagemAlinhada` (entry-point morto confirmado por 2 auditorias)
+- `CriarCotaAlinhada` (chamada SO pela entry, 82 LOC)
+- `PedirModoCota` (chamada SO pela entry, abre CotasModoWindow)
+- `TentarObterLinhaDeCota` (chamada SO pela entry, 88 LOC)
+- enum `ModoCota` (Faces/Eixos, usado SO pelos helpers acima)
+- Comment block stale no /// <remarks> do `Executar`
+- Log message stale "CotasService.CriarCotaAlinhada" em `PedirSelecaoDeElementos`
+  (renomeado pro metodo correto)
+
+`CotasService.cs`: 1459 → ~1240 LOC. `DadosLinhaCota` type preservado (usado
+pelo ramo `ExecutarCotagemAutomatica`, codigo vivo). `CotasModoWindow.xaml(.cs)`
+NAO removida (ponta documentada — Window orphan, vive isolada, sem impacto runtime).
+
+#### Refactored (NumberParsing dedup — PR #28)
+
+[PfColumnBarsWindow](SteelBIM/Views/PfColumnBarsWindow.xaml.cs) e
+[PfBeamBarsWindow](SteelBIM/Views/PfBeamBarsWindow.xaml.cs) tinham impl
+IDENTICAS de `TryParseDouble` + `ParseDouble` (~22 LOC × 2 = 44 LOC duplicados).
+
+Pior: as copias locais usavam `CultureInfo.CurrentCulture`, que **contradiz**
+a regra de ouro documentada em [`SteelBIM.Utils.NumberParsing`](SteelBIM/Utils/NumberParsing.cs)
+(linha 16): "em PC pt-BR, '1.5' digitado deliberadamente quebra com CurrentCulture".
+
+Helper centralizado JA EXISTIA com docstring explicita dizendo "centraliza
+a logica para todas as janelas... em vez de cada code-behind ter sua propria
+implementacao". As 2 Pf*BarsWindow eram regressoes que nao usaram.
+
+Migracao: 2 metodos privados deletados × 2 arquivos. Call sites trocados
+por `NumberParsing.{TryParseDouble,ParseDoubleOrDefault}`. Zero diff
+funcional pro usuario; corrige sutileza pt-BR. LOC -43.
+
+#### Performance (IFC hot path cache — PR #29)
+
+[IfcMaterialParser](SteelBIM/Services/Ifc/IfcMaterialParser.cs) ganha
+memoization em `ExtrairTipoEDimensoes`. Hot path: `CalcularScore` chamada
+~24k vezes em galpoes 6000+ elementos (400 grupos × 59 perfis Revit × 2
+invocacoes de regex+parse cada).
+
+`ConcurrentDictionary<string, (string, IReadOnlyList<double>)>` com:
+
+- Cache estatico thread-safe (defensivo p/ futura execucao em sub-thread)
+- `GetOrAdd` atomico, factory `ParseSemCache` so em miss
+- `IReadOnlyList<double>` previne mutacao acidental do cache pelo caller
+- Empty fallback `Array.Empty<double>()` compartilhado (sem alloc em
+  resultados vazios)
+
+API change menor: signature interna `ExtrairTipoEDimensoes` mudou de
+`(string, List<double>)` para `(string, IReadOnlyList<double>)`. Caller
+`CalcularScore` (private, sem callers externos) atualizado.
+
+Helpers internal para tests:
+- `ResetCacheForTests()` — limpa estado
+- `CacheCount` — contador atual
+
+Estimativa de ganho: 24k calls × ~10us regex/parse = ~240ms. Cache reduz
+a ~59 unique calls = ~0.6ms. **~240ms a menos na primeira carga do Window
+do Conversor IFC em galpoes grandes.**
+
+Memory footprint: ~500 entries × ~50 bytes = ~25KB worst case. Cache
+vive durante sessao do Revit; nunca esvazia em prod.
+
+5 testes novos cobrindo: reset, repeated calls nao crescem contador,
+strings distintas geram entries, null/empty NAO poluem, semantica
+preservada apos 10 calls. Suite 979 → 984 verdes.
+
+#### Stats
+
+- Build Release: 0 erros, 0 warnings (TreatWarningsAsErrors sustentado)
+- Testes: 979 → 984 verdes em 948ms
+- LOC removidos: 262 (dead + duplicado)
+- LOC adicionados: ~30 (cache + 5 tests)
+- Saldo: **-232 LOC**, +5 testes, ganho perf user-visivel
+
+#### Nao incluido (deferred pra v2.7.9+ / Sprint 2/3 completo)
+
+Refactors estruturais maiores que demandam mais tempo + risco medio:
+
+- `#nullable enable` em top 20 arquivos (~6h)
+- AutoVistaService refactor como template ADR-003 (~5h)
+- PfRebarServiceTests scaffold (~3h, requer refactor estrutural pra
+  testabilidade — PfRebarService.cs tem deps Revit, nao esta no test
+  project Compile Include)
+
+---
+
 ## [2.7.7] - 2026-05-25
 
 ### Sprint 0 do roadmap v2.8.0 — 6 PRs em 1 dia (auditoria 2026-05-25)
