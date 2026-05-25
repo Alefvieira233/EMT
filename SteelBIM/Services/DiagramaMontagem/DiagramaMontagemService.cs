@@ -48,9 +48,8 @@ namespace SteelBIM.Services.DiagramaMontagem
                 // 3) Criar Section View (em transaction propria — Revit exige)
                 // v2.6.9: nome contextual quando vista superior (planta) — facilita
                 // identificacao no Project Browser.
-                string nomeBase = config.Orientacao == OrientacaoDiagrama.Superior
-                    ? $"{config.NomeVista} (Planta)"
-                    : config.NomeVista;
+                // v2.8.0 F12 (Wave 3): logica de naming extraida pra DiagramaMontagemViewNamer (testado).
+                string nomeBase = DiagramaMontagemViewNamer.BuildContextualName(config.NomeVista, config.Orientacao);
 
                 ViewSection vista;
                 using (Transaction tx1 = new Transaction(doc, "Criar vista do Diagrama de Montagem"))
