@@ -3,18 +3,36 @@
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
 ![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.9-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-1048%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-1080%20passing-brightgreen)
+![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
 
-Plugin Revit 2025 para detalhamento estrutural brasileiro. NBR 6118
-nativo, export DSTV/NC1 para CNC, Diagrama de Montagem completo no
-padrão BR e 48 comandos especializados para escritórios de
-detalhamento metálico e pré-fabricado de concreto.
+> **Detalhamento estrutural brasileiro direto no Revit.** Treliças, terças,
+> conexões, armaduras NBR 6118, Diagrama de Montagem padrão BR e export
+> DSTV/NC1 para CNC — em 48 comandos do ribbon. Sem Tekla, sem AutoCAD
+> intermediário, sem retrabalho.
+
+---
+
+## Por que SteelBIM existe
+
+Escritórios de estrutura metálica e pré-fabricado no Brasil enfrentam o
+mesmo dilema: o Revit nativo entrega o modelo, mas o **detalhamento de
+prancha** (vistas, cotas, marcação, lista, fabricação) consome 40-60% do
+tempo do projeto e força workflows manuais ou ferramentas estrangeiras
+que não conhecem nossa norma. SteelBIM automatiza essa camada de
+detalhamento seguindo padrões do executivo brasileiro — convenção EM-08
+de prancha, NBR 6118 §9.4.6.1 para estribos, perfis U/UDC/W/HP nos
+formatos do mercado local.
+
+---
 
 ## Quem usa
 
 - Escritórios de detalhamento metálico (vigas, pilares, terças, conexões)
 - Projetistas de pré-fabricado de concreto (armaduras NBR 6118)
 - Construtoras com fluxo BIM 4D (Synchro, Navisworks)
+
+---
 
 ## O que faz
 
@@ -48,7 +66,32 @@ forma e nomeação automática de elementos.
 **CNC sem Tekla.** Exportação DSTV/NC1 direto do modelo Revit para
 máquinas de corte, com extração de furação e mapeamento de perfis.
 
+**Conversor IFC → Nativo Revit.** Importa modelos IFC de coordenação
+(arquitetura, instalações, terceiros) e converte perfis genéricos em
+famílias Revit nativas — com progresso visível e cancelamento (v2.7.10).
+
 **Verificação de modelo.** Checagem de consistência antes da entrega.
+
+---
+
+## Comparação
+
+| Cenário | Revit puro | Tekla / AutoCAD intermediário | **SteelBIM** |
+|---|---|---|---|
+| Cotagem de treliça padrão BR (5 faixas) | manual, 30-90min por treliça | export + retrabalho em 2D | 1 clique, ~10s |
+| Estribo com gancho NBR 6118 §9.4.6.1 | annotation manual | template proprietário | gerado automaticamente |
+| Diagrama de Montagem EM-08 | montagem manual de prancha | não tem | 1 comando, vista pronta |
+| Marcação de peças (P01, V01, T01) | parâmetro manual por elemento | numeração não-BR | 1 comando, prefixo configurável |
+| DSTV/NC1 para CNC | requer Tekla ou converter externo | export Tekla → CAM | direto do Revit |
+| Cobertura NBR | só geometria | configurável manual | nativa |
+| Custo de licença | incluso no Revit | licença adicional (anual ou perpétua) | a definir (v2.8.0) |
+
+Não substitui Tekla para projetos de aço pesado com **conexões soldadas
+complexas** — SteelBIM cobre o que é detalhamento brasileiro típico
+(estrutura leve, treliça padrão BR, pré-fabricado de concreto). Para
+projetos pesados, é complementar.
+
+---
 
 ## Instalação
 
@@ -58,8 +101,9 @@ máquinas de corte, com extração de furação e mapeamento de perfis.
    [github.com/Alefvieira233/EMT/releases](https://github.com/Alefvieira233/EMT/releases)
 2. Feche o Revit 2025 se estiver aberto
 3. Execute `SteelBIM-Revit2025-Setup.exe`. O SmartScreen vai avisar — o
-   plugin ainda não é assinado digitalmente; clique em "Mais informações"
-   e depois em "Executar assim mesmo"
+   plugin ainda não é assinado digitalmente (cert Sectigo OV em
+   aquisição); clique em "Mais informações" e depois em "Executar assim
+   mesmo"
 4. Abra o Revit — duas abas aparecem no ribbon:
    "SteelBIM | Modelagem" e "SteelBIM | Detalhamento"
 
@@ -74,6 +118,23 @@ cd EMT
 SteelBIM\Compilar-e-Instalar.bat
 ```
 
+---
+
+## Licenciamento
+
+Plugin proprietário. Modelo:
+
+- **Trial** de 7 dias com 100% das funcionalidades habilitadas (sem
+  cadastro, ativação automática na primeira execução)
+- **Chave perpétua por máquina** após o trial — gerada manualmente após
+  contato (modelo de pricing em definição para v2.8.0)
+- **Validação offline** via HMAC (não exige conexão de internet pra rodar)
+
+Para licenças ou para participar do **programa beta** de validação,
+contate `engenheiroalefvieira@gmail.com`.
+
+---
+
 ## Estrutura do projeto
 
 ```
@@ -84,7 +145,7 @@ SteelBIM/
 ├── Services/          # Lógica de negócio (ADR-003 — services mudos)
 ├── Views/             # Janelas WPF (configuração + interação)
 ├── Models/            # DTOs e configs
-├── Infrastructure/    # Cross-cutting (Logger, Crash, Telemetry, License)
+├── Infrastructure/    # Cross-cutting (Logger, Crash, Telemetry, License, Update)
 └── Resources/         # Ícones do ribbon (conjunto lucide_blue)
 ```
 
@@ -92,24 +153,36 @@ Dos 48 comandos do ribbon, **46 são comandos de feature** de
 detalhamento (33 do fluxo geral + 13 do fluxo Pré-Fabricado) e **2 são
 utilitários** do painel Licença — "Ativar Licença" e "Sobre".
 
+---
+
 ## Arquitetura
 
 Plugin estruturado em camadas, com decisões registradas em `docs/ADR/`:
 
 - **ADR-003** — Services mudos: retornam `Result<T>`, não chamam diálogo
 - **ADR-004** — `IProgress` + `CancellationToken` em operações longas
+- **ADR-005** — CI usa Revit reference stubs (Nice3point) sem instalar Revit
 - **ADR-006** — Auto-update com fallback de 3 tentativas
-- **ADR-007** — Crash reporting via Sentry com `PiiScrubber`
+- **ADR-007** — Crash reporting via Sentry com `PiiScrubber` (LGPD-friendly)
 - **ADR-008** — Telemetria PostHog HTTP-direct (não SDK)
+- **ADR-009** — Code signing parametrizado via signtool + GitHub secrets
+- **ADR-010** — Documentos legais (EULA/Privacy/TOS — drafts em revisão jurídica)
 
-São 1048 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
-zoneamento de armadura NBR, formatadores culture-invariant, validação
-de configuração e regras de domínio.
+São **1080 testes automatizados** em `SteelBIM.Tests` cobrindo lógica
+pura: zoneamento de armadura NBR, formatadores culture-invariant,
+validação de configuração, regras de domínio, scrubbing de PII e
+verificação Authenticode.
+
+---
 
 ## Versão atual
 
-**v2.7.9** (2026-05-25) — histórico completo de releases em
-[CHANGELOG.md](CHANGELOG.md).
+**v2.7.9** (2026-05-25) — histórico completo em [CHANGELOG.md](CHANGELOG.md).
+
+Próxima release: **v2.7.10** (em integração) — Wave 1 da auditoria
+2026-05-25: Conversor IFC com progresso/cancelamento, breadcrumbs Sentry
+sem PII (LGPD), Authenticode verify pós-extract (flag-gated),
+build reproduzível via packages.lock + Dependabot.
 
 Releases recentes:
 
@@ -132,43 +205,57 @@ Releases recentes:
 - **v2.4.0** — Diagrama de Montagem completo (padrão BR EM-08)
 - **v2.0.0** — Rebranding FerramentaEMT → SteelBIM
 
+---
+
 ## Suporte e contato
 
-- Email: engenheiroalefvieira@gmail.com
-- Issues: [github.com/Alefvieira233/EMT/issues](https://github.com/Alefvieira233/EMT/issues)
-- Local: Uberlândia/MG, Brasil
+- **Email comercial / suporte**: engenheiroalefvieira@gmail.com
+- **Bugs e melhorias**: [github.com/Alefvieira233/EMT/issues](https://github.com/Alefvieira233/EMT/issues)
+- **Beta program**: contato por email com nome do escritório
+- **Local**: Uberlândia/MG, Brasil
+
+---
 
 ## Roadmap & Pricing
 
 **Pricing público sai na v2.8.0** (em definição). Modelo proposto a ser
 confirmado: trial 7 dias, tiers Professional / Studio / Perpétua. Para
-acesso antecipado ao programa beta, contatar via email (abaixo).
+acesso antecipado ao programa beta, contate via email.
 
-**Roadmap próximo (v2.8.0, ~10 semanas):**
+**Roadmap próximo (v2.8.0, ~6-8 semanas):**
 
-- Code signing efetivo (cert Sectigo OV em aquisição)
-- EULA/Privacy/TOS revisados e ativados (revisão jurídica em curso)
-- Authenticode verification pós-extract no auto-update
-- Testes de unidade do `PfRebarService` (módulo PF core)
-- Conversor IFC com `IProgress` + `CancellationToken` (resolve trava em modelos > 5000 elementos)
-- Refactor template ADR-003 (AutoVistaService como modelo)
+- ✅ Authenticode verification pós-extract no auto-update (v2.7.10 — flag-gated)
+- ✅ Conversor IFC com `IProgress` + `CancellationToken` (v2.7.10)
+- ✅ Sentry breadcrumbs LGPD-compliant (v2.7.10)
+- ✅ Build reproduzível: packages.lock + Dependabot (v2.7.10)
+- ⏳ Code signing efetivo (cert Sectigo OV em aquisição)
+- ⏳ EULA/Privacy/TOS revisados e ativados (revisão jurídica em curso)
+- ⏳ MSI installer assinado (WiX)
+- ⏳ Refactor template ADR-003 (Wave 2: Tercas/PipeRack/Escada/GuardaCorpo/Contraventamento)
+- ⏳ Migração de 3 windows pra MVVM (Wave 3)
 
 Detalhes em [docs/ROADMAP.md](docs/ROADMAP.md).
+
+---
 
 ## Status
 
 Plugin em **soft launch funcional** com beta selecionado. Auditoria
 técnica completa de 2026-05-25 mapeou 22 achados críticos/altos e
-forneceu roadmap consolidado de 10 semanas até v2.8.0 production-grade
-(distribuição comercial, code-signed, legal-cover, manual). Artefatos
-da auditoria em `.audit/` (gitignored — workspace local).
+forneceu roadmap consolidado de 6-8 semanas até v2.8.0 production-grade
+(distribuição comercial, code-signed, legal-cover, manual). Wave 1
+fechada em v2.7.10. Artefatos da auditoria em `.audit/` (gitignored —
+workspace local).
 
-Itens prioritários (Sprint 0/1 do roadmap v2.8.0):
+Itens prioritários em andamento:
 
 - ✅ Hardening de CI aplicado em v2.7.7 (PR #20: cache NuGet, timeouts, dorny test-reporter, job EmtKeyGen)
+- ✅ Wave 1 da auditoria (4 PRs em v2.7.10 — IFC UX, packages.lock + Dependabot, Sentry LGPD, Authenticode)
 - ⏳ Code signing cert (Sectigo OV — aquisição planejada)
 - ⏳ Revisão jurídica dos drafts em `docs/legal/` (contratação de advogado TI planejada)
-- ⏳ Authenticode verification pós-extract no auto-update
+- ⏳ Wave 2 (Strangler Fig PfRebar + ADR-003 em 5 services + MSI WiX)
+
+---
 
 ## Licença
 
