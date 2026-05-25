@@ -28,6 +28,14 @@ on:
         type: choice
         options:
           - Release
+      # v2.7.7: input opcional pra re-publicar release antiga (ex: v2.7.5,
+      # v2.7.6) depois que cert chegar. Em tag push automatico, fica vazio
+      # e o publish step usa github.ref_name.
+      tag_name:
+        description: 'Tag para publicar assets (vazio = usa tag atual). Util pra re-publicar release antiga apos cert chegar.'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   build-signed-setup:
@@ -35,7 +43,10 @@ jobs:
     runs-on: windows-latest
 
     permissions:
-      contents: read
+      # v2.7.7: 'write' (era 'read') pra permitir step final publicar assets
+      # via softprops/action-gh-release. GITHUB_TOKEN com contents:write eh
+      # o minimo necessario pra criar/editar release.
+      contents: write
 
     env:
       CI: 'true'
@@ -141,3 +152,28 @@ jobs:
             SteelBIM/artifacts/installer/*Setup.exe
             SteelBIM/artifacts/installer/checksums.txt
           if-no-files-found: error
+
+      # v2.7.7 (auditoria 2026-05-25 #006): publicar setup.exe + checksums.txt
+      # como Release Asset (visivel em github.com/.../releases) — antes ficava
+      # so como Actions Artifact (visivel em Actions UI, 90 dias).
+      #
+      # Politica: este step SO executa em release oficial — depende dos secrets
+      # de codesign (validados acima) pra construir setup.exe assinado. Releases
+      # sem cert nao chegam aqui (workflow falha em "Validate signing secrets").
+      # Comportamento intencional: NAO publicamos release oficial unsigned.
+      #
+      # tag_name: usa input do workflow_dispatch (re-publicar tag antiga) OU
+      # github.ref_name (tag push automatico).
+      # make_latest: false pra Alef decidir promocao manualmente.
+      # fail_on_unmatched_files: garante que falha se artifacts/installer/ estiver vazio.
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          files: |
+            SteelBIM/artifacts/installer/*Setup.exe
+            SteelBIM/artifacts/installer/checksums.txt
+          fail_on_unmatched_files: true
+          make_latest: false
+          draft: false
+          prerelease: false
