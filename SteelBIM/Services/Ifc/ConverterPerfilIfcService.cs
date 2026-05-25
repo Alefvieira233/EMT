@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
+using SteelBIM.Core;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
 using SteelBIM.Services.DiagramaMontagem;
@@ -12,10 +14,46 @@ namespace SteelBIM.Services.Ifc
 {
     public class ConverterPerfilIfcService
     {
-        public (int convertidos, int ignorados) Executar(Document doc, ConverterPerfilIfcConfig config)
+        /// <summary>
+        /// v2.7.7 (auditoria 2026-05-25 #008): conversao agora reporta progresso
+        /// e respeita CancellationToken. Antes era loop sem feedback em galpoes
+        /// com 6000+ elementos (Revit congelava 30-120s).
+        ///
+        /// Parametros novos sao OPCIONAIS (defaults null/default) — call sites
+        /// existentes continuam funcionando sem mudanca. UI wiring do
+        /// ProgressWindow + botao Cancel fica para Sprint 1/2 do roadmap
+        /// v2.8.0 (via IfcConversionHandler.Progress / .CancellationToken).
+        ///
+        /// Comportamento de cancelamento: <see cref="OperationCanceledException"/>
+        /// dentro do <c>using (Transaction)</c> dispara rollback automatico
+        /// (Transaction.Dispose() rolla back se nao-commitada). Service captura
+        /// a excecao e retorna a tupla atual — chamador ve quantos elementos
+        /// estavam processados antes do cancel (mas nenhum foi commitado).
+        /// </summary>
+        /// <param name="doc">Documento Revit ativo.</param>
+        /// <param name="config">Configuracao de conversao.</param>
+        /// <param name="progress">
+        /// Opcional. Recebe <see cref="ProgressReport"/> a cada
+        /// <see cref="ProgressReportEveryNElements"/> elementos processados
+        /// (e no inicio e fim). null = sem reporting (default).
+        /// </param>
+        /// <param name="ct">
+        /// Opcional. Verificado antes de cada elemento. Se cancelado, throws
+        /// <see cref="OperationCanceledException"/> internamente, captura,
+        /// rollback da transaction, e retorna counts ate o ponto do cancel.
+        /// </param>
+        public (int convertidos, int ignorados) Executar(
+            Document doc,
+            ConverterPerfilIfcConfig config,
+            IProgress<ProgressReport> progress = null,
+            CancellationToken ct = default)
         {
             int convertidos = 0;
             int ignorados = 0;
+            int total = config.Conversoes.Count;
+
+            // v2.7.7: reportar inicio antes do work pesado (UI mostra "0/N" imediato)
+            progress?.Report(new ProgressReport(0, total, "Preparando conversao..."));
 
             // v2.7.0 BUG 2: carregar todos os Levels uma vez para o LevelMatcher
             // escolher por proximidade Z em vez de cair no fallback fixo.
@@ -29,86 +67,133 @@ namespace SteelBIM.Services.Ifc
             {
                 t.Start();
 
-                foreach (ConversaoElementoIfc conversao in config.Conversoes)
+                try
                 {
-                    Element origem = doc.GetElement(conversao.ElementoOrigem);
-                    if (origem == null)
-                    { ignorados++; continue; }
-
-                    Line linha = ObterLinhaDoElemento(origem);
-                    if (linha == null)
-                    { ignorados++; continue; }
-
-                    Level nivel = ObterNivelDoElemento(origem, doc, niveis, config.NivelPadrao);
-                    if (nivel == null)
-                    { ignorados++; continue; }
-
-                    FamilySymbol simbolo = conversao.PerfilDestino;
-                    if (!simbolo.IsActive)
+                    int processados = 0;
+                    foreach (ConversaoElementoIfc conversao in config.Conversoes)
                     {
-                        simbolo.Activate();
-                        doc.Regenerate();
-                    }
+                        // v2.7.7: cancelamento honra ADR-004. Throw interno aqui
+                        // sobe pro catch externo, transaction da rollback no
+                        // Dispose (using block). Convertidos/ignorados ate aqui
+                        // sao retornados pro chamador como feedback.
+                        ct.ThrowIfCancellationRequested();
 
-                    try
-                    {
-                        bool ehColuna = simbolo.Category?.Id?.Value ==
-                                        (long)BuiltInCategory.OST_StructuralColumns;
+                        Element origem = doc.GetElement(conversao.ElementoOrigem);
+                        if (origem == null)
+                        { ignorados++; processados++; continue; }
 
-                        FamilyInstance nova;
-                        if (ehColuna)
+                        Line linha = ObterLinhaDoElemento(origem);
+                        if (linha == null)
+                        { ignorados++; processados++; continue; }
+
+                        Level nivel = ObterNivelDoElemento(origem, doc, niveis, config.NivelPadrao);
+                        if (nivel == null)
+                        { ignorados++; processados++; continue; }
+
+                        FamilySymbol simbolo = conversao.PerfilDestino;
+                        if (!simbolo.IsActive)
                         {
-                            XYZ start = linha.GetEndPoint(0);
-                            XYZ end = linha.GetEndPoint(1);
-                            XYZ dir = (end - start).Normalize();
-                            bool vertical = Math.Abs(dir.Z) > Math.Cos(5.0 * Math.PI / 180.0);
+                            simbolo.Activate();
+                            doc.Regenerate();
+                        }
 
-                            if (vertical)
+                        try
+                        {
+                            bool ehColuna = simbolo.Category?.Id?.Value ==
+                                            (long)BuiltInCategory.OST_StructuralColumns;
+
+                            FamilyInstance nova;
+                            if (ehColuna)
                             {
-                                nova = doc.Create.NewFamilyInstance(
-                                    start, simbolo, nivel, StructuralType.Column);
+                                XYZ start = linha.GetEndPoint(0);
+                                XYZ end = linha.GetEndPoint(1);
+                                XYZ dir = (end - start).Normalize();
+                                bool vertical = Math.Abs(dir.Z) > Math.Cos(5.0 * Math.PI / 180.0);
 
-                                // Ajustar topo para o endpoint Z do IFC
-                                Parameter topOffset = nova.get_Parameter(
-                                    BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
-                                if (topOffset != null && !topOffset.IsReadOnly)
-                                    topOffset.Set(end.Z - nivel.Elevation);
+                                if (vertical)
+                                {
+                                    nova = doc.Create.NewFamilyInstance(
+                                        start, simbolo, nivel, StructuralType.Column);
+
+                                    // Ajustar topo para o endpoint Z do IFC
+                                    Parameter topOffset = nova.get_Parameter(
+                                        BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
+                                    if (topOffset != null && !topOffset.IsReadOnly)
+                                        topOffset.Set(end.Z - nivel.Elevation);
+                                }
+                                else
+                                {
+                                    // Coluna inclinada ou diagonal: preservar linha 3D completa
+                                    nova = doc.Create.NewFamilyInstance(
+                                        linha, simbolo, nivel, StructuralType.Brace);
+                                }
                             }
                             else
                             {
-                                // Coluna inclinada ou diagonal: preservar linha 3D completa
                                 nova = doc.Create.NewFamilyInstance(
-                                    linha, simbolo, nivel, StructuralType.Brace);
+                                    linha, simbolo, nivel, StructuralType.Beam);
                             }
+
+                            TentarAplicarRotacaoSecao(nova, origem, linha, doc);
+
+                            string ifcMaterial = origem.LookupParameter("IfcMaterial")?.AsString();
+                            if (!string.IsNullOrWhiteSpace(ifcMaterial))
+                                TentarAplicarMaterial(nova, ifcMaterial, doc);
+
+                            convertidos++;
+
+                            if (config.DeletarOriginal)
+                                doc.Delete(origem.Id);
                         }
-                        else
+                        catch (Exception)
                         {
-                            nova = doc.Create.NewFamilyInstance(
-                                linha, simbolo, nivel, StructuralType.Beam);
+                            ignorados++;
                         }
 
-                        TentarAplicarRotacaoSecao(nova, origem, linha, doc);
+                        processados++;
 
-                        string ifcMaterial = origem.LookupParameter("IfcMaterial")?.AsString();
-                        if (!string.IsNullOrWhiteSpace(ifcMaterial))
-                            TentarAplicarMaterial(nova, ifcMaterial, doc);
-
-                        convertidos++;
-
-                        if (config.DeletarOriginal)
-                            doc.Delete(origem.Id);
+                        // v2.7.7: throttle de progresso — reporta a cada N (ou no
+                        // fim) pra evitar inundar Dispatcher em galpoes grandes
+                        // (6983 elementos * 1 report cada = lag UI). Default 25
+                        // = ~280 reports em galpao do Alef, suave.
+                        if (progress != null
+                            && (processados % ProgressReportEveryNElements == 0
+                                || processados == total))
+                        {
+                            progress.Report(new ProgressReport(
+                                processados,
+                                total,
+                                $"Convertendo {processados}/{total} (convertidos {convertidos}, ignorados {ignorados})..."));
+                        }
                     }
-                    catch (Exception)
-                    {
-                        ignorados++;
-                    }
+
+                    t.Commit();
                 }
-
-                t.Commit();
+                catch (OperationCanceledException)
+                {
+                    // v2.7.7: cancelamento limpo. Transaction.Dispose() (using
+                    // block exit) faz rollback automatico pois t.Commit() nunca
+                    // foi chamado. Logger registra pra investigacao caso usuario
+                    // reporte "convertia mas parou no meio".
+                    Logger.Info(
+                        "[ConverterPerfilIfc] Cancelado pelo usuario apos {Conv}/{Total} elementos (rollback automatico)",
+                        convertidos + ignorados, total);
+                    progress?.Report(new ProgressReport(
+                        convertidos + ignorados, total,
+                        "Cancelado — alteracoes revertidas."));
+                }
             }
 
             return (convertidos, ignorados);
         }
+
+        /// <summary>
+        /// v2.7.7: frequencia de reports de progresso. Cada N elementos processados,
+        /// um <see cref="ProgressReport"/> e enviado. Valor escolhido empirico:
+        /// 25 = ~280 reports em galpao de 6983 elementos (Alef), suave pra UI WPF
+        /// sem inundacao do Dispatcher.
+        /// </summary>
+        private const int ProgressReportEveryNElements = 25;
 
         public List<Element> ColetarElementosIfc(Document doc)
         {
