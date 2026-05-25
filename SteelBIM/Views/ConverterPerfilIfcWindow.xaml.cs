@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using SteelBIM.Core;
 using SteelBIM.Forms;
 using SteelBIM.Models;
 using SteelBIM.Models.Ifc;
@@ -48,6 +50,14 @@ namespace SteelBIM.Views
 
         // v2.7.1: race-condition guard (window fechada antes do Execute terminar)
         private volatile bool _isClosing;
+
+        // v2.7.10: ProgressWindow + CTS pra UX de progresso/cancel no Conversor IFC.
+        // API ja existia desde v2.7.7 (IfcConversionHandler.Progress + .CancellationToken).
+        // Esta versao consome a API: ao clicar Converter, abre ProgressWindow modeless
+        // (botao Cancel funcional), reporta progresso a cada 25 elementos (throttle do
+        // service), e em caso de Cancel rollback automatico via Transaction.Dispose.
+        private CancellationTokenSource _cts;
+        private ProgressWindow _progressWindow;
 
         public ConverterPerfilIfcWindow(
             UIDocument uidoc,
@@ -369,16 +379,48 @@ namespace SteelBIM.Views
             _conversionHandler.Config = config;
             _conversionHandler.OnFinished = OnConversionFinished;
 
+            // v2.7.10: criar CTS + ProgressWindow modeless. CTS cancela a operacao
+            // via service.Executar(ct) — service captura OperationCanceledException
+            // e Transaction.Dispose faz rollback automatico.
+            _cts = new CancellationTokenSource();
+            _progressWindow = new ProgressWindow(
+                "Converter Perfis IFC",
+                $"Convertendo {elemComPerfil} elemento(s)...")
+            {
+                Owner = this
+            };
+            _progressWindow.Cancelled += (_, __) =>
+            {
+                try { _cts?.Cancel(); }
+                catch (ObjectDisposedException) { /* ignorado — CTS ja disposed */ }
+            };
+
+            // Progress<T> capturado aqui (UI thread) auto-marshalla callbacks pelo
+            // SynchronizationContext quando service.Executar (na thread Revit API)
+            // chamar progress.Report(...).
+            _conversionHandler.Progress = new Progress<ProgressReport>(report =>
+            {
+                if (_isClosing || _progressWindow == null) return;
+                _progressWindow.UpdateProgress(report);
+            });
+            _conversionHandler.CancellationToken = _cts.Token;
+
             // Desabilitar botoes pra evitar duplo-disparo enquanto Execute roda
             btnConverter.IsEnabled = false;
             btnCancelar.IsEnabled = false;
 
+            _progressWindow.Show();
             _conversionEvent.Raise();
         }
 
         /// <summary>
         /// Callback invocado pelo <see cref="IfcConversionHandler.Execute"/>
-        /// (thread Revit API). Mostra resultado + fecha Window via Dispatcher.
+        /// (thread Revit API). Mostra resultado + fecha ProgressWindow + Window
+        /// principal via Dispatcher.
+        ///
+        /// v2.7.10: detecta cancelamento via flag <c>_cts.IsCancellationRequested</c>
+        /// e mostra mensagem distinta (rollback aplicado). Sucesso normal mantem
+        /// mensagem original.
         /// </summary>
         private void OnConversionFinished(int convertidos, int ignorados)
         {
@@ -391,12 +433,37 @@ namespace SteelBIM.Views
                 if (_isClosing)
                     return;
 
-                AppDialogService.ShowInfo(
-                    "Converter Perfis IFC",
-                    $"Conversao concluida.\n\n" +
-                    $"Convertidos: {convertidos}\n" +
-                    $"Ignorados (sem eixo ou nivel detectavel): {ignorados}",
-                    "Conversao concluida");
+                // v2.7.10: fechar ProgressWindow + cleanup CTS antes de mostrar dialog
+                try
+                {
+                    if (_progressWindow != null && _progressWindow.IsVisible)
+                        _progressWindow.Close();
+                }
+                catch (InvalidOperationException) { /* progress window ja fechada */ }
+                _progressWindow = null;
+
+                bool wasCancelled = _cts?.IsCancellationRequested == true;
+                _cts?.Dispose();
+                _cts = null;
+
+                if (wasCancelled)
+                {
+                    AppDialogService.ShowInfo(
+                        "Converter Perfis IFC",
+                        $"Conversao cancelada pelo usuario.\n\n" +
+                        $"Rollback automatico aplicado — nenhum elemento Revit foi criado.\n" +
+                        $"Elementos processados antes do cancel: {convertidos + ignorados}",
+                        "Operacao cancelada");
+                }
+                else
+                {
+                    AppDialogService.ShowInfo(
+                        "Converter Perfis IFC",
+                        $"Conversao concluida.\n\n" +
+                        $"Convertidos: {convertidos}\n" +
+                        $"Ignorados (sem eixo ou nivel detectavel): {ignorados}",
+                        "Conversao concluida");
+                }
 
                 Close();
             });
@@ -427,7 +494,24 @@ namespace SteelBIM.Views
                 _conversionHandler.Config = null;
                 _conversionHandler.Doc = null;
                 _conversionHandler.OnFinished = null;
+                _conversionHandler.Progress = null;
+                _conversionHandler.CancellationToken = default;
             }
+
+            // v2.7.10: cleanup ProgressWindow + CTS se ainda abertos (Window principal
+            // fechada antes da conversao terminar — usuario clica X). CTS.Cancel
+            // dispara cancelamento do servico em curso; service rollback transaction.
+            if (_progressWindow != null && _progressWindow.IsVisible)
+            {
+                try { _progressWindow.Close(); }
+                catch (InvalidOperationException) { /* ignorado */ }
+            }
+            _progressWindow = null;
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException) { /* ignorado */ }
+            _cts?.Dispose();
+            _cts = null;
+
             base.OnClosed(e);
         }
     }
