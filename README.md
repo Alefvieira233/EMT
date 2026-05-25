@@ -102,28 +102,31 @@ Plugin estruturado em camadas, com decisões registradas em `docs/ADR/`:
 - **ADR-007** — Crash reporting via Sentry com `PiiScrubber`
 - **ADR-008** — Telemetria PostHog HTTP-direct (não SDK)
 
-São 851 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
+São 954 testes automatizados em `SteelBIM.Tests` cobrindo lógica pura:
 zoneamento de armadura NBR, formatadores culture-invariant, validação
 de configuração e regras de domínio.
 
 ## Versão atual
 
-**v2.6.4** — histórico completo de releases em
+**v2.7.6** (2026-05-24) — histórico completo de releases em
 [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
-- **v2.6.4** — Hotfix UX (5 Windows padronizadas: BlocoFundacao + Terças + PipeRack + PlacaBase + PlanoMontagem)
-- **v2.6.3** — Hotfix UX (17 ícones lucide_blue + bug Gerar Conexão + cleanup Resources/)
-- **v2.6.2** — Hotfix UX (DiagramaMontagemWindow botões sempre visíveis)
+- **v2.7.6** — Canonicalização de ícones do ribbon (5 swaps em [App.cs](SteelBIM/App.cs); 84% → 88% conformidade canônica)
+- **v2.7.5** — Hotfix visual Conversor IFC (botões e combos com texto cortado por `Height` override)
+- **v2.7.4** — Conversor IFC fixes do Victor: rotação preservada U/L/T + colunas inclinadas (`StructuralType.Brace`) + topo correto
+- **v2.7.3** — HOTFIX CRITICAL crash `ToggleButton.IsChecked` ao abrir Conversor IFC
+- **v2.7.2** — Vista de Peça modernizada (cotagem longitudinal reformulada + tag)
+- **v2.7.1** — Conversor IFC UX: dialog modeless + click-to-highlight + filtro estrutural
+- **v2.7.0** — FEATURE MAIOR: Conversor IFC → Perfis Nativos Revit (co-autoria 50/50 Victor)
+- **v2.6.4** — Hotfix UX (5 Windows padronizadas)
+- **v2.6.3** — Hotfix UX (17 ícones lucide_blue + cleanup Resources/)
+- **v2.6.2** — Hotfix UX (DiagramaMontagemWindow)
 - **v2.6.1** — Hotfix CRITICAL P0 (NBR-1 + NBR-2 + MARCA + security)
 - **v2.6.0** — Ribbon split (Modelagem + Detalhamento)
-- **v2.5.0** — Pre-market polish (README rewrite + 9 guards defensivos de doc.ActiveView)
-- **v2.4.1** — Hotfix gancho de estribo NBR 6118 9.4.6.1
-- **v2.4.0** — Diagrama de Montagem completo (100% padrão BR EM-08)
-- **v2.3.0** — MVP Diagrama de Montagem
-- **v2.2.0** — Sequenciamento BIM (4D phasing)
-- **v2.1.0** — Ribbon unificada + ícones lucide_blue
+- **v2.5.0** — Pre-market polish
+- **v2.4.0** — Diagrama de Montagem completo (padrão BR EM-08)
 - **v2.0.0** — Rebranding FerramentaEMT → SteelBIM
 
 ## Suporte e contato
@@ -132,17 +135,37 @@ Releases recentes:
 - Issues: [github.com/Alefvieira233/EMT/issues](https://github.com/Alefvieira233/EMT/issues)
 - Local: Uberlândia/MG, Brasil
 
+## Roadmap & Pricing
+
+**Pricing público sai na v2.8.0** (em definição). Modelo proposto a ser
+confirmado: trial 7 dias, tiers Professional / Studio / Perpétua. Para
+acesso antecipado ao programa beta, contatar via email (abaixo).
+
+**Roadmap próximo (v2.8.0, ~10 semanas):**
+
+- Code signing efetivo (cert Sectigo OV em aquisição)
+- EULA/Privacy/TOS revisados e ativados (revisão jurídica em curso)
+- Authenticode verification pós-extract no auto-update
+- Testes de unidade do `PfRebarService` (módulo PF core)
+- Conversor IFC com `IProgress` + `CancellationToken` (resolve trava em modelos > 5000 elementos)
+- Refactor template ADR-003 (AutoVistaService como modelo)
+
+Detalhes em [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## Status
 
-Plugin em fase comercial. Soft launch para alunos selecionados em
-andamento. Aprovado em auditoria sênior (8 PASS / 5 WARN / 0 CRITICAL
-nos 14 eixos auditados).
+Plugin em **soft launch funcional** com beta selecionado. Auditoria
+técnica completa de 2026-05-25 mapeou 22 achados críticos/altos e
+forneceu roadmap consolidado de 10 semanas até v2.8.0 production-grade
+(distribuição comercial, code-signed, legal-cover, manual). Artefatos
+da auditoria em `.audit/` (gitignored — workspace local).
 
-Pré-requisitos pós-MVP em backlog confirmado:
+Itens prioritários (Sprint 0/1 do roadmap v2.8.0):
 
-- Code signing cert (Sectigo OV — em processo de aquisição)
-- Revisão jurídica dos drafts em `docs/legal/` (em processo)
-- Migração ADR-003 dos services legados restantes (planejada para v2.6.0)
+- ✅ Hardening de CI aplicado em v2.7.7 (PR #20: cache NuGet, timeouts, dorny test-reporter, job EmtKeyGen)
+- ⏳ Code signing cert (Sectigo OV — aquisição planejada)
+- ⏳ Revisão jurídica dos drafts em `docs/legal/` (contratação de advogado TI planejada)
+- ⏳ Authenticode verification pós-extract no auto-update
 
 ## Licença
 

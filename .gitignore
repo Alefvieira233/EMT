@@ -128,3 +128,8 @@ FerramentaEMT_Patch_DropIn.zip
 # local em SteelBIM/Resources/_backup_<nome>_<data>/ pra comparar
 # antes/depois. NAO commitar — workspace local apenas.
 SteelBIM/Resources/_backup_*/
+
+# --- v2.7.7: auditoria completa de 2026-05-25 ---
+# Artefatos da auditoria (5 relatorios + 3 senior reviews + roadmap final).
+# Contem opinioes/analises internas — workspace local apenas, NAO commitar.
+.audit/
