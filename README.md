@@ -1,9 +1,9 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.7.11-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.0-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-1110%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-1151%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
 
 > **Detalhamento estrutural brasileiro direto no Revit.** Treliças, terças,
@@ -177,10 +177,11 @@ verificação Authenticode.
 
 ## Versão atual
 
-**v2.7.11** (2026-05-25) — histórico completo em [CHANGELOG.md](CHANGELOG.md).
+**v2.8.0** (2026-05-25) — auditoria 2026-05-25 **CONCLUÍDA**. Histórico completo em [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.8.0** — Wave 3 da auditoria 2026-05-25 (2 PRs Strangler Fig): pure helpers extraídos de 3 windows (F11 — PfRebarCoordinateParser + UniformPositionDistributor + NumeracaoEscopoParser) + DiagramaMontagemViewNamer extraído do orquestrador (F12). +41 testes (1110 → 1151). F13 (i18n EN/ES) **deferido** — depende de decisão estratégica LATAM.
 - **v2.7.11** — Wave 2 da auditoria 2026-05-25 (3 PRs estruturais): PfRebar Strangler Fig completion (F5 — original delega ao Pure, 7 métodos + 1 const), ADR-003 template em 4 services (F6 — Tercas/PipeRack/Escada/GuardaCorpo migrados pra IUIDecisionService), extrações NBR adicionais no Pure (F10 — 5 novos métodos cobrindo cobrimento + espaçamento + distribuição). +30 testes (1080 → 1110).
 - **v2.7.10** — Wave 1 da auditoria 2026-05-25 (6 PRs cirúrgicos): Conversor IFC com progresso/cancelamento (F1), build reproduzível packages.lock + Dependabot (F2), breadcrumbs Sentry sem PII pra LGPD (F3), Authenticode verify pós-extract flag-gated no auto-update (F4), README marketing-ready (F8), SECURITY.md + SUPPORT.md + fix de templates quebrados (F9). +32 testes (1048 → 1080).
 - **v2.7.9** — Sprint 2/3 estrutural: Nullable annotations projeto-wide + AutoVistaService template ADR-003 (IUIDecisionService injetada) + PfRebarServicePure extraction (resolve auditoria #1 bloqueador crítico, 58 testes novos)

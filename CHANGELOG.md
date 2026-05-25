@@ -8,11 +8,80 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-Roadmap v2.8.0 production-grade (ver [docs/ROADMAP.md](docs/ROADMAP.md)):
+**Auditoria 2026-05-25 CONCLUÍDA** com v2.8.0 (3 waves, 13 PRs estruturais).
 
-- **Wave 3** (v2.8.0): migração de 3 windows pra MVVM (PfColumnBars/PfBeamBars/NumeracaoItens), refactor DiagramaMontagem, i18n EN/ES (condicional a decisão LATAM)
-- **External-dependent (paralelo):** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
-- **F7 dropped:** MSI WiX cancelado por decisão do escritório (mantém setup .exe atual indefinidamente)
+Próximas atividades dependem de eventos externos:
+
+- **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
+- **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
+
+---
+
+## [2.8.0] - 2026-05-25
+
+### Wave 3 da auditoria 2026-05-25 — 2 PRs Strangler Fig + release final
+
+Wave 3 fecha a auditoria 2026-05-25. **Plano original previa F11 (3 windows MVVM completas, ~15-20h) + F12 (DiagramaMontagem refactor ~8-12h) + F13 (i18n EN/ES, ~12-16h)**. Escopo revisado em sessão autônoma por análise de risco:
+
+- F11 (windows MVVM completo) → **revisado pra extração Strangler Fig**: bindings MVVM exigiriam validação manual no Revit pra cada window, risco alto em modo autônomo. Trocado por extração de pure helpers (mesmo padrão de F5/F10), preservando bindings.
+- F12 (DiagramaMontagem refactor) → **revisado pra extração de naming helper**: auditoria revelou que a lógica algorítmica pesada JÁ foi extraída em v2.6.5/v2.6.6 (`DimensionPlanCalculator` + `Vec3` + 298 LOC de tests). Restou só o naming.
+- F13 (i18n EN/ES) → **deferido**: depende de decisão estratégica de expansão LATAM. Adicionar skeleton sem usar é YAGNI.
+
+#### Refactored
+
+- **(F11) Pure helpers extraídos de 3 windows** ([#46](https://github.com/Alefvieira233/EMT/pull/46)) —
+  novo namespace `SteelBIM.Views.Helpers/` com 3 classes:
+  `PfRebarCoordinateParser` (parser de coordenadas X;Y de barras de armadura,
+  extraído duplicado de PfColumnBars + PfBeamBars), `UniformPositionDistributor`
+  (distribuição uniforme de N posições em range, extraído duplicado dos mesmos
+  windows), `NumeracaoEscopoParser` (parser string → enum NumeracaoEscopo
+  extraído de NumeracaoItensWindow). Refactor secundário: `NumeracaoEscopo`
+  enum movido pra arquivo próprio pra remover dep transitiva de
+  `Autodesk.Revit.DB` no test project. **+33 testes** (15 + 11 + 7).
+
+- **(F12) DiagramaMontagemViewNamer extraído** ([#47](https://github.com/Alefvieira233/EMT/pull/47)) —
+  regra de naming contextual da vista (sufixo "(Planta)" quando
+  `OrientacaoDiagrama.Superior`) extraída do orquestrador de
+  `DiagramaMontagemService.Executar`. **+6 testes**.
+
+#### Test counts
+
+1110 → **1151 testes verde** (+41 novos: 33 F11 + 6 F12 + 2 consolidados).
+
+#### Migração / breaking
+
+Nenhuma. Wave 3 é 100% refactor: bindings das windows intactos, comportamento
+end-to-end preservado.
+
+#### F13 — i18n deferido (justificativa)
+
+Adicionar `Strings.resx` + `LocalizationProvider` sem migrar nenhuma das ~hundreds
+de strings PT-BR existentes seria dead code. A migração efetiva exige:
+1. Decisão estratégica (vale a pena LATAM?)
+2. Tradutor profissional pra terminologia técnica NBR + Revit
+3. Validação por usuários EN/ES nativos
+
+Tudo fora do escopo de sessão autônoma de engenharia. Reativar quando o
+escritório fechar parceria LATAM.
+
+---
+
+## Auditoria 2026-05-25 — Sumário consolidado
+
+Sessão autônoma de 3 waves consecutivas a partir do `/goal execute o plano detalhado acima`:
+
+| Wave | Versão | PRs | Foco | Test delta |
+|---|---|---|---|---|
+| Wave 1 | v2.7.10 | 6 (#35/#36/#37/#38/#39/#40) | IFC UX + packages.lock + Sentry LGPD + Authenticode flag + README marketing + SECURITY/SUPPORT | 1048 → 1080 (+32) |
+| Wave 2 | v2.7.11 | 3 (#42/#43/#44) | PfRebar Strangler Fig + ADR-003 em 4 services + Pure extractions NBR | 1080 → 1110 (+30) |
+| Wave 3 | v2.8.0 | 2 (#46/#47) | Helpers de 3 windows + DiagramaMontagem naming | 1110 → 1151 (+41) |
+| **Total** | — | **11 + 3 releases** | — | **1048 → 1151 (+103)** |
+
+Itens **deferidos** por critério explícito de risco/escopo:
+- **F7 (MSI WiX)** — decisão do escritório (mantém .exe setup)
+- **F13 (i18n EN/ES)** — depende de decisão estratégica LATAM
+- **Authenticode flag → TRUE** — aguarda cert Sectigo OV ser ativado
+- **EULA/Privacy/TOS** — aguarda revisão jurídica
 
 ---
 
