@@ -196,5 +196,82 @@ namespace SteelBIM.Services.PF
 
         /// <summary>Conversao matematica graus → radianos.</summary>
         public static double DegreesToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+        // =====================================================================
+        // v2.7.11 F10 (Wave 2): extracoes NBR 6118 adicionais.
+        //
+        // Logica que estava como private static no PfRebarService (Revit-bound),
+        // agora pura + testavel. PfRebarService passa a delegar pra esses
+        // metodos via wrappers de conversao feet↔mm.
+        // =====================================================================
+
+        /// <summary>
+        /// v2.7.11 F10 (NBR 6118 §7.4.7.1): clampa cobrimento ao MINIMO de 1.0 cm.
+        /// Recebe valor "bruto" da config (que pode estar 0 ou negativo se usuario
+        /// nao preencheu) e garante valor minimo seguro.
+        /// </summary>
+        public static double ClampCoverCm(double coverCm) => Math.Max(1.0, coverCm);
+
+        /// <summary>
+        /// v2.7.11 F10 (NBR 6118 §7.4.7.5): cobrimento efetivo das BARRAS LONGITUDINAIS =
+        /// cobrimento nominal + diametro do estribo (em cm). Se nao houver estribo
+        /// (diametroMm = 0), retorna apenas o cobrimento clampado.
+        /// </summary>
+        public static double EffectiveCoverCm(double coverCm, double stirrupDiameterMm)
+            => Math.Max(0.0, coverCm) + (Math.Max(0.0, stirrupDiameterMm) / 10.0);
+
+        /// <summary>
+        /// v2.7.11 F10 (NBR 6118 §18.3.2.2): espacamento livre minimo entre barras
+        /// longitudinais. Regra: <c>max(20mm, diametro_barra)</c>. A norma tambem
+        /// considera 1.2x diametro do maior agregado, mas como nao modelamos
+        /// agregado, ficamos com a constante (conservador na pratica).
+        /// </summary>
+        public static double MinimumClearSpacingMm(double barDiameterMm)
+            => Math.Max(20.0, barDiameterMm);
+
+        /// <summary>
+        /// v2.7.11 F10: verifica se o espacamento ENTRE-CENTROS de barras
+        /// (input) atende a regra NBR §18.3.2.2. Considera tolerancia
+        /// construtiva de 1mm.
+        /// </summary>
+        public static bool IsBarSpacingValid(double minCenterSpacingMm, double barDiameterMm)
+        {
+            if (barDiameterMm <= 1.0)
+                return true;
+            double clearSpacingMm = minCenterSpacingMm - barDiameterMm;
+            double minimumMm = MinimumClearSpacingMm(barDiameterMm);
+            return clearSpacingMm + 1.0 >= minimumMm;
+        }
+
+        /// <summary>
+        /// v2.7.11 F10: calcula espacamento uniforme pra distribuir
+        /// <paramref name="count"/> barras ao longo de <paramref name="pathLengthMm"/>.
+        /// Retorna 0 se inputs invalidos (count &lt;= 1 ou path muito curto).
+        /// </summary>
+        public static double CalculateLinearSpacingMm(int count, double pathLengthMm)
+        {
+            if (count <= 1 || pathLengthMm <= 5.0)
+                return 0.0;
+            return pathLengthMm / Math.Max(1, count - 1);
+        }
+
+        /// <summary>
+        /// v2.7.11 F10: fallback do layout "max spacing" quando o Revit
+        /// rejeita SetLayoutAsMaximumSpacing — recalcula o numero de barras
+        /// (count = floor(path/spacing) + 1, minimo 2) e o espacamento real
+        /// (path / (count - 1)) pra cair em SetLayoutAsNumberWithSpacing.
+        /// Retorna tupla (count, realSpacingMm).
+        /// </summary>
+        public static (int Count, double RealSpacingMm) CalculateMaxSpacingFallback(
+            double spacingMm,
+            double pathLengthMm)
+        {
+            if (spacingMm <= 1.0 || pathLengthMm <= 5.0)
+                return (Count: 0, RealSpacingMm: 0.0);
+
+            int count = Math.Max(2, (int)Math.Floor(pathLengthMm / spacingMm) + 1);
+            double realSpacing = pathLengthMm / Math.Max(1, count - 1);
+            return (Count: count, RealSpacingMm: realSpacing);
+        }
     }
 }

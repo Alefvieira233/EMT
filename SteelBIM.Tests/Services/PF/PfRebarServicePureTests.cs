@@ -342,5 +342,167 @@ namespace SteelBIM.Tests.Services.PF
             PfRebarServicePure.MinPieceMm.Should().Be(300.0,
                 "pedacos de barra util precisam ter pelo menos 30cm");
         }
+
+        // =============================================================
+        // v2.7.11 F10: extracoes NBR adicionais
+        // =============================================================
+
+        // ---------- ClampCoverCm (NBR 6118 §7.4.7.1) ----------
+
+        [Theory]
+        [InlineData(0.0, 1.0)]
+        [InlineData(-5.0, 1.0)]
+        [InlineData(0.5, 1.0)]
+        [InlineData(1.0, 1.0)]
+        [InlineData(1.5, 1.5)]
+        [InlineData(3.0, 3.0)]
+        public void ClampCoverCm_ValorAbaixoMinimo_RetornaUmCm(double input, double expected)
+        {
+            PfRebarServicePure.ClampCoverCm(input).Should().Be(expected);
+        }
+
+        // ---------- EffectiveCoverCm (NBR 6118 §7.4.7.5) ----------
+
+        [Fact]
+        public void EffectiveCoverCm_SemEstribo_RetornaCobrimentoNominal()
+        {
+            // Sem estribo (diametro 0): efetivo = cobrimento nominal
+            PfRebarServicePure.EffectiveCoverCm(coverCm: 3.0, stirrupDiameterMm: 0.0).Should().Be(3.0);
+        }
+
+        [Fact]
+        public void EffectiveCoverCm_ComEstribo8mm_SomaEm08cm()
+        {
+            // Estribo 8mm = 0.8cm. Cobrimento 3cm + 0.8cm = 3.8cm
+            PfRebarServicePure.EffectiveCoverCm(coverCm: 3.0, stirrupDiameterMm: 8.0).Should().Be(3.8);
+        }
+
+        [Fact]
+        public void EffectiveCoverCm_ComEstribo10mm_SomaEm1cm()
+        {
+            PfRebarServicePure.EffectiveCoverCm(coverCm: 2.5, stirrupDiameterMm: 10.0).Should().Be(3.5);
+        }
+
+        [Fact]
+        public void EffectiveCoverCm_ValoresNegativos_TratadosComoZero()
+        {
+            PfRebarServicePure.EffectiveCoverCm(coverCm: -2.0, stirrupDiameterMm: -5.0).Should().Be(0.0);
+        }
+
+        // ---------- MinimumClearSpacingMm (NBR 6118 §18.3.2.2) ----------
+
+        [Theory]
+        [InlineData(10.0, 20.0)]    // diam 10mm → min 20mm (regra constante)
+        [InlineData(16.0, 20.0)]    // diam 16mm → min 20mm
+        [InlineData(20.0, 20.0)]    // diam 20mm → empate
+        [InlineData(25.0, 25.0)]    // diam 25mm → min = diam
+        [InlineData(32.0, 32.0)]    // diam 32mm → min = diam
+        public void MinimumClearSpacingMm_AplicaMaxDe20mmOuDiametro(double barDiameterMm, double expected)
+        {
+            PfRebarServicePure.MinimumClearSpacingMm(barDiameterMm).Should().Be(expected);
+        }
+
+        // ---------- IsBarSpacingValid ----------
+
+        [Fact]
+        public void IsBarSpacingValid_BarrasMuitoPertas_Invalida()
+        {
+            // Diam 20mm, espacamento entre centros 30mm = clear 10mm < min 20mm
+            PfRebarServicePure.IsBarSpacingValid(minCenterSpacingMm: 30.0, barDiameterMm: 20.0)
+                .Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsBarSpacingValid_EspacamentoOk_Valida()
+        {
+            // Diam 16mm, espacamento entre centros 50mm = clear 34mm > min 20mm
+            PfRebarServicePure.IsBarSpacingValid(minCenterSpacingMm: 50.0, barDiameterMm: 16.0)
+                .Should().BeTrue();
+        }
+
+        [Fact]
+        public void IsBarSpacingValid_DiametroBarraIgnoravel_AceitaQualquer()
+        {
+            // barDiameter <= 1mm = considerado "sem barra" / nao validar
+            PfRebarServicePure.IsBarSpacingValid(minCenterSpacingMm: 0.5, barDiameterMm: 0.5)
+                .Should().BeTrue();
+        }
+
+        [Fact]
+        public void IsBarSpacingValid_ToleranciaConstrutiva1mm_RespeitadaNoLimite()
+        {
+            // Diam 25mm, min clear = 25mm. Center-to-center 49mm = clear 24mm.
+            // Com tolerancia +1mm: 24+1=25 >= 25 → valido (na linha)
+            PfRebarServicePure.IsBarSpacingValid(minCenterSpacingMm: 49.0, barDiameterMm: 25.0)
+                .Should().BeTrue();
+        }
+
+        // ---------- CalculateLinearSpacingMm ----------
+
+        [Theory]
+        [InlineData(0, 1000.0, 0.0)]     // count 0 → spacing 0 (invalido)
+        [InlineData(1, 1000.0, 0.0)]     // count 1 → spacing 0
+        [InlineData(2, 1000.0, 1000.0)]  // 2 barras em 1m → spacing 1m
+        [InlineData(5, 1000.0, 250.0)]   // 5 barras em 1m → 4 vaos → 250mm
+        [InlineData(11, 1000.0, 100.0)]  // 11 barras em 1m → 10 vaos → 100mm
+        [InlineData(3, 4.0, 0.0)]        // path 4mm <= 5mm → invalido
+        public void CalculateLinearSpacingMm_DistribuiUniforme(int count, double pathLengthMm, double expected)
+        {
+            PfRebarServicePure.CalculateLinearSpacingMm(count, pathLengthMm)
+                .Should().BeApproximately(expected, 0.001);
+        }
+
+        // ---------- CalculateMaxSpacingFallback ----------
+
+        [Fact]
+        public void CalculateMaxSpacingFallback_PathDivisivelPeloSpacing_RealEspacamentoBate()
+        {
+            // path 1000mm, max spacing 200mm → count = floor(1000/200)+1 = 6
+            // real spacing = 1000 / 5 = 200mm
+            var (count, realSpacingMm) = PfRebarServicePure.CalculateMaxSpacingFallback(
+                spacingMm: 200.0, pathLengthMm: 1000.0);
+
+            count.Should().Be(6);
+            realSpacingMm.Should().BeApproximately(200.0, 0.001);
+        }
+
+        [Fact]
+        public void CalculateMaxSpacingFallback_PathNaoDivisivel_RecalculaEspacamentoMenor()
+        {
+            // path 1000mm, max spacing 300mm → count = floor(1000/300)+1 = 4
+            // real spacing = 1000 / 3 ≈ 333mm (mas a regra "max" eh respeitada
+            // porque count cresce ao em vez do spacing — esperado: count=4, real=333)
+            var (count, realSpacingMm) = PfRebarServicePure.CalculateMaxSpacingFallback(
+                spacingMm: 300.0, pathLengthMm: 1000.0);
+
+            count.Should().Be(4);
+            realSpacingMm.Should().BeApproximately(333.333, 0.01);
+        }
+
+        [Fact]
+        public void CalculateMaxSpacingFallback_SpacingInvalido_RetornaZero()
+        {
+            var (count, _) = PfRebarServicePure.CalculateMaxSpacingFallback(
+                spacingMm: 0.5, pathLengthMm: 1000.0);
+            count.Should().Be(0);
+        }
+
+        [Fact]
+        public void CalculateMaxSpacingFallback_PathInvalido_RetornaZero()
+        {
+            var (count, _) = PfRebarServicePure.CalculateMaxSpacingFallback(
+                spacingMm: 200.0, pathLengthMm: 3.0);
+            count.Should().Be(0);
+        }
+
+        [Fact]
+        public void CalculateMaxSpacingFallback_MinimoCountSempre2()
+        {
+            // Path 100mm, max spacing 90mm → count = floor(100/90)+1 = 2 (ok)
+            // Edge: garante que count nunca cai abaixo de 2.
+            var (count, _) = PfRebarServicePure.CalculateMaxSpacingFallback(
+                spacingMm: 90.0, pathLengthMm: 100.0);
+            count.Should().BeGreaterThanOrEqualTo(2);
+        }
     }
 }

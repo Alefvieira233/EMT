@@ -1159,15 +1159,13 @@ namespace SteelBIM.Services.PF
             return last;
         }
 
-        private static double GetCover(double coverCm)
-        {
-            return ToFeetCm(Math.Max(1.0, coverCm));
-        }
+        // v2.7.11 F10 (NBR 6118 §7.4.7.1): delegado pra Pure. Cobrimento clampado
+        // em cm + conversao pra feet (Revit unit).
+        private static double GetCover(double coverCm) => ToFeetCm(PfRebarServicePure.ClampCoverCm(coverCm));
 
+        // v2.7.11 F10 (NBR 6118 §7.4.7.5): delegado pra Pure. Cobrimento efetivo cm.
         private static double GetEffectiveCoverCm(double coverCm, double stirrupDiameterMm)
-        {
-            return Math.Max(0.0, coverCm) + Math.Max(0.0, stirrupDiameterMm / 10.0);
-        }
+            => PfRebarServicePure.EffectiveCoverCm(coverCm, stirrupDiameterMm);
 
         private static Rebar CreateClosedRebar(
             Document doc,
@@ -1432,6 +1430,10 @@ namespace SteelBIM.Services.PF
             ValidateMinimumBarSpacing(context, localSectionPoints, barType?.BarNominalDiameter ?? 0.0);
         }
 
+        // v2.7.11 F10 (NBR 6118 §18.3.2.2): logica de espacamento livre minimo
+        // delegada pra Pure. So o loop O(n²) de menor distancia entre centros
+        // fica aqui (depende de XYZ Revit), e a regra de validacao em si vai
+        // pra Pure.IsBarSpacingValid + Pure.MinimumClearSpacingMm.
         private static void ValidateMinimumBarSpacing(string context, IEnumerable<XYZ> localSectionPoints, double barDiameter)
         {
             List<XYZ> points = (localSectionPoints ?? Enumerable.Empty<XYZ>()).ToList();
@@ -1452,28 +1454,34 @@ namespace SteelBIM.Services.PF
             if (double.IsInfinity(minCenterSpacing) || minCenterSpacing == double.MaxValue)
                 return;
 
-            double clearSpacing = minCenterSpacing - barDiameter;
-            double minimumClearSpacing = Math.Max(ToFeetMm(20.0), barDiameter);
-            if (clearSpacing + ToFeetMm(1.0) >= minimumClearSpacing)
+            double minCenterSpacingMm = ToMillimeters(minCenterSpacing);
+            double barDiameterMm = ToMillimeters(barDiameter);
+            if (PfRebarServicePure.IsBarSpacingValid(minCenterSpacingMm, barDiameterMm))
                 return;
 
+            double clearSpacingMm = minCenterSpacingMm - barDiameterMm;
+            double minimumMm = PfRebarServicePure.MinimumClearSpacingMm(barDiameterMm);
             throw new InvalidOperationException(
-                $"Espacamento insuficiente entre barras em {context}: livre {ToCentimeters(clearSpacing):0.#} cm; minimo adotado {ToCentimeters(minimumClearSpacing):0.#} cm.");
+                $"Espacamento insuficiente entre barras em {context}: livre {(clearSpacingMm / 10.0):0.#} cm; minimo adotado {(minimumMm / 10.0):0.#} cm.");
         }
 
+        // v2.7.11 F10: delegado pra Pure. Calculo do spacing uniforme isolado
+        // (testavel sem Revit); chamada do accessor fica aqui.
         private static void ApplyLinearLayout(Rebar rebar, int count, double pathLength)
         {
-            if (rebar == null || count <= 1 || pathLength <= ToFeetMm(5))
+            if (rebar == null)
                 return;
-
-            double spacing = pathLength / Math.Max(1, count - 1);
-            if (spacing <= 0)
+            double pathLengthMm = ToMillimeters(pathLength);
+            double spacingMm = PfRebarServicePure.CalculateLinearSpacingMm(count, pathLengthMm);
+            if (spacingMm <= 0.0)
                 return;
 
             rebar.GetShapeDrivenAccessor()
-                .SetLayoutAsNumberWithSpacing(count, spacing, true, true, true);
+                .SetLayoutAsNumberWithSpacing(count, ToFeetMm(spacingMm), true, true, true);
         }
 
+        // v2.7.11 F10: idem. Fallback (calculo de count+spacing pos-rejeicao
+        // do Revit) tambem delegado pra Pure.CalculateMaxSpacingFallback.
         private static void ApplyMaximumSpacingLayout(Rebar rebar, double spacing, double pathLength)
         {
             if (rebar == null || spacing <= ToFeetMm(1) || pathLength <= ToFeetMm(5))
@@ -1486,10 +1494,13 @@ namespace SteelBIM.Services.PF
             }
             catch
             {
-                int count = Math.Max(2, (int)Math.Floor(pathLength / spacing) + 1);
-                double realSpacing = pathLength / Math.Max(1, count - 1);
+                double spacingMm = ToMillimeters(spacing);
+                double pathLengthMm = ToMillimeters(pathLength);
+                (int count, double realSpacingMm) = PfRebarServicePure.CalculateMaxSpacingFallback(spacingMm, pathLengthMm);
+                if (count <= 0)
+                    return;
                 rebar.GetShapeDrivenAccessor()
-                    .SetLayoutAsNumberWithSpacing(count, realSpacing, true, true, true);
+                    .SetLayoutAsNumberWithSpacing(count, ToFeetMm(realSpacingMm), true, true, true);
             }
         }
 
