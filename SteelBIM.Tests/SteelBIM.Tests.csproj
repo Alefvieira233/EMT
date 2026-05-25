@@ -195,6 +195,16 @@
     <Compile Include="..\SteelBIM\Models\PF\PfRebarConfigs.cs"
              Link="LinkedSources\Models\PF\PfRebarConfigs.cs" />
 
+    <!-- v2.8.0 F11 (Wave 3): helpers extraidos de Views/*Window.xaml.cs -->
+    <Compile Include="..\SteelBIM\Views\Helpers\PfRebarCoordinateParser.cs"
+             Link="LinkedSources\Views\Helpers\PfRebarCoordinateParser.cs" />
+    <Compile Include="..\SteelBIM\Views\Helpers\UniformPositionDistributor.cs"
+             Link="LinkedSources\Views\Helpers\UniformPositionDistributor.cs" />
+    <Compile Include="..\SteelBIM\Views\Helpers\NumeracaoEscopoParser.cs"
+             Link="LinkedSources\Views\Helpers\NumeracaoEscopoParser.cs" />
+    <Compile Include="..\SteelBIM\Models\NumeracaoEscopo.cs"
+             Link="LinkedSources\Models\NumeracaoEscopo.cs" />
+
     <!-- v1.6.0: Incorporacao Victor Wave 2 (2026-04-24) — PF RebarShape + Bloco 2 Estacas + NBR 6118 -->
     <Compile Include="..\SteelBIM\Models\PF\PfRebarShapeOption.cs"
              Link="LinkedSources\Models\PF\PfRebarShapeOption.cs" />

@@ -10,6 +10,7 @@ using Autodesk.Revit.DB.Structure;
 using SteelBIM.Models.PF;
 using SteelBIM.Services.PF;
 using SteelBIM.Utils;
+using SteelBIM.Views.Helpers;
 using WpfEllipse = System.Windows.Shapes.Ellipse;
 using WpfLine = System.Windows.Shapes.Line;
 using WpfRectangle = System.Windows.Shapes.Rectangle;
@@ -169,44 +170,9 @@ namespace SteelBIM.Views
                 : fallback;
         }
 
+        // v2.8.0 F11 (Wave 3): delegado pra PfRebarCoordinateParser (testado em xUnit).
         private static List<PfColumnBarCoordinate> ParseCoordinates(string text, out string error)
-        {
-            error = string.Empty;
-            List<PfColumnBarCoordinate> coordinates = new List<PfColumnBarCoordinate>();
-
-            if (string.IsNullOrWhiteSpace(text))
-                return coordinates;
-
-            string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
-            for (int i = 0; i < lines.Length; i++)
-            {
-                string line = lines[i].Trim();
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                string[] parts = line.Split(new[] { ';', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length != 2)
-                {
-                    error = $"Linha {i + 1}: use o formato X(cm); Y(cm).";
-                    return new List<PfColumnBarCoordinate>();
-                }
-
-                if (!NumberParsing.TryParseDouble(parts[0].Trim(), out double xCm) ||
-                    !NumberParsing.TryParseDouble(parts[1].Trim(), out double yCm))
-                {
-                    error = $"Linha {i + 1}: X e Y precisam ser numeros em centimetros.";
-                    return new List<PfColumnBarCoordinate>();
-                }
-
-                coordinates.Add(new PfColumnBarCoordinate
-                {
-                    XCm = xCm,
-                    YCm = yCm
-                });
-            }
-
-            return coordinates;
-        }
+            => PfRebarCoordinateParser.ParseCoordinates(text, out error);
 
         private void ConfigureLapInputs()
         {
@@ -602,21 +568,9 @@ namespace SteelBIM.Views
             return bars;
         }
 
+        // v2.8.0 F11 (Wave 3): delegado pra UniformPositionDistributor (testado em xUnit).
         private static List<double> DistributePositions(int count, double min, double max)
-        {
-            if (count <= 0 || max < min)
-                return new List<double>();
-
-            if (count == 1 || max - min <= 0.001)
-                return new List<double> { (min + max) / 2.0 };
-
-            List<double> values = new List<double>();
-            double step = (max - min) / (count - 1);
-            for (int i = 0; i < count; i++)
-                values.Add(min + (step * i));
-
-            return values;
-        }
+            => UniformPositionDistributor.Distribute(count, min, max);
 
         private double ToCanvasX(double xCm, double scale)
         {

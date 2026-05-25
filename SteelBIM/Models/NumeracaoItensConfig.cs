@@ -2,12 +2,8 @@
 
 namespace SteelBIM.Models
 {
-    public enum NumeracaoEscopo
-    {
-        ModeloInteiro = 0,
-        VistaAtiva = 1,
-        SelecaoAtual = 2
-    }
+    // NumeracaoEscopo movido pra NumeracaoEscopo.cs em v2.8.0 F11 (Wave 3)
+    // pra permitir teste do parser sem dep Revit.
 
     public class NumeracaoItensConfig
     {

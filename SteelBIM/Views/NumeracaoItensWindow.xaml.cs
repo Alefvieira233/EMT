@@ -8,6 +8,7 @@ using Autodesk.Revit.UI;
 using SteelBIM.Models;
 using SteelBIM.Services;
 using SteelBIM.Utils;
+using SteelBIM.Views.Helpers;
 
 namespace SteelBIM.Views
 {
@@ -453,12 +454,8 @@ namespace SteelBIM.Views
             _settings.Save();
         }
 
-        private static NumeracaoEscopo ParseEscopo(string valor)
-        {
-            return Enum.TryParse(valor, ignoreCase: true, out NumeracaoEscopo escopo)
-                ? escopo
-                : NumeracaoEscopo.VistaAtiva;
-        }
+        // v2.8.0 F11 (Wave 3): delegado pra NumeracaoEscopoParser (testado em xUnit).
+        private static NumeracaoEscopo ParseEscopo(string valor) => NumeracaoEscopoParser.Parse(valor);
 
         private static int TentarLerInteiro(string texto, int valorPadrao)
         {
