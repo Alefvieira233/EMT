@@ -22,11 +22,14 @@
 ## Checklist
 
 - [ ] Segui as convencoes de commit (Conventional Commits)
-- [ ] `dotnet test` passa local (`cd FerramentaEMT.Tests && dotnet test`)
+- [ ] `dotnet test SteelBIM.Tests/SteelBIM.Tests.csproj` passa local
+- [ ] `dotnet build SteelBIM/SteelBIM.csproj -c Release` passa (TreatWarningsAsErrors)
+- [ ] `dotnet format --verify-no-changes` clean
 - [ ] Testei manualmente no Revit quando a mudanca toca em codigo Revit-bound
 - [ ] Atualizei o `CHANGELOG.md` (secao `[Unreleased]`)
 - [ ] Atualizei documentacao afetada (README, comentarios XML, docs/)
 - [ ] Se mudanca arquitetural: abri ADR em `docs/ADR/`
+- [ ] Se afeta seguranca: alinhado com [SECURITY.md](../SECURITY.md) threat model
 
 ## Impacto
 

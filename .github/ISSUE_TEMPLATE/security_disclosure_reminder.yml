@@ -1,0 +1,39 @@
+name: Vulnerabilidade de seguranca (LEIA ANTES)
+description: Lembrete — NAO reporte vulnerabilidades em issues publicas
+labels: ["security", "do-not-open-publicly"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # ⚠️ NAO REPORTE VULNERABILIDADES EM ISSUE PUBLICA
+
+        Issues publicas expoem o problema antes do fix estar disponivel,
+        colocando todos os usuarios em risco.
+
+        ## Use um destes canais privados:
+
+        1. **Email**: `engenheiroalefvieira@gmail.com` com assunto
+           `[SECURITY] <descricao>`
+        2. **GitHub Security Advisories** (privado): clique em
+           [Report a vulnerability](https://github.com/Alefvieira233/EMT/security/advisories/new)
+
+        Detalhes completos: [SECURITY.md](https://github.com/Alefvieira233/EMT/blob/main/SECURITY.md)
+
+        Resposta garantida em **ate 48h uteis**.
+
+        ## Se voce abriu essa issue por engano
+
+        Por favor:
+        1. Delete o conteudo da issue (mantenha so o titulo generico)
+        2. Reporte privadamente pelo email ou Security Advisory
+        3. Marque a issue como `wontfix` ou peca pra fechar
+
+        Obrigado por proteger os usuarios do plugin.
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmacao
+      options:
+        - label: Entendi que NAO devo descrever a vulnerabilidade aqui
+          required: true

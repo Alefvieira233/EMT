@@ -44,10 +44,8 @@ body:
     attributes:
       label: Versao do Revit
       options:
-        - Revit 2025
-        - Revit 2024
-        - Revit 2026
-        - Outro (descrever abaixo)
+        - Revit 2025 (suportada)
+        - Outro (nao suportada - descrever abaixo)
     validations:
       required: true
 
@@ -55,8 +53,21 @@ body:
     id: plugin-version
     attributes:
       label: Versao do plugin
-      description: Ribbon -> Sobre -> Versao
-      placeholder: "1.2.0"
+      description: Ribbon -> SteelBIM | Modelagem -> Sobre -> Versao
+      placeholder: "v2.7.10"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: license-state
+    attributes:
+      label: Estado da licenca
+      description: Visivel no painel Licenca do ribbon.
+      options:
+        - Trial (ativo)
+        - Trial expirado
+        - Valida (chave perpetua)
+        - Nao sei
     validations:
       required: true
 
@@ -64,7 +75,11 @@ body:
     id: logs
     attributes:
       label: Log (%LOCALAPPDATA%\SteelBIM\logs)
-      description: Cole as ultimas ~50 linhas do log do dia do erro. Remova qualquer info sensivel.
+      description: |
+        Cole as ultimas ~50 linhas do log do dia do erro.
+        IMPORTANTE: Remova qualquer info sensivel manualmente — embora o
+        plugin scrubbe PII automaticamente (paths de usuario, emails, nomes
+        de .rvt), revise antes de colar publicamente.
       render: text
 
   - type: textarea

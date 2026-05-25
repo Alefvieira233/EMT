@@ -1,8 +1,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentacao
-    url: https://github.com/Alefvieira233/SteelBIM/tree/main/docs
-    about: Arquitetura, plano 100/100, guias de onboarding e ADRs.
+    url: https://github.com/Alefvieira233/EMT/tree/main/docs
+    about: Arquitetura, ADRs, plano de auditoria, code-signing, ROADMAP.
   - name: Changelog
-    url: https://github.com/Alefvieira233/SteelBIM/blob/main/CHANGELOG.md
-    about: Historico completo de mudancas.
+    url: https://github.com/Alefvieira233/EMT/blob/main/CHANGELOG.md
+    about: Historico completo de releases (v2.0.0+).
+  - name: Suporte comercial e licenciamento
+    url: https://github.com/Alefvieira233/EMT/blob/main/SUPPORT.md
+    about: Email, SLA por tier, beta program e canais de contato.
+  - name: Reportar vulnerabilidade de seguranca
+    url: https://github.com/Alefvieira233/EMT/blob/main/SECURITY.md
+    about: NAO abra issue publica. Use o canal privado descrito em SECURITY.md.
