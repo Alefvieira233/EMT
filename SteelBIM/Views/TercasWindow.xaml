@@ -98,6 +98,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Label Grid.Row="0" Grid.Column="0" Content="Beiral inicial (cm):" VerticalAlignment="Center"/>
@@ -117,6 +118,18 @@
 
                         <CheckBox x:Name="chkInverter" Grid.Row="3" Grid.Column="0" Content="Inverter sentido das terças" Margin="0,6,0,0" TabIndex="15"/>
                         <CheckBox x:Name="chkDividir" Grid.Row="3" Grid.Column="1" Content="Dividir terças nos banzos selecionados" IsChecked="True" Margin="20,6,0,0" TabIndex="16"/>
+
+                        <!-- v2.8.1 (Victor): botao abre janela de espacamentos manuais.
+                             Quando ativo no fluxo, o servico usa EspacamentosCm em vez
+                             da distribuicao uniforme. -->
+                        <Button x:Name="btnEspacamentos"
+                                Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                                Content="Espaçamentos manuais..."
+                                Style="{StaticResource SecondaryActionButton}"
+                                Margin="0,10,0,0"
+                                HorizontalAlignment="Left"
+                                Width="200"
+                                TabIndex="17"/>
                     </Grid>
                 </GroupBox>
 

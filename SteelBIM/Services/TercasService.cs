@@ -5,6 +5,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using SteelBIM.Models;
 using SteelBIM.Utils;
+using SteelBIM.Views.Helpers;
 using IUIDecisionService = SteelBIM.Core.IUIDecisionService;
 
 namespace SteelBIM.Services
@@ -24,6 +25,19 @@ namespace SteelBIM.Services
         }
 
         public Result Executar(UIDocument uidoc, Document doc, TercasConfig config, Plane plane)
+            => ExecutarInterno(uidoc, doc, config, plane, prePickedLimA: null, prePickedLineAraw: null);
+
+        /// <summary>
+        /// v2.8.1 (Victor): overload que aceita a linha limite inicial ja
+        /// pre-pickada pelo command. Evita pick duplicado quando o command
+        /// precisa do vao da linha pra pre-preencher a TercasSpacingWindow.
+        /// </summary>
+        public Result Executar(UIDocument uidoc, Document doc, TercasConfig config, Plane plane,
+            Element? prePickedLimA, Line? prePickedLineAraw)
+            => ExecutarInterno(uidoc, doc, config, plane, prePickedLimA, prePickedLineAraw);
+
+        private Result ExecutarInterno(UIDocument uidoc, Document doc, TercasConfig config, Plane plane,
+            Element? prePickedLimA, Line? prePickedLineAraw)
         {
             if (plane == null)
             {
@@ -40,13 +54,25 @@ namespace SteelBIM.Services
                 return Result.Failed;
             }
 
-            Element elLimA, elLimB;
-            Line lineAraw, lineBraw;
-            if (!RevitUtils.TryGetLineFromPickedElement(uidoc, "Selecione a LINHA LIMITE INICIAL", out elLimA, out lineAraw))
+            Element elLimA;
+            Line lineAraw;
+            // v2.8.1 (Victor): usa pre-pick se disponivel; senao pickea normalmente.
+            if (prePickedLimA != null && prePickedLineAraw != null)
             {
-                _ui.Error(Titulo, "Nao foi possivel obter a linha limite inicial.");
-                return Result.Failed;
+                elLimA = prePickedLimA;
+                lineAraw = prePickedLineAraw;
             }
+            else
+            {
+                if (!RevitUtils.TryGetLineFromPickedElement(uidoc, "Selecione a LINHA LIMITE INICIAL", out elLimA, out lineAraw))
+                {
+                    _ui.Error(Titulo, "Nao foi possivel obter a linha limite inicial.");
+                    return Result.Failed;
+                }
+            }
+
+            Element elLimB;
+            Line lineBraw;
             if (!RevitUtils.TryGetLineFromPickedElement(uidoc, "Selecione a LINHA LIMITE FINAL", out elLimB, out lineBraw))
             {
                 _ui.Error(Titulo, "Nao foi possivel obter a linha limite final.");
@@ -111,6 +137,13 @@ namespace SteelBIM.Services
             double offsetFt = config.OffsetMm * RevitUtils.FT_PER_MM;
             double rotacaoRad = RevitUtils.DegToRad(config.RotacaoSecaoGraus);
 
+            // v2.8.1 (Victor): calcula parametros (0..1) ao longo da lineA/lineB.
+            // Delega ao helper puro (testavel sem Revit). Quando UsarEspacamentoManual
+            // + EspacamentosCm.Count == Quantidade+1, usa distancias customizadas;
+            // senao cai pra distribuicao uniforme.
+            List<double> parametros = TercasSpacingCalculator.CalcularParametrosPosicao(
+                config.Quantidade, config.UsarEspacamentoManual, config.EspacamentosCm, lineA.Length);
+
             using (Transaction t = new Transaction(doc, "Criar Terças por Plano"))
             {
                 t.Start();
@@ -118,10 +151,8 @@ namespace SteelBIM.Services
                     config.SymbolSelecionado.Activate();
                 doc.Regenerate();
 
-                double step = 1.0 / (config.Quantidade + 1);
-                for (int i = 1; i <= config.Quantidade; i++)
+                foreach (double par in parametros)
                 {
-                    double par = step * i;
                     XYZ ptA = lineA.Evaluate(par, true);
                     XYZ ptB = lineB.Evaluate(par, true);
                     XYZ dirSpan = RevitUtils.SafeNormalize(ptB - ptA);
@@ -145,6 +176,7 @@ namespace SteelBIM.Services
             _ui.Info(Titulo, "Tercas criadas por plano com sucesso.", "Lancamento concluido");
             return Result.Succeeded;
         }
+
 
         private void CreateTercaSegments(
             Document doc,
