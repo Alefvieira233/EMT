@@ -118,6 +118,11 @@
     <Compile Include="..\SteelBIM\Services\Montagem\EtapaMontagemParser.cs"
              Link="LinkedSources\Services\Montagem\EtapaMontagemParser.cs" />
 
+    <!-- v2.8.1 (Victor): ConexaoTercasMath — helper puro de dedup XY pra
+         comando "Inserir Conexao de Terca". Permite test sem Revit. -->
+    <Compile Include="..\SteelBIM\Services\ConexaoTercasMath.cs"
+             Link="LinkedSources\Services\ConexaoTercasMath.cs" />
+
     <!-- Sprint 7: Conexoes (modelos e calculadora sao pure C#) -->
     <Compile Include="..\SteelBIM\Models\Conexoes\TipoConexao.cs"
              Link="LinkedSources\Models\Conexoes\TipoConexao.cs" />

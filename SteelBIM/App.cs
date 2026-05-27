@@ -342,6 +342,18 @@ namespace SteelBIM
                 "column_line_small.png"
             );
 
+            // v2.8.1 (Victor): lancamento de conexoes estruturais em tercas selecionadas.
+            AddButton(
+                panelEstruturaMetalica,
+                "btnInserirConexaoTercas",
+                "Conexão\nTerça",
+                assemblyPath,
+                "SteelBIM.Commands.CmdInserirConexaoTercas",
+                "Insere a conexao estrutural nas extremidades e/ou meio das tercas selecionadas, posicionada na face inferior da secao.",
+                "link_large.png",
+                "link_small.png"
+            );
+
             // --- Operações em Vigas ---
             AddButton(
                 panelOperacoesVigas,
