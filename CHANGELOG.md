@@ -9,11 +9,113 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 **Auditoria 2026-05-25 CONCLUÍDA** com v2.8.0 (3 waves, 13 PRs estruturais).
+**Incorporação Victor** em v2.8.1 (2 PRs).
 
 Próximas atividades dependem de eventos externos:
 
 - **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
 - **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
+- **Manual no Revit (Alef):** validar rotação Passo 2 da Conexão Terça (Victor adicionou `-90°` em torno do eixo horizontal da terça pra erguer chapa de plano horizontal pra vertical, mas não validou — se sair invertida, trocar `-Math.PI/2` por `Math.PI/2` em `ConexaoTercasService.InserirConexao`)
+
+---
+
+## [2.8.1] - 2026-05-27
+
+### Incorporação Victor — 2 PRs sobre base v2.7.3 portados pra main v2.8.0
+
+Victor enviou um snapshot da base v2.7.3 com 2 contribuições estruturais
+desenvolvidas em paralelo ao roadmap principal da auditoria. Diff
+analisado vs nossa main v2.8.0, mudanças cirurgicamente portadas
+preservando todas as melhorias de v2.7.4→v2.8.0 (waves auditoria,
+ADR-003, Strangler Fig, nullable annotations, Authenticode flag, etc).
+
+#### Added
+
+- **(PR #49) Comando NOVO "Conexão Terça"** — lança instâncias de
+  família de conexão estrutural nas extremidades e/ou meio das terças
+  selecionadas, posicionadas na face inferior da seção (encostadas no
+  topo da viga de apoio).
+  - Novos: `Models/ConexaoTercasConfig.cs`, `Services/ConexaoTercasService.cs`,
+    `Services/ConexaoTercasMath.cs` (helper puro dedup XY 50mm),
+    `Views/ConexaoTercasWindow.xaml(.cs)`, `Commands/CmdInserirConexaoTercas.cs`,
+    `Utils/StructuralFramingSelectionFilter.cs` (extraído pra reuso).
+  - Janela popula parâmetros do FamilySymbol DINAMICAMENTE via SpecTypeId
+    (Length em mm, Angle em °, genérico sem sufixo).
+  - Algoritmo: pick terças → filtra famílias categoria "Conex*" pt/en →
+    aplica parâmetros ao FamilySymbol pré-Activate → dedup XY 50mm (nó
+    comum = 1 conexão) → insere com Z na face inferior → rotaciona 2
+    passos (azimute Z + ergue plano -90° eixo terça).
+  - Botão "Conexão Terça" novo no panel Estrutura Metálica (ícone link).
+  - **ATENÇÃO:** Passo 2 da rotação (-90° eixo horizontal) **não validado**
+    pelo Victor no env dele. Se chapa sair invertida → trocar `-Math.PI/2`
+    por `Math.PI/2` em `ConexaoTercasService.InserirConexao`.
+
+- **(PR #50) Fluxo automático no "Gerar Terças por Plano"** + wire-up
+  completo do espaçamento manual (janela órfã em main agora ligada).
+  - **Pick adicional de viga de referência** antes da janela → extrai
+    ângulo real da inclinação e pré-preenche campo Rotação. Esc =
+    fallback pro ângulo do plano de trabalho.
+  - **Pick antecipado da linha limite inicial** → extrai vão em cm e
+    pré-preenche campo "Vão total" na TercasSpacingWindow. Elemento+Line
+    repassados pro service via novo overload `Executar(...prePickedLimA, prePickedLineAraw)`
+    pra evitar pick duplicado (overload original mantido p/ backward compat).
+  - **`TercasWindow` ganha botão "Espaçamentos manuais..."** que abre
+    `TercasSpacingWindow` (existia desde versões anteriores mas estava
+    órfã — sem caller). Estado persiste entre aberturas.
+  - **`TercasSpacingWindow` reformulada**: mostra perfil selecionado
+    (família/tipo/dimensão d em cm), campo Vão total editável (muda →
+    escala todos proporcionalmente), editar espaçamento individual
+    recalcula o último como remainder, label Total verde (bate dentro
+    de 0.1cm) ou vermelho (não bate), validação OK se manual ativo
+    (todos > 0).
+  - **`TercasConfig`** +2 props: `UsarEspacamentoManual` + `EspacamentosCm`
+    (List<double> com Quantidade+1 distâncias em cm).
+  - **`TercasService`** distribuição agora delega ao helper puro
+    `TercasSpacingCalculator.CalcularParametrosPosicao` (testável sem
+    Revit). Quando manual ativo + count = Quantidade+1, usa distâncias
+    customizadas; senão cai pra uniforme (defensivo).
+  - Novo helper puro `Views/Helpers/TercasSpacingCalculator.cs` (160 LOC,
+    sem dependências Revit/WPF): `ScaleProportionally`, `RecalculateLastAsRemainder`,
+    `IsTotalMatching`, `CalcularParametrosPosicao`, constantes `FtPerCm`
+    e `DefaultMatchToleranceCm`.
+
+#### Changed
+
+- **(PR #50)** Default `cmbZJust` em TercasWindow mudou de **"Topo" (idx 2)**
+  para **"Inferior" (idx 3)**. Justificativa do Victor: base da seção
+  na linha de referência → terça apoia sobre o topo da viga, comportamento
+  esperado em telhado típico.
+
+#### Preserved (não regredido)
+
+- **ADR-003** (`IUIDecisionService _ui` injetado em TercasService) intacto
+- Overload original `TercasService.Executar(uidoc, doc, config, plane)` mantido
+- Banzos divisão, beirais, offset ao plano, inverter sentido — tudo igual
+
+#### Tests
+
+40 novos testes (1151 → **1191** verde):
+
+- **`ConexaoTercasMathTests`** (10): dedup XY tolerância 50mm padrão,
+  pontos iguais deduplicam, 30mm dentro, 70mm fora, exatamente 50mm
+  NÃO deduplica (defensivo), triângulo 3-4-5, coordenadas negativas,
+  Z ignorado (assinatura só XY), tolerância zero
+- **`TercasSpacingCalculatorTests`** (30): escala 600→800 (uniforme),
+  escala 600→0 (zeros), oldTotal zero/negativo (inalterado), null →
+  vazia, valores não-uniformes preservam proporção; remainder último
+  fecha total, input não mutado, soma_outros > total clampa 0, 1
+  elemento vira total; IsTotalMatching tolerância padrão 0.1, diff 0.05
+  match, diff 0.2 no, tolerância custom, null/vazia; CalcularParametrosPosicao
+  uniforme 5 terças, qtde 1 = meio, qtde 0 = vazia, manual 5 espaçamentos
+  iguais = uniforme, não-uniforme, count inválido cai uniforme, espaçamentos
+  null cai uniforme, vão 0 cai uniforme, extrapolação clampada em 1,
+  quantidade negativa retorna vazia
+
+#### Migração / breaking
+
+Nenhuma. Tudo additive ou com backward compat (novo overload, props com
+defaults sanos, ZJust default-change tem comportamento mais correto pra
+caso típico).
 
 ---
 
