@@ -30,12 +30,14 @@ namespace SteelBIM.Views
         private readonly List<(string Name, TextBox Tb, bool IsLength, bool IsAngle)> _paramRows
             = new List<(string, TextBox, bool, bool)>();
 
-        public ConexaoTercasWindow(List<FamilySymbol> symbols, int qtdeTercas)
+        public ConexaoTercasWindow(List<FamilySymbol> symbols, int qtdeTercas, int qtdeVigas = 0)
         {
             InitializeComponent();
             RevitWindowThemeService.Attach(this);
             _symbols = symbols;
-            txtSubtitulo.Text = $"{qtdeTercas} terça(s) selecionada(s). Escolha a família e o tipo de conexão.";
+            txtSubtitulo.Text = qtdeVigas > 0
+                ? $"{qtdeTercas} terça(s) e {qtdeVigas} viga(s) selecionadas. Escolha a família e o tipo de conexão."
+                : $"{qtdeTercas} terça(s) selecionada(s). Escolha a família e o tipo de conexão.";
             CarregarFamilias();
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -183,6 +185,8 @@ namespace SteelBIM.Views
                 SymbolSelecionado = item.Symbol,
                 ColocarExtremidades = chkExtremidades.IsChecked == true,
                 ColocarMeio = chkMeio.IsChecked == true,
+                ModoCompleto = chkModoCompleto.IsChecked == true,
+                VigaTipoI = chkVigaTipoI.IsChecked == true,
                 OffsetRotacaoGraus = rot,
                 OffsetVerticalAdicionalMm = offV,
                 ParametrosInternos = parametros

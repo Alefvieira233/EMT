@@ -12,17 +12,14 @@ using SteelBIM.Views;
 namespace SteelBIM.Commands
 {
     /// <summary>
-    /// Comando "Inserir Conexao de Terca" (v2.8.1, Victor).
+    /// Comando "Inserir Conexao de Terca".
     ///
-    /// <para>Fluxo:</para>
-    /// <list type="number">
-    ///   <item>PickObjects multiseleciona as tercas que receberao a conexao.</item>
-    ///   <item>Busca familias carregadas cuja categoria contém "onex" (cobre
-    ///         pt-BR "Conexoes Estruturais" e en-US "Connections").</item>
-    ///   <item>Abre janela com combos familia/tipo, checkboxes extremidades/meio,
-    ///         expander de parametros da familia, ajuste fino.</item>
-    ///   <item>Delega ao ConexaoTercasService que insere as instancias.</item>
-    /// </list>
+    /// <para>v2.8.1 inicial: 1 pick (terças) + dedup XY 50mm + rotação manual.</para>
+    ///
+    /// <para>v2.8.2 (algoritmo face-based validado): 2 picks separados —
+    /// terças + vigas de apoio. Service projeta a extremidade da terça na
+    /// curva da viga mais próxima, obtém a maior face planar do solid da
+    /// terça (alma em U/C/I), e insere face-based sem rotações manuais.</para>
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     public class CmdInserirConexaoTercas : FerramentaCommandBase
@@ -31,11 +28,11 @@ namespace SteelBIM.Commands
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
-            // 1. Seleciona as tercas no modelo antes de abrir a janela de configuracao.
-            IList<Reference> refs;
+            // 1. PICK #1 — Terças (filter framing).
+            IList<Reference> tercasRefs;
             try
             {
-                refs = uidoc.Selection.PickObjects(
+                tercasRefs = uidoc.Selection.PickObjects(
                     ObjectType.Element,
                     new StructuralFramingSelectionFilter(),
                     "Selecione as TERÇAS que receberão a conexão (Enter para confirmar)");
@@ -45,13 +42,34 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
             }
 
-            if (refs == null || refs.Count == 0)
+            if (tercasRefs == null || tercasRefs.Count == 0)
             {
                 AppDialogService.ShowWarning(CommandName, "Nenhuma terça foi selecionada.", "Seleção vazia");
                 return Result.Cancelled;
             }
 
-            // 2. Carrega familias de conexao estrutural.
+            // 2. PICK #2 — Vigas de apoio (filter beam). NOVO em v2.8.2.
+            // Necessário pra projetar o endpoint da terça na curva da viga.
+            IList<Reference> vigasRefs;
+            try
+            {
+                vigasRefs = uidoc.Selection.PickObjects(
+                    ObjectType.Element,
+                    new StructuralBeamSelectionFilter(),
+                    "Selecione as VIGAS DE APOIO que receberão as conexões (Enter para confirmar)");
+            }
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
+            {
+                return Result.Cancelled;
+            }
+
+            if (vigasRefs == null || vigasRefs.Count == 0)
+            {
+                AppDialogService.ShowWarning(CommandName, "Nenhuma viga de apoio foi selecionada.", "Seleção vazia");
+                return Result.Cancelled;
+            }
+
+            // 3. Carrega famílias de conexão estrutural.
             // Filtra por nome de categoria pois OST_StructuralConnections pode nao existir
             // na versao do SDK em uso — busca por substring "onex" para cobrir pt-BR e en-US.
             List<FamilySymbol> simbolos = new FilteredElementCollector(doc)
@@ -72,8 +90,8 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
             }
 
-            // 3. Abre a janela com o contexto das tercas ja selecionadas.
-            ConexaoTercasWindow wnd = new ConexaoTercasWindow(simbolos, refs.Count);
+            // 4. Abre a janela com o contexto das tercas + vigas ja selecionadas.
+            ConexaoTercasWindow wnd = new ConexaoTercasWindow(simbolos, tercasRefs.Count, vigasRefs.Count);
             if (wnd.ShowDialog() != true)
                 return Result.Cancelled;
 
@@ -84,7 +102,10 @@ namespace SteelBIM.Commands
                 return Result.Failed;
             }
 
-            return new ConexaoTercasService().Executar(uidoc, doc, config, refs);
+            // Anexa as vigas pickadas na config antes de enviar pro service.
+            config.VigasRefs = vigasRefs.ToList();
+
+            return new ConexaoTercasService().Executar(uidoc, doc, config, tercasRefs);
         }
     }
 }

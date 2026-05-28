@@ -127,6 +127,13 @@
          da math sem WPF/Revit attached. -->
     <Compile Include="..\SteelBIM\Views\Helpers\TercasSpacingCalculator.cs"
              Link="LinkedSources\Views\Helpers\TercasSpacingCalculator.cs" />
+    <!-- v2.8.2: ConexaoTercasGeometry — helpers puros (IsEndpointFree,
+         IsCloseToReference, MinDistanceToReferences, DistanceToSegment)
+         pra ConexaoTercasService. Recebe XYZ + tuplas de curvas, sem
+         FamilyInstance/LocationCurve. Testavel sem Revit attached
+         (Nice3point stubs ja providenciam XYZ no CI). -->
+    <Compile Include="..\SteelBIM\Services\ConexaoTercasGeometry.cs"
+             Link="LinkedSources\Services\ConexaoTercasGeometry.cs" />
 
     <!-- Sprint 7: Conexoes (modelos e calculadora sao pure C#) -->
     <Compile Include="..\SteelBIM\Models\Conexoes\TipoConexao.cs"

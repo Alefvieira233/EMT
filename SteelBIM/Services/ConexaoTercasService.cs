@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
@@ -12,34 +11,69 @@ using SteelBIM.Utils;
 namespace SteelBIM.Services
 {
     /// <summary>
-    /// Servico do comando "Inserir Conexao de Terca" (v2.8.1, Victor).
+    /// Servico do comando "Inserir Conexao de Terca" (v2.8.1 inicial,
+    /// reescrito em v2.8.2 com algoritmo face-based validado).
     ///
-    /// <para>Lanca instancias de familia de conexao estrutural nas extremidades
-    /// e/ou no meio das tercas selecionadas, posicionadas na face inferior da
-    /// seçao (= encostadas no topo da viga de apoio).</para>
-    ///
-    /// <para>Algoritmo:</para>
+    /// <para>Resolve os 4 problemas reportados pelo Victor em teste real
+    /// (audio 28/05):</para>
     /// <list type="number">
-    ///   <item>Para cada terca, calcula direcao XY + azimute + meia-altura da
-    ///         seçao (procura param d/H/h/Altura).</item>
-    ///   <item>Gera pontos candidatos: extremidades (p1,p2) e/ou meio.</item>
-    ///   <item>Deduplica por proximidade XY (50mm) — quando duas tercas se
-    ///         encontram no mesmo nó, insere UMA conexao só.</item>
-    ///   <item>Aplica parametros customizados ao FamilySymbol antes do Activate.</item>
-    ///   <item>Insere com Z = base - meiaAltura - offsetV (face inferior).</item>
-    ///   <item>Rotaciona em 2 passos:
-    ///         <list type="bullet">
-    ///           <item>Eixo Z — alinha azimute com direcao da terça + offset usuario.</item>
-    ///           <item>Eixo horizontal da terça — -90° pra erguer chapa de plano
-    ///                 horizontal pra vertical (encosta na alma).</item>
-    ///         </list>
-    ///   </item>
+    ///   <item><b>Duplicacao por seleção Element+Face</b>: filtros explicitos
+    ///         <see cref="ConexaoTercasGeometry.IsEndpointFree"/> e
+    ///         <see cref="ConexaoTercasGeometry.IsCloseToReference"/> rodam
+    ///         ANTES da geracao de pontos, evitando dependencia exclusiva
+    ///         de dedup posterior. Dedup XY 50mm continua como guard
+    ///         final (defesa em profundidade).</item>
+    ///   <item><b>Falta de referencia terça↔viga</b>: o command agora exige
+    ///         pick #2 (vigas de apoio). O service projeta a extremidade
+    ///         da terça na curva da viga mais proxima pra obter o ponto
+    ///         de insercao real, nao a extremidade da terça em si.</item>
+    ///   <item><b>Alinhamento no eixo vs alma</b>: inserção face-based usando
+    ///         a maior face planar do solid da terça
+    ///         (<c>NewFamilyInstance(face, point, dir, symbol)</c>).
+    ///         Em U/C/I, a maior face é a alma — a chapa encosta
+    ///         naturalmente sem precisar de rotacao manual.</item>
+    ///   <item><b>Rotações manuais imprevisíveis</b>: eliminadas. A inserção
+    ///         face-based ja orienta a familia corretamente; aplica-se
+    ///         apenas o offset de rotacao opcional do usuario.</item>
+    /// </list>
+    ///
+    /// <para>Algoritmo (1 caminho, sem fallback):</para>
+    /// <list type="number">
+    ///   <item>Para cada terça: extrai curva, p0/p1, GetTransform.</item>
+    ///   <item>Filtra extremidades livres + proximas de viga.</item>
+    ///   <item>Projeta endpoint escolhido na curva da viga mais proxima.</item>
+    ///   <item>Obtem solids via <c>GetAllSolids(false)</c> + maior face planar.</item>
+    ///   <item>Modo Completo opcional: raycast pra GetBottomFace + altura.</item>
+    ///   <item><c>NewFamilyInstance(sideFace, finalPoint, ejeX, symbol)</c>.</item>
+    ///   <item>Guard: corrige posicao via MoveElement se Location divergir
+    ///         (caso WorkPlaneBased ignorar XYZ).</item>
     /// </list>
     /// </summary>
     public class ConexaoTercasService
     {
-        // Tolerancia XY delegada para o helper puro (testavel sem Revit).
-        // Ver ConexaoTercasMath.DedupToleranceMm (50.0) e DedupToleranceFt.
+        // ---------- Constantes ----------
+
+        /// <summary>
+        /// Tolerancia padrao pra IsEndpointFree em pés (50 mm).
+        /// Mesma do <see cref="ConexaoTercasMath.DedupToleranceMm"/> — manter
+        /// alinhadas pra defesa em profundidade.
+        /// </summary>
+        private static readonly double EndpointFreeTolFt = 50.0 / 304.8;
+
+        /// <summary>
+        /// Distancia maxima pra IsCloseToReference em pés (2000 mm).
+        /// Endpoints alem disso de qualquer viga sao descartados.
+        /// </summary>
+        private static readonly double MaxDistToBeamFt = 2000.0 / 304.8;
+
+        /// <summary>
+        /// Delta minimo entre Location.Point e finalPoint pra disparar o
+        /// guard MoveElement. 1e-4 ft ≈ 0.03 mm — abaixo disso a divergencia
+        /// é ruído de ponto flutuante.
+        /// </summary>
+        private const double MoveGuardThresholdFt = 1e-4;
+
+        // ---------- Entry point ----------
 
         public Result Executar(UIDocument uidoc, Document doc, ConexaoTercasConfig config, IList<Reference> refs)
         {
@@ -52,50 +86,71 @@ namespace SteelBIM.Services
                 return Result.Failed;
             }
 
+            // Vigas de apoio sao obrigatorias em v2.8.2.
+            // Falta dela = comportamento antigo (v2.8.1) sem ancoragem em viga.
+            if (config.VigasRefs == null || config.VigasRefs.Count == 0)
+            {
+                AppDialogService.ShowWarning(
+                    "Conexão de Terça",
+                    "Nenhuma viga de apoio foi selecionada.\n\nO comando precisa de pelo menos uma viga para projetar as conexões.",
+                    "Vigas obrigatorias");
+                return Result.Failed;
+            }
+
             double rotOffsetRad = RevitUtils.DegToRad(config.OffsetRotacaoGraus);
             double offsetVFt = config.OffsetVerticalAdicionalMm * RevitUtils.FT_PER_MM;
 
-            List<PontoCon> pontos = new List<PontoCon>();
+            // 1. Resolve curvas das terças e das vigas (em tuplas pra usar nos helpers puros).
+            var tercas = ResolveTercaInfos(doc, refs);
+            var vigaCurves = ResolveVigaCurves(doc, config.VigasRefs);
+            var vigaTuples = vigaCurves.Select(VigaTuple).ToList();
 
-            foreach (Reference r in refs)
+            // 2. Coleta pontos a inserir aplicando os filtros.
+            var pontos = new List<PontoCon>();
+            foreach (var terca in tercas)
             {
-                Element el = doc.GetElement(r);
-                Curve? curve = RevitUtils.GetElementCurve(el);
-                if (curve == null)
-                    continue;
-
-                XYZ p1 = curve.GetEndPoint(0);
-                XYZ p2 = curve.GetEndPoint(1);
-                XYZ dir = RevitUtils.SafeNormalize(p2 - p1);
-                if (RevitUtils.IsZeroVector(dir))
-                    continue;
-
-                // Componente horizontal da direcao — usada como eixo de inclinacao.
-                XYZ dirXY = new XYZ(dir.X, dir.Y, 0);
-                if (dirXY.GetLength() > RevitUtils.EPS)
-                    dirXY = dirXY.Normalize();
-                else
-                    dirXY = XYZ.BasisX;
-
-                Level? nivel = RevitUtils.GetElementLevel(doc, el);
-                double halfH = GetHalfSectionHeightFt(el);
-                double azimuth = Math.Atan2(dirXY.Y, dirXY.X);
-                double rotTotal = azimuth + rotOffsetRad;
+                // Outras terças = todas exceto a propria (compara por ElementId)
+                var outrasTercas = tercas
+                    .Where(t => t.Element.Id != terca.Element.Id)
+                    .Select(t => ((t.P0.X, t.P0.Y, t.P0.Z), (t.P1.X, t.P1.Y, t.P1.Z)))
+                    .ToList();
 
                 if (config.ColocarExtremidades)
                 {
-                    pontos.Add(new PontoCon(p1, halfH, rotTotal, dirXY, nivel));
-                    pontos.Add(new PontoCon(p2, halfH, rotTotal, dirXY, nivel));
+                    var endpoints = new[] { terca.P0, terca.P1 };
+                    var validos = endpoints
+                        .Where(p => ConexaoTercasGeometry.IsEndpointFree(
+                            ToTuple(p), outrasTercas, EndpointFreeTolFt))
+                        .Where(p => ConexaoTercasGeometry.IsCloseToReference(
+                            ToTuple(p), vigaTuples, MaxDistToBeamFt))
+                        .ToList();
+                    if (validos.Count == 0)
+                        continue;
+
+                    XYZ best = validos
+                        .OrderBy(p => ConexaoTercasGeometry.MinDistanceToReferences(
+                            ToTuple(p), vigaTuples))
+                        .First();
+                    VigaInfo? melhorViga = FindClosestViga(best, vigaCurves);
+                    if (melhorViga == null)
+                        continue;
+
+                    XYZ finalPoint = ProjectOnCurve(best, melhorViga.Value.Curve);
+                    pontos.Add(new PontoCon(finalPoint, terca, melhorViga.Value));
                 }
                 if (config.ColocarMeio)
                 {
-                    pontos.Add(new PontoCon((p1 + p2) / 2.0, halfH, rotTotal, dirXY, nivel));
+                    XYZ meio = (terca.P0 + terca.P1) / 2.0;
+                    VigaInfo? melhorViga = FindClosestViga(meio, vigaCurves);
+                    if (melhorViga == null)
+                        continue;
+                    XYZ finalPoint = ProjectOnCurve(meio, melhorViga.Value.Curve);
+                    pontos.Add(new PontoCon(finalPoint, terca, melhorViga.Value));
                 }
             }
 
-            // Dedup por proximidade XY: quando duas tercas se encontram no mesmo nó,
-            // coloca apenas uma conexao — ela conecta as duas tercas.
-            List<XYZ> colocados = new List<XYZ>();
+            // 3. Transaction unica — insere face-based + aplica params + guard.
+            var colocados = new List<XYZ>();
             int count = 0;
 
             using (Transaction t = new Transaction(doc, "Inserir Conexões de Terça"))
@@ -116,14 +171,20 @@ namespace SteelBIM.Services
 
                 foreach (PontoCon pt in pontos)
                 {
-                    bool jaColocado = colocados.Any(c => IsWithinDedupToleranceXY(c, pt.Base));
+                    // Guard final: dedup XY 50mm. Mantido em paralelo a IsEndpointFree
+                    // como defesa em profundidade — caso a malha tenha terças que
+                    // compartilham mesmo node mas nao foram pegas pelo IsEndpointFree
+                    // (ex: usuario selecionou só uma das duas).
+                    bool jaColocado = colocados.Any(c => ConexaoTercasMath.IsWithinDistanceXY(
+                        c.X, c.Y, pt.Base.X, pt.Base.Y, ConexaoTercasMath.DedupToleranceFt));
                     if (jaColocado)
                         continue;
 
-                    InserirConexao(doc, pt.Base, pt.HalfH, offsetVFt, pt.Rot, pt.DirXY,
-                                   config.SymbolSelecionado, pt.Nivel);
-                    colocados.Add(pt.Base);
-                    count++;
+                    if (InserirConexao(doc, pt, offsetVFt, rotOffsetRad, config))
+                    {
+                        colocados.Add(pt.Base);
+                        count++;
+                    }
                 }
 
                 t.Commit();
@@ -137,99 +198,301 @@ namespace SteelBIM.Services
             return Result.Succeeded;
         }
 
-        /// <summary>
-        /// True se os pontos <paramref name="a"/> e <paramref name="b"/> estao
-        /// dentro de <see cref="ConexaoTercasMath.DedupToleranceMm"/> mm no
-        /// plano XY (Z ignorado). Delega ao math puro pra permitir teste sem
-        /// Revit runtime.
-        /// </summary>
-        internal static bool IsWithinDedupToleranceXY(XYZ a, XYZ b)
-            => ConexaoTercasMath.IsWithinDistanceXY(a.X, a.Y, b.X, b.Y, ConexaoTercasMath.DedupToleranceFt);
+        // ---------- Helpers de resolucao ----------
 
-        // Insere e orienta uma instancia da conexao:
-        //  1. Posicao Z na face inferior da terça (= face superior da viga de apoio).
-        //  2. Rotacao Z para alinhar o azimute com a direcao da terça (+ offset do usuario).
-        //  3. Rotacao -90° ao redor do eixo horizontal da terça (dirXY) para erguer a
-        //     familia de plano horizontal para vertical, encostando na alma da terça.
-        private static void InserirConexao(
-            Document doc,
-            XYZ basePt,
-            double halfHeightFt,
-            double offsetVertFt,
-            double rotacaoRad,
-            XYZ dirXY,
-            FamilySymbol symbol,
-            Level? nivel)
+        private static List<TercaInfo> ResolveTercaInfos(Document doc, IList<Reference> refs)
         {
-            XYZ insertPt = new XYZ(basePt.X, basePt.Y, basePt.Z - halfHeightFt - offsetVertFt);
+            var list = new List<TercaInfo>();
+            foreach (Reference r in refs)
+            {
+                Element el = doc.GetElement(r);
+                Curve? c = RevitUtils.GetElementCurve(el);
+                if (c == null)
+                    continue;
 
-            FamilyInstance fi = nivel != null
-                ? doc.Create.NewFamilyInstance(insertPt, symbol, nivel, StructuralType.NonStructural)
-                : doc.Create.NewFamilyInstance(insertPt, symbol, StructuralType.NonStructural);
+                XYZ p0 = c.GetEndPoint(0);
+                XYZ p1 = c.GetEndPoint(1);
+                XYZ dir = RevitUtils.SafeNormalize(p1 - p0);
+                if (RevitUtils.IsZeroVector(dir))
+                    continue;
 
-            if (fi == null)
+                list.Add(new TercaInfo(el, p0, p1, dir));
+            }
+            return list;
+        }
+
+        private static List<VigaInfo> ResolveVigaCurves(Document doc, IList<Reference> vigasRefs)
+        {
+            var list = new List<VigaInfo>();
+            foreach (Reference r in vigasRefs)
+            {
+                Element el = doc.GetElement(r);
+                Curve? c = RevitUtils.GetElementCurve(el);
+                if (c == null)
+                    continue;
+                list.Add(new VigaInfo(el, c));
+            }
+            return list;
+        }
+
+        // ---------- Helpers de projecao ----------
+
+        private static VigaInfo? FindClosestViga(XYZ ponto, IList<VigaInfo> vigas)
+        {
+            VigaInfo? best = null;
+            double minDist = double.MaxValue;
+            foreach (var v in vigas)
+            {
+                IntersectionResult? proj = null;
+                try
+                { proj = v.Curve.Project(ponto); }
+                catch { }
+                double d = proj?.Distance ?? double.MaxValue;
+                if (d < minDist)
+                {
+                    minDist = d;
+                    best = v;
+                }
+            }
+            return best;
+        }
+
+        private static XYZ ProjectOnCurve(XYZ ponto, Curve curva)
+        {
+            try
+            {
+                IntersectionResult? proj = curva.Project(ponto);
+                return proj?.XYZPoint ?? ponto;
+            }
+            catch
+            {
+                return ponto;
+            }
+        }
+
+        private static (double X, double Y, double Z) ToTuple(XYZ p) => (p.X, p.Y, p.Z);
+
+        private static ((double, double, double), (double, double, double)) VigaTuple(VigaInfo v)
+        {
+            XYZ a = v.Curve.GetEndPoint(0);
+            XYZ b = v.Curve.GetEndPoint(1);
+            return ((a.X, a.Y, a.Z), (b.X, b.Y, b.Z));
+        }
+
+        // ---------- Insercao face-based ----------
+
+        /// <summary>
+        /// Insere uma instancia de conexao usando a maior face planar do
+        /// solid da terça como host. Retorna true se a instancia foi criada.
+        /// </summary>
+        private static bool InserirConexao(
+            Document doc,
+            PontoCon pt,
+            double offsetVertFt,
+            double rotOffsetRad,
+            ConexaoTercasConfig config)
+        {
+            try
+            {
+                // Solids da terça (geometria local da familia — isRealLocation=false).
+                var solids = pt.Terca.Element.GetAllSolids(false, out var _);
+                PlanarFace? sideFace = solids
+                    .SelectMany(s => s.Faces.Cast<Face>())
+                    .OfType<PlanarFace>()
+                    .OrderByDescending(f => f.Area)
+                    .FirstOrDefault();
+
+                if (sideFace == null)
+                {
+                    Logger.Warn("[ConexaoTerca] Terça {Id} nao tem face planar — pulando", pt.Terca.Element.Id);
+                    return false;
+                }
+
+                // Eixos locais da terça pra orientar a familia
+                Transform tf = (pt.Terca.Element as FamilyInstance)?.GetTransform() ?? Transform.Identity;
+                XYZ ejeX = tf.BasisX;
+                XYZ ejeZ = tf.BasisZ.IsZeroLength() ? XYZ.BasisZ : tf.BasisZ.Normalize();
+                if (ejeZ.Z < 0)
+                    ejeZ = -ejeZ;
+                if ((pt.Terca.Element as FamilyInstance)?.Mirrored == true)
+                    ejeX = -ejeX;
+
+                XYZ insertPt = new XYZ(pt.Base.X, pt.Base.Y, pt.Base.Z - offsetVertFt);
+
+                FamilyInstance fi = doc.Create.NewFamilyInstance(
+                    sideFace, insertPt, ejeX, config.SymbolSelecionado);
+
+                if (fi == null)
+                {
+                    Logger.Warn("[ConexaoTerca] NewFamilyInstance retornou null em terça {Id}", pt.Terca.Element.Id);
+                    return false;
+                }
+
+                doc.Regenerate();
+
+                // Guard defensivo: pra familias WorkPlaneBased, NewFamilyInstance(face,...)
+                // pode ignorar o XYZ e colocar no GlobalPoint da face. Corrige via
+                // MoveElement se a divergencia for material.
+                XYZ? actualPos = (fi.Location as LocationPoint)?.Point;
+                if (actualPos != null && actualPos.DistanceTo(insertPt) > MoveGuardThresholdFt)
+                {
+                    try
+                    { ElementTransformUtils.MoveElement(doc, fi.Id, insertPt - actualPos); }
+                    catch (Exception ex) { Logger.Warn(ex, "[ConexaoTerca] MoveElement guard falhou"); }
+                }
+
+                // Rotacao opcional do usuario (offset adicional)
+                if (Math.Abs(rotOffsetRad) > RevitUtils.EPS)
+                {
+                    doc.Regenerate();
+                    XYZ dirNorm = pt.Terca.Direction.GetLength() > RevitUtils.EPS
+                        ? pt.Terca.Direction.Normalize()
+                        : XYZ.BasisX;
+                    Line eixo = Line.CreateBound(insertPt, insertPt + dirNorm);
+                    try
+                    { ElementTransformUtils.RotateElement(doc, fi.Id, eixo, rotOffsetRad); }
+                    catch (Exception ex) { Logger.Warn(ex, "[ConexaoTerca] RotateElement offset falhou"); }
+                }
+
+                // Modo Completo: ajusta parametros de altura + espessura viga
+                if (config.ModoCompleto)
+                {
+                    AplicarModoCompleto(doc, fi, pt, config);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[ConexaoTerca] insercao falhou em terça {Id}",
+                    pt.Terca.Element.Id);
+                return false;
+            }
+        }
+
+        // ---------- Modo Completo ----------
+
+        /// <summary>
+        /// Calcula a altura ate o topo da viga de apoio via raycast vertical
+        /// e aplica nos parametros da familia (com fallback PT/ES nos nomes).
+        /// Silencioso se a familia nao tem os parametros — modo Completo
+        /// vira no-op nesse caso (nao falha).
+        /// </summary>
+        private static void AplicarModoCompleto(Document doc, FamilyInstance fi, PontoCon pt, ConexaoTercasConfig config)
+        {
+            double alturaFt = CalcularAlturaAteTopoViga(doc, pt, config.VigaTipoI);
+            if (alturaFt <= 0)
                 return;
 
-            // Passo 1: alinha o azimute com a direcao da terça.
-            if (Math.Abs(rotacaoRad) > RevitUtils.EPS)
+            // Lookup duplo: aceita PT-BR e ES-LATAM (familias do Victor + Silvia)
+            Parameter? pAlt = fi.LookupParameter("Altura_PlacaInf_a_Terca")
+                          ?? fi.LookupParameter("Altura_PlacaInf_a_Correa");
+            if (pAlt != null && !pAlt.IsReadOnly && pAlt.StorageType == StorageType.Double)
             {
-                Line eixoZ = Line.CreateBound(insertPt, insertPt + XYZ.BasisZ);
-                ElementTransformUtils.RotateElement(doc, fi.Id, eixoZ, rotacaoRad);
+                try
+                { pAlt.Set(alturaFt); }
+                catch (Exception ex) { Logger.Warn(ex, "[ConexaoTerca] Set Altura_PlacaInf falhou"); }
             }
 
-            // Passo 2: ergue a familia de plano horizontal para vertical.
-            // Rotacao de -90° ao redor do eixo horizontal da terça (dirXY).
-            // Antes: plano da chapa = XY (normal = Z).
-            // Depois: plano da chapa = vertical (normal = perp a terça em XY),
-            //         que é a orientacao correta para encostar na alma da terça.
-            //
-            // NOTA: validacao em Revit pendente (Victor nao validou no env dele).
-            // Se a chapa sair invertida -> trocar -Math.PI / 2.0 por Math.PI / 2.0.
-            if (dirXY.GetLength() > RevitUtils.EPS)
+            Parameter? pEsp = fi.LookupParameter("Espesor_Viga_Principal")
+                          ?? fi.LookupParameter("Espessura_Viga_Principal");
+            if (pEsp != null && !pEsp.IsReadOnly && pEsp.StorageType == StorageType.Double)
             {
-                Line eixoTerca = Line.CreateBound(insertPt, insertPt + dirXY);
-                ElementTransformUtils.RotateElement(doc, fi.Id, eixoTerca, -Math.PI / 2.0);
+                Element vigaType = doc.GetElement(pt.Viga.Element.GetTypeId());
+                double valor = config.VigaTipoI
+                    ? (vigaType?.LookupParameter("tw")?.AsDouble() ?? 0)
+                    : (vigaType?.LookupParameter("h")?.AsDouble() ?? 0);
+                if (valor > 0)
+                {
+                    try
+                    { pEsp.Set(valor); }
+                    catch (Exception ex) { Logger.Warn(ex, "[ConexaoTerca] Set Espesor_Viga_Principal falhou"); }
+                }
             }
         }
 
         /// <summary>
-        /// Extrai a meia-altura da seçao da terça em pés. Procura parametros
-        /// "d", "H", "h", "Altura", "altura" no FamilySymbol. Retorna 0 se nao
-        /// encontrar (resulta em conexao no eixo, comportamento defensivo).
+        /// Raycast vertical do ponto de insercao até a face inferior da viga
+        /// (orientacao para baixo, dot product com -Z > 0.7). Retorna a
+        /// distancia até a primeira intersecao, ajustada por <c>tf</c> se
+        /// viga eh tipo I.
         /// </summary>
-        internal static double GetHalfSectionHeightFt(Element el)
+        private static double CalcularAlturaAteTopoViga(Document doc, PontoCon pt, bool vigaTipoI)
         {
-            if (el is not FamilyInstance fi)
+            // GetBottomFace na viga (a face com normal antiparalela ao Z)
+            var solids = pt.Viga.Element.GetAllSolidsFine(true, out var _);
+            PlanarFace? bottom = solids
+                .SelectMany(s => s.Faces.Cast<Face>())
+                .OfType<PlanarFace>()
+                .Where(f => f.FaceNormal.IsZeroLength() ? false : f.FaceNormal.Normalize().DotProduct(-XYZ.BasisZ) > 0.7)
+                .OrderByDescending(f => f.Area)
+                .FirstOrDefault();
+
+            if (bottom == null)
                 return 0;
-            foreach (string name in new[] { "d", "H", "h", "Altura", "altura" })
+
+            // Raycast curto pra baixo a partir do ponto da terça
+            Line ray = Line.CreateBound(pt.Base, pt.Base - XYZ.BasisZ * (200.0 / 304.8));
+            SetComparisonResult result = bottom.Intersect(ray, out IntersectionResultArray? results);
+            if (result != SetComparisonResult.Overlap || results == null || results.Size == 0)
+                return 0;
+
+            double dist = pt.Base.DistanceTo(results.get_Item(0).XYZPoint);
+
+            if (vigaTipoI)
             {
-                Parameter p = fi.Symbol.LookupParameter(name);
-                if (p?.StorageType == StorageType.Double)
-                {
-                    double v = p.AsDouble();
-                    // Sanity: maior que EPS e menor que 5 pes (1.5m) — secao razoavel.
-                    if (v > RevitUtils.EPS && v < 5.0)
-                        return v / 2.0;
-                }
+                Element vigaType = doc.GetElement(pt.Viga.Element.GetTypeId());
+                double tf = vigaType?.LookupParameter("tf")?.AsDouble() ?? 0;
+                dist = Math.Max(0, dist - tf);
             }
-            return 0;
+
+            return dist;
+        }
+
+        // ---------- Structs internas ----------
+
+        private readonly struct TercaInfo
+        {
+            public Element Element { get; }
+            public XYZ P0 { get; }
+            public XYZ P1 { get; }
+            public XYZ Direction { get; }
+
+            public XYZ Start => P0;
+            public XYZ End => P1;
+
+            public TercaInfo(Element el, XYZ p0, XYZ p1, XYZ dir)
+            {
+                Element = el;
+                P0 = p0;
+                P1 = p1;
+                Direction = dir;
+            }
+        }
+
+        private readonly struct VigaInfo
+        {
+            public Element Element { get; }
+            public Curve Curve { get; }
+
+            public VigaInfo(Element el, Curve c)
+            {
+                Element = el;
+                Curve = c;
+            }
         }
 
         private readonly struct PontoCon
         {
             public XYZ Base { get; }
-            public double HalfH { get; }
-            public double Rot { get; }
-            public XYZ DirXY { get; }
-            public Level? Nivel { get; }
+            public TercaInfo Terca { get; }
+            public VigaInfo Viga { get; }
 
-            public PontoCon(XYZ b, double h, double r, XYZ d, Level? n)
+            public PontoCon(XYZ b, TercaInfo t, VigaInfo v)
             {
                 Base = b;
-                HalfH = h;
-                Rot = r;
-                DirXY = d;
-                Nivel = n;
+                Terca = t;
+                Viga = v;
             }
         }
     }
