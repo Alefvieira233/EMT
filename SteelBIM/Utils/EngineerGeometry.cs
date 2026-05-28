@@ -115,5 +115,52 @@ namespace SteelBIM.Utils
 
             return list.Where(s => s.Volume > 0).ToList();
         }
+
+        /// <summary>
+        /// v2.8.3: calcula o centroide ponderado por volume dos solids
+        /// fornecidos. Retorna <see cref="XYZ.Zero"/> se a lista for vazia
+        /// ou se nenhum solid tiver volume positivo.
+        ///
+        /// <para>Usado pelo <see cref="SteelBIM.Services.ConexaoTercasService"/>
+        /// pra centrar geometricamente a instancia da conexao APOS a insercao
+        /// face-based. Resolve o caso em que a familia foi modelada com origem
+        /// fora do centro geometrico (ex: ponto base em um canto da chapa) —
+        /// sem essa correcao, a chapa fica deslocada do ponto pedido.</para>
+        ///
+        /// <para>Insight reportado em validacao externa: familias com ponto
+        /// base em canto produzem conexoes "saindo para baixo" mesmo quando
+        /// o algoritmo passa o XYZ correto, porque NewFamilyInstance
+        /// posiciona a origem da familia (= o canto) no ponto pedido.</para>
+        ///
+        /// <para>Centroide ponderado por volume:</para>
+        /// <c>centroide = sum(solid.Centroid * solid.Volume) / sum(solid.Volume)</c>
+        /// </summary>
+        public static XYZ ComputeWeightedCentroid(IEnumerable<Solid> solids)
+        {
+            if (solids == null)
+                return XYZ.Zero;
+
+            double totalVol = 0;
+            double sumX = 0, sumY = 0, sumZ = 0;
+
+            foreach (Solid s in solids)
+            {
+                if (s == null || s.Volume <= 0)
+                    continue;
+                XYZ c;
+                try
+                { c = s.ComputeCentroid(); }
+                catch { continue; } // defensivo: algumas geometrias degeneradas explodem
+
+                sumX += c.X * s.Volume;
+                sumY += c.Y * s.Volume;
+                sumZ += c.Z * s.Volume;
+                totalVol += s.Volume;
+            }
+
+            if (totalVol < 1e-12)
+                return XYZ.Zero;
+            return new XYZ(sumX / totalVol, sumY / totalVol, sumZ / totalVol);
+        }
     }
 }

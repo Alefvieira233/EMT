@@ -134,5 +134,67 @@ namespace SteelBIM.Services
             double dz = a.Z - b.Z;
             return Math.Sqrt(dx * dx + dy * dy + dz * dz);
         }
+
+        /// <summary>
+        /// v2.8.3: calcula a intersecao 2D (no plano XY) entre 2 segmentos —
+        /// terça e viga de apoio. Preserva o Z da terça no ponto resultante.
+        ///
+        /// <para>Cobertura semantica:</para>
+        /// <list type="bullet">
+        ///   <item>Resolve sistema linear 2x2: <c>p1 + s*d1 = p2 + t*d2</c> em XY.</item>
+        ///   <item>Retorna <c>null</c> se as retas sao paralelas (det ≈ 0).</item>
+        ///   <item>Retorna <c>null</c> se <c>s ∉ [0,1]</c> ou <c>t ∉ [0,1]</c>
+        ///         (extrapolacao alem dos segmentos).</item>
+        ///   <item>Retorna <c>null</c> se a distancia 3D no ponto de intersecao
+        ///         (Z da terça vs Z do segmento da viga interpolado em t) for
+        ///         maior que <paramref name="maxVerticalGapFt"/>. Isso evita
+        ///         que uma viga muito abaixo do plano da terça seja
+        ///         considerada cruzamento valido (terça flutuando no ar).</item>
+        ///   <item>Z resultante = Z da terça em <c>s</c> (preserva altura da terça).</item>
+        /// </list>
+        /// </summary>
+        public static (double X, double Y, double Z)? IntersectXY(
+            (double X, double Y, double Z) tercaP0,
+            (double X, double Y, double Z) tercaP1,
+            (double X, double Y, double Z) vigaP0,
+            (double X, double Y, double Z) vigaP1,
+            double maxVerticalGapFt = 10.0)
+        {
+            double d1x = tercaP1.X - tercaP0.X;
+            double d1y = tercaP1.Y - tercaP0.Y;
+            double d2x = vigaP1.X - vigaP0.X;
+            double d2y = vigaP1.Y - vigaP0.Y;
+
+            // Determinante do sistema 2x2:
+            //   [ d1x  -d2x ] [s]   [vigaP0.X - tercaP0.X]
+            //   [ d1y  -d2y ] [t] = [vigaP0.Y - tercaP0.Y]
+            double det = d1x * (-d2y) - (-d2x) * d1y; // = -d1x*d2y + d2x*d1y
+            if (Math.Abs(det) < 1e-12)
+                return null; // paralelas (ou um dos segmentos degenerado)
+
+            double rhsX = vigaP0.X - tercaP0.X;
+            double rhsY = vigaP0.Y - tercaP0.Y;
+
+            // Regra de Cramer
+            double s = (rhsX * (-d2y) - (-d2x) * rhsY) / det;
+            double t = (d1x * rhsY - d1y * rhsX) / det;
+
+            // Clamping em segmentos (nao retas infinitas)
+            if (s < 0 || s > 1 || t < 0 || t > 1)
+                return null;
+
+            // Ponto na terça em parametro s — preserva Z da terça (interpolando se inclinada)
+            double x = tercaP0.X + s * d1x;
+            double y = tercaP0.Y + s * d1y;
+            double z = tercaP0.Z + s * (tercaP1.Z - tercaP0.Z);
+
+            // Guard vertical: Z da viga no ponto t, comparado com Z da terça.
+            // Se a viga estiver muito abaixo (terça nao apoia ali), descarta.
+            double vigaZ = vigaP0.Z + t * (vigaP1.Z - vigaP0.Z);
+            if (Math.Abs(z - vigaZ) > maxVerticalGapFt)
+                return null;
+
+            return (x, y, z);
+        }
     }
 }

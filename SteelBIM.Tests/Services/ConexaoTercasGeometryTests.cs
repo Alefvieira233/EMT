@@ -255,5 +255,147 @@ namespace SteelBIM.Tests.Services
                 Pt(3, 4), Pt(0, 0), Pt(0, 0))
                 .Should().BeApproximately(5, 1e-9); // triangulo 3-4-5
         }
+
+        // ============== IntersectXY (v2.8.3) ==============
+
+        [Fact]
+        public void IntersectXY_perpendiculares_no_meio_dos_segmentos_retorna_ponto_correto()
+        {
+            // Terça horizontal (0,0)→(100,0) cruzando viga vertical (50,-50)→(50,50)
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(100, 0),
+                Pt(50, -50), Pt(50, 50));
+
+            result.Should().NotBeNull();
+            result!.Value.X.Should().BeApproximately(50, 1e-9);
+            result.Value.Y.Should().BeApproximately(0, 1e-9);
+            result.Value.Z.Should().BeApproximately(0, 1e-9);
+        }
+
+        [Fact]
+        public void IntersectXY_paralelas_retorna_null()
+        {
+            // Duas terças paralelas — nao se cruzam
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(100, 0),
+                Pt(0, 10), Pt(100, 10));
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void IntersectXY_sobrepostas_retorna_null()
+        {
+            // Linhas identicas (paralelas com det=0)
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(100, 0),
+                Pt(0, 0), Pt(100, 0));
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void IntersectXY_extrapolacao_alem_da_terca_retorna_null()
+        {
+            // Viga estaria em X=150, mas a terça vai so ate X=100 → fora do segmento
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(100, 0),
+                Pt(150, -50), Pt(150, 50));
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void IntersectXY_extrapolacao_alem_da_viga_retorna_null()
+        {
+            // Cruzamento XY em (50, 0) mas a viga so vai de (50, 10) ate (50, 50) → t fora de [0,1]
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(100, 0),
+                Pt(50, 10), Pt(50, 50));
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void IntersectXY_preserva_Z_da_terca_em_terca_inclinada()
+        {
+            // Terça inclinada: Z=0 em p0, Z=10 em p1. Cruzamento em s=0.5 → Z=5
+            var result = ConexaoTercasGeometry.IntersectXY(
+                (0, 0, 0), (100, 0, 10),
+                (50, -50, 0), (50, 50, 0));
+
+            result.Should().NotBeNull();
+            result!.Value.Z.Should().BeApproximately(5, 1e-9);
+        }
+
+        [Fact]
+        public void IntersectXY_viga_muito_abaixo_da_terca_retorna_null()
+        {
+            // Terça em Z=20, viga em Z=0 — gap de 20 ft > default 10 ft → null
+            var result = ConexaoTercasGeometry.IntersectXY(
+                (0, 0, 20), (100, 0, 20),
+                (50, -50, 0), (50, 50, 0));
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void IntersectXY_viga_no_mesmo_nivel_passa_no_guard_vertical()
+        {
+            // Terça em Z=5, viga em Z=4 — gap de 1 ft < default 10 ft → OK
+            var result = ConexaoTercasGeometry.IntersectXY(
+                (0, 0, 5), (100, 0, 5),
+                (50, -50, 4), (50, 50, 4));
+
+            result.Should().NotBeNull();
+            result!.Value.Z.Should().BeApproximately(5, 1e-9, "Z preserva o da terça, nao da viga");
+        }
+
+        [Fact]
+        public void IntersectXY_3_vigas_paralelas_terca_perpendicular_3_intersecoes()
+        {
+            // Cenario real: galpao com 3 vigas paralelas em X=10, 50, 90
+            // 1 terça transversal cruzando todas em Y=0
+            var terca = (start: Pt(0, 0), end: Pt(100, 0));
+
+            var viga1 = ConexaoTercasGeometry.IntersectXY(
+                terca.start, terca.end, Pt(10, -10), Pt(10, 10));
+            var viga2 = ConexaoTercasGeometry.IntersectXY(
+                terca.start, terca.end, Pt(50, -10), Pt(50, 10));
+            var viga3 = ConexaoTercasGeometry.IntersectXY(
+                terca.start, terca.end, Pt(90, -10), Pt(90, 10));
+
+            viga1.Should().NotBeNull();
+            viga2.Should().NotBeNull();
+            viga3.Should().NotBeNull();
+            viga1!.Value.X.Should().BeApproximately(10, 1e-9);
+            viga2!.Value.X.Should().BeApproximately(50, 1e-9);
+            viga3!.Value.X.Should().BeApproximately(90, 1e-9);
+        }
+
+        [Fact]
+        public void IntersectXY_intersecao_obliqua_calcula_corretamente()
+        {
+            // Terça (0,0)→(10,10) e viga (0,10)→(10,0) — cruzam em (5,5)
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(10, 10),
+                Pt(0, 10), Pt(10, 0));
+
+            result.Should().NotBeNull();
+            result!.Value.X.Should().BeApproximately(5, 1e-9);
+            result.Value.Y.Should().BeApproximately(5, 1e-9);
+        }
+
+        [Fact]
+        public void IntersectXY_no_endpoint_exatamente_aceita()
+        {
+            // Viga começa exatamente no endpoint da terça (s=0, t=0)
+            var result = ConexaoTercasGeometry.IntersectXY(
+                Pt(0, 0), Pt(100, 0),
+                Pt(0, 0), Pt(0, 50));
+
+            result.Should().NotBeNull();
+            result!.Value.X.Should().BeApproximately(0, 1e-9);
+        }
     }
 }

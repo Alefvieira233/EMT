@@ -187,6 +187,7 @@ namespace SteelBIM.Views
                 ColocarMeio = chkMeio.IsChecked == true,
                 ModoCompleto = chkModoCompleto.IsChecked == true,
                 VigaTipoI = chkVigaTipoI.IsChecked == true,
+                InverterFace = chkInverterFace.IsChecked == true,
                 OffsetRotacaoGraus = rot,
                 OffsetVerticalAdicionalMm = offV,
                 ParametrosInternos = parametros

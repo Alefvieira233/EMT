@@ -54,19 +54,6 @@ namespace SteelBIM.Services
         // ---------- Constantes ----------
 
         /// <summary>
-        /// Tolerancia padrao pra IsEndpointFree em pés (50 mm).
-        /// Mesma do <see cref="ConexaoTercasMath.DedupToleranceMm"/> — manter
-        /// alinhadas pra defesa em profundidade.
-        /// </summary>
-        private static readonly double EndpointFreeTolFt = 50.0 / 304.8;
-
-        /// <summary>
-        /// Distancia maxima pra IsCloseToReference em pés (2000 mm).
-        /// Endpoints alem disso de qualquer viga sao descartados.
-        /// </summary>
-        private static readonly double MaxDistToBeamFt = 2000.0 / 304.8;
-
-        /// <summary>
         /// Delta minimo entre Location.Point e finalPoint pra disparar o
         /// guard MoveElement. 1e-4 ft ≈ 0.03 mm — abaixo disso a divergencia
         /// é ruído de ponto flutuante.
@@ -103,48 +90,48 @@ namespace SteelBIM.Services
             // 1. Resolve curvas das terças e das vigas (em tuplas pra usar nos helpers puros).
             var tercas = ResolveTercaInfos(doc, refs);
             var vigaCurves = ResolveVigaCurves(doc, config.VigasRefs);
-            var vigaTuples = vigaCurves.Select(VigaTuple).ToList();
 
-            // 2. Coleta pontos a inserir aplicando os filtros.
+            // 2. Coleta pontos a inserir.
+            //
+            // v2.8.3 — algoritmo MUDOU: em vez de pegar a extremidade mais
+            // proxima de UMA viga (que perdia vigas intermediarias), agora
+            // pra cada terça itera TODAS as vigas e calcula a intersecao XY
+            // (helper ConexaoTercasGeometry.IntersectXY). Isso garante que
+            // viga do meio receba conexao tambem.
+            //
+            // Z resultante = Z da terça (preservado pelo IntersectXY),
+            // resolve simultaneamente o "conexao saindo abaixo da terça"
+            // — antes usavamos Z do eixo da viga (errado).
             var pontos = new List<PontoCon>();
             foreach (var terca in tercas)
             {
-                // Outras terças = todas exceto a propria (compara por ElementId)
-                var outrasTercas = tercas
-                    .Where(t => t.Element.Id != terca.Element.Id)
-                    .Select(t => ((t.P0.X, t.P0.Y, t.P0.Z), (t.P1.X, t.P1.Y, t.P1.Z)))
-                    .ToList();
-
                 if (config.ColocarExtremidades)
                 {
-                    var endpoints = new[] { terca.P0, terca.P1 };
-                    var validos = endpoints
-                        .Where(p => ConexaoTercasGeometry.IsEndpointFree(
-                            ToTuple(p), outrasTercas, EndpointFreeTolFt))
-                        .Where(p => ConexaoTercasGeometry.IsCloseToReference(
-                            ToTuple(p), vigaTuples, MaxDistToBeamFt))
-                        .ToList();
-                    if (validos.Count == 0)
-                        continue;
+                    // Cruza a terça com TODAS as vigas selecionadas
+                    foreach (var viga in vigaCurves)
+                    {
+                        var cross = ConexaoTercasGeometry.IntersectXY(
+                            ToTuple(terca.P0), ToTuple(terca.P1),
+                            ToTuple(viga.Curve.GetEndPoint(0)),
+                            ToTuple(viga.Curve.GetEndPoint(1)));
+                        if (cross == null)
+                            continue;
 
-                    XYZ best = validos
-                        .OrderBy(p => ConexaoTercasGeometry.MinDistanceToReferences(
-                            ToTuple(p), vigaTuples))
-                        .First();
-                    VigaInfo? melhorViga = FindClosestViga(best, vigaCurves);
-                    if (melhorViga == null)
-                        continue;
-
-                    XYZ finalPoint = ProjectOnCurve(best, melhorViga.Value.Curve);
-                    pontos.Add(new PontoCon(finalPoint, terca, melhorViga.Value));
+                        XYZ finalPoint = new XYZ(cross.Value.X, cross.Value.Y, cross.Value.Z);
+                        pontos.Add(new PontoCon(finalPoint, terca, viga));
+                    }
                 }
                 if (config.ColocarMeio)
                 {
+                    // "Meio" = ponto medio da terça associado a viga mais proxima
                     XYZ meio = (terca.P0 + terca.P1) / 2.0;
                     VigaInfo? melhorViga = FindClosestViga(meio, vigaCurves);
                     if (melhorViga == null)
                         continue;
-                    XYZ finalPoint = ProjectOnCurve(meio, melhorViga.Value.Curve);
+
+                    // Preserva Z da terça em "meio" (mesma logica do IntersectXY)
+                    XYZ projXY = ProjectOnCurve(meio, melhorViga.Value.Curve);
+                    XYZ finalPoint = new XYZ(projXY.X, projXY.Y, meio.Z);
                     pontos.Add(new PontoCon(finalPoint, terca, melhorViga.Value));
                 }
             }
@@ -272,11 +259,18 @@ namespace SteelBIM.Services
 
         private static (double X, double Y, double Z) ToTuple(XYZ p) => (p.X, p.Y, p.Z);
 
-        private static ((double, double, double), (double, double, double)) VigaTuple(VigaInfo v)
+        /// <summary>
+        /// v2.8.3 — heuristica de face hospedeira: DotProduct entre a normal
+        /// da face e Z global. Defensivo a faces com normal zerada.
+        /// </summary>
+        private static double SafeNormalDotZ(PlanarFace face)
         {
-            XYZ a = v.Curve.GetEndPoint(0);
-            XYZ b = v.Curve.GetEndPoint(1);
-            return ((a.X, a.Y, a.Z), (b.X, b.Y, b.Z));
+            if (face == null)
+                return 0;
+            XYZ n = face.FaceNormal;
+            if (n == null || n.IsZeroLength())
+                return 0;
+            return n.Normalize().DotProduct(XYZ.BasisZ);
         }
 
         // ---------- Insercao face-based ----------
@@ -296,11 +290,24 @@ namespace SteelBIM.Services
             {
                 // Solids da terça (geometria local da familia — isRealLocation=false).
                 var solids = pt.Terca.Element.GetAllSolids(false, out var _);
-                PlanarFace? sideFace = solids
+
+                // v2.8.3 — heurística de face hospedeira:
+                // Em U/C, a alma tem 2 faces planares de area IDENTICA (interna +
+                // externa). OrderByDescending(Area).First() escolheria uma
+                // aleatoria. Pega TOP 3 maiores e ordena por DotProduct
+                // (FaceNormal, BasisZ_global): face externa em telhado tipico
+                // tem normal apontando pra cima -> DotProduct > 0. Checkbox
+                // config.InverterFace forca a face oposta (override manual).
+                var topFaces = solids
                     .SelectMany(s => s.Faces.Cast<Face>())
                     .OfType<PlanarFace>()
                     .OrderByDescending(f => f.Area)
-                    .FirstOrDefault();
+                    .Take(3)
+                    .ToList();
+
+                PlanarFace? sideFace = config.InverterFace
+                    ? topFaces.OrderBy(f => SafeNormalDotZ(f)).FirstOrDefault()
+                    : topFaces.OrderByDescending(f => SafeNormalDotZ(f)).FirstOrDefault();
 
                 if (sideFace == null)
                 {
@@ -317,6 +324,8 @@ namespace SteelBIM.Services
                 if ((pt.Terca.Element as FamilyInstance)?.Mirrored == true)
                     ejeX = -ejeX;
 
+                // v2.8.3: pt.Base.Z ja eh Z da terça (preservado pelo IntersectXY).
+                // offsetVertFt continua sendo apenas o ajuste opcional do usuario.
                 XYZ insertPt = new XYZ(pt.Base.X, pt.Base.Y, pt.Base.Z - offsetVertFt);
 
                 FamilyInstance fi = doc.Create.NewFamilyInstance(
@@ -330,15 +339,37 @@ namespace SteelBIM.Services
 
                 doc.Regenerate();
 
-                // Guard defensivo: pra familias WorkPlaneBased, NewFamilyInstance(face,...)
-                // pode ignorar o XYZ e colocar no GlobalPoint da face. Corrige via
-                // MoveElement se a divergencia for material.
-                XYZ? actualPos = (fi.Location as LocationPoint)?.Point;
-                if (actualPos != null && actualPos.DistanceTo(insertPt) > MoveGuardThresholdFt)
+                // v2.8.3 — CENTRAMENTO REAL via centroide ponderado por volume.
+                //
+                // Substitui o guard anterior (que comparava apenas Location.Point)
+                // por uma correcao geometrica de verdade. Insight: familias modeladas
+                // com origem fora do centro (ex: ponto base em um canto da chapa,
+                // como acontece em familias externas) saiam deslocadas porque
+                // NewFamilyInstance(face, point, ...) posiciona a ORIGEM da familia
+                // no point, nao o centro geometrico. Resultado: chapa "vaza" pra
+                // um lado, parecendo flutuar abaixo ou ao lado da terça.
+                //
+                // Solucao: depois da insercao, calcular o centroide real da
+                // geometria inserida e mover a instancia pra centrar no insertPt.
+                // Funciona pra famílias com origem em QUALQUER lugar — centro,
+                // canto, ponto arbitrário — sem exigir convenção rígida.
+                try
                 {
-                    try
-                    { ElementTransformUtils.MoveElement(doc, fi.Id, insertPt - actualPos); }
-                    catch (Exception ex) { Logger.Warn(ex, "[ConexaoTerca] MoveElement guard falhou"); }
+                    var instSolids = fi.GetAllSolids(isRealLocation: true, out _);
+                    XYZ centroide = EngineerGeometry.ComputeWeightedCentroid(instSolids);
+
+                    if (!centroide.IsZeroLength())
+                    {
+                        XYZ offsetCentramento = insertPt - centroide;
+                        if (offsetCentramento.GetLength() > MoveGuardThresholdFt)
+                        {
+                            ElementTransformUtils.MoveElement(doc, fi.Id, offsetCentramento);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "[ConexaoTerca] centramento via centroide falhou");
                 }
 
                 // Rotacao opcional do usuario (offset adicional)

@@ -52,5 +52,16 @@ namespace SteelBIM.Models
         /// viga I, nao sobre o topo da mesa.
         /// </summary>
         public bool VigaTipoI { get; set; } = false;
+
+        /// <summary>
+        /// v2.8.3: override manual da heuristica de selecao de face hospedeira.
+        /// Em perfis U/C, a alma tem 2 faces planares de area identica
+        /// (interna e externa). A heuristica padrao escolhe a face cuja normal
+        /// tem maior componente positivo em Z global (= aponta pra cima na
+        /// configuracao tipica de telhado, lado externo do U). Quando essa
+        /// heuristica errar (terça vertical rara, perfil atipico), marque
+        /// esse checkbox pra forçar a face oposta.
+        /// </summary>
+        public bool InverterFace { get; set; } = false;
     }
 }
