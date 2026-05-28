@@ -10,12 +10,130 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 **Auditoria 2026-05-25 CONCLUÍDA** com v2.8.0 (3 waves, 13 PRs estruturais).
 **Incorporação Victor** em v2.8.1 (2 PRs).
+**Conexão Terça v2** em v2.8.2 (algoritmo face-based + spec da família).
 
 Próximas atividades dependem de eventos externos:
 
 - **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
 - **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
 - **Manual no Revit (Alef):** validar rotação Passo 2 da Conexão Terça (Victor adicionou `-90°` em torno do eixo horizontal da terça pra erguer chapa de plano horizontal pra vertical, mas não validou — se sair invertida, trocar `-Math.PI/2` por `Math.PI/2` em `ConexaoTercasService.InserirConexao`)
+
+---
+
+## [2.8.2] - 2026-05-29
+
+### Conexão Terça v2 — refactor face-based + spec da família
+
+Refactor do `ConexaoTercasService` resolvendo os **4 problemas reportados
+pelo Victor em teste real** (áudio 28/05) com algoritmo face-based
+validado por implementação externa de referência.
+
+#### Problemas do áudio resolvidos
+
+1. **Duplicação por seleção Element+Face**: filtros explícitos
+   `IsEndpointFree` + `IsCloseToReference` rodam ANTES da geração de
+   pontos, evitando dependência exclusiva do dedup posterior.
+   Dedup XY 50mm continua presente como guard final (defesa em profundidade).
+2. **Falta de referência terça↔viga**: pick #2 obrigatório de vigas de
+   apoio (`StructuralBeamSelectionFilter` novo). O serviço projeta a
+   extremidade da terça na curva da viga mais próxima → ponto de
+   inserção real.
+3. **Alinhamento no eixo vs alma**: inserção face-based usando a maior
+   face planar do solid da terça. Em U/C/I = alma. Sem rotação manual.
+4. **Rotações -90° imprevisíveis**: eliminadas. `NewFamilyInstance(face,
+   ...)` orienta corretamente; aplica-se apenas o offset opcional.
+
+#### Algoritmo (1 caminho, sem fallback artificial)
+
+- 2 PickObjects: terças (`StructuralFramingSelectionFilter`) + vigas
+  (`StructuralBeamSelectionFilter` novo)
+- Pra cada terça: filtra extremidades livres (50mm tol) + próximas de
+  viga (raio 2000mm), escolhe a mais próxima, projeta na curva da viga
+- Extrai `BasisX`/`BasisZ` via `terca.GetTransform()` + trata `Mirrored`
+- `GetAllSolids(false)` → maior `PlanarFace` → `NewFamilyInstance(face, point, ejeX, symbol)`
+- **Guard defensivo**: corrige posição via `MoveElement` se `Location.Point`
+  divergir do esperado (caso família WorkPlaneBased ignorar XYZ)
+
+#### Modo Completo opcional
+
+Checkbox no expander "Ajuste fino" ativa:
+- Raycast vertical pra `GetBottomFace` da viga → distância
+- Aplica em parâmetro `Altura_PlacaInf_a_Terca` (fallback `_a_Correa` pra
+  reutilizar famílias existentes em PT-BR ou ES-LATAM)
+- Aplica em parâmetro `Espesor_Viga_Principal` (fallback `Espessura_Viga_Principal`)
+- Se viga é perfil tipo I (W, H, IPN, IPE): desconta `tf` (espessura mesa)
+- Silencioso se família não tem os parâmetros (no-op, não falha)
+
+#### Added (PR #52)
+
+- `Utils/EngineerGeometry.cs` — extension methods `GetAllSolids[Fine]`
+  com suporte a `GeometryInstance` + `Transform`
+- `Utils/StructuralBeamSelectionFilter.cs` — filtro pra `FamilyInstance`
+  da categoria `OST_StructuralFraming` (usado no pick #2)
+- `Services/ConexaoTercasGeometry.cs` — helpers PUROS testáveis sem
+  Revit attached (recebem `ValueTuple<double, double, double>` em vez
+  de `XYZ`): `IsEndpointFree`, `IsCloseToReference`,
+  `MinDistanceToReferences`, `DistanceToSegment` (com clamping)
+
+#### Added (PR #53)
+
+- `docs/familia-conexao-terca-spec.md` — convenção de modelagem
+  documentada em 14 seções: template recomendado (`Metric Structural
+  Stiffener.rft`), categoria, origem e eixos (com diagrama ASCII),
+  geometria mínima, parâmetros mandatórios + opcionais, passo-a-passo
+  no Family Editor (12 passos), validação + troubleshooting com tabela
+  sintoma→causa→solução, variantes (cantoneira, gusset, ressalto)
+
+#### Changed (PR #52)
+
+- `Services/ConexaoTercasService.cs` reescrito (~430 LOC) — eliminadas
+  as rotações manuais; algoritmo face-based linear
+- `Models/ConexaoTercasConfig.cs` — adiciona `VigasRefs` (Element refs,
+  obrigatório), `ModoCompleto` (bool, default false), `VigaTipoI` (bool,
+  default false)
+- `Commands/CmdInserirConexaoTercas.cs` — adiciona pick #2 das vigas
+  de apoio entre o pick de terças e a abertura da janela
+- `Views/ConexaoTercasWindow.xaml(.cs)` — adiciona 2 checkboxes no
+  expander "Ajuste fino" com tooltips explicativos
+
+#### Tests
+
+21 novos em `ConexaoTercasGeometryTests`:
+- `IsEndpointFree` (7): lista vazia, ponto isolado, coincidência com
+  start/end, ponto no meio de outra curva (não detecta), tolerância
+  respeitada, próximo dentro/além da tolerância
+- `IsCloseToReference` (6): lista vazia, ponto sobre curva, dentro/fora
+  de maxDist, extrapolação além dos endpoints, múltiplas curvas
+- `MinDistanceToReferences` (3): lista vazia → `MaxValue`, sobre curva
+  → 0, múltiplas curvas → menor
+- `DistanceToSegment` (5): sobre segmento, perpendicular, clamping em
+  ambos os lados, segmento degenerado (triângulo 3-4-5)
+
+Total: **1191 → 1212 verde**.
+
+#### Breaking change
+
+**Sim, leve**: o command agora exige pick #2 (vigas de apoio). Se o
+usuário pressionar Esc no pick #2 ou não selecionar nenhuma viga, o
+comando cancela com warning claro. Comportamento desejado pra fluxo
+correto — sem viga de referência, o algoritmo não tem como projetar
+o ponto de inserção.
+
+#### O que aproveitamos do snapshot Victor 28/05
+
+- Conceito da viga de referência (reescrito com pick de Element em
+  vez de Face — UX melhor)
+- Padrão `Logger.Warn` em falhas defensivas
+- Guard `MoveElement` quando Location diverge (essencial pra
+  WorkPlaneBased — porta direta do código dele)
+- Estilo de documentação XML detalhada
+
+#### O que descartamos do snapshot Victor 28/05
+
+- Pick de Face (substituído por pick de Element)
+- 3 estratégias com fallback (1 caminho validado já cobre)
+- Rotações manuais (face-based orienta)
+- `FindClosestFaceRef` (projeção na curva é mais robusta)
 
 ---
 

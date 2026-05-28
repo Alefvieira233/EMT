@@ -1,9 +1,9 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.1-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.2-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-1191%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-1212%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
 
 > **Detalhamento estrutural brasileiro direto no Revit.** Treliças, terças,
@@ -168,7 +168,7 @@ Plugin estruturado em camadas, com decisões registradas em `docs/ADR/`:
 - **ADR-009** — Code signing parametrizado via signtool + GitHub secrets
 - **ADR-010** — Documentos legais (EULA/Privacy/TOS — drafts em revisão jurídica)
 
-São **1191 testes automatizados** em `SteelBIM.Tests` cobrindo lógica
+São **1212 testes automatizados** em `SteelBIM.Tests` cobrindo lógica
 pura: zoneamento de armadura NBR, formatadores culture-invariant,
 validação de configuração, regras de domínio, scrubbing de PII e
 verificação Authenticode.
@@ -177,10 +177,11 @@ verificação Authenticode.
 
 ## Versão atual
 
-**v2.8.1** (2026-05-27) — incorporação Victor: Conexão de Terça + fluxo automático Gerar Terças + espaçamento manual. Histórico completo em [CHANGELOG.md](CHANGELOG.md).
+**v2.8.2** (2026-05-29) — refactor Conexão Terça com algoritmo face-based + pick de vigas de apoio + Modo Completo opcional + spec de família documentada. Resolve os 4 problemas reportados pelo Victor em teste real (áudio 28/05). Histórico completo em [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.8.2** — Conexão Terça v2 (2 PRs): refactor do `ConexaoTercasService` com algoritmo **face-based** validado por implementação externa de referência. Resolve os 4 problemas do áudio do Victor (28/05): duplicação por pick de face, falta de referência terça↔viga, alinhamento no eixo em vez da alma, rotações -90° imprevisíveis. **Novo pick #2 obrigatório** das vigas de apoio. Insere via `NewFamilyInstance(face, point, dir, symbol)` na maior face planar do solid da terça (= alma em U/C/I). **Modo Completo** opcional (raycast pra GetBottomFace + ajuste altura, com suporte a viga tipo I). Helpers puros `ConexaoTercasGeometry` + `EngineerGeometry` + `StructuralBeamSelectionFilter`. Spec da família documentada em `docs/familia-conexao-terca-spec.md`. +21 testes (1191 → 1212).
 - **v2.8.1** — Incorporação Victor (2 PRs): comando NOVO "Conexão Terça" (lança conexões estruturais nas extremidades/meio das terças selecionadas, posicionadas na face inferior; dedup XY 50mm pra nós comuns) + fluxo automático no Gerar Terças (pick viga ref extrai ângulo real, pick antecipado linha limite extrai vão, novo botão "Espaçamentos manuais..." wireia a janela órfã com escala proporcional + remainder + total verde/vermelho). +40 testes (1151 → 1191). Default ZJust mudou de Topo → Inferior.
 - **v2.8.0** — Wave 3 da auditoria 2026-05-25 (2 PRs Strangler Fig): pure helpers extraídos de 3 windows (F11 — PfRebarCoordinateParser + UniformPositionDistributor + NumeracaoEscopoParser) + DiagramaMontagemViewNamer extraído do orquestrador (F12). +41 testes (1110 → 1151). F13 (i18n EN/ES) **deferido** — depende de decisão estratégica LATAM.
 - **v2.7.11** — Wave 2 da auditoria 2026-05-25 (3 PRs estruturais): PfRebar Strangler Fig completion (F5 — original delega ao Pure, 7 métodos + 1 const), ADR-003 template em 4 services (F6 — Tercas/PipeRack/Escada/GuardaCorpo migrados pra IUIDecisionService), extrações NBR adicionais no Pure (F10 — 5 novos métodos cobrindo cobrimento + espaçamento + distribuição). +30 testes (1080 → 1110).
