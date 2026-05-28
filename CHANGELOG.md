@@ -11,12 +11,112 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 **Auditoria 2026-05-25 CONCLUÍDA** com v2.8.0 (3 waves, 13 PRs estruturais).
 **Incorporação Victor** em v2.8.1 (2 PRs).
 **Conexão Terça v2** em v2.8.2 (algoritmo face-based + spec da família).
+**Hotfix Conexão Terça v3** em v2.8.3 (centramento automático + 3 fixes campo).
 
 Próximas atividades dependem de eventos externos:
 
 - **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
 - **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
-- **Manual no Revit (Alef):** validar rotação Passo 2 da Conexão Terça (Victor adicionou `-90°` em torno do eixo horizontal da terça pra erguer chapa de plano horizontal pra vertical, mas não validou — se sair invertida, trocar `-Math.PI/2` por `Math.PI/2` em `ConexaoTercasService.InserirConexao`)
+- **Manual no Revit (Alef + Victor):** validar v2.8.3 no mesmo galpão do teste anterior — confirmar que conexão fica na altura da terça, viga do meio recebe conexão, face externa selecionada (ou marca "Inverter face" se preciso)
+
+---
+
+## [2.8.3] - 2026-05-29
+
+### Hotfix Conexão Terça — 4 fixes validados em teste real (Victor 28/05 noite)
+
+Hotfix dos problemas identificados pelo Victor no teste real do galpão
+**+ insight crítico** vindo de validação externa de referência: a família
+tem **ponto de origem em CANTO** da chapa, não no centro.
+`NewFamilyInstance(face, point, ...)` posiciona a origem (canto) no ponto
+pedido, fazendo a chapa "vazar" pra um lado — daí o sintoma "conexão
+saindo para baixo".
+
+#### Fixed
+
+- **(F1) Centramento automático via centroide ponderado por volume.**
+  Substitui o guard antigo (que só comparava `Location.Point`) por
+  correção geométrica real: depois da inserção, calcula o centroide real
+  dos solids da instância e faz `MoveElement` pra centrar exatamente no
+  `insertPt`. **Funciona pra famílias com origem em qualquer lugar**
+  (centro, canto, ponto arbitrário) — sem exigir convenção rígida de
+  modelagem. Resolve "conexão saindo abaixo da terça" mesmo em famílias
+  como a do Victor que têm ponto base em canto.
+
+- **(F2) Heurística de face hospedeira.** Em U/C, a alma tem 2 faces
+  planares de área **idêntica** — `OrderByDescending(Area).First()`
+  pegava uma aleatória, levando a inserção na face interna em metade
+  dos casos. Fix: `Take(3)` + `OrderByDescending(FaceNormal.DotProduct(BasisZ_global))`.
+  Face externa em telhado típico tem normal apontando pra cima → Dot > 0.
+  Checkbox "Inverter face hospedeira" no expander Ajuste fino como
+  **override manual** quando heurística errar.
+
+- **(F3) Iteração de TODAS as vigas selecionadas.** Algoritmo só pegava
+  1 extremidade da terça (a mais próxima de uma viga), perdia vigas
+  intermediárias. Fix: refator do laço pra iterar TODAS as vigas e
+  calcular **interseção XY** via novo helper `IntersectXY` (sistema 2×2
+  com regra de Cramer, clamping em segmentos). Pra cada cruzamento
+  válido, gera um ponto de inserção. Resultado: viga do meio recebe
+  conexão também.
+
+- **(F4) Z da terça preservado.** `IntersectXY` retorna Z **interpolado
+  da terça** no ponto de cruzamento, não Z do eixo da viga. Resolve junto
+  com o centramento o problema "saindo abaixo da terça".
+
+#### Added
+
+- `Utils/EngineerGeometry.ComputeWeightedCentroid(solids)` — extension
+  method que retorna o centroide ponderado pelo volume de uma coleção
+  de `Solid`. Defensivo a solids degenerados (try/catch no
+  `ComputeCentroid()`, ignora volume ≤ 0).
+- `Services/ConexaoTercasGeometry.IntersectXY(tercaP0, tercaP1, vigaP0, vigaP1, maxVerticalGapFt = 10ft)`
+  — helper puro 2D que resolve sistema 2×2 com regra de Cramer.
+  Clamping em segmentos (não retas infinitas), guard vertical pra
+  descartar viga muito abaixo da terça. Retorna `(X, Y, Z)?` com Z
+  preservado da terça.
+- `Models/ConexaoTercasConfig.InverterFace` — bool opcional (default
+  false) que força a face oposta à escolhida pela heurística.
+- `Views/ConexaoTercasWindow.xaml(.cs)` — checkbox "Inverter face
+  hospedeira" no expander Ajuste fino, com tooltip explicativo.
+
+#### Changed
+
+- `Services/ConexaoTercasService.cs` reescrito laço principal:
+  - Iteração `foreach terca × foreach viga` substitui filtro
+    "endpoint mais próximo"
+  - Constantes `EndpointFreeTolFt` e `MaxDistToBeamFt` removidas
+    (não usadas pelo novo modelo — `IntersectXY` faz o filtro
+    semânticamente correto)
+  - Centramento real substitui guard `MoveGuardThresholdFt` (constante
+    mantida apenas pro threshold mínimo do offset)
+  - Heurística TOP-3 + DotProduct em vez de `.First()` ingênuo
+
+#### Tests
+
+11 novos em `ConexaoTercasGeometryTests` cobrindo `IntersectXY`:
+perpendiculares no meio dos segmentos, paralelas (det = 0), sobrepostas,
+extrapolação além da terça/viga (s/t fora de [0,1]), preserva Z em
+terça inclinada (interpolação correta), guard vertical (viga 20ft
+abaixo descarta), viga no mesmo nível passa, **integração com 3 vigas
+paralelas + terça transversal** (3 cruzamentos detectados), interseção
+oblíqua, endpoint exato.
+
+Total: **1212 → 1223 verde**.
+
+#### Insight de fora do código
+
+A imagem que a fonte externa de referência mandou mostrava a família
+dela vista de cima com **um ponto vermelho no canto inferior** = ponto
+de origem da família. A familia tem origem fora do centro, e o cálculo
+dela compensa esse deslocamento manualmente. Nosso plugin agora
+**tolera qualquer convenção de origem** via centramento automático —
+não precisa que a família siga regra rígida.
+
+#### Breaking change
+
+**Nenhuma** — todos os fixes são compatíveis com famílias da v2.8.2.
+Comportamento de famílias bem-modeladas (origem no centro) é
+preservado: centramento é no-op nesses casos (offset < threshold).
 
 ---
 
