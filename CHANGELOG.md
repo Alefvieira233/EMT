@@ -12,12 +12,87 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 **Incorporação Victor** em v2.8.1 (2 PRs).
 **Conexão Terça v2** em v2.8.2 (algoritmo face-based + spec da família).
 **Hotfix Conexão Terça v3** em v2.8.3 (centramento automático + 3 fixes campo).
+**Hotfix IFC falso-cancel** em v2.8.6 (6 fixes + 1 enhancement).
 
 Próximas atividades dependem de eventos externos:
 
 - **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
 - **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
 - **Manual no Revit (Alef + Victor):** validar v2.8.3 no mesmo galpão do teste anterior — confirmar que conexão fica na altura da terça, viga do meio recebe conexão, face externa selecionada (ou marca "Inverter face" se preciso)
+- **Manual no Revit (Alef):** validar v2.8.6 conversão IFC no mesmo arquivo que apresentou "Cancelado" falso — confirmar que conversão completa sem dialog de cancelamento, perfis inclinados são preservados, log lista ignorados com motivo
+
+---
+
+## [2.8.6] - 2026-05-29
+
+### Hotfix Conversor IFC — "Cancelado" falso e perfis sumidos
+
+Bug crítico encontrado pelo Alef em galpão real: ao rodar o Converter Perfis IFC,
+a operação aparentava sucesso na ProgressWindow mas terminava com dialog
+"Operação cancelada — rollback automático aplicado" mesmo quando o usuário
+não clicou em Cancelar. Resultado: TODOS os perfis convertidos eram perdidos
+(rollback da Transaction). Em arquivos com perfis inclinados, alguns
+sumiam, outros mudavam de posição.
+
+#### Root cause analysis
+
+Três bugs em camadas distintas se combinavam:
+
+1. **`ConverterPerfilIfcWindow.OnClosed` cancelava CTS incondicionalmente** —
+   se a janela fechasse por qualquer motivo (ESC global do `RevitWindowThemeService`,
+   X acidental, qualquer redirecionamento de foco que disparasse Close), o handler
+   chamava `_cts.Cancel()`. O serviço, ainda rodando ou recém-terminado, capturava
+   `OperationCanceledException` → rollback da Transaction → perfis criados eram
+   deletados em massa.
+
+2. **`ProgressWindow.Closing` interpretava fechamento programático como cancel** —
+   quando `OnConversionFinished` chamava `_progressWindow.Close()` após sucesso,
+   o handler disparava o evento `Cancelled` → CTS cancelado → `wasCancelled=true` →
+   dialog falso de cancelamento.
+
+3. **3 `catch` silenciosos + 1 fluxo de null-check sem log** no service mascaravam
+   por que elementos eram ignorados. Em geometria inclinada complexa, o
+   `SectionAxisExtractor` falhava no fallback de bbox e o elemento era ignorado
+   sem deixar rastro.
+
+#### Fixed
+
+- **Fix #1 (CRÍTICO) — `Views/ConverterPerfilIfcWindow.OnClosing`:** bloqueia
+  fechamento da janela enquanto a conversão está em andamento. Se há CTS ativo
+  e ProgressWindow visível, `e.Cancel = true` + aviso ao usuário ("Aguarde a
+  conversão terminar. Se quiser abortar, clique em Cancelar na janela de
+  progresso").
+
+- **Fix #2 — `Views/ProgressWindow.IsProgrammaticClose`:** flag pública nova
+  que, quando setada antes de `Close()`, faz o handler `ProgressWindow_Closing`
+  ignorar o evento (não dispara `Cancelled`). `OnConversionFinished` agora
+  marca `IsProgrammaticClose=true` antes de fechar.
+
+- **Fix #3 — `Services/Ifc/ConverterPerfilIfcService.cs`:** todos os 4 caminhos
+  que faziam `ignorados++; continue;` agora têm `Logger.Warn` detalhado com
+  index, total, ElementId, categoria e motivo. Inclui o `catch (Exception)`
+  silencioso da criação do `FamilyInstance` (agora captura `ex` e loga
+  exception completa + perfil destino).
+
+- **Fix #4 — `Views/ConverterPerfilIfcWindow.OnClosed`:** quando CTS é cancelado
+  no cleanup (caso defensivo onde `OnClosing` foi bypassed), agora loga
+  `Logger.Info` pra investigação caso o bug "perfis sumiram" volte a aparecer.
+
+- **Fix #5 — `Services/Ifc/ConverterPerfilIfcService.cs`:** após `t.Commit()`,
+  resumo final via `Logger.Info` com `convertidos`, `ignorados`, `total`.
+  Permite ao usuário abrir o log e ver o resumo da conversão sem contar
+  manualmente entries IGNORADO.
+
+- **Fix #6 — `Utils/RevitWindowThemeService.cs`:** novo opt-out do ESC global
+  via `Tag="no-escape"`. `ConverterPerfilIfcWindow.xaml` recebe a tag → ESC
+  acidental não fecha mais a janela enquanto conversão roda. Defesa em
+  profundidade junto com Fix #1.
+
+#### Enhanced
+
+- **Mensagem final com path do log** — quando há ignorados, o dialog "Conversão
+  concluída" mostra o caminho do diretório de log (`Logger.LogDirectory`) pra
+  o usuário investigar quais elementos foram pulados e por quê.
 
 ---
 

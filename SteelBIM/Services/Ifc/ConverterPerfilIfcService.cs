@@ -80,15 +80,34 @@ namespace SteelBIM.Services.Ifc
 
                         Element origem = doc.GetElement(conversao.ElementoOrigem);
                         if (origem == null)
-                        { ignorados++; processados++; continue; }
+                        {
+                            // v2.8.6: log detalhado pra diagnostico (antes silencioso).
+                            Logger.Warn("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: ElementoOrigem {Id} nao existe mais no documento",
+                                processados + 1, total, conversao.ElementoOrigem?.Value);
+                            ignorados++;
+                            processados++;
+                            continue;
+                        }
 
                         Line linha = ObterLinhaDoElemento(origem);
                         if (linha == null)
-                        { ignorados++; processados++; continue; }
+                        {
+                            Logger.Warn("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — SectionAxisExtractor + bbox fallback nao conseguiram extrair linha de eixo (geometria sem caps planares e sem variancia detectavel)",
+                                processados + 1, total, origem.Id.Value, origem.Category?.Name ?? "?");
+                            ignorados++;
+                            processados++;
+                            continue;
+                        }
 
                         Level nivel = ObterNivelDoElemento(origem, doc, niveis, config.NivelPadrao);
                         if (nivel == null)
-                        { ignorados++; processados++; continue; }
+                        {
+                            Logger.Warn("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — sem Level associado e sem NivelPadrao",
+                                processados + 1, total, origem.Id.Value, origem.Category?.Name ?? "?");
+                            ignorados++;
+                            processados++;
+                            continue;
+                        }
 
                         FamilySymbol simbolo = conversao.PerfilDestino;
                         if (!simbolo.IsActive)
@@ -145,8 +164,17 @@ namespace SteelBIM.Services.Ifc
                             if (config.DeletarOriginal)
                                 doc.Delete(origem.Id);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            // v2.8.6: log detalhado do erro silencioso (antes "ignorados++" sem info).
+                            // Causas tipicas: NewFamilyInstance com geometria invalida (Z-degenerada),
+                            // simbolo nao ativavel, host inexistente, parametro readonly inesperado.
+                            Logger.Warn(ex,
+                                "[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — excecao na criacao do FamilyInstance (perfil destino: {Perfil})",
+                                processados + 1, total,
+                                origem.Id.Value,
+                                origem.Category?.Name ?? "?",
+                                simbolo?.Name ?? "?");
                             ignorados++;
                         }
 
@@ -168,6 +196,13 @@ namespace SteelBIM.Services.Ifc
                     }
 
                     t.Commit();
+
+                    // v2.8.6: resumo final pos-commit pra auditoria. Permite
+                    // o usuario abrir o log e ver "convertidos N de M, ignorados I"
+                    // sem precisar contar manualmente entries individuais.
+                    Logger.Info(
+                        "[ConverterPerfilIfc] Conversao concluida: {Conv} convertidos, {Ign} ignorados de {Total} totais. Verifique entries IGNORADO acima para diagnostico individual.",
+                        convertidos, ignorados, total);
                 }
                 catch (OperationCanceledException)
                 {

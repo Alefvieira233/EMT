@@ -9,6 +9,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using SteelBIM.Core;
 using SteelBIM.Forms;
+using SteelBIM.Infrastructure;
 using SteelBIM.Models;
 using SteelBIM.Models.Ifc;
 using SteelBIM.Services.Ifc;
@@ -435,16 +436,26 @@ namespace SteelBIM.Views
                 if (_isClosing)
                     return;
 
-                // v2.7.10: fechar ProgressWindow + cleanup CTS antes de mostrar dialog
+                // v2.8.6 FIX: ler wasCancelled ANTES de fechar a ProgressWindow.
+                // O ProgressWindow_Closing handler disparava Cancelled (= CTS.Cancel())
+                // quando a janela era fechada por qualquer motivo, contaminando
+                // _cts.IsCancellationRequested apos fechamento programatico de sucesso.
+                // Resultado: conversao OK -> mensagem falsa "Cancelado pelo usuario".
+                // Defesa em profundidade: marcar IsProgrammaticClose=true antes do Close
+                // pra o handler ignorar o evento de fechamento via codigo.
+                bool wasCancelled = _cts?.IsCancellationRequested == true;
+
                 try
                 {
                     if (_progressWindow != null && _progressWindow.IsVisible)
+                    {
+                        _progressWindow.IsProgrammaticClose = true;
                         _progressWindow.Close();
+                    }
                 }
                 catch (InvalidOperationException) { /* progress window ja fechada */ }
                 _progressWindow = null;
 
-                bool wasCancelled = _cts?.IsCancellationRequested == true;
                 _cts?.Dispose();
                 _cts = null;
 
@@ -459,11 +470,19 @@ namespace SteelBIM.Views
                 }
                 else
                 {
+                    // v2.8.6: mensagem orienta o usuario a abrir o log caso
+                    // existam ignorados (cada um agora tem entry Logger.Warn
+                    // detalhada — origem, categoria, motivo).
+                    string detalhes = ignorados > 0
+                        ? $"\n\nDetalhes dos {ignorados} ignorados estao no log:\n{Logger.LogDirectory ?? "(log nao inicializado)"}"
+                        : string.Empty;
+
                     AppDialogService.ShowInfo(
                         "Converter Perfis IFC",
                         $"Conversao concluida.\n\n" +
                         $"Convertidos: {convertidos}\n" +
-                        $"Ignorados (sem eixo ou nivel detectavel): {ignorados}",
+                        $"Ignorados (sem eixo, sem nivel ou excecao na criacao): {ignorados}" +
+                        detalhes,
                         "Conversao concluida");
                 }
 
@@ -480,6 +499,30 @@ namespace SteelBIM.Views
 
         protected override void OnClosing(CancelEventArgs e)
         {
+            // v2.8.6 BUG-MORTAL FIX: bloquear fechamento da janela enquanto a
+            // conversao IFC estiver em andamento. Antes, ao fechar a janela por
+            // qualquer motivo (ESC global via RevitWindowThemeService, click
+            // acidental, X), o OnClosed chamava _cts.Cancel() → service abortava
+            // → rollback de TUDO. Usuario perdia trabalho sem entender por que.
+            //
+            // Agora: se ha uma conversao rodando, cancelar o fechamento e
+            // mostrar mensagem orientando o usuario a usar o botao Cancelar
+            // da ProgressWindow se realmente quiser abortar.
+            if (!_isClosing
+                && _cts != null
+                && !_cts.IsCancellationRequested
+                && _progressWindow != null
+                && _progressWindow.IsVisible)
+            {
+                e.Cancel = true;
+                AppDialogService.ShowWarning(
+                    "Converter Perfis IFC",
+                    "Aguarde a conversao terminar.\n\n" +
+                    "Se quiser abortar, clique em Cancelar na janela de progresso.",
+                    "Conversao em andamento");
+                return;
+            }
+
             _isClosing = true;
             base.OnClosing(e);
         }
@@ -510,9 +553,20 @@ namespace SteelBIM.Views
                 catch (InvalidOperationException) { /* ignorado */ }
             }
             _progressWindow = null;
-            try
-            { _cts?.Cancel(); }
-            catch (ObjectDisposedException) { /* ignorado */ }
+
+            // v2.8.6: log defensivo. Em condicoes normais (v2.8.6+), OnClosing
+            // bloqueia o fechamento enquanto conversao roda — entao CTS so e
+            // cancelado se realmente terminou (cleanup) ou se OnClosing foi
+            // burlado de alguma forma. Logar pra rastrear caso a frustracao
+            // "perfis sumiram" volte a aparecer.
+            if (_cts != null && !_cts.IsCancellationRequested)
+            {
+                Logger.Info(
+                    "[ConverterPerfilIfcWindow] OnClosed cancelando CTS — verificar se OnClosing foi bypassed (esperado: bloqueia se conversao ativa).");
+                try
+                { _cts.Cancel(); }
+                catch (ObjectDisposedException) { /* ignorado */ }
+            }
             _cts?.Dispose();
             _cts = null;
 
