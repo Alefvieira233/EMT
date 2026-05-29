@@ -39,8 +39,13 @@ namespace SteelBIM.Views
                 ? $"{qtdeTercas} terça(s) e {qtdeVigas} viga(s) selecionadas. Escolha a família e o tipo de conexão."
                 : $"{qtdeTercas} terça(s) selecionada(s). Escolha a família e o tipo de conexão.";
             CarregarFamilias();
-            btnOk.Click += BtnOk_Click;
-            btnCancel.Click += BtnCancel_Click;
+            // v2.8.4: handlers btnOk/btnCancel ja sao registrados via XAML
+            // (Click="BtnOk_Click" e Click="BtnCancel_Click"). NAO duplicar
+            // aqui via "+= BtnOk_Click" — isso faz o handler rodar 2x ao
+            // clicar, e a segunda chamada lanca exception
+            // "DialogResult somente pode ser definido apos Window ser criado
+            // e exibido como caixa de dialogo" porque a primeira ja fechou
+            // a janela. Bug encontrado em v2.8.3 (logs Alef 28/05 noite).
         }
 
         private void CarregarFamilias()
