@@ -28,7 +28,9 @@ namespace SteelBIM.Views
             }
             catch (System.Exception ex)
             {
-                AppDialogService.ShowError("Travamentos", ex.ToString(), "Erro ao inicializar janela");
+                // v2.8.7 (auditoria UX/security): ex.Message + Logger.Error.
+                SteelBIM.Infrastructure.Logger.Error(ex, "[TravamentoWindow] Falha ao inicializar janela");
+                AppDialogService.ShowError("Travamentos", ex.Message, "Erro ao inicializar janela");
                 throw;
             }
 

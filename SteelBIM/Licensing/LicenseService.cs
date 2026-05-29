@@ -107,8 +107,10 @@ namespace SteelBIM.Licensing
             LicenseStore.SaveLicense(token.Trim(), fingerprint);
             InvalidateCache();
 
+            // v2.8.7 (auditoria security P2-3): mascarar email no log local.
+            // Antes vazava em cleartext se cliente compartilhasse emt-*.log.
             Logger.Info("[License] Licenca ativada para {Email}, expira em {Data}",
-                payload.Email, payload.ExpiresAtUtc);
+                PiiScrubber.MaskEmail(payload.Email), payload.ExpiresAtUtc);
 
             return new LicenseState
             {

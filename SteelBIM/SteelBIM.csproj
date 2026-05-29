@@ -102,6 +102,12 @@
 	  <!-- Logging estruturado (Sprint 1) -->
 	  <PackageReference Include="Serilog" Version="4.2.0" />
 	  <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+	  <!-- v2.8.7: async wrapper sobre File sink. Antes era sync com `shared: true` →
+	       File.Write bloqueava a thread Revit API em cenarios de log spike (1800+
+	       Logger.Warn em galpao 6000 elem com 30% ignorados ~ 270ms-9s overhead).
+	       Async desbloqueia API thread; trade-off: ate 10000 entries em buffer,
+	       perda em crash duro aceitavel pra warns por elemento. -->
+	  <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
 	  <!-- Sistema de licenca (1.0.0): DPAPI nao esta mais no BCL desde .NET Core,
 	       precisa do package explicito. Sem isso, ProtectedData.Protect/Unprotect
 	       lancam TypeLoadException em runtime. -->

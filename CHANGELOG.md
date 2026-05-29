@@ -13,6 +13,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 **Conexão Terça v2** em v2.8.2 (algoritmo face-based + spec da família).
 **Hotfix Conexão Terça v3** em v2.8.3 (centramento automático + 3 fixes campo).
 **Hotfix IFC falso-cancel** em v2.8.6 (6 fixes + 1 enhancement).
+**Sprint Hardening Dia 1** em v2.8.7 (7 melhorias defensivas pós-auditoria 5-agents).
 
 Próximas atividades dependem de eventos externos:
 
@@ -20,6 +21,73 @@ Próximas atividades dependem de eventos externos:
 - **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
 - **Manual no Revit (Alef + Victor):** validar v2.8.3 no mesmo galpão do teste anterior — confirmar que conexão fica na altura da terça, viga do meio recebe conexão, face externa selecionada (ou marca "Inverter face" se preciso)
 - **Manual no Revit (Alef):** validar v2.8.6 conversão IFC no mesmo arquivo que apresentou "Cancelado" falso — confirmar que conversão completa sem dialog de cancelamento, perfis inclinados são preservados, log lista ignorados com motivo
+
+---
+
+## [2.8.7] - 2026-05-29
+
+### Sprint Hardening Dia 1 — pós-auditoria 5 agents (Arquitetura, Performance, UX, Security, Code Quality)
+
+Análise paralela de 5 sub-agents executada após o release v2.8.6 identificou
+3 problemas convergentes (Logger sync, padrão Progress/Cancel duplicado,
+adoção parcial do ADR-003) e ~30 oportunidades menores. Esta release aplica
+os **7 itens "zero-risco aditivo" do Dia 1** do sprint recomendado.
+
+Relatório completo em [docs/audits/RELATORIO-CONSOLIDADO-2026-05-29-v2.8.6.md](docs/audits/RELATORIO-CONSOLIDADO-2026-05-29-v2.8.6.md).
+
+#### Performance
+
+- **`Serilog.Sinks.Async 2.1.0` adicionado** + File sink envolvido em `WriteTo.Async`
+  (`Infrastructure/Logger.cs:55-78`). Antes era sync com `shared: true` — em galpão
+  6000 elementos com 30% ignorados pelo Conversor IFC, custava 270ms-9s só de
+  logging na thread Revit API. Buffer 10000 entries, `blockWhenFull: true` para
+  evitar perda silenciosa.
+- **Agregação de logs no `ConverterPerfilIfcService`** (`Services/Ifc/ConverterPerfilIfcService.cs:50-205`).
+  Antes v2.8.6 emitia 1 `Logger.Warn` por elemento ignorado (até 1800+ entries
+  individuais). Agora 4 caminhos esperados (sem origem, sem linha, sem nível) viram
+  `Logger.Debug` (filtrado em Information default); um único `Logger.Warn` agregado
+  ao fim mostra o breakdown por categoria. `Warn(ex)` mantido apenas no
+  caminho de exceção na criação do `FamilyInstance` (rota mais rara e
+  diagnóstica).
+
+#### Security
+
+- **`PiiScrubber.MaskEmail`** novo helper (`Infrastructure/PiiScrubber.cs:120-149`) que
+  mascara parte local do email mantendo domínio (`"alefchristian@gmail.com"` →
+  `"ale***@gmail.com"`). Aplicado em `LicenseService.cs:113` no log de licença
+  ativada. Antes o email vazava em cleartext em `emt-*.log` (P2-3 do audit).
+  `UserName` removido dos enrichers globais do Serilog (`Logger.cs:60`) — também
+  vazava em cada evento. **+5 testes** cobrindo edge cases.
+- **Whitelist `https` em `Process.Start(ReleaseUrl)`** (`Views/LicenseActivationWindow.xaml.cs:170-187`).
+  Antes `ShellExecute` resolvia qualquer URI registrado no Windows; agora
+  rejeita `file://`, `javascript:`, etc. (P2-4 do audit).
+- **`Guid.NewGuid()` no nome do SharedParams temp** (`Services/Montagem/PlanoMontagemService.cs:62`).
+  Antes usava `DateTime.Now:yyyyMMddHHmmss` (previsível, permitia TOCTOU em
+  `%TEMP%`). Paridade com `UpdateDownloader.cs:311`. (P2-5 do audit).
+
+#### UX
+
+- **`ex.Message` em vez de `ex.ToString()`** nas 3 Windows que jogavam stack trace
+  completo na cara do usuário: `TercasWindow.xaml.cs:36`, `TrelicaWindow.xaml.cs:30`,
+  `TravamentoWindow.xaml.cs:31`. Stack trace agora vai para `Logger.Error(ex, ...)`
+  (rastreabilidade preservada).
+
+#### Code Quality
+
+- **Catches silenciosos documentados ou trocados por `Logger.Debug`**:
+  `PfRebarService.cs:1121,1132` (tentativa-em-cadeia de criação de estribo —
+  Logger.Debug nas tentativas intermediárias), `PlanoMontagemService.cs:107`
+  (cleanup do temp — Debug, falha aceitável), `DiagramaMontagemService.cs:367`
+  (`section.Scale = 75` — Debug, ViewTemplate pode bloquear). Catches genuínos
+  de fallback geométrico em `ConexaoTercasService.cs:236,254,275,293` mantidos
+  silent por design (rotina O(N) em hot loop com retorno sentinela documentado).
+
+#### Métricas
+
+- Build Release: 0 erros, 0 warnings
+- Testes: **1228/1228** verdes (+5 testes novos do `PiiScrubber.MaskEmail`)
+- Diff: ~13 arquivos, +180 / -20 LOC
+- **Zero mudanças funcionais** — todas as alterações são aditivas ou substituições semanticamente equivalentes
 
 ---
 

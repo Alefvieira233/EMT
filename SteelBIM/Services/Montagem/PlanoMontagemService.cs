@@ -56,10 +56,13 @@ namespace SteelBIM.Services.Montagem
                         return true; // ja existe
                 }
 
-                // Nao existe — criar via SharedParameter temporario
+                // Nao existe — criar via SharedParameter temporario.
+                // v2.8.7 (auditoria security P2-5): Guid em vez de DateTime.Now —
+                // antes nome era previsivel (formato yyyyMMddHHmmss), permitindo
+                // TOCTOU em %TEMP%. Paridade com UpdateDownloader.cs:311.
                 string sharedFile = System.IO.Path.Combine(
                     System.IO.Path.GetTempPath(),
-                    $"SteelBIM_SharedParams_{DateTime.Now:yyyyMMddHHmmss}.txt");
+                    $"SteelBIM_SharedParams_{Guid.NewGuid():N}.txt");
                 System.IO.File.WriteAllText(sharedFile, "# This is a Revit shared parameter file.\n*META\tVERSION\tMINVERSION\n*GROUP\tID\tNAME\n*PARAM\tGUID\tNAME\tDATATYPE\tDATACATEGORY\tGROUP\tVISIBLE\tDESCRIPTION\tUSERMODIFIABLE\n");
 
                 DefinitionFile defFile;
@@ -101,7 +104,13 @@ namespace SteelBIM.Services.Montagem
                         doc.Application.SharedParametersFilename = previousSharedFile;
                     try
                     { System.IO.File.Delete(sharedFile); }
-                    catch { }
+                    catch (Exception exDel)
+                    {
+                        // v2.8.7 (auditoria arquitetura): falha no cleanup do temp e'
+                        // aceitavel (arquivo travado por outro processo). Logger.Debug
+                        // mantem rastro sem inundar Warn em hot paths.
+                        SteelBIM.Infrastructure.Logger.Debug("[PlanoMontagem] falha ao deletar SharedParams temp '{F}': {Msg}", sharedFile, exDel.Message);
+                    }
                 }
             }
             catch (Exception ex)

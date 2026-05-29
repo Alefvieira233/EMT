@@ -116,5 +116,36 @@ namespace SteelBIM.Infrastructure
             scrubbed = RevitFilenameRegex.Replace(scrubbed, "<REVIT_FILE>.$1");
             return scrubbed;
         }
+
+        /// <summary>
+        /// v2.8.7 (auditoria security P2-3): mascara email para log local mantendo
+        /// dominio + 1-2 chars da parte local — util pra correlacionar bug reports
+        /// sem expor o email completo. Ex: "alefchristian@gmail.com" → "ale***@gmail.com".
+        /// Usar em <c>Logger.Info/Warn</c> quando o email do payload de licenca for
+        /// referenciado; o pipeline Sentry/PostHog ja usa <see cref="Scrub"/> que
+        /// substitui por <c>&lt;EMAIL&gt;</c> — esta versao mantem domain pra suporte.
+        /// </summary>
+        public static string MaskEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return email;
+
+            int at = email.IndexOf('@');
+            if (at < 1)
+                return "<EMAIL>"; // sem '@' ou comecando com '@' — nao parece email real
+
+            string local = email.Substring(0, at);
+            string domain = email.Substring(at);
+
+            // Preserva 1-3 chars iniciais da parte local (proporcional ao tamanho).
+            int keep = local.Length switch
+            {
+                <= 2 => 1,
+                <= 4 => 2,
+                _ => 3
+            };
+            string visible = local.Substring(0, System.Math.Min(keep, local.Length));
+            return visible + "***" + domain;
+        }
     }
 }

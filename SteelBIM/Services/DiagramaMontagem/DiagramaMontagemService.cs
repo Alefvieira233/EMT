@@ -364,7 +364,13 @@ namespace SteelBIM.Services.DiagramaMontagem
             // Escala 1:75 (padrao das pranchas BR)
             try
             { section.Scale = 75; }
-            catch { }
+            catch (Exception exScale)
+            {
+                // v2.8.7 (auditoria arquitetura): vista pode ter scale travada por
+                // ViewTemplate ou ser categoria que nao aceita scale livre — fica
+                // com default do Revit, nao e' bloqueante.
+                SteelBIM.Infrastructure.Logger.Debug("[DiagramaMontagem] nao foi possivel setar Scale=75 em {Nome}: {Msg}", section.Name, exScale.Message);
+            }
 
             return section;
         }
