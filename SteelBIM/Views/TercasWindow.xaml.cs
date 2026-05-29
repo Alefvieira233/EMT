@@ -33,7 +33,11 @@ namespace SteelBIM.Views
             }
             catch (System.Exception ex)
             {
-                AppDialogService.ShowError("Gerar Terças", ex.ToString(), "Erro ao inicializar janela");
+                // v2.8.7 (auditoria UX/security): ex.Message em vez de ex.ToString()
+                // — antes o stack trace inteiro com paths do dev vazava ao usuario
+                // final (P3-3 security + finding UX). Stack trace fica no Logger.
+                SteelBIM.Infrastructure.Logger.Error(ex, "[TercasWindow] Falha ao inicializar janela");
+                AppDialogService.ShowError("Gerar Terças", ex.Message, "Erro ao inicializar janela");
                 throw;
             }
             _symbols = symbols;

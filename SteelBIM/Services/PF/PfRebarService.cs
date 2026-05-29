@@ -1118,7 +1118,13 @@ namespace SteelBIM.Services.PF
                         RebarHookOrientation.Left, RebarHookOrientation.Left,
                         true, true);
                 }
-                catch { }
+                // v2.8.7 (auditoria arquitetura): catch silent intencional —
+                // tentativa-em-cadeia (StirrupTie -> Standard -> Polygon). Erro
+                // real e' Logger.Error no 3o fallback (linha 1149).
+                catch (Exception exTry1)
+                {
+                    Logger.Debug("[PfRebar/estaca] StirrupTie falhou (i={I}): {Msg} — tentando Standard", i, exTry1.Message);
+                }
                 if (r == null)
                 {
                     try
@@ -1129,7 +1135,10 @@ namespace SteelBIM.Services.PF
                             RebarHookOrientation.Left, RebarHookOrientation.Right,
                             true, true);
                     }
-                    catch { }
+                    catch (Exception exTry2)
+                    {
+                        Logger.Debug("[PfRebar/estaca] Standard tambem falhou (i={I}): {Msg} — tentando Polygon", i, exTry2.Message);
+                    }
                 }
 
                 // Fallback: alguns hosts de fundacao aceitam melhor um poligono fechado.

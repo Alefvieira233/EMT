@@ -303,5 +303,48 @@ namespace SteelBIM.Tests.Infrastructure
             output.Should().Contain(@"<USER>\Documents\");
             output.Should().Contain("<REVIT_FILE>.rvt");
         }
+
+        // ---------- MaskEmail (v2.8.7) ----------
+        //
+        // MaskEmail substitui parte local mantendo dominio — usado em logs
+        // locais onde Scrub() iria ofuscar demais (quer-se manter dominio
+        // pro suporte correlacionar bug reports).
+
+        [Fact]
+        public void MaskEmail_keeps_domain_and_partial_local()
+        {
+            PiiScrubber.MaskEmail("alefchristian@gmail.com").Should().Be("ale***@gmail.com");
+        }
+
+        [Fact]
+        public void MaskEmail_short_local_keeps_fewer_chars()
+        {
+            PiiScrubber.MaskEmail("ab@x.io").Should().Be("a***@x.io");
+            PiiScrubber.MaskEmail("abcd@x.io").Should().Be("ab***@x.io");
+        }
+
+        [Fact]
+        public void MaskEmail_null_or_empty_passthrough()
+        {
+            PiiScrubber.MaskEmail(null).Should().BeNull();
+            PiiScrubber.MaskEmail("").Should().Be("");
+            PiiScrubber.MaskEmail("   ").Should().Be("   ");
+        }
+
+        [Fact]
+        public void MaskEmail_invalid_returns_placeholder()
+        {
+            PiiScrubber.MaskEmail("naoehemail").Should().Be("<EMAIL>");
+            PiiScrubber.MaskEmail("@semlocal.com").Should().Be("<EMAIL>");
+        }
+
+        [Fact]
+        public void MaskEmail_with_subdomain_keeps_full_domain()
+        {
+            // "user" tem 4 chars → keep=2 (regra: <=4 chars mantem 2).
+            PiiScrubber.MaskEmail("user@sub.dominio.co.uk").Should().Be("us***@sub.dominio.co.uk");
+            // "useradmin" tem 9 chars → keep=3.
+            PiiScrubber.MaskEmail("useradmin@sub.dominio.co.uk").Should().Be("use***@sub.dominio.co.uk");
+        }
     }
 }

@@ -57,13 +57,22 @@ namespace SteelBIM.Infrastructure
                         .Enrich.WithProperty("Application", "SteelBIM")
                         .Enrich.WithProperty("Version", typeof(Logger).Assembly.GetName().Version?.ToString() ?? "unknown")
                         .Enrich.WithProperty("MachineName", Environment.MachineName)
-                        .Enrich.WithProperty("UserName", Environment.UserName)
-                        .WriteTo.File(
+                        // v2.8.7 (auditoria security P2-3): nao mais enrichar UserName em
+                        // cada evento. Estava em cleartext no emt-*.log e vazava se cliente
+                        // mandasse log pro suporte. MachineName permanece (menos sensivel,
+                        // util pra correlacionar bug reports).
+                        .WriteTo.Async(a => a.File(
                             path: CurrentLogFile,
                             rollingInterval: RollingInterval.Day,
                             retainedFileCountLimit: 30,
                             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
-                            shared: true)
+                            shared: true),
+                            // v2.8.7 (auditoria perf): wrapper Async desbloqueia a thread
+                            // Revit API em hot paths de log (ConverterPerfilIfc 1800+ warns).
+                            // Buffer default 10000; bloqueia caller se passar disso (vs perda
+                            // silenciosa) — pra plugin desktop com taxa moderada, OK.
+                            bufferSize: 10000,
+                            blockWhenFull: true)
                         .CreateLogger();
 
                     _initialized = true;

@@ -27,7 +27,9 @@ namespace SteelBIM.Views
             }
             catch (System.Exception ex)
             {
-                AppDialogService.ShowError("Treliça", ex.ToString(), "Erro ao inicializar janela");
+                // v2.8.7 (auditoria UX/security): ex.Message + Logger.Error.
+                SteelBIM.Infrastructure.Logger.Error(ex, "[TrelicaWindow] Falha ao inicializar janela");
+                AppDialogService.ShowError("Treliça", ex.Message, "Erro ao inicializar janela");
                 throw;
             }
 

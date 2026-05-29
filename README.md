@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.6-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.7-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-1223%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
@@ -176,6 +176,8 @@ verificação Authenticode.
 ---
 
 ## Versão atual
+
+**v2.8.7** (2026-05-29) — Sprint Hardening Dia 1 (7 melhorias defensivas pós-auditoria 5 agents): `Serilog.Sinks.Async` no Logger (desbloqueia thread Revit API em log spikes), agregação de logs do ConverterPerfilIfc (1800+ warns individuais → 1 warn agregado + breakdown), `PiiScrubber.MaskEmail` aplicado no log de licença ativada (mascara email em cleartext), whitelist `https` em `Process.Start(ReleaseUrl)`, `Guid.NewGuid()` no SharedParams temp (sem TOCTOU previsível), `ex.Message` em vez de `ex.ToString()` nas 3 Windows que mostravam stack trace ao usuário, catches silenciosos documentados ou trocados por Logger.Debug. **1228 testes verdes** (+5). Zero mudanças funcionais. Relatório consolidado em [docs/audits/RELATORIO-CONSOLIDADO-2026-05-29-v2.8.6.md](docs/audits/RELATORIO-CONSOLIDADO-2026-05-29-v2.8.6.md).
 
 **v2.8.6** (2026-05-29) — hotfix Conversor IFC "Cancelado" falso: 6 fixes + 1 enhancement corrigindo bug crítico onde conversão completava com sucesso mas terminava em dialog de cancelamento + rollback de TODOS os perfis criados. Três bugs em camadas: (1) `OnClosed` cancelava CTS incondicionalmente — qualquer fechamento da janela (ESC global, X) abortava transação em andamento; (2) `ProgressWindow.Closing` interpretava `Close()` programático como cancel; (3) 4 caminhos silenciosos no service mascaravam por que elementos eram ignorados. Fixes: `OnClosing` bloqueia fechamento durante conversão, `IsProgrammaticClose` flag, `Logger.Warn` detalhado em todos os ignorados, log do resumo final, opt-out ESC via `Tag="no-escape"`, mensagem final mostra path do log.
 

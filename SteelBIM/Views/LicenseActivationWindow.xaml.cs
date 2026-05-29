@@ -169,7 +169,21 @@ namespace SteelBIM.Views
                         {
                             try
                             {
-                                Process.Start(new ProcessStartInfo(result.ReleaseUrl) { UseShellExecute = true });
+                                // v2.8.7 (auditoria security P2-4): whitelist de scheme.
+                                // ReleaseUrl vem do JSON do GitHub (html_url). Sem essa
+                                // checagem, conta GitHub comprometida poderia inserir
+                                // file://, javascript:, ms-windows-store:, etc — ShellExecute
+                                // resolve qualquer URI registrado no Windows. https-only
+                                // garante so navegador abrindo URL legitima.
+                                if (Uri.TryCreate(result.ReleaseUrl, UriKind.Absolute, out Uri uri)
+                                    && uri.Scheme == Uri.UriSchemeHttps)
+                                {
+                                    Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+                                }
+                                else
+                                {
+                                    Logger.Warn("[Update] ReleaseUrl rejeitada (esperado https): {Url}", result.ReleaseUrl);
+                                }
                             }
                             catch (Exception ex)
                             {

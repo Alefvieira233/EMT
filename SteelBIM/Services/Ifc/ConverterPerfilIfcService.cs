@@ -52,6 +52,17 @@ namespace SteelBIM.Services.Ifc
             int ignorados = 0;
             int total = config.Conversoes.Count;
 
+            // v2.8.7 (auditoria perf): contadores por categoria de motivo em vez de
+            // 1 Logger.Warn por elemento. Em galpao 6000 elem com 30% ignorados,
+            // 1800 Warn sync no File sink custavam 270ms-9s na thread Revit API
+            // (mesmo com Sinks.Async, evita inundar buffer e disco). Detalhe
+            // individual fica em Logger.Debug (filtrado em Information default);
+            // o resumo agregado vai em UM Logger.Warn no fim.
+            int ignSemOrigem = 0;
+            int ignSemLinha = 0;
+            int ignSemNivel = 0;
+            int ignErroCriacao = 0;
+
             // v2.7.7: reportar inicio antes do work pesado (UI mostra "0/N" imediato)
             progress?.Report(new ProgressReport(0, total, "Preparando conversao..."));
 
@@ -81,9 +92,10 @@ namespace SteelBIM.Services.Ifc
                         Element origem = doc.GetElement(conversao.ElementoOrigem);
                         if (origem == null)
                         {
-                            // v2.8.6: log detalhado pra diagnostico (antes silencioso).
-                            Logger.Warn("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: ElementoOrigem {Id} nao existe mais no documento",
+                            // v2.8.7: Debug em vez de Warn — agregado abaixo no resumo final.
+                            Logger.Debug("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: ElementoOrigem {Id} nao existe mais no documento",
                                 processados + 1, total, conversao.ElementoOrigem?.Value);
+                            ignSemOrigem++;
                             ignorados++;
                             processados++;
                             continue;
@@ -92,8 +104,9 @@ namespace SteelBIM.Services.Ifc
                         Line linha = ObterLinhaDoElemento(origem);
                         if (linha == null)
                         {
-                            Logger.Warn("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — SectionAxisExtractor + bbox fallback nao conseguiram extrair linha de eixo (geometria sem caps planares e sem variancia detectavel)",
+                            Logger.Debug("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — SectionAxisExtractor + bbox fallback nao conseguiram extrair linha de eixo",
                                 processados + 1, total, origem.Id.Value, origem.Category?.Name ?? "?");
+                            ignSemLinha++;
                             ignorados++;
                             processados++;
                             continue;
@@ -102,8 +115,9 @@ namespace SteelBIM.Services.Ifc
                         Level nivel = ObterNivelDoElemento(origem, doc, niveis, config.NivelPadrao);
                         if (nivel == null)
                         {
-                            Logger.Warn("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — sem Level associado e sem NivelPadrao",
+                            Logger.Debug("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — sem Level associado e sem NivelPadrao",
                                 processados + 1, total, origem.Id.Value, origem.Category?.Name ?? "?");
+                            ignSemNivel++;
                             ignorados++;
                             processados++;
                             continue;
@@ -166,15 +180,19 @@ namespace SteelBIM.Services.Ifc
                         }
                         catch (Exception ex)
                         {
-                            // v2.8.6: log detalhado do erro silencioso (antes "ignorados++" sem info).
-                            // Causas tipicas: NewFamilyInstance com geometria invalida (Z-degenerada),
-                            // simbolo nao ativavel, host inexistente, parametro readonly inesperado.
+                            // v2.8.7: Warn(ex) so para erros de criacao (mais raros e
+                            // diagnosticos). Para origem/linha/nivel (caminhos esperados
+                            // em IFC heterogeneos), agregamos em Debug + resumo final.
+                            // Causas tipicas aqui: NewFamilyInstance com geometria invalida
+                            // (Z-degenerada), simbolo nao ativavel, host inexistente,
+                            // parametro readonly inesperado.
                             Logger.Warn(ex,
                                 "[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — excecao na criacao do FamilyInstance (perfil destino: {Perfil})",
                                 processados + 1, total,
                                 origem.Id.Value,
                                 origem.Category?.Name ?? "?",
                                 simbolo?.Name ?? "?");
+                            ignErroCriacao++;
                             ignorados++;
                         }
 
@@ -197,12 +215,20 @@ namespace SteelBIM.Services.Ifc
 
                     t.Commit();
 
-                    // v2.8.6: resumo final pos-commit pra auditoria. Permite
-                    // o usuario abrir o log e ver "convertidos N de M, ignorados I"
-                    // sem precisar contar manualmente entries individuais.
+                    // v2.8.7: resumo final agregado em UM Logger.Warn (se houver ignorados).
+                    // Substitui ate 1800+ Warn individuais (v2.8.6) por 1 entrada com
+                    // breakdown por categoria — diagnostico equivalente sem inundar I/O.
+                    // Detalhe por elemento fica em Logger.Debug (LogEventLevel.Debug).
                     Logger.Info(
-                        "[ConverterPerfilIfc] Conversao concluida: {Conv} convertidos, {Ign} ignorados de {Total} totais. Verifique entries IGNORADO acima para diagnostico individual.",
+                        "[ConverterPerfilIfc] Conversao concluida: {Conv} convertidos, {Ign} ignorados de {Total} totais.",
                         convertidos, ignorados, total);
+
+                    if (ignorados > 0)
+                    {
+                        Logger.Warn(
+                            "[ConverterPerfilIfc] Breakdown dos {Ign} ignorados: SemOrigem={SO}, SemLinha={SL}, SemNivel={SN}, ErroCriacao={EC}. Habilite Logger em Debug para ver elementos individuais.",
+                            ignorados, ignSemOrigem, ignSemLinha, ignSemNivel, ignErroCriacao);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
