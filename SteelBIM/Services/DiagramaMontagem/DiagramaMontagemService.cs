@@ -93,8 +93,12 @@ namespace SteelBIM.Services.DiagramaMontagem
                     using (Transaction tx4 = new Transaction(doc, "Adicionar cotas entre eixos"))
                     {
                         tx4.Start();
+                        // v2.8.8 Onda 4: handler suprime dialog "Excluir cotas".
+                        var handler4 = InstalarSuppressDimensionsHandler(tx4, doc);
                         resultado.CotasCriadas = CriarCotasEntreEixos(doc, vista);
                         tx4.Commit();
+                        if (handler4.CotasSuprimidas > 0)
+                            resultado.Avisos.Add($"{handler4.CotasSuprimidas} cota(s) entre eixos foram removidas automaticamente (Refs invalidas).");
                     }
                 }
 
@@ -120,9 +124,13 @@ namespace SteelBIM.Services.DiagramaMontagem
                     using (Transaction tx6 = new Transaction(doc, "Cotas verticais"))
                     {
                         tx6.Start();
+                        // v2.8.8 Onda 4: handler suprime dialog "Excluir cotas".
+                        var handler6 = InstalarSuppressDimensionsHandler(tx6, doc);
                         resultado.CotasVerticais = CriarCotasVerticais(
                             doc, vista, elementos, config.ToleranciaClusterizacaoMm);
                         tx6.Commit();
+                        if (handler6.CotasSuprimidas > 0)
+                            resultado.Avisos.Add($"{handler6.CotasSuprimidas} cota(s) verticais foram removidas automaticamente (Refs invalidas).");
                     }
                 }
                 else if (config.AdicionarCotasVerticais && config.Orientacao == OrientacaoDiagrama.Superior)
@@ -136,8 +144,12 @@ namespace SteelBIM.Services.DiagramaMontagem
                     using (Transaction tx7 = new Transaction(doc, "Cota total conjunto"))
                     {
                         tx7.Start();
+                        // v2.8.8 Onda 4: handler suprime dialog "Excluir cotas".
+                        var handler7 = InstalarSuppressDimensionsHandler(tx7, doc);
                         resultado.CotaTotalConjunto = CriarCotaTotalConjunto(doc, vista);
                         tx7.Commit();
+                        if (handler7.CotasSuprimidas > 0)
+                            resultado.Avisos.Add($"Cota total foi removida automaticamente (Refs invalidas).");
                     }
                 }
 
@@ -158,8 +170,12 @@ namespace SteelBIM.Services.DiagramaMontagem
                     using (Transaction tx9 = new Transaction(doc, "Comprimentos individuais"))
                     {
                         tx9.Start();
+                        // v2.8.8 Onda 4: handler suprime dialog "Excluir cotas".
+                        var handler9 = InstalarSuppressDimensionsHandler(tx9, doc);
                         resultado.ComprimentosCriados = CriarComprimentosIndividuais(doc, vista, elementos, config);
                         tx9.Commit();
+                        if (handler9.CotasSuprimidas > 0)
+                            resultado.Avisos.Add($"{handler9.CotasSuprimidas} cota(s) de comprimento foram removidas automaticamente (Refs invalidas).");
                     }
                 }
 
@@ -427,57 +443,122 @@ namespace SteelBIM.Services.DiagramaMontagem
 
         // ============================================
         // 2F. CRIAR COTAS ENTRE EIXOS CONSECUTIVOS
+        // v2.8.8: reescrito do zero.
+        //
+        // BUGS v2.4.0 → v2.8.7 (corrigidos aqui):
+        //  #1: usava `vista.CropBox.Max.Y` (UV LOCAL) somando em
+        //      `vista.UpDirection` (world). Resultado: Line.CreateBound com
+        //      pontos absurdos no espaco modelo → Revit nao alinhava com Refs
+        //      dos Grids → dialog "Excluir cotas" no commit.
+        //  #2: ProjetarParaTopo misturava coords local+world.
+        //  #3: nao filtrava Grids visiveis na vista — pegava todos do projeto.
+        //  #4: nao verificava se Grid cruza o plano da Section View.
+        //
+        // FIX v2.8.8:
+        //  - Filtra Grids via FilteredElementCollector(doc, vista.Id) — so'
+        //    visiveis.
+        //  - Projeta o ponto base de cada Grid no plano da vista usando
+        //    DimensionPlanCalculator.ProjetarPontoNoPlano (helper puro).
+        //  - Calcula yTopoVista (acima do topo dos Grids projetados) no
+        //    espaco 2D da vista, depois reconstroi os pontos 3D world-space
+        //    via ReconstruirPonto3DDaVista (helper puro).
+        //  - Instala SuppressInvalidDimensionsHandler na transaction (chamada
+        //    pelo orquestrador antes da Onda 1) — se algum Grid ainda gerar
+        //    Ref invalida em edge case, a cota e' silenciosamente removida
+        //    sem abrir dialog modal.
+        //
+        // OFFSET_ACIMA_DOS_GRIDS_MM: linha de cota fica 1m acima do topo
+        // calculado dos Grids projetados. Valor escolhido pra dar respiro
+        // visual sem encostar no titulo da vista.
         // ============================================
+        private const double OffsetCotaAcimaGridsMm = 1000.0;
+
         private int CriarCotasEntreEixos(Document doc, ViewSection vista)
         {
-            // Coletar grids visiveis na vista, ordenados pela posicao na direcao "right" da vista
             XYZ rightDir = vista.RightDirection;
+            XYZ upDir = vista.UpDirection;
+            XYZ viewDir = vista.ViewDirection;
             XYZ origin = vista.Origin;
 
-            var gridsComOrdem = new FilteredElementCollector(doc)
+            Vec3 origemVista = new Vec3(origin.X, origin.Y, origin.Z);
+            Vec3 right = new Vec3(rightDir.X, rightDir.Y, rightDir.Z);
+            Vec3 up = new Vec3(upDir.X, upDir.Y, upDir.Z);
+            Vec3 normalPlano = new Vec3(viewDir.X, viewDir.Y, viewDir.Z);
+
+            // v2.8.8 FIX #3: filtra Grids visiveis na vista (collector com View id).
+            // Sem isso, pega Grids do projeto inteiro e cria Refs inutilizaveis.
+            var gridsNaVista = new FilteredElementCollector(doc, vista.Id)
                 .OfClass(typeof(Grid))
                 .Cast<Grid>()
-                .Select(g => new
-                {
-                    Grid = g,
-                    Ordem = ProjetarPontoNaDirecao(GridPosicaoBase(g), origin, rightDir)
-                })
-                .Where(x => x.Grid.Curve != null)
-                .OrderBy(x => x.Ordem)
+                .Where(g => g.Curve != null)
                 .ToList();
 
-            if (gridsComOrdem.Count < 2)
+            // v2.8.8 FIX: projetar ponto base de cada Grid no plano da vista
+            // antes de ordenar e antes de calcular yTopo.
+            var gridsComProjecao = gridsNaVista
+                .Select(g =>
+                {
+                    XYZ pBase = GridPosicaoBase(g);
+                    Vec3 pBaseVec = new Vec3(pBase.X, pBase.Y, pBase.Z);
+                    Vec3 pProj = DimensionPlanCalculator.ProjetarPontoNoPlano(pBaseVec, origemVista, normalPlano);
+                    (double u, double v) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(pProj, origemVista, right, up);
+                    return new { Grid = g, U = u, V = v, ProjWorld = pProj };
+                })
+                .OrderBy(x => x.U)
+                .ToList();
+
+            if (gridsComProjecao.Count < 2)
                 return 0;
+
+            // v2.8.8 FIX #1: yTopo em coordenada V (UP) do plano da vista,
+            // calculado a partir dos Grids reais — nao do CropBox UV.
+            double vMaxDosGrids = gridsComProjecao.Max(x => x.V);
+            double offsetFt = UnitUtils.ConvertToInternalUnits(OffsetCotaAcimaGridsMm, UnitTypeId.Millimeters);
+            double vLinhaCota = vMaxDosGrids + offsetFt;
 
             int cotasOk = 0;
 
-            // Pegar um ponto Y (altura) acima do conjunto para colocar a linha de cota
-            BoundingBoxXYZ cropBox = vista.CropBox;
-            XYZ topo = vista.Origin + vista.UpDirection * (cropBox.Max.Y + UnitUtils.ConvertToInternalUnits(500.0, UnitTypeId.Millimeters));
-
-            for (int i = 0; i < gridsComOrdem.Count - 1; i++)
+            for (int i = 0; i < gridsComProjecao.Count - 1; i++)
             {
-                Grid g1 = gridsComOrdem[i].Grid;
-                Grid g2 = gridsComOrdem[i + 1].Grid;
+                var item1 = gridsComProjecao[i];
+                var item2 = gridsComProjecao[i + 1];
 
                 try
                 {
                     ReferenceArray refs = new ReferenceArray();
-                    refs.Append(new Reference(g1));
-                    refs.Append(new Reference(g2));
+                    refs.Append(new Reference(item1.Grid));
+                    refs.Append(new Reference(item2.Grid));
 
-                    // Linha de cota: na altura "topo", do ponto do g1 ao do g2
-                    XYZ p1 = ProjetarParaTopo(GridPosicaoBase(g1), topo, vista.UpDirection);
-                    XYZ p2 = ProjetarParaTopo(GridPosicaoBase(g2), topo, vista.UpDirection);
+                    // v2.8.8 FIX #1 #2: reconstroi pontos 3D world-space usando
+                    // o U projetado de cada Grid + o V comum (linha de cota).
+                    // Garante que p1 e p2 estao no MESMO plano paralelo a
+                    // RightDirection da vista, alinhados com as Refs dos Grids.
+                    Vec3 p1Vec = DimensionPlanCalculator.ReconstruirPonto3DDaVista(
+                        item1.U, vLinhaCota, origemVista, right, up);
+                    Vec3 p2Vec = DimensionPlanCalculator.ReconstruirPonto3DDaVista(
+                        item2.U, vLinhaCota, origemVista, right, up);
+
+                    XYZ p1 = new XYZ(p1Vec.X, p1Vec.Y, p1Vec.Z);
+                    XYZ p2 = new XYZ(p2Vec.X, p2Vec.Y, p2Vec.Z);
+
+                    // Sanidade: se a distancia entre os Grids projetados for
+                    // < 1mm (Grids quase coincidentes), pula — Revit rejeitaria.
+                    if (p1.DistanceTo(p2) < UnitUtils.ConvertToInternalUnits(1.0, UnitTypeId.Millimeters))
+                    {
+                        Logger.Debug(
+                            "[DiagramaMontagem] Grids {G1}/{G2} quase coincidentes na projecao — pulando cota",
+                            item1.Grid.Name, item2.Grid.Name);
+                        continue;
+                    }
+
                     Line linhaCota = Line.CreateBound(p1, p2);
-
                     Dimension dim = doc.Create.NewDimension(vista, linhaCota, refs);
                     if (dim != null)
                         cotasOk++;
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn(ex, "[DiagramaMontagem] Falha ao cotar entre {G1} e {G2}", g1.Name, g2.Name);
+                    Logger.Warn(ex, "[DiagramaMontagem] Falha ao cotar entre {G1} e {G2}", item1.Grid.Name, item2.Grid.Name);
                 }
             }
 
@@ -494,15 +575,6 @@ namespace SteelBIM.Services.DiagramaMontagem
         private double ProjetarPontoNaDirecao(XYZ ponto, XYZ origem, XYZ direcao)
         {
             return (ponto - origem).DotProduct(direcao);
-        }
-
-        private XYZ ProjetarParaTopo(XYZ ponto, XYZ topo, XYZ upDir)
-        {
-            // Preserva o X do ponto original mas usa Y do topo
-            double yTopo = topo.DotProduct(upDir);
-            XYZ pontoNoUp = upDir * yTopo;
-            XYZ horizontal = ponto - upDir * ponto.DotProduct(upDir);
-            return horizontal + pontoNoUp;
         }
 
         // ============================================
@@ -552,14 +624,28 @@ namespace SteelBIM.Services.DiagramaMontagem
         }
 
         // ============================================
-        // 2H. COTAS VERTICAIS (SpotElevation clusterizado) — v2.4.0
+        // 2H. COTAS VERTICAIS (SpotElevation clusterizado)
+        // v2.8.8: reescrito do zero.
+        //
+        // BUGS v2.4.0 → v2.8.7 (corrigidos aqui):
+        //  #5: usava `new Reference(FamilyInstance)` — proibido pela API.
+        //      So' funciona pra Grids/Levels/ReferencePlanes. Pra
+        //      FamilyInstance precisa usar GetReferences(Top/Bottom).
+        //  #6: usava `bbVista.Max.X` em world-space numa Section View que
+        //      pode estar rotacionada — coordenadas absurdas.
+        //  #7: Y=0 hardcoded — quebra em qualquer projeto fora da origem.
+        //
+        // FIX v2.8.8:
+        //  - Pra cada cluster Z, escolhe um FamilyInstance que tem topo OU
+        //    base nesse Z e extrai a Reference correta via
+        //    GetReferences(FamilyInstanceReferenceType.Top/Bottom).
+        //  - Calcula bbox do conjunto de elementos em world-space (nao da
+        //    vista) pra posicionar SpotElevation a direita do galpao real.
+        //  - Y do SpotElevation = Y medio dos elementos selecionados (em
+        //    vez de 0 hardcoded).
+        //  - Pula clusters sem FamilyInstance com Refs Top/Bottom validas
+        //    com Logger.Debug.
         // ============================================
-        /// <summary>
-        /// Cria SpotElevation em niveis chave dos elementos selecionados:
-        /// pontos onde ha viga, mudanca de elevacao, base/topo pilar.
-        /// Clusteriza pontos com elevacao Z proxima (tolerancia em mm).
-        /// Limita entre 3 e 15 cotas para nao poluir.
-        /// </summary>
         private int CriarCotasVerticais(Document doc, ViewSection vista, List<Element> elementos, double tolMm)
         {
             // Coletar TODOS os pontos Z relevantes
@@ -599,7 +685,6 @@ namespace SteelBIM.Services.DiagramaMontagem
             // Limitar entre 3 e 15 cotas (regra do plano — nao poluir)
             if (clusters.Count > 15)
             {
-                // Reamostrar uniformemente para 15
                 var reduzido = new List<double>();
                 double passo = (clusters.Count - 1) / 14.0;
                 for (int i = 0; i < 15; i++)
@@ -607,45 +692,90 @@ namespace SteelBIM.Services.DiagramaMontagem
                 clusters = reduzido.Distinct().ToList();
             }
 
-            // Posicionar SpotElevations a direita da extensao da vista
-            BoundingBoxXYZ bbVista = vista.get_BoundingBox(null);
-            if (bbVista == null)
+            // v2.8.8 FIX #6 #7: bbox do CONJUNTO em world-space (pra qualquer
+            // orientacao de vista, qualquer offset world). Cota fica 800mm a
+            // direita do extremo direito dos elementos selecionados.
+            double xMaxWorld = double.MinValue;
+            double yMedioSum = 0;
+            int yMedioCount = 0;
+            foreach (Element e in elementos)
+            {
+                BoundingBoxXYZ bb = e.get_BoundingBox(null);
+                if (bb == null)
+                    continue;
+                if (bb.Max.X > xMaxWorld)
+                    xMaxWorld = bb.Max.X;
+                yMedioSum += (bb.Min.Y + bb.Max.Y) / 2.0;
+                yMedioCount++;
+            }
+            if (xMaxWorld == double.MinValue || yMedioCount == 0)
                 return 0;
 
-            double xDireita = bbVista.Max.X + UnitUtils.ConvertToInternalUnits(800, UnitTypeId.Millimeters); // 80cm a direita
+            double offsetCota = UnitUtils.ConvertToInternalUnits(800, UnitTypeId.Millimeters);
+            double offsetTexto = UnitUtils.ConvertToInternalUnits(200, UnitTypeId.Millimeters);
+            double xDireita = xMaxWorld + offsetCota;
+            double yMedio = yMedioSum / yMedioCount;
 
             int cotasOk = 0;
             foreach (double zCluster in clusters)
             {
                 try
                 {
-                    // Encontrar um elemento que tem face nesse nivel Z
-                    Element refElem = null;
+                    // v2.8.8 FIX #5: achar FamilyInstance com Top ou Bottom
+                    // batendo no zCluster, depois extrair a Reference correta
+                    // via GetReferences. Pula elementos sem refs.
+                    FamilyInstance refFI = null;
+                    FamilyInstanceReferenceType tipoRef = FamilyInstanceReferenceType.Top;
+
                     foreach (Element e in elementos)
                     {
-                        BoundingBoxXYZ bb = e.get_BoundingBox(null);
+                        if (!(e is FamilyInstance fi))
+                            continue;
+                        BoundingBoxXYZ bb = fi.get_BoundingBox(null);
                         if (bb == null)
                             continue;
-                        if (Math.Abs(bb.Min.Z - zCluster) < tolFt || Math.Abs(bb.Max.Z - zCluster) < tolFt)
+
+                        if (Math.Abs(bb.Max.Z - zCluster) < tolFt)
                         {
-                            refElem = e;
+                            refFI = fi;
+                            tipoRef = FamilyInstanceReferenceType.Top;
+                            break;
+                        }
+                        if (Math.Abs(bb.Min.Z - zCluster) < tolFt)
+                        {
+                            refFI = fi;
+                            tipoRef = FamilyInstanceReferenceType.Bottom;
                             break;
                         }
                     }
-                    if (refElem == null)
-                        continue;
 
-                    Reference refE = new Reference(refElem);
-                    XYZ pontoElbow = new XYZ(xDireita, 0, zCluster);
-                    XYZ pontoTexto = new XYZ(xDireita + UnitUtils.ConvertToInternalUnits(200, UnitTypeId.Millimeters), 0, zCluster);
-                    XYZ pontoCota = new XYZ(xDireita, 0, zCluster);
+                    if (refFI == null)
+                    {
+                        Logger.Debug(
+                            "[DiagramaMontagem] SpotElevation Z={Z:F3}: nenhum FamilyInstance com Top/Bottom no cluster — pulando",
+                            zCluster);
+                        continue;
+                    }
+
+                    IList<Reference> refs = refFI.GetReferences(tipoRef);
+                    if (refs == null || refs.Count == 0)
+                    {
+                        Logger.Debug(
+                            "[DiagramaMontagem] SpotElevation Z={Z:F3}: peca {Id} sem refs {Tipo} — pulando",
+                            zCluster, refFI.Id.Value, tipoRef);
+                        continue;
+                    }
+
+                    XYZ pontoNaFace = new XYZ(xMaxWorld, yMedio, zCluster);
+                    XYZ pontoElbow = new XYZ(xDireita, yMedio, zCluster);
+                    XYZ pontoTexto = new XYZ(xDireita + offsetTexto, yMedio, zCluster);
 
                     SpotDimension sd = doc.Create.NewSpotElevation(
-                        vista, refE,
-                        new XYZ(xDireita, 0, zCluster),
+                        vista, refs[0],
+                        pontoNaFace,
                         pontoElbow,
                         pontoTexto,
-                        pontoCota,
+                        pontoElbow,
                         true /* hasLeader */);
 
                     if (sd != null)
@@ -661,48 +791,72 @@ namespace SteelBIM.Services.DiagramaMontagem
         }
 
         // ============================================
-        // 2I. COTA TOTAL DO CONJUNTO — v2.4.0
+        // 2I. COTA TOTAL DO CONJUNTO
+        // v2.8.8: reescrito do zero — mesmo padrao da Onda 1 (cotas entre eixos).
+        // Linha de cota fica acima da linha das cotas entre eixos
+        // (offset 2x = OffsetCotaAcimaGridsMm * 2 = 2000mm).
         // ============================================
-        /// <summary>
-        /// Cria uma cota linear total entre o eixo mais a esquerda e o mais a direita visiveis na vista.
-        /// Linha de cota fica ACIMA da linha de cotas entre eixos consecutivos.
-        /// </summary>
         private bool CriarCotaTotalConjunto(Document doc, ViewSection vista)
         {
             try
             {
                 XYZ rightDir = vista.RightDirection;
+                XYZ upDir = vista.UpDirection;
+                XYZ viewDir = vista.ViewDirection;
                 XYZ origin = vista.Origin;
 
-                var gridsComOrdem = new FilteredElementCollector(doc)
+                Vec3 origemVista = new Vec3(origin.X, origin.Y, origin.Z);
+                Vec3 right = new Vec3(rightDir.X, rightDir.Y, rightDir.Z);
+                Vec3 up = new Vec3(upDir.X, upDir.Y, upDir.Z);
+                Vec3 normalPlano = new Vec3(viewDir.X, viewDir.Y, viewDir.Z);
+
+                // v2.8.8: filtra Grids visiveis na vista (mesmo fix da Onda 1).
+                var gridsComProjecao = new FilteredElementCollector(doc, vista.Id)
                     .OfClass(typeof(Grid))
                     .Cast<Grid>()
                     .Where(g => g.Curve != null)
-                    .Select(g => new
+                    .Select(g =>
                     {
-                        Grid = g,
-                        Ordem = ProjetarPontoNaDirecao(GridPosicaoBase(g), origin, rightDir)
+                        XYZ pBase = GridPosicaoBase(g);
+                        Vec3 pBaseVec = new Vec3(pBase.X, pBase.Y, pBase.Z);
+                        Vec3 pProj = DimensionPlanCalculator.ProjetarPontoNoPlano(pBaseVec, origemVista, normalPlano);
+                        (double u, double v) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(pProj, origemVista, right, up);
+                        return new { Grid = g, U = u, V = v };
                     })
-                    .OrderBy(x => x.Ordem)
+                    .OrderBy(x => x.U)
                     .ToList();
 
-                if (gridsComOrdem.Count < 2)
+                if (gridsComProjecao.Count < 2)
                     return false;
 
-                Grid primeiro = gridsComOrdem.First().Grid;
-                Grid ultimo = gridsComOrdem.Last().Grid;
+                var primeiro = gridsComProjecao.First();
+                var ultimo = gridsComProjecao.Last();
 
                 ReferenceArray refs = new ReferenceArray();
-                refs.Append(new Reference(primeiro));
-                refs.Append(new Reference(ultimo));
+                refs.Append(new Reference(primeiro.Grid));
+                refs.Append(new Reference(ultimo.Grid));
 
-                // Linha de cota 1m mais alta que a das cotas entre eixos
-                BoundingBoxXYZ cropBox = vista.CropBox;
-                double yTopoFt = cropBox.Max.Y + UnitUtils.ConvertToInternalUnits(1000, UnitTypeId.Millimeters);
-                XYZ p1 = ProjetarParaTopo(GridPosicaoBase(primeiro), vista.Origin + vista.UpDirection * yTopoFt, vista.UpDirection);
-                XYZ p2 = ProjetarParaTopo(GridPosicaoBase(ultimo), vista.Origin + vista.UpDirection * yTopoFt, vista.UpDirection);
+                // Linha de cota total: 2x offset da linha das cotas entre eixos
+                // (fica empilhada acima).
+                double vMaxDosGrids = gridsComProjecao.Max(x => x.V);
+                double offsetFt = UnitUtils.ConvertToInternalUnits(OffsetCotaAcimaGridsMm * 2, UnitTypeId.Millimeters);
+                double vLinhaCota = vMaxDosGrids + offsetFt;
+
+                Vec3 p1Vec = DimensionPlanCalculator.ReconstruirPonto3DDaVista(
+                    primeiro.U, vLinhaCota, origemVista, right, up);
+                Vec3 p2Vec = DimensionPlanCalculator.ReconstruirPonto3DDaVista(
+                    ultimo.U, vLinhaCota, origemVista, right, up);
+
+                XYZ p1 = new XYZ(p1Vec.X, p1Vec.Y, p1Vec.Z);
+                XYZ p2 = new XYZ(p2Vec.X, p2Vec.Y, p2Vec.Z);
+
+                if (p1.DistanceTo(p2) < UnitUtils.ConvertToInternalUnits(1.0, UnitTypeId.Millimeters))
+                {
+                    Logger.Debug("[DiagramaMontagem] Cota total: extremos coincidentes na projecao — pulando");
+                    return false;
+                }
+
                 Line linhaCota = Line.CreateBound(p1, p2);
-
                 Dimension dim = doc.Create.NewDimension(vista, linhaCota, refs);
                 return dim != null;
             }
@@ -1036,6 +1190,33 @@ namespace SteelBIM.Services.DiagramaMontagem
                 .OfClass(typeof(ViewSheet))
                 .Cast<ViewSheet>()
                 .Any(s => string.Equals(s.SheetNumber, numero, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // ============================================
+        // 2M. v2.8.8 Onda 4 — instalacao do SuppressInvalidDimensionsHandler
+        // ============================================
+        /// <summary>
+        /// v2.8.8 — Instala <see cref="SuppressInvalidDimensionsHandler"/> na
+        /// transaction passada. Retorna a instancia do handler pra que o
+        /// caller possa consultar <c>CotasSuprimidas</c> apos o commit.
+        ///
+        /// Sem este handler, cotas com Reference invalida (Grid fora da vista,
+        /// FamilyInstance sem Top/Bottom refs, Line desalinhada com Refs)
+        /// fazem o Revit abrir dialog modal "Excluir cotas" no commit —
+        /// interrompendo o fluxo do usuario (bug reportado em v2.8.7).
+        ///
+        /// Tambem suprime <see cref="FailureSeverity.Warning"/> em cotas
+        /// (alinhado com <see cref="Utils.FailureHandlingHelper.SwallowWarnings"/>).
+        /// </summary>
+        private SuppressInvalidDimensionsHandler InstalarSuppressDimensionsHandler(Transaction tx, Document doc)
+        {
+            var handler = new SuppressInvalidDimensionsHandler(doc);
+            FailureHandlingOptions opts = tx.GetFailureHandlingOptions();
+            opts.SetFailuresPreprocessor(handler);
+            opts.SetForcedModalHandling(false);
+            opts.SetClearAfterRollback(true);
+            tx.SetFailureHandlingOptions(opts);
+            return handler;
         }
     }
 }

@@ -294,5 +294,221 @@ namespace SteelBIM.Tests.Services.DiagramaMontagem
             Assert.True(DimensionPlanCalculator.DeveAplicarOverride(geomFt, fabFt, thresholdMm: 5));
             Assert.False(DimensionPlanCalculator.DeveAplicarOverride(geomFt, fabFt, thresholdMm: 10));
         }
+
+        // ============================================================
+        // v2.8.8 — ProjetarPontoNoPlano (Onda 1 do fix Diagrama Montagem)
+        // ============================================================
+        //
+        // Em qualquer plano definido por (origem, normal unitaria), a projecao
+        // de um ponto P e' P - normal * ((P - origem) . normal). Isso traz P
+        // pro plano mantendo a componente paralela ao plano intacta.
+        //
+        // Em Section Views do Revit, isso e' usado pra trazer o ponto base de
+        // um Grid (que pode estar em Z qualquer) pro plano da vista — antes
+        // disso, a Line.CreateBound usada pra criar a Dimension ficava
+        // desalinhada das Refs e o Revit rejeitava no commit (bug v2.8.7).
+
+        [Fact]
+        public void ProjetarPontoNoPlano_PontoNoProprioPlano_RetornaIgual()
+        {
+            // Plano XY (normal = +Z, origem = 0,0,0). Ponto (5,3,0) ja' esta no plano.
+            Vec3 ponto = new Vec3(5, 3, 0);
+            Vec3 origem = new Vec3(0, 0, 0);
+            Vec3 normal = new Vec3(0, 0, 1);
+
+            Vec3 result = DimensionPlanCalculator.ProjetarPontoNoPlano(ponto, origem, normal);
+
+            AssertVecEqual(ponto, result);
+        }
+
+        [Fact]
+        public void ProjetarPontoNoPlano_PontoAcimaDoPlanoXY_ProjetaParaZero()
+        {
+            // Plano XY (normal +Z). Ponto (2, 3, 7) -> projeta pra (2, 3, 0).
+            Vec3 ponto = new Vec3(2, 3, 7);
+            Vec3 origem = new Vec3(0, 0, 0);
+            Vec3 normal = new Vec3(0, 0, 1);
+
+            Vec3 result = DimensionPlanCalculator.ProjetarPontoNoPlano(ponto, origem, normal);
+
+            AssertVecEqual(new Vec3(2, 3, 0), result);
+        }
+
+        [Fact]
+        public void ProjetarPontoNoPlano_PlanoOblique_ProjecaoConsistente()
+        {
+            // Plano com normal (1,0,0) (plano YZ). Ponto (10, 5, 3) -> projeta
+            // pra (0, 5, 3) (X some, Y e Z preservados).
+            Vec3 ponto = new Vec3(10, 5, 3);
+            Vec3 origem = new Vec3(0, 0, 0);
+            Vec3 normal = new Vec3(1, 0, 0);
+
+            Vec3 result = DimensionPlanCalculator.ProjetarPontoNoPlano(ponto, origem, normal);
+
+            AssertVecEqual(new Vec3(0, 5, 3), result);
+        }
+
+        [Fact]
+        public void ProjetarPontoNoPlano_OrigemDeslocada_RespeitaOffset()
+        {
+            // Plano paralelo a XY mas em Z=10. Ponto (3, 4, 25) -> projeta pra (3, 4, 10).
+            Vec3 ponto = new Vec3(3, 4, 25);
+            Vec3 origem = new Vec3(0, 0, 10);
+            Vec3 normal = new Vec3(0, 0, 1);
+
+            Vec3 result = DimensionPlanCalculator.ProjetarPontoNoPlano(ponto, origem, normal);
+
+            AssertVecEqual(new Vec3(3, 4, 10), result);
+        }
+
+        // ============================================================
+        // v2.8.8 — ProjetarPontoEm2DDaVista (Onda 1)
+        // ============================================================
+
+        [Fact]
+        public void ProjetarPontoEm2DDaVista_PontoNaOrigem_RetornaZeroZero()
+        {
+            Vec3 origem = new Vec3(0, 0, 0);
+            Vec3 right = new Vec3(1, 0, 0);
+            Vec3 up = new Vec3(0, 1, 0);
+
+            (double u, double v) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(
+                new Vec3(0, 0, 0), origem, right, up);
+
+            Assert.Equal(0, u, 9);
+            Assert.Equal(0, v, 9);
+        }
+
+        [Fact]
+        public void ProjetarPontoEm2DDaVista_PontoNoEixoRight_RetornaUNaoZero()
+        {
+            Vec3 origem = new Vec3(0, 0, 0);
+            Vec3 right = new Vec3(1, 0, 0);
+            Vec3 up = new Vec3(0, 1, 0);
+
+            (double u, double v) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(
+                new Vec3(5, 0, 0), origem, right, up);
+
+            Assert.Equal(5, u, 9);
+            Assert.Equal(0, v, 9);
+        }
+
+        [Fact]
+        public void ProjetarPontoEm2DDaVista_OrigemDeslocada_SubtraiOrigemAntes()
+        {
+            // Origem em (10, 20, 0). Ponto absoluto (15, 25, 0) deve dar (5, 5).
+            Vec3 origem = new Vec3(10, 20, 0);
+            Vec3 right = new Vec3(1, 0, 0);
+            Vec3 up = new Vec3(0, 1, 0);
+
+            (double u, double v) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(
+                new Vec3(15, 25, 0), origem, right, up);
+
+            Assert.Equal(5, u, 9);
+            Assert.Equal(5, v, 9);
+        }
+
+        // ============================================================
+        // v2.8.8 — ReconstruirPonto3DDaVista (Onda 1, inverso da 2D)
+        // ============================================================
+
+        [Fact]
+        public void ReconstruirPonto3DDaVista_Inverso_DaProjecao2D_RoundTrip()
+        {
+            // Round-trip: 3D -> 2D -> 3D deve voltar pro mesmo ponto (assumindo
+            // ponto no plano da vista).
+            Vec3 origem = new Vec3(100, 200, 50);
+            Vec3 right = new Vec3(1, 0, 0);
+            Vec3 up = new Vec3(0, 0, 1);
+            Vec3 pontoOriginal = new Vec3(105, 200, 55);
+
+            (double u, double v) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(
+                pontoOriginal, origem, right, up);
+            Vec3 reconstruido = DimensionPlanCalculator.ReconstruirPonto3DDaVista(
+                u, v, origem, right, up);
+
+            AssertVecEqual(pontoOriginal, reconstruido);
+        }
+
+        [Fact]
+        public void ReconstruirPonto3DDaVista_UVZerados_RetornaOrigem()
+        {
+            Vec3 origem = new Vec3(7, 14, 21);
+            Vec3 right = new Vec3(1, 0, 0);
+            Vec3 up = new Vec3(0, 0, 1);
+
+            Vec3 result = DimensionPlanCalculator.ReconstruirPonto3DDaVista(0, 0, origem, right, up);
+
+            AssertVecEqual(origem, result);
+        }
+
+        // ============================================================
+        // v2.8.8 — Vec3.Dot (helper novo da Onda 1)
+        // ============================================================
+
+        [Fact]
+        public void Vec3_Dot_OrtogonalDaZero()
+        {
+            Vec3 a = new Vec3(1, 0, 0);
+            Vec3 b = new Vec3(0, 1, 0);
+            Assert.Equal(0, a.Dot(b), 9);
+        }
+
+        [Fact]
+        public void Vec3_Dot_ParalelosMesmoSentido_DaProdutoDosModulos()
+        {
+            Vec3 a = new Vec3(3, 4, 0);
+            Vec3 b = new Vec3(6, 8, 0);
+            // |a| = 5, |b| = 10, paralelos => dot = 50
+            Assert.Equal(50, a.Dot(b), 9);
+        }
+
+        [Fact]
+        public void Vec3_Dot_AntiparalelosNegativo()
+        {
+            Vec3 a = new Vec3(1, 0, 0);
+            Vec3 b = new Vec3(-2, 0, 0);
+            Assert.Equal(-2, a.Dot(b), 9);
+        }
+
+        // ============================================================
+        // v2.8.8 — Cenario integrado: ordenar Grids da esquerda pra direita
+        // ============================================================
+        //
+        // Simula o que CriarCotasEntreEixos faz no Service: dado 3 Grids em
+        // pontos arbitrarios e uma Section View com RightDirection conhecida,
+        // a ordenacao pelo U deve dar a sequencia geometricamente esperada.
+
+        [Fact]
+        public void Cenario_OrdenarGridsPorU_GalpaoSimples()
+        {
+            // Vista olhando pra Y (ViewDirection = -Y), Right = +X, Up = +Z, Origem = (0,0,0)
+            Vec3 origem = new Vec3(0, 0, 0);
+            Vec3 right = new Vec3(1, 0, 0);
+            Vec3 up = new Vec3(0, 0, 1);
+            Vec3 normalPlano = new Vec3(0, -1, 0);
+
+            // 3 Grids em pontos arbitrarios em XYZ.
+            // GridA em X=0, GridB em X=5000mm, GridC em X=10000mm.
+            // Y de cada Grid e' arbitrario (Grid e' linha vertical no XY do mundo).
+            Vec3 gA = new Vec3(0, 50, 100);            // Y e Z arbitrarios
+            Vec3 gB = new Vec3(Mm(5000), -30, 200);
+            Vec3 gC = new Vec3(Mm(10000), 70, 50);
+
+            // Projetar cada um no plano da vista (esperado: Y vai a 0)
+            Vec3 gAProj = DimensionPlanCalculator.ProjetarPontoNoPlano(gA, origem, normalPlano);
+            Vec3 gBProj = DimensionPlanCalculator.ProjetarPontoNoPlano(gB, origem, normalPlano);
+            Vec3 gCProj = DimensionPlanCalculator.ProjetarPontoNoPlano(gC, origem, normalPlano);
+
+            // U deve refletir a posicao em X (esquerda → direita)
+            (double uA, _) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(gAProj, origem, right, up);
+            (double uB, _) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(gBProj, origem, right, up);
+            (double uC, _) = DimensionPlanCalculator.ProjetarPontoEm2DDaVista(gCProj, origem, right, up);
+
+            Assert.Equal(0, uA, 6);
+            Assert.Equal(Mm(5000), uB, 6);
+            Assert.Equal(Mm(10000), uC, 6);
+            Assert.True(uA < uB && uB < uC);
+        }
     }
 }
