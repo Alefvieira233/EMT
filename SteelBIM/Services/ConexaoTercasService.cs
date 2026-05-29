@@ -260,17 +260,37 @@ namespace SteelBIM.Services
         private static (double X, double Y, double Z) ToTuple(XYZ p) => (p.X, p.Y, p.Z);
 
         /// <summary>
-        /// v2.8.3 — heuristica de face hospedeira: DotProduct entre a normal
-        /// da face e Z global. Defensivo a faces com normal zerada.
+        /// v2.8.5 — normal da face normalizada com fallback defensivo.
+        /// Retorna <c>XYZ.Zero</c> se a face nao tem normal valida.
         /// </summary>
-        private static double SafeNormalDotZ(PlanarFace face)
+        private static XYZ SafeNormalizeFaceNormal(PlanarFace face)
         {
             if (face == null)
-                return 0;
+                return XYZ.Zero;
             XYZ n = face.FaceNormal;
             if (n == null || n.IsZeroLength())
-                return 0;
-            return n.Normalize().DotProduct(XYZ.BasisZ);
+                return XYZ.Zero;
+            try
+            { return n.Normalize(); }
+            catch { return XYZ.Zero; }
+        }
+
+        /// <summary>
+        /// v2.8.5 — distancia 3D do centro geometrico da face ao ponto dado.
+        /// Usado pra escolher a face do lado correto da alma em terças U/C.
+        /// </summary>
+        private static double DistanceFaceCenterToPoint(PlanarFace face, XYZ point)
+        {
+            if (face == null || point == null)
+                return double.MaxValue;
+            try
+            {
+                BoundingBoxUV bb = face.GetBoundingBox();
+                UV centerUV = (bb.Min + bb.Max) / 2;
+                XYZ faceCenter = face.Evaluate(centerUV);
+                return faceCenter.DistanceTo(point);
+            }
+            catch { return double.MaxValue; }
         }
 
         // ---------- Insercao face-based ----------
@@ -291,31 +311,8 @@ namespace SteelBIM.Services
                 // Solids da terça (geometria local da familia — isRealLocation=false).
                 var solids = pt.Terca.Element.GetAllSolids(false, out var _);
 
-                // v2.8.3 — heurística de face hospedeira:
-                // Em U/C, a alma tem 2 faces planares de area IDENTICA (interna +
-                // externa). OrderByDescending(Area).First() escolheria uma
-                // aleatoria. Pega TOP 3 maiores e ordena por DotProduct
-                // (FaceNormal, BasisZ_global): face externa em telhado tipico
-                // tem normal apontando pra cima -> DotProduct > 0. Checkbox
-                // config.InverterFace forca a face oposta (override manual).
-                var topFaces = solids
-                    .SelectMany(s => s.Faces.Cast<Face>())
-                    .OfType<PlanarFace>()
-                    .OrderByDescending(f => f.Area)
-                    .Take(3)
-                    .ToList();
-
-                PlanarFace? sideFace = config.InverterFace
-                    ? topFaces.OrderBy(f => SafeNormalDotZ(f)).FirstOrDefault()
-                    : topFaces.OrderByDescending(f => SafeNormalDotZ(f)).FirstOrDefault();
-
-                if (sideFace == null)
-                {
-                    Logger.Warn("[ConexaoTerca] Terça {Id} nao tem face planar — pulando", pt.Terca.Element.Id);
-                    return false;
-                }
-
-                // Eixos locais da terça pra orientar a familia
+                // Eixos locais da terça pra orientar a familia (calculados PRIMEIRO
+                // pra usar na heuristica de face)
                 Transform tf = (pt.Terca.Element as FamilyInstance)?.GetTransform() ?? Transform.Identity;
                 XYZ ejeX = tf.BasisX;
                 XYZ ejeZ = tf.BasisZ.IsZeroLength() ? XYZ.BasisZ : tf.BasisZ.Normalize();
@@ -323,6 +320,67 @@ namespace SteelBIM.Services
                     ejeZ = -ejeZ;
                 if ((pt.Terca.Element as FamilyInstance)?.Mirrored == true)
                     ejeX = -ejeX;
+
+                // v2.8.5 — nova heurística da face hospedeira:
+                //
+                // Bug das versoes anteriores: usar DotProduct(BasisZ_global) preferia
+                // faces APONTANDO PRA CIMA. Em U/C com mesas pra baixo, a face SUPERIOR
+                // da mesa (horizontal, normal +Z) vencia a face LATERAL da alma
+                // (vertical, normal ~0 em Z). Resultado: chapa saia DEITADA sobre
+                // o topo da terça, em vez de em pe encostada na alma.
+                //
+                // Nova heuristica em 2 passos:
+                //   1. FILTRAR candidatas que sao faces da ALMA:
+                //      - Normal perpendicular ao eixo da terça (descarta extremidades)
+                //      - Normal NAO-vertical (descarta mesas horizontais)
+                //   2. ESCOLHER entre as candidatas pela PROXIMIDADE ao pt.Base (viga):
+                //      - Face cujo centro esta mais perto da viga = face do lado correto
+                //      - InverterFace inverte (escolhe a oposta)
+                XYZ tercaDir = pt.Terca.Direction.GetLength() > RevitUtils.EPS
+                    ? pt.Terca.Direction.Normalize()
+                    : XYZ.BasisX;
+
+                var todasFaces = solids
+                    .SelectMany(s => s.Faces.Cast<Face>())
+                    .OfType<PlanarFace>()
+                    .OrderByDescending(f => f.Area)
+                    .Take(6)
+                    .ToList();
+
+                // Filtra faces da ALMA: perpendicular ao eixo da terça E nao-vertical
+                var almaFaces = todasFaces
+                    .Where(f =>
+                    {
+                        XYZ n = SafeNormalizeFaceNormal(f);
+                        if (n.IsZeroLength())
+                            return false;
+                        double dotEixo = Math.Abs(n.DotProduct(tercaDir));
+                        double dotZ = Math.Abs(n.DotProduct(XYZ.BasisZ));
+                        // dotEixo < 0.3 => normal nao-paralela ao eixo (descarta extremidades)
+                        // dotZ < 0.7    => normal nao-vertical (descarta mesas)
+                        //   threshold 0.7 (vs 0.3) tolera terça inclinada (telhado ate ~45°)
+                        return dotEixo < 0.3 && dotZ < 0.7;
+                    })
+                    .ToList();
+
+                // Se nenhuma face passar no filtro (perfil atipico), cai pra TOP 2 maiores
+                var candidatas = almaFaces.Count > 0
+                    ? almaFaces
+                    : todasFaces.Take(2).ToList();
+
+                // Escolhe pela proximidade ao pt.Base (ponto na viga).
+                // Em U/C, ambas as faces da alma tem distancia similar em Z (centradas
+                // na altura da alma), mas Y diferente (lados opostos). pt.Base.Y eh
+                // o Y da viga; face do MESMO lado tem distancia XY menor.
+                PlanarFace? sideFace = config.InverterFace
+                    ? candidatas.OrderByDescending(f => DistanceFaceCenterToPoint(f, pt.Base)).FirstOrDefault()
+                    : candidatas.OrderBy(f => DistanceFaceCenterToPoint(f, pt.Base)).FirstOrDefault();
+
+                if (sideFace == null)
+                {
+                    Logger.Warn("[ConexaoTerca] Terça {Id} nao tem face planar — pulando", pt.Terca.Element.Id);
+                    return false;
+                }
 
                 // v2.8.3: pt.Base.Z ja eh Z da terça (preservado pelo IntersectXY).
                 // offsetVertFt continua sendo apenas o ajuste opcional do usuario.

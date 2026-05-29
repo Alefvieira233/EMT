@@ -21,6 +21,71 @@ Próximas atividades dependem de eventos externos:
 
 ---
 
+## [2.8.5] - 2026-05-29
+
+### Hotfix Conexão Terça — heurística de face + janela cortada
+
+Bugs encontrados pelo Alef em teste real no galpão da EMT após v2.8.4:
+
+1. **Chapa saía deitada sobre a terça** em vez de em pé encostada na alma.
+   Causa: heurística `DotProduct(BasisZ_global)` em v2.8.3 preferia faces com
+   normal apontando pra cima. Em U/C com mesas pra baixo, a face SUPERIOR
+   da terça (horizontal, normal +Z) vencia a face LATERAL da alma (vertical,
+   normal ~0 em Z). Resultado: hospedagem face-based usando a face da MESA
+   em vez da face da ALMA → chapa deitada.
+
+2. **Janela "Conexão de Terça" cortada na parte de baixo** em DPI alto, com
+   botões "Inserir" e "Cancelar" fora da viewport. Causa: `SizeToContent=Height`
+   + `MaxHeight=700` + `ResizeMode=NoResize` insuficientes para conter o
+   conteúdo (família + tipo + parâmetros populados + expander de ajuste fino).
+
+#### Fixed
+
+- **`Services/ConexaoTercasService.cs` — heurística da face em 2 passos:**
+  1. **Filtra candidatas que são faces da ALMA**:
+     - `|FaceNormal · tercaDir| < 0.3` — descarta faces das extremidades
+       (cuja normal é paralela ao eixo da terça)
+     - `|FaceNormal · BasisZ_global| < 0.7` — descarta mesas horizontais
+       (cuja normal aponta vertical). Tolerância 0.7 tolera terça inclinada
+       até ~45° (telhado típico)
+  2. **Escolhe entre as candidatas pela proximidade ao `pt.Base`** (ponto na
+     curva da viga). Em U/C, ambas as faces da alma têm Z similar mas Y
+     diferente; face do MESMO lado da viga tem distância menor. Checkbox
+     `InverterFace` força a face oposta. Helpers novos: `SafeNormalizeFaceNormal`
+     + `DistanceFaceCenterToPoint`.
+
+- **`Views/ConexaoTercasWindow.xaml` — reescrito pra DockPanel + ScrollViewer:**
+  - Botões "Cancelar/Inserir" agora ficam fixos no rodapé (`DockPanel.Dock=Bottom`)
+  - Conteúdo principal envolto em `ScrollViewer` → scrolla automaticamente se
+    janela for menor que conteúdo
+  - `ResizeMode=CanResize` + `Height=780` + `MaxHeight=920` + `MinHeight=400` →
+    usuário pode redimensionar se precisar
+  - `IsDefault=true` em btnOk + `IsCancel=true` em btnCancel — Enter/Esc
+    funcionam corretamente
+  - Mesmo padrão usado em `TercasWindow.xaml` (v2.6.4 hotfix UX da Bruna)
+
+#### Atualização do tooltip do checkbox InverterFace
+
+Tooltip atualizado pra refletir a nova heurística:
+> *"Use se a chapa estiver saindo no lado errado da alma. A heurística automática escolhe a face da alma cujo centro está mais próximo da viga; marque pra forçar a face oposta."*
+
+#### Risco
+
+**LOW** — 2 fixes cirúrgicos. XAML é declarativo (não afeta lógica). Nova
+heurística é determinística (mesma face para mesma terça em runs sucessivos)
+e tem fallback: se nenhuma face passa no filtro de alma, usa as TOP-2 maiores.
+Checkbox `InverterFace` continua disponível como override manual.
+
+#### Test plan
+
+- [x] Build Release 0 warning
+- [x] **1223/1223 testes verde** (sem mudança de math pura)
+- [x] `dotnet format` clean
+- [ ] **Validação manual (Alef)**: rodar Conexão Terça com perfis U150 + 3 vigas:
+      chapa em pé encostada na alma, sobre o topo da viga; janela inteira visível
+
+---
+
 ## [2.8.4] - 2026-05-29
 
 ### Hotfix UI — handler duplicado em ConexaoTercasWindow

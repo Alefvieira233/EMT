@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.4-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.5-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-1223%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
@@ -176,6 +176,8 @@ verificação Authenticode.
 ---
 
 ## Versão atual
+
+**v2.8.5** (2026-05-29) — hotfix Conexão Terça: (1) heurística de face corrigida — antes pegava face SUPERIOR da terça (mesa horizontal) em vez da face LATERAL da alma → chapa saía deitada; (2) janela cortada em DPI alto — reescrita pra `DockPanel` + `ScrollViewer` + redimensionável + botões fixos no rodapé (mesmo padrão do `TercasWindow` v2.6.4).
 
 **v2.8.4** (2026-05-29) — hotfix UI: handler `BtnOk_Click` da ConexaoTercasWindow estava registrado 2× (XAML + code-behind) e gerava exception "DialogResult somente pode ser definido após Window ser criado e exibido como caixa de diálogo" ao clicar Inserir. Diff de 1 arquivo, 7 linhas. Diagnóstico do log + fix cirúrgico.
 
