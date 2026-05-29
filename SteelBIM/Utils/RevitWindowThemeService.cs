@@ -65,6 +65,12 @@ namespace SteelBIM.Utils
         /// Usa PreviewKeyDown para capturar a tecla ANTES de qualquer controle filho.
         /// Se a janela foi aberta como ShowDialog(), define DialogResult = false.
         /// Se nao, apenas chama Close().
+        ///
+        /// v2.8.6: janelas com <c>Tag="no-escape"</c> sao opt-out — o ESC global
+        /// nao fecha. Use para janelas modeless que orquestram operacoes longas
+        /// (ex.: ConverterPerfilIfcWindow) onde um ESC acidental disparava
+        /// rollback de transacoes em andamento. A janela ainda pode tratar ESC
+        /// localmente se quiser.
         /// </summary>
         private static void AttachEscapeHandler(Window window)
         {
@@ -72,6 +78,13 @@ namespace SteelBIM.Utils
             {
                 if (e.Key == Key.Escape && !e.Handled)
                 {
+                    // v2.8.6: opt-out via Tag="no-escape"
+                    if (window.Tag is string tag &&
+                        string.Equals(tag, "no-escape", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+
                     try
                     {
                         // Tenta setar DialogResult (so funciona se a janela foi aberta com ShowDialog)

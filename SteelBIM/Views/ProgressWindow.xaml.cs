@@ -22,6 +22,15 @@ namespace SteelBIM.Views
         public bool CancelRequested { get; private set; }
 
         /// <summary>
+        /// v2.8.6: setar como true ANTES de chamar <see cref="System.Windows.Window.Close()"/>
+        /// programaticamente apos a operacao ja ter terminado (sucesso ou erro real).
+        /// Sem esta flag, o ProgressWindow_Closing interpretava o fechamento via codigo
+        /// como cancelamento e disparava <see cref="Cancelled"/>, contaminando o CTS
+        /// e fazendo o caller ler IsCancellationRequested=true (falso positivo).
+        /// </summary>
+        public bool IsProgrammaticClose { get; set; }
+
+        /// <summary>
         /// Disparado quando o usuario clica Cancelar. O host assina este evento
         /// para cancelar o <see cref="System.Threading.CancellationTokenSource"/>.
         /// </summary>
@@ -86,6 +95,12 @@ namespace SteelBIM.Views
 
         private void ProgressWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // v2.8.6: fechamento PROGRAMATICO pos-conclusao nao dispara Cancelled.
+            // Sem isso, OnConversionFinished -> Close() era interpretado como cancel
+            // e contaminava CTS.IsCancellationRequested (bug do IFC falso-cancel).
+            if (IsProgrammaticClose)
+                return;
+
             // Fechar pelo X equivale a Cancelar.
             if (!CancelRequested)
             {

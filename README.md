@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.5-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.6-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-1223%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
@@ -177,6 +177,8 @@ verificação Authenticode.
 
 ## Versão atual
 
+**v2.8.6** (2026-05-29) — hotfix Conversor IFC "Cancelado" falso: 6 fixes + 1 enhancement corrigindo bug crítico onde conversão completava com sucesso mas terminava em dialog de cancelamento + rollback de TODOS os perfis criados. Três bugs em camadas: (1) `OnClosed` cancelava CTS incondicionalmente — qualquer fechamento da janela (ESC global, X) abortava transação em andamento; (2) `ProgressWindow.Closing` interpretava `Close()` programático como cancel; (3) 4 caminhos silenciosos no service mascaravam por que elementos eram ignorados. Fixes: `OnClosing` bloqueia fechamento durante conversão, `IsProgrammaticClose` flag, `Logger.Warn` detalhado em todos os ignorados, log do resumo final, opt-out ESC via `Tag="no-escape"`, mensagem final mostra path do log.
+
 **v2.8.5** (2026-05-29) — hotfix Conexão Terça: (1) heurística de face corrigida — antes pegava face SUPERIOR da terça (mesa horizontal) em vez da face LATERAL da alma → chapa saía deitada; (2) janela cortada em DPI alto — reescrita pra `DockPanel` + `ScrollViewer` + redimensionável + botões fixos no rodapé (mesmo padrão do `TercasWindow` v2.6.4).
 
 **v2.8.4** (2026-05-29) — hotfix UI: handler `BtnOk_Click` da ConexaoTercasWindow estava registrado 2× (XAML + code-behind) e gerava exception "DialogResult somente pode ser definido após Window ser criado e exibido como caixa de diálogo" ao clicar Inserir. Diff de 1 arquivo, 7 linhas. Diagnóstico do log + fix cirúrgico.
@@ -185,6 +187,7 @@ verificação Authenticode.
 
 Releases recentes:
 
+- **v2.8.6** — Hotfix Conversor IFC (1 PR): bug crítico "Cancelado" falso onde conversão completa com sucesso mas dialog final é de cancelamento + rollback de TODOS os perfis criados (perdia trabalho do usuário). Três bugs em camadas distintas: (1) `ConverterPerfilIfcWindow.OnClosed` cancelava CTS incondicionalmente — qualquer fechamento da janela (ESC global do `RevitWindowThemeService`, X acidental, redirecionamento de foco) disparava `_cts.Cancel()` → service rollback; (2) `ProgressWindow_Closing` interpretava `Close()` programático pós-sucesso como cancel; (3) 4 caminhos `ignorados++` silenciosos no service mascaravam por que elementos eram pulados. **6 fixes:** `OnClosing` bloqueia fechamento enquanto conversão ativa, `ProgressWindow.IsProgrammaticClose` flag, `Logger.Warn` detalhado em todos os ignorados, `Logger.Info` defensivo no cleanup, resumo final pós-commit, opt-out ESC via `Tag="no-escape"`. **1 enhancement:** dialog final mostra path do log quando há ignorados.
 - **v2.8.4** — Hotfix UI Conexão Terça (1 PR): `BtnOk_Click` e `BtnCancel_Click` estavam registrados 2× (XAML `Click=` + code-behind `+=`), gerando exception "DialogResult somente pode ser definido após Window ser criado e exibido como caixa de diálogo" ao clicar Inserir. Bug introduzido em v2.8.1 e só descoberto após Alef ter família real testando v2.8.3. Fix: remover registro redundante do code-behind (7 linhas, 0 LOC funcionais).
 - **v2.8.3** — Hotfix Conexão Terça (1 PR): 4 fixes validados em teste real pelo Victor — **centramento automático via centroide ponderado** (tolera famílias com origem em canto, como a do Victor; corrige "conexão saindo abaixo da terça"), **heurística de face** TOP-3 + `DotProduct(FaceNormal, BasisZ_global)` pra escolher a externa em U/C de mesma área (+ checkbox "Inverter face" como override manual), **iteração de TODAS as vigas** via novo helper `IntersectXY` (sistema 2×2 com regra de Cramer; resolve "viga do meio ignorada"), **Z da terça preservado** no `IntersectXY` (não pega Z do eixo da viga). +11 testes (1212 → 1223).
 - **v2.8.2** — Conexão Terça v2 (2 PRs): refactor do `ConexaoTercasService` com algoritmo **face-based** validado por implementação externa de referência. Resolve os 4 problemas do áudio do Victor (28/05): duplicação por pick de face, falta de referência terça↔viga, alinhamento no eixo em vez da alma, rotações -90° imprevisíveis. **Novo pick #2 obrigatório** das vigas de apoio. Insere via `NewFamilyInstance(face, point, dir, symbol)` na maior face planar do solid da terça (= alma em U/C/I). **Modo Completo** opcional (raycast pra GetBottomFace + ajuste altura, com suporte a viga tipo I). Helpers puros `ConexaoTercasGeometry` + `EngineerGeometry` + `StructuralBeamSelectionFilter`. Spec da família documentada em `docs/familia-conexao-terca-spec.md`. +21 testes (1191 → 1212).
