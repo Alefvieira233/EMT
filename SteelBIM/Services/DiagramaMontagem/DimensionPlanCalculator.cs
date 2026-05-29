@@ -31,6 +31,8 @@ namespace SteelBIM.Services.DiagramaMontagem
         public static Vec3 operator -(Vec3 a, Vec3 b) => new Vec3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
         public static Vec3 operator *(Vec3 a, double s) => new Vec3(a.X * s, a.Y * s, a.Z * s);
 
+        public double Dot(Vec3 other) => X * other.X + Y * other.Y + Z * other.Z;
+
         public Vec3 Cross(Vec3 other) => new Vec3(
             Y * other.Z - Z * other.Y,
             Z * other.X - X * other.Z,
@@ -157,6 +159,53 @@ namespace SteelBIM.Services.DiagramaMontagem
             Vec3 origem = midpoint + perp * offsetTotalFt;
 
             return new PlanoCotaResult(origem, direcao);
+        }
+
+        /// <summary>
+        /// v2.8.8 — Projeta um ponto 3D no plano da Section View.
+        /// O "plano" e definido por <paramref name="origemPlano"/> (ponto no plano)
+        /// e <paramref name="normalPlano"/> (unitario, ortogonal ao plano —
+        /// equivalente a <c>vista.ViewDirection</c> do Revit).
+        ///
+        /// Usado para colocar a linha de cota e endpoints na MESMA cota Y do plano
+        /// da vista — sem isso, a Dimension fica com Line desalinhada das Refs e
+        /// o Revit rejeita no commit (dialog "Excluir cotas").
+        /// </summary>
+        /// <param name="ponto">Ponto 3D arbitrario (em world-space, ft).</param>
+        /// <param name="origemPlano">Ponto pertencente ao plano (tipicamente <c>vista.Origin</c>).</param>
+        /// <param name="normalPlano">Normal unitaria do plano (tipicamente <c>vista.ViewDirection</c>).</param>
+        /// <returns>Ponto projetado no plano. Se <paramref name="normalPlano"/> nao for unitaria, o resultado fica escalado proporcionalmente.</returns>
+        public static Vec3 ProjetarPontoNoPlano(Vec3 ponto, Vec3 origemPlano, Vec3 normalPlano)
+        {
+            // d = (ponto - origemPlano) . normal  -> distancia signed do ponto ao plano
+            double d = (ponto - origemPlano).Dot(normalPlano);
+            // Subtrai a componente normal pra trazer o ponto pro plano
+            return ponto - normalPlano * d;
+        }
+
+        /// <summary>
+        /// v2.8.8 — Converte um ponto 3D pra coordenadas 2D do plano da vista
+        /// (u = direcao RightDirection, v = direcao UpDirection). Util pra
+        /// ordenar Grids da esquerda pra direita e calcular o topo dos eixos
+        /// pra posicionar a linha de cota.
+        /// </summary>
+        /// <returns>Tuple (u, v) onde u = <c>(ponto - origem).Dot(right)</c> e v = <c>(ponto - origem).Dot(up)</c>.</returns>
+        public static (double U, double V) ProjetarPontoEm2DDaVista(
+            Vec3 ponto, Vec3 origem, Vec3 right, Vec3 up)
+        {
+            Vec3 delta = ponto - origem;
+            return (delta.Dot(right), delta.Dot(up));
+        }
+
+        /// <summary>
+        /// v2.8.8 — Reconstroi um ponto 3D world-space a partir das coordenadas
+        /// 2D no plano da vista (inverso de <see cref="ProjetarPontoEm2DDaVista"/>).
+        /// <c>origem + right*u + up*v</c>.
+        /// </summary>
+        public static Vec3 ReconstruirPonto3DDaVista(
+            double u, double v, Vec3 origem, Vec3 right, Vec3 up)
+        {
+            return origem + right * u + up * v;
         }
 
         /// <summary>

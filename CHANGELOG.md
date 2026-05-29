@@ -14,6 +14,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 **Hotfix Conexão Terça v3** em v2.8.3 (centramento automático + 3 fixes campo).
 **Hotfix IFC falso-cancel** em v2.8.6 (6 fixes + 1 enhancement).
 **Sprint Hardening Dia 1** em v2.8.7 (7 melhorias defensivas pós-auditoria 5-agents).
+**Hotfix Diagrama de Montagem — cotas inválidas** em v2.8.8 (5 ondas, reescrita das 3 funções de cota + failure handler).
 
 Próximas atividades dependem de eventos externos:
 
@@ -21,6 +22,113 @@ Próximas atividades dependem de eventos externos:
 - **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
 - **Manual no Revit (Alef + Victor):** validar v2.8.3 no mesmo galpão do teste anterior — confirmar que conexão fica na altura da terça, viga do meio recebe conexão, face externa selecionada (ou marca "Inverter face" se preciso)
 - **Manual no Revit (Alef):** validar v2.8.6 conversão IFC no mesmo arquivo que apresentou "Cancelado" falso — confirmar que conversão completa sem dialog de cancelamento, perfis inclinados são preservados, log lista ignorados com motivo
+
+---
+
+## [2.8.8] - 2026-05-29
+
+### Hotfix Diagrama de Montagem — cotas inválidas (5 ondas)
+
+Bug reportado pelo Alef em teste real: ao executar "Diagrama de Montagem"
+com todas as opções marcadas, o Revit abria dialog modal "Excluir cotas"
+oferecendo só essa opção. As tags funcionavam, mas as 3 funções de cota
+falhavam silenciosamente — usuário precisava excluir tudo pra prosseguir.
+
+#### Root cause analysis
+
+Análise técnica em `docs/audits/DIAGRAMA-MONTAGEM-FIX-PLAN-2026-05-29.md`.
+Resumo: **8 bugs estruturais** nas funções `CriarCotasEntreEixos`,
+`CriarCotaTotalConjunto` e `CriarCotasVerticais` — todos convergindo no
+mesmo padrão de erro: **coordenadas world-space vs view-space misturadas
+sem conversão**.
+
+- `CriarCotasEntreEixos`/`CriarCotaTotalConjunto`: linha de cota construída
+  com `cropBox.Max.Y` (UV LOCAL da vista) somada em `vista.UpDirection`
+  (world). Resultado: `Line.CreateBound` em ponto absurdo no espaço
+  modelo → Refs dos Grids não alinhavam → Revit rejeitava no commit.
+- Não filtrava Grids visíveis na vista — pegava todos do projeto.
+- `CriarCotasVerticais`: usava `new Reference(FamilyInstance)` que **é
+  proibido pela API** (só funciona pra Grids/Levels/ReferencePlanes).
+- `bbVista.Max.X` em world-space pra vista rotacionada — coords absurdas.
+- `Y=0` hardcoded — quebra em qualquer projeto fora da origem 0,0.
+- O `try-catch` dentro do `for` não evita o dialog: `NewDimension` aceita
+  criar o objeto, Revit só detecta inconsistência no `tx.Commit()`.
+
+#### Fixed (5 ondas)
+
+##### Onda 1 — `CriarCotasEntreEixos` reescrito
+
+[Services/DiagramaMontagem/DiagramaMontagemService.cs:431-555](SteelBIM/Services/DiagramaMontagem/DiagramaMontagemService.cs#L431-L555)
+
+- `FilteredElementCollector(doc, vista.Id)` — filtra Grids visíveis na vista.
+- Projeta cada Grid no plano da vista via `DimensionPlanCalculator.ProjetarPontoNoPlano`.
+- Ordena Grids pelo U (direção RightDirection) no espaço 2D da vista.
+- Calcula `vLinhaCota` em coordenada V (UP), 1m acima do topo dos Grids reais.
+- Reconstroi pontos 3D world-space via `ReconstruirPonto3DDaVista` — garante
+  Line.CreateBound alinhada com Refs dos Grids.
+- Sanidade: pula par com `p1.DistanceTo(p2) < 1mm`.
+
+##### Onda 2 — `CriarCotaTotalConjunto` reescrito
+
+[Services/DiagramaMontagem/DiagramaMontagemService.cs:752-820](SteelBIM/Services/DiagramaMontagem/DiagramaMontagemService.cs#L752-L820)
+
+Mesma estratégia da Onda 1, usando `primeiro/ultimo` Grid e `vLinhaCota =
+vMaxDosGrids + 2*OffsetCotaAcimaGridsMm` (linha de cota empilhada 1m
+acima da linha das cotas entre eixos).
+
+##### Onda 3 — `CriarCotasVerticais` reescrito
+
+[Services/DiagramaMontagem/DiagramaMontagemService.cs:618-744](SteelBIM/Services/DiagramaMontagem/DiagramaMontagemService.cs#L618-L744)
+
+- `FamilyInstance.GetReferences(FamilyInstanceReferenceType.Top/Bottom)`
+  para obter Reference válida (substitui `new Reference(FamilyInstance)`
+  proibido).
+- `xMaxWorld` calculado a partir do bbox dos elementos selecionados em
+  world-space (não da vista).
+- `yMedio` calculado dos elementos (substitui `Y=0` hardcoded).
+- Pula clusters sem FamilyInstance com Refs Top/Bottom válidas via
+  `Logger.Debug`.
+
+##### Onda 4 — `SuppressInvalidDimensionsHandler` (safety net)
+
+[Services/DiagramaMontagem/SuppressInvalidDimensionsHandler.cs](SteelBIM/Services/DiagramaMontagem/SuppressInvalidDimensionsHandler.cs)
+
+`IFailuresPreprocessor` instalado nas 4 transações de cota
+(`CotasEntreEixos`, `CotaTotal`, `CotasVerticais`, `Comprimentos`).
+Identifica failures `Error` cujos failing elements são `Dimension` ou
+`SpotDimension` e deleta silenciosamente — **garante que nunca mais
+apareça o dialog modal pro usuário**. Contador `CotasSuprimidas`
+exposto pra resumo final via `resultado.Avisos`.
+
+Defesa em profundidade: mesmo se um edge case escapar dos fixes das
+Ondas 1-3, o handler captura e remove a cota inválida sem interromper
+o fluxo.
+
+##### Onda 5 — Testes
+
+[SteelBIM.Tests/Services/DiagramaMontagem/DimensionPlanCalculatorTests.cs](SteelBIM.Tests/Services/DiagramaMontagem/DimensionPlanCalculatorTests.cs)
+
+**+13 testes novos** cobrindo:
+- `ProjetarPontoNoPlano` (4 cenários: ponto no plano, acima, oblíquo, origem deslocada)
+- `ProjetarPontoEm2DDaVista` (3 cenários)
+- `ReconstruirPonto3DDaVista` (2 cenários incluindo round-trip)
+- `Vec3.Dot` (3 cenários: ortogonal, paralelo, antiparalelo)
+- Cenário integrado de ordenação de Grids num galpão simples (3 Grids X)
+
+#### Métricas
+
+- Build Release: 0 erros, 0 warnings
+- Testes: **1241/1241** verdes (+13 novos)
+- Diff: ~7 arquivos
+- Plano completo em [docs/audits/DIAGRAMA-MONTAGEM-FIX-PLAN-2026-05-29.md](docs/audits/DIAGRAMA-MONTAGEM-FIX-PLAN-2026-05-29.md)
+
+#### Validação manual pendente (Alef)
+
+- [ ] Selecionar 3-5 vigas/pilares
+- [ ] Executar Diagrama de Montagem com TODAS opções marcadas
+- [ ] Confirmar: nenhum dialog modal "Excluir cotas"
+- [ ] Vista gerada tem eixos + cotas entre eixos + cota total + spot elevations + tags
+- [ ] Log mostra contadores corretos
 
 ---
 
