@@ -21,6 +21,50 @@ Próximas atividades dependem de eventos externos:
 
 ---
 
+## [2.8.4] - 2026-05-29
+
+### Hotfix UI — handler duplicado em ConexaoTercasWindow
+
+Bug encontrado pelo Alef em teste real de v2.8.3 (logs 28/05 noite): ao
+clicar "Inserir" na janela de Conexão Terça, exception:
+> *"DialogResult somente pode ser definido após Window ser criado e exibido como caixa de diálogo."*
+
+#### Fixed
+
+- **`Views/ConexaoTercasWindow.xaml.cs`**: handlers `BtnOk_Click` e
+  `BtnCancel_Click` estavam registrados **2 vezes** — XAML (`Click="BtnOk_Click"`)
+  E code-behind (`btnOk.Click += BtnOk_Click;`). Resultado: cada clique
+  disparava o handler 2x; primeira chamada setava `DialogResult = true`
+  (janela fecha), segunda chamada explodia tentando setar `DialogResult`
+  em janela já fechada. Fix: remover as 2 linhas `+= BtnOk_Click` e
+  `+= BtnCancel_Click` do construtor — XAML continua sendo a fonte única
+  do registro. Comentário explicativo deixado no código pra evitar regressão.
+
+#### Diagnóstico
+
+Via log estruturado em `%LOCALAPPDATA%\SteelBIM\logs\emt-20260528.log`.
+Stack trace bateu direto na linha 209 (`DialogResult = true`) com chamada
+vinda de `Window.ShowDialog()` (= janela foi mostrada modal). Causa óbvia:
+handler duplicado.
+
+#### Bug latente em outras janelas
+
+Scan revelou **mesmo padrão** em `Views/ExportarDstvWindow.xaml(.cs)` e
+`Views/VerificarModeloWindow.xaml(.cs)`. Não foram reportadas ainda
+(provavelmente usuário só usa Esc/Cancel onde `IsCancel=true` ignora
+handler duplicado). Sweep em Wave futura ou hotfix dedicado.
+
+#### Risco
+
+**MINIMAL** — diff: 1 arquivo, 7 linhas. Sem mudança de lógica. Mesmo
+1223/1223 testes verde.
+
+#### Breaking change
+
+**Nenhuma.**
+
+---
+
 ## [2.8.3] - 2026-05-29
 
 ### Hotfix Conexão Terça — 4 fixes validados em teste real (Victor 28/05 noite)

@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.3-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.4-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-1223%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
@@ -177,10 +177,13 @@ verificação Authenticode.
 
 ## Versão atual
 
+**v2.8.4** (2026-05-29) — hotfix UI: handler `BtnOk_Click` da ConexaoTercasWindow estava registrado 2× (XAML + code-behind) e gerava exception "DialogResult somente pode ser definido após Window ser criado e exibido como caixa de diálogo" ao clicar Inserir. Diff de 1 arquivo, 7 linhas. Diagnóstico do log + fix cirúrgico.
+
 **v2.8.3** (2026-05-29) — hotfix Conexão Terça com 4 fixes validados em teste real: centramento automático via centroide ponderado (tolera famílias com origem em canto), heurística TOP-3 + DotProduct(BasisZ) pra escolher face externa, iteração de TODAS as vigas (não só extremidades), Z da terça preservado. Checkbox "Inverter face" como override manual. Histórico completo em [CHANGELOG.md](CHANGELOG.md).
 
 Releases recentes:
 
+- **v2.8.4** — Hotfix UI Conexão Terça (1 PR): `BtnOk_Click` e `BtnCancel_Click` estavam registrados 2× (XAML `Click=` + code-behind `+=`), gerando exception "DialogResult somente pode ser definido após Window ser criado e exibido como caixa de diálogo" ao clicar Inserir. Bug introduzido em v2.8.1 e só descoberto após Alef ter família real testando v2.8.3. Fix: remover registro redundante do code-behind (7 linhas, 0 LOC funcionais).
 - **v2.8.3** — Hotfix Conexão Terça (1 PR): 4 fixes validados em teste real pelo Victor — **centramento automático via centroide ponderado** (tolera famílias com origem em canto, como a do Victor; corrige "conexão saindo abaixo da terça"), **heurística de face** TOP-3 + `DotProduct(FaceNormal, BasisZ_global)` pra escolher a externa em U/C de mesma área (+ checkbox "Inverter face" como override manual), **iteração de TODAS as vigas** via novo helper `IntersectXY` (sistema 2×2 com regra de Cramer; resolve "viga do meio ignorada"), **Z da terça preservado** no `IntersectXY` (não pega Z do eixo da viga). +11 testes (1212 → 1223).
 - **v2.8.2** — Conexão Terça v2 (2 PRs): refactor do `ConexaoTercasService` com algoritmo **face-based** validado por implementação externa de referência. Resolve os 4 problemas do áudio do Victor (28/05): duplicação por pick de face, falta de referência terça↔viga, alinhamento no eixo em vez da alma, rotações -90° imprevisíveis. **Novo pick #2 obrigatório** das vigas de apoio. Insere via `NewFamilyInstance(face, point, dir, symbol)` na maior face planar do solid da terça (= alma em U/C/I). **Modo Completo** opcional (raycast pra GetBottomFace + ajuste altura, com suporte a viga tipo I). Helpers puros `ConexaoTercasGeometry` + `EngineerGeometry` + `StructuralBeamSelectionFilter`. Spec da família documentada em `docs/familia-conexao-terca-spec.md`. +21 testes (1191 → 1212).
 - **v2.8.1** — Incorporação Victor (2 PRs): comando NOVO "Conexão Terça" (lança conexões estruturais nas extremidades/meio das terças selecionadas, posicionadas na face inferior; dedup XY 50mm pra nós comuns) + fluxo automático no Gerar Terças (pick viga ref extrai ângulo real, pick antecipado linha limite extrai vão, novo botão "Espaçamentos manuais..." wireia a janela órfã com escala proporcional + remainder + total verde/vermelho). +40 testes (1151 → 1191). Default ZJust mudou de Topo → Inferior.
