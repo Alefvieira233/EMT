@@ -128,13 +128,14 @@ contra **um arquivo NC1 de referência real do escritório** numa máquina/visua
 
 ## 5. Backlog — SAFE (lógica/UX, sem Revit) não incluídos nesta release
 
-Pequenos e seguros, deixados fora da v2.8.9 só para manter o PR focado e revisável:
+**Feitos na v2.8.9** (commits adicionais `c0bc324`, `5eecb3a`): mensagem amigável quando o
+Excel está aberto/bloqueado (`ListaMateriaisExportService` — `IOException`/`UnauthorizedAccessException`);
+null-check do `GuardaCorpoService` (`config.SymbolSelecionado`/`NivelReferencia`); padronização
+de branding PM-/ECC- → PF- nas janelas e mensagens do PF (resquício de fork).
 
-- Excel (LDM/ModelCheck): distinguir "arquivo aberto no Excel" com mensagem amigável
-  (`IOException`/`UnauthorizedAccessException`) — `ListaMateriaisExportService.cs:193`.
+Ainda abertos (pequenos e seguros):
+
 - DSTV: avisar quando PieceMark/Notes com acento é degradado por `Encoding.ASCII`.
-- `GuardaCorpoService`: null-check de `config.SymbolSelecionado`/`NivelReferencia`.
-- PF: padronizar branding "PM -"/"ECC -" → "PF -" nos títulos/transações (resquício de fork).
 - PF: `PfConsoloRebarConfig` sem campo de cobrimento (fixo 30 mm).
 - `RevitWindowThemeService`/`WindowExtensions`: corrigir doc de idempotência do `Attach`.
 - App.cs: persistir consent quando a janela é fechada no "X" (hoje reabre a cada boot).
