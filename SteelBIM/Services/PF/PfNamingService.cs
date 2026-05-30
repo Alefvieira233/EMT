@@ -32,7 +32,7 @@ namespace SteelBIM.Services.PF
             {
                 AppDialogService.ShowWarning(
                     commandName,
-                    "Nenhum elemento PM elegivel foi encontrado com os filtros atuais.",
+                    "Nenhum elemento PF elegivel foi encontrado com os filtros atuais.",
                     "Nenhum item encontrado");
                 return Result.Cancelled;
             }

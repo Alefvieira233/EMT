@@ -58,19 +58,19 @@ namespace SteelBIM.Views
             PfColumnStirrupsConfig config = BuildConfig();
             if (config.DiametroMm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Pilar", "Informe um diametro de barra maior que zero.", "Dados incompletos");
+                AppDialogService.ShowWarning("PF - Estribos Pilar", "Informe um diametro de barra maior que zero.", "Dados incompletos");
                 return;
             }
 
             if (config.CobrimentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Pilar", "Informe cobrimento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Estribos Pilar", "Informe cobrimento maior que zero.", "Dados invalidos");
                 return;
             }
 
             if (config.EspacamentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Pilar", "Informe espacamento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Estribos Pilar", "Informe espacamento maior que zero.", "Dados invalidos");
                 return;
             }
 
