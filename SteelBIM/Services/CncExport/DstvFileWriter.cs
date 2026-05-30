@@ -226,29 +226,19 @@ namespace SteelBIM.Services.CncExport
             if (string.IsNullOrEmpty(value))
                 return value ?? string.Empty;
 
-            var sb = new StringBuilder(value.Length);
-            foreach (char c in value)
+            // v2.8.9: normalizacao Unicode (FormD) decompoe cada acento em base + marca
+            // combinante; descartamos a marca e mantemos o ASCII. Cobre todos os acentos
+            // (nao so uma lista) e e' format-safe (sem switch multi-case por linha).
+            string decomposto = value.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(decomposto.Length);
+            foreach (char c in decomposto)
             {
-                switch (c)
+                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
                 {
-                    case 'á': case 'à': case 'â': case 'ã': case 'ä': sb.Append('a'); break;
-                    case 'Á': case 'À': case 'Â': case 'Ã': case 'Ä': sb.Append('A'); break;
-                    case 'é': case 'è': case 'ê': case 'ë': sb.Append('e'); break;
-                    case 'É': case 'È': case 'Ê': case 'Ë': sb.Append('E'); break;
-                    case 'í': case 'ì': case 'î': case 'ï': sb.Append('i'); break;
-                    case 'Í': case 'Ì': case 'Î': case 'Ï': sb.Append('I'); break;
-                    case 'ó': case 'ò': case 'ô': case 'õ': case 'ö': sb.Append('o'); break;
-                    case 'Ó': case 'Ò': case 'Ô': case 'Õ': case 'Ö': sb.Append('O'); break;
-                    case 'ú': case 'ù': case 'û': case 'ü': sb.Append('u'); break;
-                    case 'Ú': case 'Ù': case 'Û': case 'Ü': sb.Append('U'); break;
-                    case 'ç': sb.Append('c'); break;
-                    case 'Ç': sb.Append('C'); break;
-                    case 'ñ': sb.Append('n'); break;
-                    case 'Ñ': sb.Append('N'); break;
-                    default:
-                        sb.Append(c <= 0x7F ? c : '?');
-                        break;
+                    continue;
                 }
+
+                sb.Append(c <= 0x7F ? c : '?');
             }
             return sb.ToString();
         }
