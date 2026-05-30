@@ -91,5 +91,71 @@ namespace SteelBIM.Services.Trelica
                 throw new ArgumentException("Banzo inferior precisa de pelo menos 2 nos.", nameof(xBanzoInferior));
             return (lista.Min(), lista.Max());
         }
+
+        /// <summary>
+        /// Coleta os nos 2D distintos pertencentes ao banzo alvo, a partir de barras JA
+        /// classificadas (passo 3 do pipeline) e JA projetadas no plano da vista. Cada barra
+        /// entra com seu <see cref="TrelicaClassificador.TipoMembro"/> e seus dois extremos 2D.
+        /// Nos coincidentes (dentro de <see cref="TolPesIgualdade"/>) sao unificados; o
+        /// resultado vem ordenado por X.
+        /// </summary>
+        /// <remarks>
+        /// Extraido de CotarTrelicaService para teste sem Revit. Substitui a logica antiga que
+        /// re-classificava por inclinacao (<c>ClassificarPorInclinacao</c>), que NUNCA devolve
+        /// BanzoSuperior/Inferior — a comparacao era sempre falsa e o pipeline abortava em
+        /// "banzos nao detectados" para TODA trelica.
+        /// </remarks>
+        public static IReadOnlyList<(double X, double Z)> ColetarNosDoBanzo(
+            IEnumerable<(TrelicaClassificador.TipoMembro Tipo, (double X, double Z) P0, (double X, double Z) P1)> barras,
+            TrelicaClassificador.TipoMembro tipoBanzoAlvo)
+        {
+            if (barras is null)
+                throw new ArgumentNullException(nameof(barras));
+
+            var brutos = new List<(double X, double Z)>();
+            foreach (var b in barras)
+            {
+                if (b.Tipo != tipoBanzoAlvo)
+                    continue;
+                brutos.Add(b.P0);
+                brutos.Add(b.P1);
+            }
+
+            var unicos = new List<(double X, double Z)>();
+            foreach (var p in brutos.OrderBy(p => p.X).ThenBy(p => p.Z))
+            {
+                bool jaExiste = unicos.Any(q =>
+                    Math.Abs(q.X - p.X) <= TolPesIgualdade &&
+                    Math.Abs(q.Z - p.Z) <= TolPesIgualdade);
+                if (!jaExiste)
+                    unicos.Add(p);
+            }
+
+            return unicos;
+        }
+
+        /// <summary>
+        /// Retorna o indice do no cuja coordenada X esta mais proxima de <paramref name="alvoX"/>,
+        /// desde que dentro de <paramref name="tolPes"/>. Retorna -1 se nenhum no estiver dentro
+        /// da tolerancia — distingue "nao encontrado" de "no legitimamente em X≈0" (o sentinela
+        /// antigo <c>noSup.X == 0</c> falhava nos dois casos).
+        /// </summary>
+        public static int IndiceNoMaisProximo(IReadOnlyList<double> xs, double alvoX, double tolPes)
+        {
+            if (xs is null)
+                throw new ArgumentNullException(nameof(xs));
+            int melhor = -1;
+            double menor = double.MaxValue;
+            for (int i = 0; i < xs.Count; i++)
+            {
+                double d = Math.Abs(xs[i] - alvoX);
+                if (d < menor)
+                {
+                    menor = d;
+                    melhor = i;
+                }
+            }
+            return menor <= tolPes ? melhor : -1;
+        }
     }
 }

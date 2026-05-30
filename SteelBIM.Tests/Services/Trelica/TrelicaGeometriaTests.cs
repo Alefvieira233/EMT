@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Linq;
 using FluentAssertions;
 using SteelBIM.Services.Trelica;
 using Xunit;
@@ -88,6 +89,82 @@ namespace SteelBIM.Tests.Services.Trelica
         {
             var act = () => TrelicaGeometria.ExtremosApoio(new[] { 1.0 });
             act.Should().Throw<ArgumentException>();
+        }
+
+        // =====================================================================
+        // v2.8.9 — regressao do bug P0 "Cotar Treliça nunca detecta banzos".
+        // Antes, o passo 4 re-classificava por inclinacao (que nunca devolve
+        // BanzoSuperior/Inferior) e a deteccao saia SEMPRE vazia. Estes testes
+        // pinam a coleta de nos a partir da classificacao ja desambiguada.
+        // =====================================================================
+
+        [Fact]
+        public void ColetarNosDoBanzo_TrelicaPlana_SeparaSuperiorEInferior()
+        {
+            // 2 banzos horizontais (sup Z=3, inf Z=0) + 1 montante.
+            var barras = new (TrelicaClassificador.TipoMembro, (double, double), (double, double))[]
+            {
+                (TrelicaClassificador.TipoMembro.BanzoSuperior, (0.0, 3.0), (5.0, 3.0)),
+                (TrelicaClassificador.TipoMembro.BanzoInferior, (0.0, 0.0), (5.0, 0.0)),
+                (TrelicaClassificador.TipoMembro.Montante,      (5.0, 0.0), (5.0, 3.0)),
+            };
+
+            var sup = TrelicaGeometria.ColetarNosDoBanzo(barras, TrelicaClassificador.TipoMembro.BanzoSuperior);
+            var inf = TrelicaGeometria.ColetarNosDoBanzo(barras, TrelicaClassificador.TipoMembro.BanzoInferior);
+
+            sup.Should().NotBeEmpty();   // o bug original deixava VAZIO -> pipeline abortava
+            inf.Should().NotBeEmpty();
+            sup.Should().OnlyContain(n => n.Z == 3.0);
+            inf.Should().OnlyContain(n => n.Z == 0.0);
+        }
+
+        [Fact]
+        public void ColetarNosDoBanzo_UnificaNosCoincidentes()
+        {
+            // Duas barras do banzo superior compartilham o no (5,3) -> deve aparecer 1x.
+            var barras = new (TrelicaClassificador.TipoMembro, (double, double), (double, double))[]
+            {
+                (TrelicaClassificador.TipoMembro.BanzoSuperior, (0.0, 3.0), (5.0, 3.0)),
+                (TrelicaClassificador.TipoMembro.BanzoSuperior, (5.0, 3.0), (10.0, 3.0)),
+            };
+
+            var sup = TrelicaGeometria.ColetarNosDoBanzo(barras, TrelicaClassificador.TipoMembro.BanzoSuperior);
+
+            sup.Should().HaveCount(3); // 0, 5, 10 (o 5 compartilhado e unificado)
+            sup.Select(n => n.X).Should().BeInAscendingOrder();
+        }
+
+        [Fact]
+        public void ColetarNosDoBanzo_SemBarrasDoTipo_RetornaVazio()
+        {
+            var barras = new (TrelicaClassificador.TipoMembro, (double, double), (double, double))[]
+            {
+                (TrelicaClassificador.TipoMembro.Diagonal, (0.0, 0.0), (5.0, 3.0)),
+            };
+            TrelicaGeometria.ColetarNosDoBanzo(barras, TrelicaClassificador.TipoMembro.BanzoSuperior)
+                .Should().BeEmpty();
+        }
+
+        [Fact]
+        public void IndiceNoMaisProximo_AchaDentroDaTolerancia()
+        {
+            var xs = new[] { 0.0, 5.0, 10.0 };
+            TrelicaGeometria.IndiceNoMaisProximo(xs, 5.02, 0.05).Should().Be(1);
+        }
+
+        [Fact]
+        public void IndiceNoMaisProximo_ForaDaTolerancia_RetornaMenosUm()
+        {
+            var xs = new[] { 0.0, 5.0, 10.0 };
+            TrelicaGeometria.IndiceNoMaisProximo(xs, 7.0, 0.05).Should().Be(-1);
+        }
+
+        [Fact]
+        public void IndiceNoMaisProximo_NoEmZero_NaoEhDescartado()
+        {
+            // Regressao do sentinela antigo "noSup.X == 0": no legitimo em X=0 deve ser achavel.
+            var xs = new[] { 0.0, 5.0 };
+            TrelicaGeometria.IndiceNoMaisProximo(xs, 0.0, 0.05).Should().Be(0);
         }
     }
 }
