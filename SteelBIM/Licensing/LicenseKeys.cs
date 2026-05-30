@@ -12,11 +12,12 @@ namespace SteelBIM.Licensing
     public static class LicenseKeys
     {
         /// <summary>
-        /// SubjectPublicKeyInfo (DER) da chave publica de PRODUCAO, em Base64.
-        /// >>> SUBSTITUIR pelo output de `EmtKeyGen genkeypair` (secao 7). Enquanto for o
-        ///     placeholder, Verify retorna null para qualquer chave (fail-closed). <<<
+        /// SubjectPublicKeyInfo (DER) da chave publica de PRODUCAO (ECDsa P-256), em Base64.
+        /// Embarcada em 2026-05-30. A chave PRIVADA correspondente fica SO com o produtor
+        /// (env STEELBIM_LICENSE_PRIVATE_KEY no EmtKeyGen) e NUNCA entra no repositorio.
+        /// Validada: 91 bytes, curva prime256v1, importavel por ImportSubjectPublicKeyInfo.
         /// </summary>
-        public const string PublicKeySpkiBase64 = "COLE_AQUI_A_CHAVE_PUBLICA_DO_genkeypair";
+        public const string PublicKeySpkiBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEde4Xt2EvHU+g4SBSdNHrVvMtilUrOknmopGDWhfHJdA+l1gA0pM4PMHNDCrEsiZeSPzt6CjiTL8B0sK5NTnqEQ==";
 
         // Seam de teste: o projeto de testes COMPILA este arquivo no proprio assembly,
         // entao pode setar este campo internal. NAO e' nova superficie de ataque (um
