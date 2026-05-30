@@ -79,10 +79,9 @@ namespace SteelBIM.Views
 
         private static double ParseDouble(string text, double fallback)
         {
-            string normalized = (text ?? string.Empty).Trim().Replace(',', '.');
-            return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
-                ? value
-                : fallback;
+            // v2.8.9 FIX: padronizar no helper oficial (Invariant -> pt-BR). A variante
+            // Replace(',','.')+Invariant divergia das demais janelas e quebrava "1,000".
+            return SteelBIM.Utils.NumberParsing.ParseDoubleOrDefault(text, fallback);
         }
 
         private static string Format(double value)

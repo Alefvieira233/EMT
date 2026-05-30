@@ -101,7 +101,9 @@ namespace SteelBIM.Infrastructure
                 sb.AppendLine($"CLR version:  {Environment.Version}");
                 sb.AppendLine($"OS version:   {Environment.OSVersion}");
                 sb.AppendLine($"Machine:      {Environment.MachineName}");
-                sb.AppendLine($"User:         {Environment.UserName}");
+                // v2.8.9 privacidade: NAO gravar Environment.UserName (PII) no dump.
+                // Este arquivo eh enviado ao suporte pelo usuario; o Logger ja removeu
+                // UserName do enrich (v2.8.7) pelo mesmo motivo de vazamento via suporte.
                 sb.AppendLine();
                 if (ex != null)
                 {

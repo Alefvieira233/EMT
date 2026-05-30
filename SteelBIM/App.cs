@@ -180,17 +180,30 @@ namespace SteelBIM
             // trabalho (modelar vs detalhar), mantendo a marca no prefixo da aba.
             // Apenas reorganizacao visual: nenhum command/service/AddInId mudou e
             // os internalName dos botoes foram preservados (atalhos do usuario OK).
-            RevitWindowThemeService.Initialize(application);
+            // v2.8.9: construcao do ribbon protegida por try/catch raiz. Uma excecao
+            // aqui (ex.: internalName duplicado em reload, PNG corrompido, mudanca de
+            // API do Revit) escaparia do OnStartup e o Revit DESABILITARIA o add-in
+            // inteiro — o usuario pagante "fica sem a ferramenta". Melhor um ribbon
+            // parcial (logado) que um plugin que nao carrega.
+            try
+            {
+                RevitWindowThemeService.Initialize(application);
 
-            string tabModelagem = "SteelBIM | Modelagem";
-            string tabDetalhamento = "SteelBIM | Detalhamento";
-            CreateRibbonTabSafe(application, tabModelagem);
-            CreateRibbonTabSafe(application, tabDetalhamento);
+                string tabModelagem = "SteelBIM | Modelagem";
+                string tabDetalhamento = "SteelBIM | Detalhamento";
+                CreateRibbonTabSafe(application, tabModelagem);
+                CreateRibbonTabSafe(application, tabDetalhamento);
 
-            string assemblyPath = Assembly.GetExecutingAssembly().Location;
+                string assemblyPath = Assembly.GetExecutingAssembly().Location;
 
-            BuildAbaModelagem(application, tabModelagem, assemblyPath);
-            BuildAbaDetalhamento(application, tabDetalhamento, assemblyPath);
+                BuildAbaModelagem(application, tabModelagem, assemblyPath);
+                BuildAbaDetalhamento(application, tabDetalhamento, assemblyPath);
+            }
+            catch (Exception ribbonEx)
+            {
+                Logger.Error(ribbonEx,
+                    "[App] Falha ao construir o ribbon — plugin continua carregado (ribbon pode estar parcial)");
+            }
 
             return Result.Succeeded;
         }

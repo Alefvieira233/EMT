@@ -452,13 +452,11 @@ namespace SteelBIM.Views
 
         private static double ParseDouble(string text, double fallback)
         {
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double v1))
-                return v1;
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double v2))
-                return v2;
-            if (double.TryParse(text.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out double v3))
-                return v3;
-            return fallback;
+            // v2.8.9 FIX: usar o helper oficial (Invariant primeiro, depois pt-BR). Antes
+            // tentava CurrentCulture PRIMEIRO — viola a "regra de ouro" do projeto
+            // (SteelBIM.Utils.NumberParsing): em PC pt-BR "1.5" digitado quebrava e "1,000"
+            // virava ambiguo; alem disso text.Replace(',','.') lancava NRE se text fosse null.
+            return SteelBIM.Utils.NumberParsing.ParseDoubleOrDefault(text, fallback);
         }
 
         private static string Format(double value)

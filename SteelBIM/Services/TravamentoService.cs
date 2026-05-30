@@ -27,8 +27,11 @@ namespace SteelBIM.Services
             {
                 refs = uidoc.Selection.PickObjects(ObjectType.Element, "Selecione TODAS as TERÇAS em ordem");
             }
-            catch
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
             {
+                // ESC do usuario — cancelamento normal. v2.8.9 FIX: antes o catch generico
+                // engolia TODAS as excecoes (mascarando erros reais da API); agora so trata
+                // cancelamento e deixa o resto subir para o handler de FerramentaCommandBase.
                 return;
             }
 
