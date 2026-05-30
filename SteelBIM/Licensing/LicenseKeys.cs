@@ -38,5 +38,14 @@ namespace SteelBIM.Licensing
             }
             catch { ecdsa.Dispose(); throw; }
         }
+
+        /// <summary>
+        /// True se a chave publica de PRODUCAO ainda for o placeholder (a chave real do
+        /// `genkeypair` nao foi colada). Nesse estado nenhuma licenca paga valida — so trial.
+        /// Usado no startup para avisar alto (evita o sintoma confuso de "trial silencioso").
+        /// </summary>
+        public static bool ChavePublicaEhPlaceholder =>
+            string.IsNullOrWhiteSpace(PublicKeySpkiBase64)
+            || PublicKeySpkiBase64.StartsWith("COLE_AQUI", StringComparison.Ordinal);
     }
 }
