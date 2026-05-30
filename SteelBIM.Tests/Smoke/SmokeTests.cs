@@ -65,6 +65,9 @@ namespace SteelBIM.Tests.Smoke
         [InlineData("SteelBIM.Licensing.LicenseSecretProvider")]
         [InlineData("SteelBIM.Licensing.KeySigner")]
         [InlineData("SteelBIM.Licensing.LicensePayload")]
+        // v2.8.9 ADR-011: licenca assimetrica
+        [InlineData("SteelBIM.Licensing.LicenseKeys")]
+        [InlineData("SteelBIM.Licensing.LicensePrivateKeyProvider")]
         // Core — pattern ADR-001/004
         [InlineData("SteelBIM.Core.ProgressReport")]
         [InlineData("SteelBIM.Core.ProgressReporter")]

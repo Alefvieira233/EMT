@@ -164,13 +164,9 @@ namespace SteelBIM
             { application.Idling += OnFirstIdling; }
             catch (Exception idlEx) { Logger.Warn(idlEx, "[Privacy] falha ao registrar Idling handler"); }
 
-            // 1.3.0: logar fonte do segredo HMAC
-            try
-            {
-                LicenseSecretProvider.SecretSource source = LicenseSecretProvider.GetResolvedSource();
-                Logger.Info("[Licensing] Segredo HMAC carregado de {Source}", source);
-            }
-            catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
+            // v2.8.9: licenca agora usa assinatura assimetrica (ECDsa). O plugin embarca
+            // apenas a chave PUBLICA de verificacao — nao ha mais segredo HMAC a resolver.
+            Logger.Info("[Licensing] verificacao de licenca por chave publica embarcada (ECDsa P-256)");
 
             // v2.6.0: ribbon dividido em DUAS abas (decisao do Alef):
             //   "SteelBIM | Modelagem"    -> modelagem, conexoes, armaduras PF, visualizacao
