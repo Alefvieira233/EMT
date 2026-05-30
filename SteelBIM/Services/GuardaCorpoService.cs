@@ -24,6 +24,16 @@ namespace SteelBIM.Services
 
         public void Executar(UIDocument uidoc, Document doc, GuardaCorpoConfig config)
         {
+            // v2.8.9: guarda anti-NRE — a janela deveria garantir, mas defende contra
+            // config incompleta (familia/nivel nao selecionados) antes de pedir os pontos.
+            if (config == null || config.SymbolSelecionado == null || config.NivelReferencia == null)
+            {
+                _ui.Warn(Titulo,
+                    "Selecione a familia do guarda-corpo e o nivel de referencia antes de continuar.",
+                    "Configuracao incompleta");
+                return;
+            }
+
             XYZ pontoInicial;
             XYZ pontoFinal;
 

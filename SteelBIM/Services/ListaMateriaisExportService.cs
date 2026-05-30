@@ -194,6 +194,16 @@ namespace SteelBIM.Services
             {
                 SalvarWorkbook(config.CaminhoArquivo, grupos, config, doc.Title);
             }
+            catch (Exception ex) when (ex is System.IO.IOException || ex is System.UnauthorizedAccessException)
+            {
+                // v2.8.9: causa mais comum — arquivo aberto no Excel ou pasta sem permissao.
+                // Antes caia no catch generico e mostrava a Message tecnica do .NET.
+                Logger.Error(ex, "ListaMateriaisExport: arquivo bloqueado/sem acesso {Path}", config.CaminhoArquivo);
+                return Core.Result<ResultadoExport>.Fail(
+                    "Nao foi possivel gravar a planilha.\n\nO arquivo pode estar ABERTO no Excel, " +
+                    "ou a pasta nao tem permissao de escrita. Feche o arquivo e tente novamente:\n\n" +
+                    config.CaminhoArquivo);
+            }
             catch (Exception ex)
             {
                 Logger.Error(ex, "ListaMateriaisExport: falha ao gravar workbook {Path}", config.CaminhoArquivo);
