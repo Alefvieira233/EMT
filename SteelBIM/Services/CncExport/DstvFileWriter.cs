@@ -176,7 +176,7 @@ namespace SteelBIM.Services.CncExport
             // Quebra a string em linhas e prefixa cada uma com 2 espacos
             foreach (string line in f.Notes.Replace("\r", "").Split('\n'))
             {
-                sb.Append("  ").Append(line.Trim()).Append(NewLine);
+                sb.Append("  ").Append(SanitizeAscii(line.Trim())).Append(NewLine);
             }
             sb.Append("EN").Append(NewLine);
         }
@@ -187,8 +187,10 @@ namespace SteelBIM.Services.CncExport
 
         private static void AppendField(StringBuilder sb, string value)
         {
-            // Indentacao padrao DSTV: dois espacos antes do campo
-            sb.Append("  ").Append(value ?? string.Empty).Append(NewLine);
+            // Indentacao padrao DSTV: dois espacos antes do campo.
+            // v2.8.9: transliterar acentos PT-BR para ASCII (em vez do Encoding.ASCII
+            // trocar por '?') — marca/nota da peca fica legivel e rastreavel no NC1.
+            sb.Append("  ").Append(SanitizeAscii(value ?? string.Empty)).Append(NewLine);
         }
 
         /// <summary>
@@ -211,6 +213,44 @@ namespace SteelBIM.Services.CncExport
             double rounded = Math.Round(value, 2, MidpointRounding.AwayFromZero);
             string s = rounded.ToString("0.##", Inv);
             return s;
+        }
+
+        /// <summary>
+        /// Converte um texto para ASCII transliterando acentos PT-BR comuns
+        /// (ã→a, ç→c, é→e, …) em vez de deixar o <see cref="Encoding.ASCII"/> trocar por '?'.
+        /// Mantem a marca/nota da peca legivel e rastreavel no NC1. Identidade em ASCII puro;
+        /// caracteres nao-ASCII sem mapeamento viram '?'.
+        /// </summary>
+        public static string SanitizeAscii(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value ?? string.Empty;
+
+            var sb = new StringBuilder(value.Length);
+            foreach (char c in value)
+            {
+                switch (c)
+                {
+                    case 'á': case 'à': case 'â': case 'ã': case 'ä': sb.Append('a'); break;
+                    case 'Á': case 'À': case 'Â': case 'Ã': case 'Ä': sb.Append('A'); break;
+                    case 'é': case 'è': case 'ê': case 'ë': sb.Append('e'); break;
+                    case 'É': case 'È': case 'Ê': case 'Ë': sb.Append('E'); break;
+                    case 'í': case 'ì': case 'î': case 'ï': sb.Append('i'); break;
+                    case 'Í': case 'Ì': case 'Î': case 'Ï': sb.Append('I'); break;
+                    case 'ó': case 'ò': case 'ô': case 'õ': case 'ö': sb.Append('o'); break;
+                    case 'Ó': case 'Ò': case 'Ô': case 'Õ': case 'Ö': sb.Append('O'); break;
+                    case 'ú': case 'ù': case 'û': case 'ü': sb.Append('u'); break;
+                    case 'Ú': case 'Ù': case 'Û': case 'Ü': sb.Append('U'); break;
+                    case 'ç': sb.Append('c'); break;
+                    case 'Ç': sb.Append('C'); break;
+                    case 'ñ': sb.Append('n'); break;
+                    case 'Ñ': sb.Append('N'); break;
+                    default:
+                        sb.Append(c <= 0x7F ? c : '?');
+                        break;
+                }
+            }
+            return sb.ToString();
         }
 
         private static int CompareHoles(DstvHole a, DstvHole b)
