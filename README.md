@@ -1,14 +1,14 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.8-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.9-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
-![Testes](https://img.shields.io/badge/testes-1223%20passing-brightgreen)
+![Testes](https://img.shields.io/badge/testes-1247%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)
 
 > **Detalhamento estrutural brasileiro direto no Revit.** Treliças, terças,
 > conexões, armaduras NBR 6118, Diagrama de Montagem padrão BR e export
-> DSTV/NC1 para CNC — em 48 comandos do ribbon. Sem Tekla, sem AutoCAD
+> DSTV/NC1 para CNC — em 50 comandos do ribbon. Sem Tekla, sem AutoCAD
 > intermediário, sem retrabalho.
 
 ---
@@ -139,9 +139,9 @@ contate `engenheiroalefvieira@gmail.com`.
 
 ```
 SteelBIM/
-├── Commands/          # 48 comandos do ribbon (entry points)
-│   ├── PF/            # 13 comandos do fluxo Pré-Fabricado
-│   └── *.cs           # 35 comandos do fluxo geral
+├── Commands/          # 50 comandos do ribbon (entry points)
+│   ├── PF/            # 14 comandos do fluxo Pré-Fabricado
+│   └── *.cs           # 36 comandos do fluxo geral
 ├── Services/          # Lógica de negócio (ADR-003 — services mudos)
 ├── Views/             # Janelas WPF (configuração + interação)
 ├── Models/            # DTOs e configs
@@ -149,8 +149,8 @@ SteelBIM/
 └── Resources/         # Ícones do ribbon (conjunto lucide_blue)
 ```
 
-Dos 48 comandos do ribbon, **46 são comandos de feature** de
-detalhamento (33 do fluxo geral + 13 do fluxo Pré-Fabricado) e **2 são
+Dos 50 comandos do ribbon, **48 são comandos de feature** de
+detalhamento (34 do fluxo geral + 14 do fluxo Pré-Fabricado) e **2 são
 utilitários** do painel Licença — "Ativar Licença" e "Sobre".
 
 ---
@@ -168,7 +168,7 @@ Plugin estruturado em camadas, com decisões registradas em `docs/ADR/`:
 - **ADR-009** — Code signing parametrizado via signtool + GitHub secrets
 - **ADR-010** — Documentos legais (EULA/Privacy/TOS — drafts em revisão jurídica)
 
-São **1223 testes automatizados** em `SteelBIM.Tests` cobrindo lógica
+São **1247 testes automatizados** em `SteelBIM.Tests` cobrindo lógica
 pura: zoneamento de armadura NBR, formatadores culture-invariant,
 validação de configuração, regras de domínio, scrubbing de PII e
 verificação Authenticode.
@@ -176,6 +176,8 @@ verificação Authenticode.
 ---
 
 ## Versão atual
+
+**v2.8.9** (2026-05-30) — Auditoria profunda (6 agentes) + correções. Destaque: **"Cotar Treliça" estava 100% inoperante** — o passo de extração de banzos reclassificava por inclinação (que nunca retorna Banzo Superior/Inferior), abortando o pipeline para *toda* treliça; agora reutiliza a classificação por altura do passo anterior e a função volta a operar (+6 testes de regressão). Também: fallback `new Reference(FamilyInstance)` proibido removido das cotas de treliça; **Verificar Modelo** comparava volume de interseção em pés³ contra limiar em m³ (~35× mais sensível → enxurrada de falsos positivos de sobreposição); parsing decimal das janelas PF padronizado no `NumberParsing` (cobrimento/espaçamento liam errado em locale pt-BR); `Marcar Peças` não sobrescreve mais marca em parâmetro numérico; `OnStartup` e a construção do ribbon protegidos por try/catch raiz (falha de um botão não derruba mais o plugin); `Environment.UserName` removido do crash dump local (LGPD). **~1247 testes.** Relatório completo em [docs/audits/AUDITORIA-PROFUNDA-2026-05-30.md](docs/audits/AUDITORIA-PROFUNDA-2026-05-30.md).
 
 **v2.8.8** (2026-05-29) — hotfix Diagrama de Montagem: bug reportado pelo Alef onde Revit abria dialog modal "Excluir cotas" oferecendo só essa opção. 5 ondas de fix: (1) `CriarCotasEntreEixos` reescrito com projeção correta no plano da vista + filtro de Grids visíveis; (2) `CriarCotaTotalConjunto` reescrito; (3) `CriarCotasVerticais` usando `FamilyInstance.GetReferences(Top/Bottom)` em vez de `new Reference(FamilyInstance)` proibido + coordenadas world-space corretas; (4) `SuppressInvalidDimensionsHandler` (IFailuresPreprocessor) instalado nas 4 transações de cota — garante que nunca mais apareça dialog modal pro usuário; (5) +13 testes novos cobrindo `ProjetarPontoNoPlano`, `Vec3.Dot`, round-trip 2D↔3D, ordenação de Grids. **1241 testes verdes**. Análise técnica completa em [docs/audits/DIAGRAMA-MONTAGEM-FIX-PLAN-2026-05-29.md](docs/audits/DIAGRAMA-MONTAGEM-FIX-PLAN-2026-05-29.md).
 

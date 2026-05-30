@@ -25,6 +25,96 @@ Próximas atividades dependem de eventos externos:
 
 ---
 
+## [2.8.9] - 2026-05-30
+
+Auditoria profunda do codebase (6 agentes sênior em paralelo: bootstrap/infra,
+licenciamento, metálico-geometria, documentação/CNC, PF pré-fabricado, build/CI)
+seguida de correções de alta confiança (lógica pura + hardening + docs). Relatório
+completo e backlog priorizado em `docs/audits/AUDITORIA-PROFUNDA-2026-05-30.md`.
+
+### Fixed
+
+#### Cotar Treliça — função estava 100% inoperante (P0)
+
+- `CotarTrelicaService.ExtrairNosBanzo` reclassificava cada barra com
+  `TrelicaClassificador.ClassificarPorInclinacao`, que **nunca** retorna
+  `BanzoSuperior`/`BanzoInferior` (só `BanzoIndefinido`/`Montante`/`Diagonal`). A
+  comparação `tipo == tipoBanzo` era **sempre falsa** → `nosSuperior`/`nosInferior`
+  saíam vazios → o pipeline abortava em "Não foi possível detectar banzos válidos"
+  para **toda** treliça. Agora reutiliza a classificação do passo 3 (que desambigua
+  por altura via `ClassificarBanzoPorAltura`) e delega a coleta de nós ao novo
+  helper puro `TrelicaGeometria.ColetarNosDoBanzo`.
+- `TrelicaRevitHelper.ObterReferenciaExtremo` retornava `new Reference(FamilyInstance)`
+  como fallback — **proibido** em `doc.Create.NewDimension` (lança no commit da
+  transação, derrubando a faixa de cota inteira). Agora retorna `null` e o caller
+  pula o segmento.
+- Sentinela `noSup.X == 0 || noInf.X == 0` na faixa de alturas descartava nós
+  legitimamente em X≈0 e aceitava "não encontrado" (tuple default) como válido com
+  Z=0 → alturas de montante ausentes/absurdas. Substituído por busca por índice com
+  tolerância (`TrelicaGeometria.IndiceNoMaisProximo`).
+- Altura do montante calculada via round-trip 3D (`DesprojetarPonto` + leitura do
+  `.Z` mundial) — só correto quando `UpDirection == +Z` mundial. Agora usa a
+  separação vertical 2D direta (`|noSup.Z − noInf.Z|`).
+- Gate duplicado (`EncontrarBarraNoNo` chamado 2× com os mesmos argumentos) removido.
+- "Cotas criadas" no relatório somava `faixa.Segmentos.Count` em vez de contar 1 por
+  `Dimension` encadeada (inflava a contagem).
+- Vãos entre apoios passam a derivar dos extremos do **banzo inferior** (onde a
+  treliça apoia), não do superior (que pode ter balanço em duas águas).
+- +6 testes de regressão em `TrelicaGeometriaTests` (`ColetarNosDoBanzo`,
+  `IndiceNoMaisProximo`).
+
+#### Outras correções de campo
+
+- **Verificar Modelo** (`OverlappingElementsRule`): `intersection.Volume` (pés³,
+  unidade interna do Revit) era comparado contra um limiar documentado como m³
+  (`0.0001`). Sem conversão, o limiar efetivo era ~35× mais sensível (~2,8 cm³ em
+  vez de 100 cm³) → enxurrada de falsos positivos de sobreposição. Agora converte
+  para m³ antes de comparar.
+- **Janelas PF** (`PfEstacaRebarWindow`, `PfColumnStirrupsWindow`): parsing decimal
+  padronizado em `SteelBIM.Utils.NumberParsing`. A estaca tentava `CurrentCulture`
+  primeiro (viola a regra de ouro do projeto; "1.5" quebrava em PC pt-BR) e dava
+  `NullReferenceException` se o texto fosse null — cobrimento/espaçamento podiam ser
+  lidos errado, posicionando armadura indevidamente.
+- **Marcar Peças** (`GravarMarca`): a proteção "não sobrescrever" usava só
+  `param.AsString()`, que retorna null em parâmetro numérico → marca existente era
+  sobrescrita mesmo com `SobrescreverExistentes=false` (perda de dado). Agora usa
+  `AsString() ?? AsValueString()`.
+- **Travamento** (`TravamentoService`): `catch {}` genérico no `PickObjects`
+  mascarava todas as exceções; agora trata só `OperationCanceledException` e deixa o
+  resto subir para o handler de `FerramentaCommandBase`.
+- **Boot** (`App.OnStartup`): construção do ribbon protegida por try/catch raiz — uma
+  exceção ali (internalName duplicado em reload, PNG corrompido) escapava do
+  `OnStartup` e o Revit **desabilitava o add-in inteiro**. Agora loga e segue (ribbon
+  parcial em vez de plugin que não carrega).
+- **Privacidade/LGPD** (`CrashReporter`): `Environment.UserName` (PII) não é mais
+  gravado no crash dump local — arquivo que o usuário envia ao suporte. Alinha com a
+  decisão da v2.8.7 que removeu o UserName do Logger.
+
+### Changed
+
+- Bump de versão 2.8.8 → 2.8.9 (`AssemblyInfo.cs`).
+- Documentação sincronizada com o estado real: `CLAUDE.md` (dizia v2.0.3/777 testes
+  e apontava `SteelBIM.Distribuicao/` inexistente), `README.md` (badge de versão +
+  contagem de testes contraditória 1223 vs 1241 + contagem de comandos 48→50),
+  `docs/ROADMAP.md` e `SECURITY.md` (versão estável defasada).
+- Arquivos órfãos da era v1.6.0 movidos para `docs/historico/`.
+
+### Backlog aberto (detalhado em `docs/audits/AUDITORIA-PROFUNDA-2026-05-30.md`)
+
+- **Licenciamento (P0 arquitetural — requer decisão):** esquema HMAC simétrico — o
+  segredo que verifica a chave é o mesmo que a assina e é distribuído com o plugin;
+  um aluno técnico pode extraí-lo do próprio disco e forjar chaves ilimitadas.
+  Recomendação: migrar para assinatura assimétrica (Ed25519/RSA) com a chave privada
+  só no EmtKeyGen e a pública embarcada no plugin.
+- **DSTV/NC1 (P1 — requer Revit + referência real):** o formato emitido diverge da
+  spec NC1 (ordem de campos do bloco ST, blocos AK/BO/SC), provável causa de arquivos
+  recusados por leitores/máquinas CNC.
+- Itens que exigem validação no Revit real (cotas verticais do Diagrama de Montagem
+  em vistas ao longo de Y; nomes de parâmetro com mojibake no bloco de 2 estacas;
+  sobreposição de estribos PF na junção de zonas) estão catalogados no relatório.
+
+---
+
 ## [2.8.8] - 2026-05-29
 
 ### Hotfix Diagrama de Montagem — cotas inválidas (5 ondas)
