@@ -43,6 +43,21 @@ namespace SteelBIM.Tests.Services.CncExport
         }
 
         [Fact]
+        public void Write_ST_OrdemDSTV_LengthAposCodigoEAntesDaAltura()
+        {
+            var f = MinimalFile(); // code "I", length 6000, height 310
+            string txt = DstvFileWriter.Write(f);
+
+            int posCode = txt.IndexOf("\r\n  I\r\n", System.StringComparison.Ordinal);
+            int posLength = txt.IndexOf("\r\n  6000\r\n", System.StringComparison.Ordinal);
+            int posHeight = txt.IndexOf("\r\n  310\r\n", System.StringComparison.Ordinal);
+
+            posCode.Should().BeGreaterThan(0);
+            posLength.Should().BeGreaterThan(posCode);    // comprimento logo apos o codigo do perfil
+            posHeight.Should().BeGreaterThan(posLength);  // altura depois do comprimento (ordem DSTV)
+        }
+
+        [Fact]
         public void Write_SemFuros_NaoEmiteBlocoBO()
         {
             var f = MinimalFile();

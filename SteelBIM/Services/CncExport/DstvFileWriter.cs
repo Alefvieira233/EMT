@@ -76,23 +76,36 @@ namespace SteelBIM.Services.CncExport
         {
             sb.Append("ST").Append(NewLine);
 
-            // Os campos sao posicionais, um por linha, prefixados por dois espacos.
-            AppendField(sb, f.OrderNumber);             // 1.  Order
-            AppendField(sb, f.DrawingNumber);           // 2.  Drawing No.
-            AppendField(sb, f.Phase);                   // 3.  Phase
-            AppendField(sb, f.PieceMark);               // 4.  Piece No (mark)
-            AppendField(sb, f.SteelQuality);            // 5.  Steel quality
-            AppendField(sb, f.Quantity.ToString(Inv));  // 6.  Quantity
-            AppendField(sb, f.ProfileName);             // 7.  Profile name
-            AppendField(sb, f.ProfileType.ToDstvCode());// 8.  Profile code
-            AppendField(sb, FormatNumber(f.ProfileHeightMm));    // 9.  height
-            AppendField(sb, FormatNumber(f.FlangeWidthMm));      // 10. flange width
-            AppendField(sb, FormatNumber(f.FlangeThicknessMm));  // 11. flange thickness
-            AppendField(sb, FormatNumber(f.WebThicknessMm));     // 12. web thickness
-            AppendField(sb, FormatNumber(f.FilletRadiusMm));     // 13. radius
-            AppendField(sb, FormatNumber(f.WeightPerMeter));     // 14. weight per meter
-            AppendField(sb, f.SurfaceTreatment);                 // 15. surface treatment
-            AppendField(sb, FormatNumber(f.CutLengthMm));        // 16. length
+            // Bloco ST na ordem padrao DSTV NC1 (24 campos, um por linha, prefixados por
+            // dois espacos). CORRECAO v2.8.9: o comprimento (Length) e' o campo 9 — logo
+            // apos o codigo do perfil — e NAO o ultimo (estava na pos. 16); o tratamento de
+            // superficie e' campo de TEXTO (21), nao numerico no meio das dimensoes. Os 4
+            // angulos de corte e a area de pintura completam os 24 campos que os leitores
+            // DSTV (Tekla/Advance/FICEP/Voortman/Peddinghaus) esperam.
+            AppendField(sb, f.OrderNumber);                       // 1.  order
+            AppendField(sb, f.DrawingNumber);                     // 2.  drawing
+            AppendField(sb, f.Phase);                             // 3.  phase
+            AppendField(sb, f.PieceMark);                         // 4.  piece mark
+            AppendField(sb, f.SteelQuality);                      // 5.  steel quality
+            AppendField(sb, f.Quantity.ToString(Inv));            // 6.  quantity
+            AppendField(sb, f.ProfileName);                       // 7.  profile
+            AppendField(sb, f.ProfileType.ToDstvCode());          // 8.  profile code
+            AppendField(sb, FormatNumber(f.CutLengthMm));         // 9.  length [mm]
+            AppendField(sb, FormatNumber(f.ProfileHeightMm));     // 10. height [mm]
+            AppendField(sb, FormatNumber(f.FlangeWidthMm));       // 11. flange width [mm]
+            AppendField(sb, FormatNumber(f.FlangeThicknessMm));   // 12. flange thickness [mm]
+            AppendField(sb, FormatNumber(f.WebThicknessMm));      // 13. web thickness [mm]
+            AppendField(sb, FormatNumber(f.FilletRadiusMm));      // 14. radius [mm]
+            AppendField(sb, FormatNumber(f.WeightPerMeter));      // 15. weight [kg/m]
+            AppendField(sb, FormatNumber(0.0));                   // 16. painting surface [m2/m] (nao calculado)
+            AppendField(sb, FormatNumber(0.0));                   // 17. web start angle (0 = corte reto; miter -> bloco SC)
+            AppendField(sb, FormatNumber(0.0));                   // 18. web end angle
+            AppendField(sb, FormatNumber(0.0));                   // 19. flange start angle
+            AppendField(sb, FormatNumber(0.0));                   // 20. flange end angle
+            AppendField(sb, f.SurfaceTreatment);                  // 21. text 1 (tratamento de superficie)
+            AppendField(sb, "");                                  // 22. text 2
+            AppendField(sb, "");                                  // 23. text 3
+            AppendField(sb, "");                                  // 24. text 4
 
             sb.Append("EN").Append(NewLine);
         }
