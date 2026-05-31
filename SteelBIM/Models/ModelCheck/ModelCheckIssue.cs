@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.ModelCheck
+﻿#nullable enable
+namespace SteelBIM.Models.ModelCheck
 {
     /// <summary>
     /// Um problema individual encontrado por uma regra de verificacao.

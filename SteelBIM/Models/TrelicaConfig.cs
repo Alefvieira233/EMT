@@ -1,11 +1,12 @@
-﻿using Autodesk.Revit.DB;
+﻿#nullable enable
+using Autodesk.Revit.DB;
 
 namespace SteelBIM.Models
 {
     public class TrelicaConfig
     {
-        public FamilySymbol SymbolMontante { get; set; }
-        public FamilySymbol SymbolDiagonal { get; set; }
+        public FamilySymbol? SymbolMontante { get; set; }
+        public FamilySymbol? SymbolDiagonal { get; set; }
         public bool LancarMontante { get; set; }
         public bool LancarDiagonal { get; set; }
         public int Quantidade { get; set; }
