@@ -180,6 +180,10 @@ jobs:
     name: Code Quality (dotnet format)
     runs-on: windows-latest
     timeout-minutes: 10
+    env:
+      # CI=true habilita PackageReference Nice3point (Revit stubs) em vez do
+      # HintPath local. Ver docs/ADR/ADR-005-ci-revit-stubs.md.
+      CI: 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -191,6 +195,12 @@ jobs:
         # Removido continue-on-error em v2.0.2 - apos limpeza de formatting
         # em SteelBIM.Tests. Build deve falhar honesto se formatting quebrar.
         run: dotnet format --verify-no-changes --verbosity diagnostic
+
+      # v2.8.9 (Onda 3): gate de formatacao tambem no projeto principal
+      # (SteelBIM.csproj). Antes so SteelBIM.Tests era checado, entao codigo
+      # mal-formatado em Commands/Services/Views passava no CI.
+      - name: Verify formatting (SteelBIM main project)
+        run: dotnet format SteelBIM/SteelBIM.csproj --verify-no-changes --verbosity diagnostic
 
 # TODO (multi-Revit, v3.0 fase 1): job matrix building against Revit 2024 /
 # 2025 / 2026 reference assemblies. Depende de converter SteelBIM.csproj
