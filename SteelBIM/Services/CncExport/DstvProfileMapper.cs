@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Text.RegularExpressions;
 using SteelBIM.Models.CncExport;
 
@@ -34,7 +35,7 @@ namespace SteelBIM.Services.CncExport
         /// <param name="familyName">Nome da familia (ex: "W-Wide Flange").</param>
         /// <param name="typeName">Nome do tipo (ex: "W12X26", "HEA200").</param>
         /// <returns>Codigo DSTV correspondente. <see cref="DstvProfileType.SO"/> se nao reconhecido.</returns>
-        public static DstvProfileType Map(string familyName, string typeName)
+        public static DstvProfileType Map(string? familyName, string? typeName)
         {
             string family = (familyName ?? "").Trim().ToUpperInvariant();
             string type = (typeName ?? "").Trim().ToUpperInvariant();
