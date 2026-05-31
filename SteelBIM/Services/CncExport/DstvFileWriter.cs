@@ -16,7 +16,7 @@ namespace SteelBIM.Services.CncExport
     /// Estrutura do arquivo NC1 (ordem dos blocos):
     ///   ST     -> cabecalho (always present)
     ///   EN     -> end of header
-    ///   AK     -> outer contour (omitido nesta implementacao base)
+    ///   AK     -> outer contour (opt-in via DstvFile.IncluirContornoAk; default off)
     ///   IK     -> inner contour (omitido)
     ///   SC     -> cuts at ends (gerado se HasMiteredEnds())
     ///   BO     -> hole block, um por face (so se houver furos)
@@ -45,6 +45,7 @@ namespace SteelBIM.Services.CncExport
             var sb = new StringBuilder();
 
             WriteHeader(sb, file);
+            WriteOuterContour(sb, file);
             WriteCuts(sb, file);
             WriteHoles(sb, file);
             WriteNotes(sb, file);
@@ -66,6 +67,43 @@ namespace SteelBIM.Services.CncExport
             // ASCII — maquinas CNC antigas nao toleram BOM nem UTF-8
             // Se houver caracteres acentuados eles viram '?'.
             File.WriteAllText(filePath, content, Encoding.ASCII);
+        }
+
+        // ============================================================
+        //  Bloco AK (contorno externo) — OPT-IN, desligado por padrao
+        // ============================================================
+        // Gera o contorno retangular da face da alma (v): comprimento x altura do perfil
+        // — (0,0)->(L,0)->(L,h)->(0,h)->(0,0). Muitos leitores DSTV exigem AK, mas o
+        // contorno exato varia por perfil/maquina; por isso fica atras de
+        // DstvFile.IncluirContornoAk (default false) ate validar contra um .nc1 real.
+
+        private static void WriteOuterContour(StringBuilder sb, DstvFile f)
+        {
+            if (!f.IncluirContornoAk)
+                return;
+            if (f.CutLengthMm <= 0 || f.ProfileHeightMm <= 0)
+                return;
+
+            string len = FormatNumber(f.CutLengthMm);
+            string hgt = FormatNumber(f.ProfileHeightMm);
+            string zero = FormatNumber(0.0);
+
+            sb.Append("AK").Append(NewLine);
+            AppendContourPoint(sb, zero, zero);
+            AppendContourPoint(sb, len, zero);
+            AppendContourPoint(sb, len, hgt);
+            AppendContourPoint(sb, zero, hgt);
+            AppendContourPoint(sb, zero, zero); // fecha o contorno
+            sb.Append("EN").Append(NewLine);
+        }
+
+        // Ponto de contorno na face da alma 'v': "<face> <x> <y> <raio=0>" (canto reto).
+        private static void AppendContourPoint(StringBuilder sb, string x, string y)
+        {
+            sb.Append(" v ").Append(x)
+              .Append(' ').Append(y)
+              .Append(' ').Append(FormatNumber(0.0))
+              .Append(NewLine);
         }
 
         // ============================================================

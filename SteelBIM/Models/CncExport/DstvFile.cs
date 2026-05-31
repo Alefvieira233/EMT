@@ -70,6 +70,14 @@ namespace SteelBIM.Models.CncExport
         public double CutAngleStartDeg { get; set; } = 90.0;
         public double CutAngleEndDeg { get; set; } = 90.0;
 
+        /// <summary>
+        /// Emitir o bloco AK (contorno externo retangular da face da alma) no NC1.
+        /// DESLIGADO por padrao: embora muitos leitores DSTV exijam AK, o contorno exato
+        /// varia por perfil/maquina e PRECISA ser validado contra um .nc1 real do fabricante
+        /// (ou test-cut) antes de producao. Ligar somente apos validar na maquina alvo.
+        /// </summary>
+        public bool IncluirContornoAk { get; set; }
+
         // ---------- Bloco BO (furos) ----------
 
         public List<DstvHole> Holes { get; } = new List<DstvHole>();

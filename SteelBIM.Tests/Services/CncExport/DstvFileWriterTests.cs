@@ -58,6 +58,33 @@ namespace SteelBIM.Tests.Services.CncExport
         }
 
         [Fact]
+        public void Write_ContornoAkDesligadoPorPadrao_NaoEmiteBlocoAK()
+        {
+            var f = MinimalFile(); // IncluirContornoAk = false (default)
+            DstvFileWriter.Write(f).Should().NotContain("AK\r\n");
+        }
+
+        [Fact]
+        public void Write_ContornoAkLigado_EmiteRetanguloDaFaceV()
+        {
+            var f = MinimalFile(); // L=6000, h=310
+            f.IncluirContornoAk = true;
+
+            string txt = DstvFileWriter.Write(f);
+
+            txt.Should().Contain("AK\r\n");
+            txt.Should().Contain(" v 0 0 0\r\n");       // canto inicial
+            txt.Should().Contain(" v 6000 0 0\r\n");    // (L, 0)
+            txt.Should().Contain(" v 6000 310 0\r\n");  // (L, h)
+            txt.Should().Contain(" v 0 310 0\r\n");     // (0, h)
+
+            // AK vem depois do cabecalho ST
+            int posSt = txt.IndexOf("ST\r\n", System.StringComparison.Ordinal);
+            int posAk = txt.IndexOf("AK\r\n", System.StringComparison.Ordinal);
+            posAk.Should().BeGreaterThan(posSt);
+        }
+
+        [Fact]
         public void Write_SemFuros_NaoEmiteBlocoBO()
         {
             var f = MinimalFile();
