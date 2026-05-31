@@ -380,13 +380,11 @@ namespace SteelBIM.Services.Conexoes
             if (symbol?.Family == null)
                 return false;
 
-            // v2.8.9 (auditoria): aceitar tambem FaceBased — o lancamento usa
-            // NewFamilyInstance(face, ...) que suporta os dois tipos, e a mensagem de erro
-            // ja anuncia "face-based/work plane-based". Antes so WorkPlaneBased passava,
-            // rejeitando familias de placa de base face-based legitimas.
-            FamilyPlacementType placement = symbol.Family.FamilyPlacementType;
-            return placement == FamilyPlacementType.WorkPlaneBased
-                || placement == FamilyPlacementType.FaceBased;
+            // NOTA (auditoria): aceitar tambem placas face-based seria desejavel, mas o
+            // enum FamilyPlacementType nao tem membro "FaceBased" — familias face-based sao
+            // OneLevelBasedHosted. Requer verificacao na API Revit real antes de ampliar
+            // (evita aceitar hosts inadequados). Mantido WorkPlaneBased ate validar.
+            return symbol.Family.FamilyPlacementType == FamilyPlacementType.WorkPlaneBased;
         }
 
         private static void TrySetLength(Element element, string parameterName, double valueMm)
