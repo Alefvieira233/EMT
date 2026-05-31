@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using SteelBIM.Licensing;
 using Xunit;
 
