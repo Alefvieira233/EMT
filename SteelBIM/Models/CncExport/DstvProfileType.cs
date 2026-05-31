@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.CncExport
+﻿#nullable enable
+namespace SteelBIM.Models.CncExport
 {
     /// <summary>
     /// Codigo de tipo de perfil conforme especificacao DSTV (NC1).

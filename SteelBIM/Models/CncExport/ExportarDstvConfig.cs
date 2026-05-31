@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.CncExport
+﻿#nullable enable
+namespace SteelBIM.Models.CncExport
 {
     public enum EscopoExportacaoDstv
     {
