@@ -1,16 +1,17 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 
 namespace SteelBIM.Models
 {
     public class PipeRackConfig
     {
-        public Level NivelBase { get; set; }
-        public Level NivelTopoPilares { get; set; }
-        public FamilySymbol SymbolPilar { get; set; }
-        public FamilySymbol SymbolViga { get; set; }
-        public FamilySymbol SymbolMontante { get; set; }
-        public FamilySymbol SymbolDiagonal { get; set; }
+        public Level? NivelBase { get; set; }
+        public Level? NivelTopoPilares { get; set; }
+        public FamilySymbol? SymbolPilar { get; set; }
+        public FamilySymbol? SymbolViga { get; set; }
+        public FamilySymbol? SymbolMontante { get; set; }
+        public FamilySymbol? SymbolDiagonal { get; set; }
         public List<double> VaosMm { get; set; } = new List<double>();
         public double AlturaModuloMm { get; set; }
         public int QuantidadeModulos { get; set; } = 1;
