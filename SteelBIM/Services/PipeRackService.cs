@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -49,12 +50,15 @@ namespace SteelBIM.Services
                 return;
             }
 
-            origem = new XYZ(origem.X, origem.Y, config.NivelBase.Elevation);
+            // TODO(nullable): NivelBase/NivelTopoPilares sao Level? no config mas a Window
+            // ja' valida que estao setados antes de chamar Executar. Mantido ! pra preservar
+            // comportamento; se a validacao do caller falhar, ainda NRE como antes.
+            origem = new XYZ(origem.X, origem.Y, config.NivelBase!.Elevation);
 
             XYZ dirTrans = XYZ.BasisZ.CrossProduct(dirLong);
             dirTrans = RevitUtils.SafeNormalize(dirTrans);
 
-            double alturaTotalMm = (config.NivelTopoPilares.Elevation - config.NivelBase.Elevation) / RevitUtils.FT_PER_MM;
+            double alturaTotalMm = (config.NivelTopoPilares!.Elevation - config.NivelBase.Elevation) / RevitUtils.FT_PER_MM;
             if (alturaTotalMm <= 0)
             {
                 _ui.Warn(Titulo, "O nível de topo precisa estar acima do nível de base.", "Níveis incompatíveis");
@@ -281,7 +285,7 @@ namespace SteelBIM.Services
             return melhor;
         }
 
-        private FamilyInstance CriarMembro(Document doc, FamilySymbol symbol, Level level, XYZ p0, XYZ p1, bool coluna, bool desabilitarUniao, Level topLevel = null)
+        private FamilyInstance? CriarMembro(Document doc, FamilySymbol? symbol, Level? level, XYZ p0, XYZ p1, bool coluna, bool desabilitarUniao, Level? topLevel = null)
         {
             if (symbol is null || level is null || p0.DistanceTo(p1) < RevitUtils.EPS)
                 return null;
@@ -341,7 +345,7 @@ namespace SteelBIM.Services
             }
         }
 
-        private void ConfigurarExtremosColuna(FamilyInstance instancia, Level baseLevel, Level topLevel)
+        private void ConfigurarExtremosColuna(FamilyInstance? instancia, Level baseLevel, Level? topLevel)
         {
             if (instancia is null || baseLevel is null)
                 return;
@@ -358,7 +362,7 @@ namespace SteelBIM.Services
             DefinirParametro(instancia.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM), topLevel is null ? 0.0 : topLevel.Elevation - baseLevel.Elevation);
         }
 
-        private void DefinirParametro(Parameter parameter, ElementId value)
+        private void DefinirParametro(Parameter? parameter, ElementId value)
         {
             if (parameter is null || parameter.IsReadOnly)
                 return;
@@ -366,7 +370,7 @@ namespace SteelBIM.Services
             parameter.Set(value);
         }
 
-        private void DefinirParametro(Parameter parameter, double value)
+        private void DefinirParametro(Parameter? parameter, double value)
         {
             if (parameter is null || parameter.IsReadOnly)
                 return;
@@ -374,7 +378,7 @@ namespace SteelBIM.Services
             parameter.Set(value);
         }
 
-        private void PosProcessarInstancia(FamilyInstance instancia, bool desabilitarUniao)
+        private void PosProcessarInstancia(FamilyInstance? instancia, bool desabilitarUniao)
         {
             if (instancia is null || !desabilitarUniao)
                 return;
@@ -382,7 +386,7 @@ namespace SteelBIM.Services
             RevitUtils.DisallowJoins(instancia);
         }
 
-        private void Ativar(FamilySymbol symbol, Document doc)
+        private void Ativar(FamilySymbol? symbol, Document doc)
         {
             if (symbol is null || symbol.IsActive)
                 return;
