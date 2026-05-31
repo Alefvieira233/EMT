@@ -1,11 +1,12 @@
-﻿using Autodesk.Revit.DB;
+﻿#nullable enable
+using Autodesk.Revit.DB;
 
 namespace SteelBIM.Models
 {
     public class GuardaCorpoConfig
     {
-        public FamilySymbol SymbolSelecionado { get; set; }
-        public Level NivelReferencia { get; set; }
+        public FamilySymbol? SymbolSelecionado { get; set; }
+        public Level? NivelReferencia { get; set; }
         public double AlturaCorrimaoCm { get; set; }
         public double OffsetLateralCm { get; set; }
         public int ZJustificationValue { get; set; }

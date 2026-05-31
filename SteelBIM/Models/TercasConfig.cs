@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 
 namespace SteelBIM.Models
 {
     public class TercasConfig
     {
-        public FamilySymbol SymbolSelecionado { get; set; }
+        public FamilySymbol? SymbolSelecionado { get; set; }
         public int Quantidade { get; set; }
         public double BeiralInicialCm { get; set; }
         public double BeiralFinalCm { get; set; }
