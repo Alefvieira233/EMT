@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -71,7 +72,7 @@ namespace SteelBIM.Services
 
         public static Core.Result<ResultadoAgrupamento> AgruparPilares(
             UIDocument uidoc,
-            IProgress<ProgressReport> progress = null,
+            IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
             return AgruparPorTipo(
@@ -85,7 +86,7 @@ namespace SteelBIM.Services
 
         public static Core.Result<ResultadoAgrupamento> AgruparVigas(
             UIDocument uidoc,
-            IProgress<ProgressReport> progress = null,
+            IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
             return AgruparPorTipo(
@@ -99,7 +100,7 @@ namespace SteelBIM.Services
 
         public static Core.Result<ResultadoLimpeza> LimparAgrupamentos(
             UIDocument uidoc,
-            IProgress<ProgressReport> progress = null,
+            IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
             if (uidoc is null)
@@ -197,7 +198,7 @@ namespace SteelBIM.Services
             BuiltInCategory categoria,
             string titulo,
             string prefixoGrupo,
-            IProgress<ProgressReport> progress,
+            IProgress<ProgressReport>? progress,
             CancellationToken ct)
         {
             if (uidoc is null)
@@ -441,7 +442,7 @@ namespace SteelBIM.Services
             if (elemento.GroupId == ElementId.InvalidElementId)
                 return true;
 
-            Group grupo = doc.GetElement(elemento.GroupId) as Group;
+            Group? grupo = doc.GetElement(elemento.GroupId) as Group;
             string nomeGrupo = grupo?.GroupType?.Name ?? string.Empty;
 
             return nomeGrupo.StartsWith(PrefixoGruposPilares, StringComparison.OrdinalIgnoreCase) ||
@@ -566,9 +567,9 @@ namespace SteelBIM.Services
             AppendParametro(sb, "MAT_TYPE", elemento, BuiltInParameter.STRUCTURAL_MATERIAL_TYPE);
         }
 
-        private static void AppendParametro(StringBuilder sb, string chave, Element elemento, BuiltInParameter builtInParameter)
+        private static void AppendParametro(StringBuilder sb, string chave, Element? elemento, BuiltInParameter builtInParameter)
         {
-            Parameter parametro = elemento?.get_Parameter(builtInParameter);
+            Parameter? parametro = elemento?.get_Parameter(builtInParameter);
             if (parametro == null || !parametro.HasValue)
                 return;
 
@@ -620,7 +621,7 @@ namespace SteelBIM.Services
                 sb.Append(item).Append('|');
         }
 
-        private static void AppendCurveInvariante(StringBuilder sb, Curve curve)
+        private static void AppendCurveInvariante(StringBuilder sb, Curve? curve)
         {
             if (curve == null)
             {
@@ -725,7 +726,7 @@ namespace SteelBIM.Services
 
         private static string DescreverTipo(Document doc, ElementId typeId)
         {
-            ElementType tipo = doc.GetElement(typeId) as ElementType;
+            ElementType? tipo = doc.GetElement(typeId) as ElementType;
             if (tipo == null)
                 return "Tipo sem nome";
 
@@ -737,7 +738,7 @@ namespace SteelBIM.Services
             return string.IsNullOrWhiteSpace(familia) ? nomeTipo : $"{familia} - {nomeTipo}";
         }
 
-        private static string DescreverElemento(FamilyInstance instancia, Document doc)
+        private static string DescreverElemento(FamilyInstance? instancia, Document doc)
         {
             if (instancia == null)
                 return "Elemento sem descricao";
