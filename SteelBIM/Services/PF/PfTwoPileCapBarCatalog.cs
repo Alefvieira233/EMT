@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using SteelBIM.Models.PF;
 
 namespace SteelBIM.Services.PF
@@ -23,7 +24,7 @@ namespace SteelBIM.Services.PF
             Position(14, 8.0, 12, 454, 20, PfTwoPileCapBarShape.FormaEspecial, "barra vertical/transversal do calice"),
         };
 
-        public static PfTwoPileCapBarPosition Get(int position)
+        public static PfTwoPileCapBarPosition? Get(int position)
         {
             foreach (PfTwoPileCapBarPosition item in Tipo4)
             {

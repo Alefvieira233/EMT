@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
@@ -9,7 +10,7 @@ namespace SteelBIM.Services.PF
 {
     internal sealed class PfRebarBarTypeOption
     {
-        public PfRebarBarTypeOption(ElementId id, string name)
+        public PfRebarBarTypeOption(ElementId id, string? name)
         {
             Id = id;
             Name = name ?? string.Empty;
@@ -36,7 +37,7 @@ namespace SteelBIM.Services.PF
                 .ToList();
         }
 
-        public static bool TrySelect(ComboBox combo, string preferredName)
+        public static bool TrySelect(ComboBox? combo, string? preferredName)
         {
             if (combo == null)
                 return false;

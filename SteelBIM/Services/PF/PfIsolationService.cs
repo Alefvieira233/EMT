@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -11,7 +12,7 @@ namespace SteelBIM.Services.PF
     {
         public static Result IsolateElements(
             UIDocument uidoc,
-            IEnumerable<ElementId> elementIds,
+            IEnumerable<ElementId>? elementIds,
             string commandName,
             string emptyMessage)
         {
