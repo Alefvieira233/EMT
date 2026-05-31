@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -11,7 +12,7 @@ namespace SteelBIM.Services
     {
         internal sealed class AjustarEncontroResultado
         {
-            internal AjustarEncontroResultado(bool houveAlteracao, List<string> diagnostico)
+            internal AjustarEncontroResultado(bool houveAlteracao, List<string>? diagnostico)
             {
                 HouveAlteracao = houveAlteracao;
                 Diagnostico = diagnostico ?? new List<string>();
@@ -26,7 +27,7 @@ namespace SteelBIM.Services
             Document doc,
             FamilyInstance vigaPrincipal,
             Element cortador,
-            Reference referenciaCortador)
+            Reference? referenciaCortador)
         {
             List<string> diagnostico = new List<string>();
             bool houveAlteracao = false;
@@ -66,7 +67,7 @@ namespace SteelBIM.Services
             return new AjustarEncontroResultado(houveAlteracao, diagnostico);
         }
 
-        internal static bool EhCortadorValido(Element elemento)
+        internal static bool EhCortadorValido(Element? elemento)
         {
             if (elemento is not FamilyInstance fi || fi.Category == null)
                 return false;
@@ -77,7 +78,7 @@ namespace SteelBIM.Services
         }
 
         private static bool GarantirJoinPermitido(
-            FamilyInstance instancia,
+            FamilyInstance? instancia,
             int extremidade,
             string descricao,
             List<string> diagnostico)
@@ -151,7 +152,7 @@ namespace SteelBIM.Services
         private static bool TryDefinirReferenciaDeExtremidade(
             FamilyInstance vigaPrincipal,
             int extremidade,
-            Reference referenciaCortador,
+            Reference? referenciaCortador,
             List<string> diagnostico)
         {
             if (referenciaCortador == null)
@@ -208,13 +209,13 @@ namespace SteelBIM.Services
             }
         }
 
-        private static int ObterExtremidadeMaisProxima(FamilyInstance viga, Element outroElemento, Reference referencia)
+        private static int ObterExtremidadeMaisProxima(FamilyInstance viga, Element outroElemento, Reference? referencia)
         {
-            Curve curva = (viga.Location as LocationCurve)?.Curve;
+            Curve? curva = (viga.Location as LocationCurve)?.Curve;
             if (curva == null)
                 return 1;
 
-            XYZ alvo = ObterPontoDeComparacao(outroElemento, referencia);
+            XYZ? alvo = ObterPontoDeComparacao(outroElemento, referencia);
             if (alvo == null)
                 return 1;
 
@@ -224,7 +225,7 @@ namespace SteelBIM.Services
             return p0.DistanceTo(alvo) <= p1.DistanceTo(alvo) ? 0 : 1;
         }
 
-        private static XYZ ObterPontoDeComparacao(Element elemento, Reference referencia)
+        private static XYZ? ObterPontoDeComparacao(Element? elemento, Reference? referencia)
         {
             if (referencia?.GlobalPoint != null)
                 return referencia.GlobalPoint;
@@ -247,11 +248,11 @@ namespace SteelBIM.Services
             if (elemento.Location is LocationPoint lp)
                 return lp.Point;
 
-            BoundingBoxXYZ bbox = elemento.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = elemento.get_BoundingBox(null);
             return bbox == null ? null : (bbox.Min + bbox.Max) * 0.5;
         }
 
-        private static bool EhVigaEstrutural(FamilyInstance instancia) =>
+        private static bool EhVigaEstrutural(FamilyInstance? instancia) =>
             instancia != null &&
             instancia.Category?.Id.Value == (long)BuiltInCategory.OST_StructuralFraming &&
             instancia.StructuralType == StructuralType.Beam;
