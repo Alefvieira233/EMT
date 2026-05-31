@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 
 namespace SteelBIM.Models
 {
@@ -28,8 +29,8 @@ namespace SteelBIM.Models
             int alteracoesAplicadas,
             int jaConformes,
             int falhas,
-            IReadOnlyList<long> elementosRelacionados,
-            IReadOnlyList<string> diagnostico)
+            IReadOnlyList<long>? elementosRelacionados,
+            IReadOnlyList<string>? diagnostico)
         {
             TotalSelecionados = totalSelecionados;
             HostsAnalisados = hostsAnalisados;
