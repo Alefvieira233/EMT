@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -236,7 +237,7 @@ namespace SteelBIM.Services.CncExport
         //  Helpers
         // ============================================================
 
-        private static void AppendField(StringBuilder sb, string value)
+        private static void AppendField(StringBuilder sb, string? value)
         {
             // Indentacao padrao DSTV: dois espacos antes do campo.
             // v2.8.9: transliterar acentos PT-BR para ASCII (em vez do Encoding.ASCII
@@ -272,7 +273,7 @@ namespace SteelBIM.Services.CncExport
         /// Mantem a marca/nota da peca legivel e rastreavel no NC1. Identidade em ASCII puro;
         /// caracteres nao-ASCII sem mapeamento viram '?'.
         /// </summary>
-        public static string SanitizeAscii(string value)
+        public static string SanitizeAscii(string? value)
         {
             if (string.IsNullOrEmpty(value))
                 return value ?? string.Empty;

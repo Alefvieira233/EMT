@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -26,7 +27,7 @@ namespace SteelBIM.Services
             ContraventamentoPlanoConfig config,
             Plane plane,
             out ContraventamentoPlanoResultado resultado,
-            Func<bool> confirmarPreview = null)
+            Func<bool>? confirmarPreview = null)
         {
             resultado = new ContraventamentoPlanoResultado();
 
@@ -51,7 +52,7 @@ namespace SteelBIM.Services
                 return Result.Cancelled;
             }
 
-            TransparencyScope transparencyScope = TransparencyScope.TryApply(
+            TransparencyScope? transparencyScope = TransparencyScope.TryApply(
                 doc,
                 doc.ActiveView,
                 BuiltInCategory.OST_StructuralFraming,
@@ -108,7 +109,7 @@ namespace SteelBIM.Services
                 XYZ segundaDiagonalInicio = canto4 + normalPlano.Multiply(offsetSegundaDiagonalFt);
                 XYZ segundaDiagonalFim = canto3 + normalPlano.Multiply(offsetSegundaDiagonalFt);
 
-                Level nivel = ObterNivelReferencia(doc, new[] { canto1, canto2, canto3, canto4, segundaDiagonalInicio, segundaDiagonalFim });
+                Level? nivel = ObterNivelReferencia(doc, new[] { canto1, canto2, canto3, canto4, segundaDiagonalInicio, segundaDiagonalFim });
                 if (nivel == null)
                 {
                     resultado.NivelNaoEncontrado = true;
@@ -122,7 +123,7 @@ namespace SteelBIM.Services
                 {
                     tg.Start();
 
-                    List<ElementId> idsPreview = null;
+                    List<ElementId>? idsPreview = null;
                     bool previewDisponivel = false;
 
                     try
@@ -163,8 +164,8 @@ namespace SteelBIM.Services
                             doc.Regenerate();
                         }
 
-                        FamilyInstance barraA = CriarBarra(doc, config, nivel, canto1, canto2);
-                        FamilyInstance barraB = CriarBarra(doc, config, nivel, segundaDiagonalInicio, segundaDiagonalFim);
+                        FamilyInstance? barraA = CriarBarra(doc, config, nivel, canto1, canto2);
+                        FamilyInstance? barraB = CriarBarra(doc, config, nivel, segundaDiagonalInicio, segundaDiagonalFim);
 
                         if (barraA != null)
                             idsCriados.Add(barraA.Id);
@@ -211,7 +212,7 @@ namespace SteelBIM.Services
             }
         }
 
-        private FamilyInstance CriarBarra(
+        private FamilyInstance? CriarBarra(
             Document doc,
             ContraventamentoPlanoConfig config,
             Level nivel,
@@ -251,7 +252,7 @@ namespace SteelBIM.Services
 
                 SketchPlane sketch1 = SketchPlane.Create(doc, planeBase);
                 ids.Add(sketch1.Id);
-                ModelCurve curva1 = doc.Create.NewModelCurve(Line.CreateBound(inicioDiagonal1, fimDiagonal1), sketch1);
+                ModelCurve? curva1 = doc.Create.NewModelCurve(Line.CreateBound(inicioDiagonal1, fimDiagonal1), sketch1);
                 if (curva1 != null)
                     ids.Add(curva1.Id);
 
@@ -262,7 +263,7 @@ namespace SteelBIM.Services
 
                 SketchPlane sketch2 = SketchPlane.Create(doc, planeSegundaDiagonal);
                 ids.Add(sketch2.Id);
-                ModelCurve curva2 = doc.Create.NewModelCurve(Line.CreateBound(inicioDiagonal2, fimDiagonal2), sketch2);
+                ModelCurve? curva2 = doc.Create.NewModelCurve(Line.CreateBound(inicioDiagonal2, fimDiagonal2), sketch2);
                 if (curva2 != null)
                     ids.Add(curva2.Id);
 
@@ -277,7 +278,7 @@ namespace SteelBIM.Services
             return plane.Origin + xVec.Multiply(u) + yVec.Multiply(v);
         }
 
-        private Level ObterNivelReferencia(Document doc, IEnumerable<XYZ> pontos)
+        private Level? ObterNivelReferencia(Document doc, IEnumerable<XYZ> pontos)
         {
             if (doc?.ActiveView?.GenLevel != null)
                 return doc.ActiveView.GenLevel;
@@ -306,7 +307,7 @@ namespace SteelBIM.Services
                 _originalOverrides = originalOverrides;
             }
 
-            public static TransparencyScope TryApply(Document doc, View view, BuiltInCategory category, int transparency)
+            public static TransparencyScope? TryApply(Document doc, View view, BuiltInCategory category, int transparency)
             {
                 if (doc == null || view == null)
                     return null;
