@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using Autodesk.Revit.DB;
 using SteelBIM.Infrastructure;
@@ -30,7 +31,7 @@ namespace SteelBIM.Services.CncExport
                 throw new ArgumentNullException(nameof(output));
             config ??= new ExportarDstvConfig();
 
-            ElementType type = doc.GetElement(element.GetTypeId()) as ElementType;
+            ElementType? type = doc.GetElement(element.GetTypeId()) as ElementType;
             string familyName = element.Symbol?.Family?.Name ?? "";
             string typeName = type?.Name ?? element.Name ?? "";
 
@@ -79,19 +80,19 @@ namespace SteelBIM.Services.CncExport
         //  Mark / piece number
         // ============================================================
 
-        public static string GetPieceMark(FamilyInstance element, ExportarDstvConfig config)
+        public static string GetPieceMark(FamilyInstance element, ExportarDstvConfig? config)
         {
             if (config != null && !string.IsNullOrWhiteSpace(config.NomeParametroMarca))
             {
-                Parameter p = element.LookupParameter(config.NomeParametroMarca);
-                string v = p?.AsString();
+                Parameter? p = element.LookupParameter(config.NomeParametroMarca);
+                string? v = p?.AsString();
                 if (!string.IsNullOrWhiteSpace(v))
                     return v;
             }
 
             // ALL_MODEL_MARK
-            Parameter pMark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
-            string mark = pMark?.AsString();
+            Parameter? pMark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
+            string? mark = pMark?.AsString();
             if (!string.IsNullOrWhiteSpace(mark))
                 return mark;
 
@@ -103,17 +104,17 @@ namespace SteelBIM.Services.CncExport
         //  Material / steel quality
         // ============================================================
 
-        public static string GetSteelQuality(Document doc, FamilyInstance element, ElementType type)
+        public static string GetSteelQuality(Document doc, FamilyInstance element, ElementType? type)
         {
             ElementId matId = ElementId.InvalidElementId;
 
-            Parameter pMat = element.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
+            Parameter? pMat = element.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
             if (pMat != null && pMat.HasValue)
                 matId = pMat.AsElementId();
 
             if ((matId == null || matId == ElementId.InvalidElementId) && type != null)
             {
-                Parameter pTypeMat = type.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
+                Parameter? pTypeMat = type.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
                 if (pTypeMat != null && pTypeMat.HasValue)
                     matId = pTypeMat.AsElementId();
             }
@@ -129,7 +130,7 @@ namespace SteelBIM.Services.CncExport
             if (matId == null || matId == ElementId.InvalidElementId)
                 return "";
 
-            Material mat = doc.GetElement(matId) as Material;
+            Material? mat = doc.GetElement(matId) as Material;
             return mat?.Name ?? "";
         }
 
@@ -143,8 +144,8 @@ namespace SteelBIM.Services.CncExport
             string[] candidatos = { "Surface Treatment", "Tratamento Superficie", "Pintura", "Acabamento", "Coating" };
             foreach (string nome in candidatos)
             {
-                Parameter p = element.LookupParameter(nome);
-                string v = p?.AsString();
+                Parameter? p = element.LookupParameter(nome);
+                string? v = p?.AsString();
                 if (!string.IsNullOrWhiteSpace(v))
                     return v;
             }
@@ -155,22 +156,22 @@ namespace SteelBIM.Services.CncExport
         //  Project / drawing
         // ============================================================
 
-        public static string GetProjectCode(Document doc)
+        public static string GetProjectCode(Document? doc)
         {
             try
             {
-                ProjectInfo info = doc?.ProjectInformation;
+                ProjectInfo? info = doc?.ProjectInformation;
                 if (info != null)
                 {
                     // Tentar Project Number primeiro
-                    Parameter pNum = info.get_Parameter(BuiltInParameter.PROJECT_NUMBER);
-                    string num = pNum?.AsString();
+                    Parameter? pNum = info.get_Parameter(BuiltInParameter.PROJECT_NUMBER);
+                    string? num = pNum?.AsString();
                     if (!string.IsNullOrWhiteSpace(num))
                         return num;
 
                     // Fallback: Project Name
-                    Parameter pName = info.get_Parameter(BuiltInParameter.PROJECT_NAME);
-                    string name = pName?.AsString();
+                    Parameter? pName = info.get_Parameter(BuiltInParameter.PROJECT_NAME);
+                    string? name = pName?.AsString();
                     if (!string.IsNullOrWhiteSpace(name))
                         return name;
                 }
@@ -188,15 +189,15 @@ namespace SteelBIM.Services.CncExport
             return "";
         }
 
-        public static string GetDrawingNumber(Document doc)
+        public static string GetDrawingNumber(Document? doc)
         {
             try
             {
-                ProjectInfo info = doc?.ProjectInformation;
+                ProjectInfo? info = doc?.ProjectInformation;
                 if (info != null)
                 {
-                    Parameter p = info.LookupParameter("Drawing Number") ?? info.LookupParameter("Numero do Desenho");
-                    string v = p?.AsString();
+                    Parameter? p = info.LookupParameter("Drawing Number") ?? info.LookupParameter("Numero do Desenho");
+                    string? v = p?.AsString();
                     if (!string.IsNullOrWhiteSpace(v))
                         return v;
                 }
@@ -209,13 +210,13 @@ namespace SteelBIM.Services.CncExport
         //  Dimensoes
         // ============================================================
 
-        private static double ReadLengthMm(Element elem, BuiltInParameter bip)
+        private static double ReadLengthMm(Element? elem, BuiltInParameter bip)
         {
             if (elem == null)
                 return 0;
             try
             {
-                Parameter p = elem.get_Parameter(bip);
+                Parameter? p = elem.get_Parameter(bip);
                 if (p == null || !p.HasValue)
                     return 0;
                 if (p.StorageType != StorageType.Double)
@@ -225,7 +226,7 @@ namespace SteelBIM.Services.CncExport
             catch (Exception ex) { Logger.Warn(ex, "Falha ao ler dimensao do perfil"); return 0; }
         }
 
-        private static double TryReadSharedLengthMm(Element elem, params string[] candidateNames)
+        private static double TryReadSharedLengthMm(Element? elem, params string[] candidateNames)
         {
             if (elem == null || candidateNames == null)
                 return 0;
@@ -233,7 +234,7 @@ namespace SteelBIM.Services.CncExport
             {
                 try
                 {
-                    Parameter p = elem.LookupParameter(name);
+                    Parameter? p = elem.LookupParameter(name);
                     if (p != null && p.HasValue && p.StorageType == StorageType.Double)
                         return UnitUtils.ConvertFromInternalUnits(p.AsDouble(), UnitTypeId.Millimeters);
                 }
@@ -248,7 +249,7 @@ namespace SteelBIM.Services.CncExport
                 return 0;
 
             // CUT_LENGTH (preferencial — leva em conta corte/coping)
-            Parameter pCut = element.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
+            Parameter? pCut = element.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
             if (pCut != null && pCut.HasValue && pCut.StorageType == StorageType.Double)
             {
                 double cut = pCut.AsDouble();
@@ -257,7 +258,7 @@ namespace SteelBIM.Services.CncExport
             }
 
             // INSTANCE_LENGTH (comprimento bruto)
-            Parameter pLen = element.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
+            Parameter? pLen = element.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
             if (pLen != null && pLen.HasValue && pLen.StorageType == StorageType.Double)
             {
                 double len = pLen.AsDouble();
@@ -288,7 +289,7 @@ namespace SteelBIM.Services.CncExport
             {
                 try
                 {
-                    Parameter p = element.LookupParameter(n) ??
+                    Parameter? p = element.LookupParameter(n) ??
                                   (doc.GetElement(element.GetTypeId()) as ElementType)?.LookupParameter(n);
                     if (p != null && p.HasValue && p.StorageType == StorageType.Double)
                     {
@@ -303,7 +304,7 @@ namespace SteelBIM.Services.CncExport
             // 2. Calcular a partir de volume + densidade do material
             try
             {
-                Parameter pVol = element.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED);
+                Parameter? pVol = element.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED);
                 if (pVol == null || !pVol.HasValue)
                     return 0;
 
@@ -335,13 +336,13 @@ namespace SteelBIM.Services.CncExport
             try
             {
                 ElementId matId = ElementId.InvalidElementId;
-                Parameter p = element.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
+                Parameter? p = element.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
                 if (p != null && p.HasValue)
                     matId = p.AsElementId();
 
                 if (matId == null || matId == ElementId.InvalidElementId)
                     return null;
-                Material mat = doc.GetElement(matId) as Material;
+                Material? mat = doc.GetElement(matId) as Material;
                 if (mat == null)
                     return null;
 
@@ -349,8 +350,8 @@ namespace SteelBIM.Services.CncExport
                 if (psaId == null || psaId == ElementId.InvalidElementId)
                     return null;
 
-                PropertySetElement pse = doc.GetElement(psaId) as PropertySetElement;
-                StructuralAsset asset = pse?.GetStructuralAsset();
+                PropertySetElement? pse = doc.GetElement(psaId) as PropertySetElement;
+                StructuralAsset? asset = pse?.GetStructuralAsset();
                 if (asset == null)
                     return null;
 
