@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -164,7 +165,7 @@ namespace SteelBIM.Services
                 "Guarda-corpo criado");
         }
 
-        private void ConfigurarInstancia(FamilyInstance instancia, GuardaCorpoConfig config)
+        private void ConfigurarInstancia(FamilyInstance? instancia, GuardaCorpoConfig config)
         {
             if (instancia == null)
                 return;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
@@ -97,7 +98,7 @@ namespace SteelBIM.Services
             List<Curve> curvasBanzos = new List<Curve>();
             if (config.DividirNosBanzos)
             {
-                IList<Reference> refsBanzos = null;
+                IList<Reference>? refsBanzos = null;
                 try
                 {
                     refsBanzos = uidoc.Selection.PickObjects(ObjectType.Element, "Selecione os BANZOS que devem dividir as terças");
@@ -114,7 +115,7 @@ namespace SteelBIM.Services
                 foreach (Reference r in refsBanzos)
                 {
                     Element el = doc.GetElement(r);
-                    Curve c = RevitUtils.GetElementCurve(el);
+                    Curve? c = RevitUtils.GetElementCurve(el);
                     if (c != null)
                         curvasBanzos.Add(c);
                 }
@@ -147,7 +148,10 @@ namespace SteelBIM.Services
             using (Transaction t = new Transaction(doc, "Criar Terças por Plano"))
             {
                 t.Start();
-                if (!config.SymbolSelecionado.IsActive)
+                // TODO(nullable): SymbolSelecionado e' FamilySymbol? mas o command/window
+                // ja' valida que esta setado antes de chamar Executar. Mantido ! pra preservar
+                // comportamento; caso a validacao do caller falhe, ainda NRE como antes.
+                if (!config.SymbolSelecionado!.IsActive)
                     config.SymbolSelecionado.Activate();
                 doc.Regenerate();
 
