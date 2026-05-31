@@ -236,6 +236,14 @@ namespace SteelBIM.Services.PF
             if (avisos.Count > 0)
                 resumo += "\n\nOcorrências:\n• " + string.Join("\n• ", avisos.Take(10));
 
+            // v2.8.9 (auditoria de dominio): disclaimer normativo. O detalhamento e'
+            // geometrico/automatico e NAO substitui a verificacao do engenheiro responsavel
+            // (zonas de adensamento de estribos, ancoragens, armadura de suspensao). Evita
+            // que o aluno/escritorio entregue armadura "pronta" fora da NBR.
+            resumo += "\n\nATENÇÃO: detalhamento automático — verifique e ajuste conforme o " +
+                      "projeto estrutural (zonas de adensamento de estribos, ancoragens e " +
+                      "armadura de suspensão). Não substitui a verificação do engenheiro responsável.";
+
             AppDialogService.ShowInfo(commandName, resumo, "Processamento concluído");
             return hostsOk > 0 ? Result.Succeeded : Result.Failed;
         }
