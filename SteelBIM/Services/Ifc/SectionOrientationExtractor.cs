@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using SteelBIM.Services.DiagramaMontagem;
 
@@ -30,7 +31,7 @@ namespace SteelBIM.Services.Ifc
         /// nao ha faces laterais validas (ex: secao circular sem PlanarFaces).
         /// </summary>
         public static Vec3? ExtrairReferenciaSecao(
-            IReadOnlyList<FaceData> faces,
+            IReadOnlyList<FaceData>? faces,
             Vec3 eixoNormalizado)
         {
             if (faces == null || faces.Count == 0)

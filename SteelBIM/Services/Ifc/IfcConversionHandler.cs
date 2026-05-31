@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Threading;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -39,8 +40,8 @@ namespace SteelBIM.Services.Ifc
     /// </summary>
     public class IfcConversionHandler : IExternalEventHandler
     {
-        public Document Doc { get; set; }
-        public ConverterPerfilIfcConfig Config { get; set; }
+        public Document? Doc { get; set; }
+        public ConverterPerfilIfcConfig? Config { get; set; }
 
         /// <summary>
         /// Callback invocado apos service.Executar completar. Argumentos:
@@ -48,7 +49,7 @@ namespace SteelBIM.Services.Ifc
         /// Window deve fazer <c>Dispatcher.Invoke</c> internamente se for
         /// tocar UI WPF.
         /// </summary>
-        public Action<int, int> OnFinished { get; set; }
+        public Action<int, int>? OnFinished { get; set; }
 
         /// <summary>
         /// v2.7.7: opcional. Se setado, Window recebe reports de progresso
@@ -56,7 +57,7 @@ namespace SteelBIM.Services.Ifc
         /// criado no thread UI — o tipo nativo do .NET captura SynchronizationContext
         /// e marshalla callbacks automaticamente. Default null = sem reporting.
         /// </summary>
-        public IProgress<ProgressReport> Progress { get; set; }
+        public IProgress<ProgressReport>? Progress { get; set; }
 
         /// <summary>
         /// v2.7.7: opcional. Se setado e cancelado pela Window (via CTS.Cancel),
@@ -68,10 +69,10 @@ namespace SteelBIM.Services.Ifc
 
         public void Execute(UIApplication app)
         {
-            Document doc = Doc;
-            ConverterPerfilIfcConfig config = Config;
-            Action<int, int> cb = OnFinished;
-            IProgress<ProgressReport> progress = Progress;
+            Document? doc = Doc;
+            ConverterPerfilIfcConfig? config = Config;
+            Action<int, int>? cb = OnFinished;
+            IProgress<ProgressReport>? progress = Progress;
             CancellationToken ct = CancellationToken;
 
             if (doc == null || config == null)
@@ -86,7 +87,10 @@ namespace SteelBIM.Services.Ifc
             try
             {
                 var service = new ConverterPerfilIfcService();
-                (convertidos, ignorados) = service.Executar(doc, config, progress, ct);
+                // doc/config ja' foram validados acima; ConverterPerfilIfcService.Executar
+                // ainda nao tem #nullable enable (Tarefa 3), entao precisamos do null-forgiving
+                // no progress (opcional la' tambem).
+                (convertidos, ignorados) = service.Executar(doc!, config!, progress!, ct);
             }
             catch (Exception ex)
             {
