@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.Conexoes
+﻿#nullable enable
+namespace SteelBIM.Models.Conexoes
 {
     /// <summary>Configuração de uma conexão do tipo Dupla Cantoneira.</summary>
     public sealed class ConfiguracaoCantoneira
