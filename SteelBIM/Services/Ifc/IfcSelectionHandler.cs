@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using SteelBIM.Infrastructure;
@@ -27,17 +28,17 @@ namespace SteelBIM.Services.Ifc
         /// A Window seta isto antes de <c>_event.Raise()</c>; o Execute
         /// le e processa. Null/empty = nada faz.
         /// </summary>
-        public List<ElementId> PendingIds { get; set; }
+        public List<ElementId>? PendingIds { get; set; }
 
         public void Execute(UIApplication app)
         {
-            List<ElementId> ids = PendingIds;
+            List<ElementId>? ids = PendingIds;
             if (ids == null || ids.Count == 0)
                 return;
 
             try
             {
-                UIDocument uidoc = app?.ActiveUIDocument;
+                UIDocument? uidoc = app?.ActiveUIDocument;
                 if (uidoc == null)
                     return;
 

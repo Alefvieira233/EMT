@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 
 namespace SteelBIM.Services.Ifc
@@ -17,10 +18,10 @@ namespace SteelBIM.Services.Ifc
         /// Retorna o <c>Level</c> mais proximo do Z medio dado, ou
         /// <paramref name="fallback"/> se a lista for vazia.
         /// </summary>
-        public static Level MaisProximoDeZ(
-            IReadOnlyList<Level> niveis,
+        public static Level? MaisProximoDeZ(
+            IReadOnlyList<Level>? niveis,
             double zCentroFt,
-            Level fallback)
+            Level? fallback)
         {
             if (niveis == null || niveis.Count == 0)
                 return fallback;

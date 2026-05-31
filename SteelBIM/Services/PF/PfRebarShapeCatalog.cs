@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace SteelBIM.Services.PF
 {
     internal static class PfRebarShapeCatalog
     {
-        public static IReadOnlyList<PfRebarShapeOption> LoadStirrupTieShapes(Document doc)
+        public static IReadOnlyList<PfRebarShapeOption> LoadStirrupTieShapes(Document? doc)
         {
             List<PfRebarShapeOption> items = new List<PfRebarShapeOption>
             {
@@ -48,7 +49,7 @@ namespace SteelBIM.Services.PF
         /// Usado pela PfEstacaRebarWindow pra pré-selecionar a shape salva nas
         /// configurações do usuário.
         /// </summary>
-        public static bool TrySelect(ComboBox combo, string preferredName)
+        public static bool TrySelect(ComboBox? combo, string? preferredName)
         {
             if (combo == null || string.IsNullOrWhiteSpace(preferredName))
                 return false;
@@ -66,14 +67,14 @@ namespace SteelBIM.Services.PF
             return false;
         }
 
-        private static string BuildDisplayName(string name)
+        private static string BuildDisplayName(string? name)
         {
             return string.IsNullOrWhiteSpace(name)
                 ? "(sem nome)"
                 : name.Trim();
         }
 
-        private static decimal GetNumericOrder(string name)
+        private static decimal GetNumericOrder(string? name)
         {
             if (decimal.TryParse((name ?? string.Empty).Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value))
                 return value;
