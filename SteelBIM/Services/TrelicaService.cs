@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -24,7 +25,7 @@ namespace SteelBIM.Services
                 return;
             }
             double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
-            IList<Reference> refs = null;
+            IList<Reference>? refs = null;
             try
             {
                 refs = uidoc.Selection.PickObjects(ObjectType.Element, "Selecione TODAS as TERÇAS em ordem");
@@ -96,7 +97,7 @@ namespace SteelBIM.Services
                         if (config.InverterSentido)
                             diagonalPadrao = !diagonalPadrao;
 
-                        Line line = diagonalPadrao
+                        Line? line = diagonalPadrao
                             ? CriarLinhaComSentido(ptsA[k], ptsB[k + 1], config.InverterSentido)
                             : CriarLinhaComSentido(ptsB[k], ptsA[k + 1], config.InverterSentido);
 
@@ -129,7 +130,7 @@ namespace SteelBIM.Services
             double zOffsetFt,
             bool inverterSentido)
         {
-            Line line = CriarLinhaComSentido(inicio, fim, inverterSentido);
+            Line? line = CriarLinhaComSentido(inicio, fim, inverterSentido);
             if (line == null)
                 return;
 
@@ -142,7 +143,7 @@ namespace SteelBIM.Services
             RevitUtils.DisallowJoins(fi);
         }
 
-        private Line CriarLinhaComSentido(XYZ inicio, XYZ fim, bool inverterSentido)
+        private Line? CriarLinhaComSentido(XYZ inicio, XYZ fim, bool inverterSentido)
         {
             if (inicio == null || fim == null || inicio.DistanceTo(fim) < RevitUtils.EPS)
                 return null;

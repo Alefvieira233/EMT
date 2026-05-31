@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using SteelBIM.Infrastructure;
@@ -33,7 +34,7 @@ namespace SteelBIM.Services.CncExport
 
             for (int i = 1; i <= MaxHoles; i++)
             {
-                DstvHole h = TryReadParametricHole(element, i);
+                DstvHole? h = TryReadParametricHole(element, i);
                 if (h == null)
                     continue;
                 holes.Add(h);
@@ -42,7 +43,7 @@ namespace SteelBIM.Services.CncExport
             return holes;
         }
 
-        private static DstvHole TryReadParametricHole(FamilyInstance element, int index)
+        private static DstvHole? TryReadParametricHole(FamilyInstance element, int index)
         {
             // Convencao: parametros "Hole {i} Diameter", "Hole {i} X", "Hole {i} Y", "Hole {i} Face"
             // Aceita variantes em portugues: "Furo {i} Diametro", "Furo {i} X", etc.

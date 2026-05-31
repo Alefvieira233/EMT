@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -27,6 +28,7 @@ namespace SteelBIM.Services.PF
                 .Where(x => EhElegivel(alvo, x))
                 .Select(x => CriarInfo(doc, x))
                 .Where(x => x != null)
+                .Select(x => x!)
                 .GroupBy(x => x.Id.Value)
                 .Select(x => x.First())
                 .OrderBy(x => x.FamiliaNome, StringComparer.CurrentCultureIgnoreCase)
@@ -96,7 +98,8 @@ namespace SteelBIM.Services.PF
                             .Cast<Element>(),
                 NumeracaoEscopo.SelecaoAtual => uidoc.Selection.GetElementIds()
                     .Select(doc.GetElement)
-                    .Where(x => x != null),
+                    .Where(x => x != null)
+                    .Select(x => x!),
                 _ => Enumerable.Empty<Element>()
             };
         }
@@ -112,12 +115,12 @@ namespace SteelBIM.Services.PF
             };
         }
 
-        private static NumeracaoElementoInfo CriarInfo(Document doc, Element instance)
+        private static NumeracaoElementoInfo? CriarInfo(Document doc, Element instance)
         {
             if (instance?.Category == null)
                 return null;
 
-            ElementType tipo = doc.GetElement(instance.GetTypeId()) as ElementType;
+            ElementType? tipo = doc.GetElement(instance.GetTypeId()) as ElementType;
             string familiaNome = ObterNomeFamilia(instance as FamilyInstance, tipo);
             string tipoNome = ObterNomeTipo(instance, tipo);
 
@@ -129,7 +132,7 @@ namespace SteelBIM.Services.PF
                 tipoNome);
         }
 
-        private static string ObterNomeFamilia(FamilyInstance instancia, ElementType tipo)
+        private static string ObterNomeFamilia(FamilyInstance? instancia, ElementType? tipo)
         {
             if (instancia?.Symbol != null && !string.IsNullOrWhiteSpace(instancia.Symbol.FamilyName))
                 return instancia.Symbol.FamilyName;
@@ -140,7 +143,7 @@ namespace SteelBIM.Services.PF
             return SemFamilia;
         }
 
-        private static string ObterNomeTipo(Element elemento, ElementType tipo)
+        private static string ObterNomeTipo(Element? elemento, ElementType? tipo)
         {
             if (tipo != null && !string.IsNullOrWhiteSpace(tipo.Name))
                 return tipo.Name;
