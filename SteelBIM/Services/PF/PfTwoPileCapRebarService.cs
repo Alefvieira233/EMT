@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -240,7 +241,7 @@ namespace SteelBIM.Services.PF
 
         private static XYZ ResolveBaseOrigin(FamilyInstance host, BoundingBoxXYZ bbox)
         {
-            XYZ xyOrigin = null;
+            XYZ? xyOrigin = null;
             if (host.Location is LocationPoint locationPoint)
                 xyOrigin = locationPoint.Point;
 
@@ -366,7 +367,7 @@ namespace SteelBIM.Services.PF
 
         private static RebarBarType GetBarType(Document doc, string preferredName)
         {
-            RebarBarType barType = new FilteredElementCollector(doc)
+            RebarBarType? barType = new FilteredElementCollector(doc)
                 .OfClass(typeof(RebarBarType))
                 .Cast<RebarBarType>()
                 .FirstOrDefault(x => string.Equals(x.Name, preferredName, StringComparison.CurrentCultureIgnoreCase))
@@ -387,16 +388,16 @@ namespace SteelBIM.Services.PF
             return host != null && RebarHostData.GetRebarHostData(host) != null;
         }
 
-        private static void Annotate(Rebar rebar, string label)
+        private static void Annotate(Rebar? rebar, string label)
         {
-            Parameter comments = rebar?.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS);
+            Parameter? comments = rebar?.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS);
             if (comments != null && !comments.IsReadOnly && comments.StorageType == StorageType.String)
                 comments.Set($"PF Bloco 2 Estacas - {label}");
         }
 
         private static double ReadLengthInternal(FamilyInstance host, params string[] names)
         {
-            Element type = host?.Document.GetElement(host.GetTypeId());
+            Element? type = host?.Document.GetElement(host.GetTypeId());
             foreach (string name in names)
             {
                 double value = ReadLengthInternal(host?.LookupParameter(name));
@@ -411,7 +412,7 @@ namespace SteelBIM.Services.PF
             return 0.0;
         }
 
-        private static double ReadLengthInternal(Parameter parameter)
+        private static double ReadLengthInternal(Parameter? parameter)
         {
             if (parameter == null || !parameter.HasValue)
                 return 0.0;
@@ -422,7 +423,7 @@ namespace SteelBIM.Services.PF
             if (parameter.StorageType == StorageType.Integer)
                 return ToFeetCm(parameter.AsInteger());
 
-            string text = parameter.AsValueString() ?? parameter.AsString();
+            string? text = parameter.AsValueString() ?? parameter.AsString();
             if (string.IsNullOrWhiteSpace(text))
                 return 0.0;
 
@@ -433,7 +434,7 @@ namespace SteelBIM.Services.PF
                 : 0.0;
         }
 
-        private static XYZ NormalizeHorizontal(XYZ vector)
+        private static XYZ NormalizeHorizontal(XYZ? vector)
         {
             if (vector == null)
                 return XYZ.Zero;
@@ -469,7 +470,7 @@ namespace SteelBIM.Services.PF
             return UnitUtils.ConvertFromInternalUnits(value, UnitTypeId.Centimeters);
         }
 
-        private static string CleanMessage(string value)
+        private static string CleanMessage(string? value)
         {
             return string.IsNullOrWhiteSpace(value)
                 ? "falha desconhecida."

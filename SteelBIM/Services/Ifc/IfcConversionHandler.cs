@@ -87,10 +87,7 @@ namespace SteelBIM.Services.Ifc
             try
             {
                 var service = new ConverterPerfilIfcService();
-                // doc/config ja' foram validados acima; ConverterPerfilIfcService.Executar
-                // ainda nao tem #nullable enable (Tarefa 3), entao precisamos do null-forgiving
-                // no progress (opcional la' tambem).
-                (convertidos, ignorados) = service.Executar(doc!, config!, progress!, ct);
+                (convertidos, ignorados) = service.Executar(doc, config, progress, ct);
             }
             catch (Exception ex)
             {
