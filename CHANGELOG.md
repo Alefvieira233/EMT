@@ -8,20 +8,25 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-**Auditoria 2026-05-25 CONCLUÍDA** com v2.8.0 (3 waves, 13 PRs estruturais).
-**Incorporação Victor** em v2.8.1 (2 PRs).
-**Conexão Terça v2** em v2.8.2 (algoritmo face-based + spec da família).
-**Hotfix Conexão Terça v3** em v2.8.3 (centramento automático + 3 fixes campo).
-**Hotfix IFC falso-cancel** em v2.8.6 (6 fixes + 1 enhancement).
-**Sprint Hardening Dia 1** em v2.8.7 (7 melhorias defensivas pós-auditoria 5-agents).
-**Hotfix Diagrama de Montagem — cotas inválidas** em v2.8.8 (5 ondas, reescrita das 3 funções de cota + failure handler).
+Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
+`docs/audits/SUPER-RELATORIO-2026-05-31.md`. Nota global 7,6/10, **sem P0 ativo**.
 
-Próximas atividades dependem de eventos externos:
+**Onda 1 (gates de CI / processo) — em andamento:**
+- `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
+  `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
+- Guard de go-live testado no CI (`LicenseKeysTests`: falha se a chave pública for placeholder).
 
-- **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
-- **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
-- **Manual no Revit (Alef + Victor):** validar v2.8.3 no mesmo galpão do teste anterior — confirmar que conexão fica na altura da terça, viga do meio recebe conexão, face externa selecionada (ou marca "Inverter face" se preciso)
-- **Manual no Revit (Alef):** validar v2.8.6 conversão IFC no mesmo arquivo que apresentou "Cancelado" falso — confirmar que conversão completa sem dialog de cancelamento, perfis inclinados são preservados, log lista ignorados com motivo
+**Pendente de validação física (não-código — depende de Alef/Victor):**
+- **DSTV/CNC:** cabeçalho ST já conforme a spec NC1; falta gerar o bloco AK e **validar contra
+  um `.nc1` real do fabricante** (ou test-cut na máquina) antes de produção.
+- **Revit:** rodar `docs/VALIDACAO-REVIT-v2.8.9.md` num modelo real (cota da treliça, Diagrama
+  de Montagem, armaduras PF).
+- **Licença:** emitir/ativar as 2 chaves (Alef + Victor) com a chave privada via EmtKeyGen.
+
+**External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra) + bump da flag
+Authenticode após primeira release assinada; EULA/Privacy/TOS (aguarda jurídico).
+
+**Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM).
 
 ---
 

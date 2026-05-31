@@ -17,13 +17,34 @@ concurrency:
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  # TODO (v2.7.7+): ativar secret apos configurar LICENSE_HMAC_SECRET em
-  # GitHub > Settings > Secrets > Actions. Sem isso, LicenseSecretProvider
-  # cai no fallback DEV_ONLY (logs emitem warning [Licensing] Segredo HMAC
-  # nao externalizado, mas build continua verde).
-  # EMT_LICENSE_SECRET: ${{ secrets.LICENSE_HMAC_SECRET }}
+  # v2.8.9: licenca migrada para ECDsa P-256 ASSIMETRICO (ADR-011). Nao ha mais
+  # segredo HMAC de licenca a configurar — o plugin embarca so a chave PUBLICA de
+  # verificacao (LicenseKeys.cs); a privada de assinatura fica so com o produtor.
+  # LicenseSecretProvider permanece apenas para o DSN do Sentry (ADR-007).
 
 jobs:
+  # v2.8.9 (Onda 1 da auditoria): barreira contra commit acidental de segredos.
+  # Complementa o .gitignore (defesa em profundidade para a chave PRIVADA de licenca,
+  # cuja exposicao = forja ilimitada). Check de arquivo simples e deterministico.
+  secret-guard:
+    name: Secret Guard (segredos commitados)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Bloquear arquivos de segredo no repositorio
+        run: |
+          bad=$(git ls-files | grep -E '\.(pfx|key)$|\.sentry\.dsn$|\.posthog\.apikey$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Arquivo de segredo commitado no repositorio:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "OK - nenhum arquivo de segredo (.pfx/.key/dsn/apikey) commitado."
+
   build-main:
     name: Build SteelBIM (Release)
     runs-on: windows-latest
