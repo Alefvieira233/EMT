@@ -108,7 +108,11 @@ namespace SteelBIM.Infrastructure
                 if (ex != null)
                 {
                     sb.AppendLine("=== Exception ===");
-                    sb.AppendLine(ex.ToString());
+                    // v2.8.9 (auditoria de seguranca): scrub de PII no texto da excecao
+                    // antes de gravar. ex.ToString() costuma conter paths 'C:\Users\<nome>\...'
+                    // e nomes de .rvt do cliente; este dump e' enviado ao suporte pelo usuario.
+                    // Coerente com o scrub ja aplicado no pipeline Sentry.
+                    sb.AppendLine(PiiScrubber.Scrub(ex.ToString()));
                 }
                 else
                 {

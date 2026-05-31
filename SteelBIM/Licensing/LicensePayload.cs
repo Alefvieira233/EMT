@@ -5,7 +5,8 @@ namespace SteelBIM.Licensing
     /// <summary>
     /// Conteudo de uma chave de licenca (parte "publica" — vai serializada no arquivo
     /// e tambem no campo "key" que o ALEF entrega para o cliente).
-    /// O HMAC garante que so o ALEF (que tem o secret) pode emitir.
+    /// A assinatura ASSIMETRICA (ECDsa P-256) garante que so o produtor (que tem a chave
+    /// PRIVADA) pode emitir; o plugin so verifica com a chave PUBLICA embarcada. Ver ADR-011.
     /// </summary>
     /// <remarks>
     /// Formato JSON minimo (curto para o usuario digitar/colar):
