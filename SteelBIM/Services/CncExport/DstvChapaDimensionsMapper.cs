@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 
 namespace SteelBIM.Services.CncExport
 {
@@ -94,6 +95,42 @@ namespace SteelBIM.Services.CncExport
             double largura = (dxMm + dyMm + dzMm) - comprimento - espessura;
 
             return Map(comprimento, largura, espessura);
+        }
+
+        /// <summary>
+        /// Deriva as dimensoes da chapa a partir do contorno 2D ja extraido/normalizado
+        /// (no plano da face principal) + a espessura. Comprimento = extensao em X do
+        /// contorno; largura = extensao em Y. Diferente de <see cref="FromBoundingBox"/>,
+        /// funciona para chapa em QUALQUER orientacao (inclusive inclinada), pois o
+        /// contorno ja esta no frame local da face — nao depende do bounding box world.
+        /// </summary>
+        /// <param name="contorno">Pontos (X, Y, Raio) em mm no plano da chapa (>= 3 pontos).</param>
+        /// <param name="espessuraMm">Espessura da chapa em mm (&gt; 0).</param>
+        /// <exception cref="ArgumentException">Se o contorno tiver menos de 3 pontos.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Se alguma dimensao resultante for &lt;= 0.</exception>
+        public static ChapaDimensions FromContorno(
+            IReadOnlyList<(double X, double Y, double Raio)> contorno, double espessuraMm)
+        {
+            if (contorno == null || contorno.Count < 3)
+                throw new ArgumentException("Contorno da chapa precisa de pelo menos 3 pontos.", nameof(contorno));
+
+            double minX = double.MaxValue;
+            double maxX = double.MinValue;
+            double minY = double.MaxValue;
+            double maxY = double.MinValue;
+            foreach ((double X, double Y, double Raio) p in contorno)
+            {
+                if (p.X < minX)
+                    minX = p.X;
+                if (p.X > maxX)
+                    maxX = p.X;
+                if (p.Y < minY)
+                    minY = p.Y;
+                if (p.Y > maxY)
+                    maxY = p.Y;
+            }
+
+            return Map(maxX - minX, maxY - minY, espessuraMm);
         }
     }
 }

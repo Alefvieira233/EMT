@@ -89,5 +89,68 @@ namespace SteelBIM.Tests.Services.CncExport
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => DstvChapaDimensionsMapper.FromBoundingBox(0.0, 100.0, 100.0));
         }
+
+        // ============================================
+        // FromContorno(contorno, espessura) — dims do plano da face (chapa inclinada)
+        // ============================================
+
+        // Contorno do CH02 (8 pontos, bbox 620 x 520), no plano da face.
+        private static System.Collections.Generic.List<(double X, double Y, double Raio)> Ch02Contorno() => new()
+        {
+            (0.0,    380.48, 0.0),
+            (238.41, 0.0,    0.0),
+            (620.0,  0.0,    0.0),
+            (620.0,  349.90, 0.0),
+            (362.90, 349.90, 0.0),
+            (349.90, 362.90, 0.0),
+            (349.90, 520.0,  0.0),
+            (0.0,    520.0,  0.0),
+        };
+
+        [Fact]
+        public void FromContorno_CH02_DerivaCompELarguraDoContorno()
+        {
+            DstvChapaDimensionsMapper.ChapaDimensions d =
+                DstvChapaDimensionsMapper.FromContorno(Ch02Contorno(), 12.70);
+
+            Assert.Equal(620.0, d.CutLengthMm, 6);     // extensao em X
+            Assert.Equal(520.0, d.ProfileHeightMm, 6); // extensao em Y
+            Assert.Equal(12.70, d.FlangeWidthMm, 6);
+            Assert.Equal(12.70, d.WebThicknessMm, 6);
+            Assert.Equal(0.0, d.FilletRadiusMm);
+        }
+
+        [Fact]
+        public void FromContorno_IndependeDeOffset_ChapaInclinadaProjetada()
+        {
+            // Contorno transladado (como sairia projetado de uma face inclinada):
+            // as EXTENSOES nao mudam — e' isso que corrige o caso de chapa inclinada.
+            System.Collections.Generic.List<(double X, double Y, double Raio)> deslocado =
+                Ch02Contorno().ConvertAll(p => (p.X + 1000.0, p.Y - 500.0, p.Raio));
+
+            DstvChapaDimensionsMapper.ChapaDimensions d =
+                DstvChapaDimensionsMapper.FromContorno(deslocado, 8.0);
+
+            Assert.Equal(620.0, d.CutLengthMm, 6);
+            Assert.Equal(520.0, d.ProfileHeightMm, 6);
+            Assert.Equal(8.0, d.WebThicknessMm, 6);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void FromContorno_MenosDe3Pontos_Lanca(int n)
+        {
+            System.Collections.Generic.List<(double X, double Y, double Raio)> pts = Ch02Contorno().GetRange(0, n);
+            Assert.Throws<ArgumentException>(() => DstvChapaDimensionsMapper.FromContorno(pts, 10.0));
+        }
+
+        [Fact]
+        public void FromContorno_EspessuraInvalida_Lanca()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(
+                () => DstvChapaDimensionsMapper.FromContorno(Ch02Contorno(), 0.0));
+        }
     }
 }

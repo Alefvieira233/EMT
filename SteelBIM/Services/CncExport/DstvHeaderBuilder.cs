@@ -95,9 +95,24 @@ namespace SteelBIM.Services.CncExport
 
         private static void PreencherDimensoesChapa(Document doc, FamilyInstance element, DstvFile output)
         {
-            // 1. Bounding box em world-space (chapas ficam horizontais na grande maioria
-            // dos casos do escritorio EMT — placas de base, gussets em planta etc).
-            // TODO(revit-bound): chapa em plano inclinado precisaria projetar no plano local.
+            // 1. Caminho preferencial: extrai o contorno externo da face principal e
+            // deriva as dimensoes do PLANO da face (comprimento/largura) + espessura
+            // (volume/area). Funciona para chapa em QUALQUER orientacao — inclusive
+            // inclinada/em parede — porque as dimensoes saem do frame local da face,
+            // nao do bounding box world-aligned. Para chapa horizontal o resultado e'
+            // identico ao bbox (sem regressao).
+            if (TentarExtrairContornoEDimensoesChapa(element, output))
+            {
+                output.IncluirContornoAk = true;
+                return;
+            }
+
+            // 2. Fallback: bounding box world-aligned. So e' confiavel para chapa
+            // horizontal (normal em Z); chapa inclinada daria dimensoes infladas.
+            output.IncluirContornoAk = false;
+            Logger.Warn("[DstvHeaderBuilder] Chapa {Id} ({Profile}) — contorno nao extraido; AK desligado e dimensoes via bounding box (confiavel so se horizontal).",
+                element.Id?.Value, output.ProfileName);
+
             BoundingBoxXYZ? bbox = element.get_BoundingBox(null);
             if (bbox == null)
             {
@@ -109,30 +124,17 @@ namespace SteelBIM.Services.CncExport
             double dyMm = UnitUtils.ConvertFromInternalUnits(bbox.Max.Y - bbox.Min.Y, UnitTypeId.Millimeters);
             double dzMm = UnitUtils.ConvertFromInternalUnits(bbox.Max.Z - bbox.Min.Z, UnitTypeId.Millimeters);
 
-            DstvChapaDimensionsMapper.ChapaDimensions dims =
-                DstvChapaDimensionsMapper.FromBoundingBox(dxMm, dyMm, dzMm);
+            AplicarDimensoes(output, DstvChapaDimensionsMapper.FromBoundingBox(dxMm, dyMm, dzMm));
+        }
 
+        private static void AplicarDimensoes(DstvFile output, DstvChapaDimensionsMapper.ChapaDimensions dims)
+        {
             output.CutLengthMm = dims.CutLengthMm;
             output.ProfileHeightMm = dims.ProfileHeightMm;
             output.FlangeWidthMm = dims.FlangeWidthMm;
             output.WebThicknessMm = dims.WebThicknessMm;
             output.FlangeThicknessMm = dims.FlangeThicknessMm;
             output.FilletRadiusMm = dims.FilletRadiusMm;
-
-            // 2. Contorno externo (AK) — extracao da face principal (maior area planar
-            // perpendicular ao eixo de espessura). Quando ha recorte de canto, o
-            // EdgeArray vai trazer mais vertices que o bbox.
-            // ⚠️ Revit-bound: smoke test no Revit pelo Alef e' necessario antes do merge.
-            if (TentarExtrairContornoChapa(element, output, dims))
-            {
-                output.IncluirContornoAk = true;
-            }
-            else
-            {
-                output.IncluirContornoAk = false;
-                Logger.Warn("[DstvHeaderBuilder] Chapa {Id} ({Profile}) — falha ao extrair contorno externo; AK desligado.",
-                    element.Id?.Value, output.ProfileName);
-            }
         }
 
         private static void PreencherDimensoesPerfil(FamilyInstance element, ElementType? type, DstvFile output)
@@ -149,13 +151,17 @@ namespace SteelBIM.Services.CncExport
         }
 
         /// <summary>
-        /// Extrai o contorno externo da face principal (maior face planar perpendicular
-        /// ao eixo de espessura) e preenche <see cref="DstvFile.ContornoAk"/>.
-        /// Retorna true se conseguiu extrair pelo menos 3 pontos validos.
+        /// Extrai o contorno externo da face principal (maior face planar da chapa),
+        /// preenche <see cref="DstvFile.ContornoAk"/> e deriva as dimensoes do PLANO da
+        /// face (comprimento/largura do contorno + espessura via volume/area). Retorna
+        /// true se conseguiu contorno valido (>= 3 pontos) E espessura confiavel.
+        ///
+        /// Por usar o frame local da face (e nao o bounding box world-aligned), funciona
+        /// para chapa em qualquer orientacao — inclusive inclinada/em parede.
         ///
         /// ⚠️ Revit-bound: requer smoke test em projeto real.
         /// </summary>
-        private static bool TentarExtrairContornoChapa(FamilyInstance element, DstvFile output, DstvChapaDimensionsMapper.ChapaDimensions dims)
+        private static bool TentarExtrairContornoEDimensoesChapa(FamilyInstance element, DstvFile output)
         {
             Options opts = new Options
             {
@@ -176,8 +182,8 @@ namespace SteelBIM.Services.CncExport
             if (geo == null)
                 return false;
 
-            // Encontrar maior face planar (a face "principal" da chapa)
-            PlanarFace? maiorFace = EncontrarMaiorFacePlanar(geo);
+            // Encontrar maior face planar (a face "principal" da chapa) + volume do solido
+            PlanarFace? maiorFace = EncontrarMaiorFacePlanar(geo, out double volumeSolidoFt3);
             if (maiorFace == null)
                 return false;
 
@@ -234,13 +240,40 @@ namespace SteelBIM.Services.CncExport
 
             output.ContornoAk.Clear();
             output.ContornoAk.AddRange(DstvContornoAkBuilder.FecharContorno(normalizado));
-            return output.ContornoAk.Count >= 4;
+            if (output.ContornoAk.Count < 4)
+                return false;
+
+            // Dimensoes do PLANO da face: comprimento/largura = extensao do contorno
+            // normalizado; espessura = volume do solido / area da face (relacao do prisma).
+            // Independe da orientacao da chapa no mundo — resolve o caso de chapa inclinada.
+            double faceAreaFt2 = maiorFace.Area;
+            double espessuraMm = (faceAreaFt2 > 1e-9 && volumeSolidoFt3 > 1e-9)
+                ? UnitUtils.ConvertFromInternalUnits(volumeSolidoFt3 / faceAreaFt2, UnitTypeId.Millimeters)
+                : 0.0;
+            if (espessuraMm <= 0)
+                return false; // sem espessura confiavel — cai no fallback bounding box
+
+            try
+            {
+                AplicarDimensoes(output, DstvChapaDimensionsMapper.FromContorno(normalizado, espessuraMm));
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("[DstvHeaderBuilder] dimensoes do contorno invalidas para chapa {Id}: {Msg}", element.Id?.Value, ex.Message);
+                return false;
+            }
+
+            return true;
         }
 
-        private static PlanarFace? EncontrarMaiorFacePlanar(GeometryElement geo)
+        // Maior face planar do elemento + volume do solido que a contem (em unidades
+        // internas: area ft2, volume ft3). O volume permite derivar a espessura da chapa
+        // (volume/area) independentemente da orientacao no mundo.
+        private static PlanarFace? EncontrarMaiorFacePlanar(GeometryElement geo, out double volumeSolidoFt3)
         {
             PlanarFace? melhor = null;
             double maiorArea = 0.0;
+            volumeSolidoFt3 = 0.0;
 
             foreach (GeometryObject obj in geo)
             {
@@ -252,6 +285,7 @@ namespace SteelBIM.Services.CncExport
                         {
                             maiorArea = pf.Area;
                             melhor = pf;
+                            volumeSolidoFt3 = solid.Volume;
                         }
                     }
                 }
@@ -260,11 +294,12 @@ namespace SteelBIM.Services.CncExport
                     GeometryElement? inner = gi.GetInstanceGeometry();
                     if (inner != null)
                     {
-                        PlanarFace? candidato = EncontrarMaiorFacePlanar(inner);
+                        PlanarFace? candidato = EncontrarMaiorFacePlanar(inner, out double volInnerFt3);
                         if (candidato != null && candidato.Area > maiorArea)
                         {
                             maiorArea = candidato.Area;
                             melhor = candidato;
+                            volumeSolidoFt3 = volInnerFt3;
                         }
                     }
                 }
