@@ -225,9 +225,15 @@ namespace SteelBIM.Services.CncExport
             if (pontosBruto.Count < 3)
                 return false;
 
-            // Fechar e gravar
+            // Normalizar para a convencao DSTV do fabricante (canto minimo em 0,0,
+            // maior extensao no X = comprimento, winding CCW) e fechar o contorno.
+            // O eixo/origem da PlanarFace do Revit e' arbitrario; a normalizacao
+            // alinha o AK ao bloco ST e o torna deterministico (validado por unit test).
+            System.Collections.Generic.List<(double X, double Y, double Raio)> normalizado =
+                DstvContornoAkBuilder.Normalizar(pontosBruto);
+
             output.ContornoAk.Clear();
-            output.ContornoAk.AddRange(DstvContornoAkBuilder.FecharContorno(pontosBruto));
+            output.ContornoAk.AddRange(DstvContornoAkBuilder.FecharContorno(normalizado));
             return output.ContornoAk.Count >= 4;
         }
 
