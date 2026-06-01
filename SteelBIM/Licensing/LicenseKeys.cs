@@ -13,11 +13,13 @@ namespace SteelBIM.Licensing
     {
         /// <summary>
         /// SubjectPublicKeyInfo (DER) da chave publica de PRODUCAO (ECDsa P-256), em Base64.
-        /// Embarcada em 2026-05-30. A chave PRIVADA correspondente fica SO com o produtor
-        /// (env STEELBIM_LICENSE_PRIVATE_KEY no EmtKeyGen) e NUNCA entra no repositorio.
+        /// Par regenerado em 2026-06-01 (o par anterior nao tinha a privada acessivel ao
+        /// produtor). A chave PRIVADA correspondente fica SO com o produtor
+        /// (env STEELBIM_LICENSE_PRIVATE_KEY ou %LOCALAPPDATA%\SteelBIM\license.private.key
+        /// no EmtKeyGen) e NUNCA entra no repositorio.
         /// Validada: 91 bytes, curva prime256v1, importavel por ImportSubjectPublicKeyInfo.
         /// </summary>
-        public const string PublicKeySpkiBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEde4Xt2EvHU+g4SBSdNHrVvMtilUrOknmopGDWhfHJdA+l1gA0pM4PMHNDCrEsiZeSPzt6CjiTL8B0sK5NTnqEQ==";
+        public const string PublicKeySpkiBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5DN7rWkaDnyYGT+VKvSALIne47owx8eAgsc33AQIU5W//K5LIKkepQrJnRlF2mlN0icSoaNbxDgdU/bAlWtssQ==";
 
         // Seam de teste: o projeto de testes COMPILA este arquivo no proprio assembly,
         // entao pode setar este campo internal. NAO e' nova superficie de ataque (um
