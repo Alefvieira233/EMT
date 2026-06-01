@@ -30,6 +30,7 @@
 // Backup da versao Alef pre-Wave2 (945 linhas, sem RebarShape/preview):
 //   PfRebarService.cs.bak-alef-v1.5
 // =========================================================================
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -258,7 +259,7 @@ namespace SteelBIM.Services.PF
             // de pilar circular nao e padrao da norma na pratica brasileira).
             RebarBarType barType = GetBarTypeByDiameter(doc, config.DiametroMm, config.BarTypeName);
             RebarHookType hookType = GetHookTypeByAngle(doc, barType, (int)config.Dobra);
-            RebarShape shape = GetRebarShape(doc, config.ShapeName, RebarStyle.StirrupTie);
+            RebarShape? shape = GetRebarShape(doc, config.ShapeName, RebarStyle.StirrupTie);
             HostFrame frame = BuildColumnFrame(column);
             double cover = GetCover(config.CobrimentoCm);
             double minX = frame.MinX + cover;
@@ -273,7 +274,7 @@ namespace SteelBIM.Services.PF
                 return 0;
 
             // Helper local para criar o loop horizontal num Z dado.
-            IList<Curve> BuildHorizontalLoopAtZ(double zPos)
+            IList<Curve>? BuildHorizontalLoopAtZ(double zPos)
             {
                 if (isCircular)
                 {
@@ -295,7 +296,7 @@ namespace SteelBIM.Services.PF
             // ---- modo SIMPLES (Victor) ou pilar circular (sem zoneamento NBR) ----
             if (config.UsarEspacamentoUnico || isCircular)
             {
-                IList<Curve> loop = BuildHorizontalLoopAtZ(minZ);
+                IList<Curve>? loop = BuildHorizontalLoopAtZ(minZ);
                 if (loop == null)
                     return 0;
 
@@ -314,7 +315,7 @@ namespace SteelBIM.Services.PF
 
             if (config.EspacamentoInferiorCm > 0 && zoneHeight > ToFeetMm(10))
             {
-                IList<Curve> lowerLoop = BuildHorizontalLoopAtZ(minZ);
+                IList<Curve>? lowerLoop = BuildHorizontalLoopAtZ(minZ);
                 if (lowerLoop != null)
                 {
                     Rebar lower = CreateClosedRebar(
@@ -326,7 +327,7 @@ namespace SteelBIM.Services.PF
 
             if (config.EspacamentoCentralCm > 0 && middleHeight > ToFeetMm(10))
             {
-                IList<Curve> middleLoop = BuildHorizontalLoopAtZ(minZ + zoneHeight);
+                IList<Curve>? middleLoop = BuildHorizontalLoopAtZ(minZ + zoneHeight);
                 if (middleLoop != null)
                 {
                     Rebar middle = CreateClosedRebar(
@@ -338,7 +339,7 @@ namespace SteelBIM.Services.PF
 
             if (config.EspacamentoSuperiorCm > 0 && zoneHeight > ToFeetMm(10))
             {
-                IList<Curve> upperLoop = BuildHorizontalLoopAtZ(maxZ - zoneHeight);
+                IList<Curve>? upperLoop = BuildHorizontalLoopAtZ(maxZ - zoneHeight);
                 if (upperLoop != null)
                 {
                     Rebar upper = CreateClosedRebar(
@@ -519,7 +520,7 @@ namespace SteelBIM.Services.PF
             //   3 rebars (apoio_inicio/centro/apoio_fim) com espacamentos distintos.
             RebarBarType barType = GetBarTypeByDiameter(doc, config.DiametroMm, config.BarTypeName);
             RebarHookType hookType = GetHookTypeByAngle(doc, barType, (int)config.Dobra);
-            RebarShape shape = GetRebarShape(doc, config.ShapeName, RebarStyle.StirrupTie);
+            RebarShape? shape = GetRebarShape(doc, config.ShapeName, RebarStyle.StirrupTie);
             HostFrame frame = BuildBeamFrame(beam);
             double cover = GetCover(config.CobrimentoCm);
             double minX = frame.MinX + cover;
@@ -849,7 +850,7 @@ namespace SteelBIM.Services.PF
 
         private static RebarBarType GetBarType(Document doc, string name)
         {
-            RebarBarType barType = new FilteredElementCollector(doc)
+            RebarBarType? barType = new FilteredElementCollector(doc)
                 .OfClass(typeof(RebarBarType))
                 .Cast<RebarBarType>()
                 .FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.CurrentCultureIgnoreCase))
@@ -879,7 +880,7 @@ namespace SteelBIM.Services.PF
             if (diameterMm > 0)
             {
                 double target = ToFeetMm(diameterMm);
-                RebarBarType byNominalDiameter = barTypes
+                RebarBarType? byNominalDiameter = barTypes
                     .Select(x => new { Type = x, Difference = Math.Abs(x.BarNominalDiameter - target) })
                     .Where(x => x.Difference <= ToFeetMm(0.25))
                     .OrderBy(x => x.Difference)
@@ -890,7 +891,7 @@ namespace SteelBIM.Services.PF
                     return byNominalDiameter;
 
                 string diameterToken = FormatDiameterToken(diameterMm);
-                RebarBarType byName = barTypes.FirstOrDefault(x =>
+                RebarBarType? byName = barTypes.FirstOrDefault(x =>
                     NormalizeText(x.Name).Contains(diameterToken));
 
                 if (byName != null)
@@ -917,7 +918,7 @@ namespace SteelBIM.Services.PF
         private static RebarHookType GetHookTypeByAngle(Document doc, RebarBarType barType, int angleDegrees)
         {
             double target = angleDegrees;
-            RebarHookType hookType = new FilteredElementCollector(doc)
+            RebarHookType? hookType = new FilteredElementCollector(doc)
                 .OfClass(typeof(RebarHookType))
                 .Cast<RebarHookType>()
                 .Where(x => Math.Abs(RadiansToDegrees(x.HookAngle) - target) <= 0.5)
@@ -1070,7 +1071,7 @@ namespace SteelBIM.Services.PF
             if (clearHeight <= ToFeetMm(100) || stirrupRadius <= ToFeetMm(20))
                 return 0;
 
-            Rebar rebar = CreateEstacaCircularStirrupSet(
+            Rebar? rebar = CreateEstacaCircularStirrupSet(
                 doc, estaca, barType, frame,
                 centerX, centerY, minZ, maxZ,
                 stirrupRadius, spacingFt,
@@ -1087,7 +1088,7 @@ namespace SteelBIM.Services.PF
             return 1;
         }
 
-        private static Rebar CreateEstacaCircularStirrupSet(
+        private static Rebar? CreateEstacaCircularStirrupSet(
             Document doc,
             Element host,
             RebarBarType barType,
@@ -1098,7 +1099,7 @@ namespace SteelBIM.Services.PF
             double maxZ,
             double radius,
             double spacingFt,
-            string shapeName = null)
+            string? shapeName = null)
         {
             double clearHeight = maxZ - minZ;
             if (clearHeight <= 0 || radius <= ToFeetMm(20))
@@ -1112,12 +1113,12 @@ namespace SteelBIM.Services.PF
             // Aqui tambem nao reaplicamos RebarShape depois de criar a geometria:
             // o objetivo eh travar a posicao do estribo dentro da estaca.
             double actualSpacing = clearHeight / Math.Max(1, count - 1);
-            Rebar last = null;
+            Rebar? last = null;
             for (int i = 0; i < count; i++)
             {
                 double zLocal = minZ + (i * actualSpacing);
                 IList<Curve> arcCurves = CreateCircleLoopHorizontal(frame, zLocal, centerX, centerY, radius);
-                Rebar r = null;
+                Rebar? r = null;
                 try
                 {
                     r = Rebar.CreateFromCurves(
@@ -1191,8 +1192,8 @@ namespace SteelBIM.Services.PF
             RebarBarType barType,
             XYZ normal,
             IList<Curve> curves,
-            RebarHookType hookType = null,
-            RebarShape shape = null)
+            RebarHookType? hookType = null,
+            RebarShape? shape = null)
         {
             Rebar rebar = Rebar.CreateFromCurves(
                 doc,
@@ -1215,14 +1216,14 @@ namespace SteelBIM.Services.PF
             return rebar;
         }
 
-        private static void TryApplyShapeToRebar(Rebar rebar, RebarShape shape)
+        private static void TryApplyShapeToRebar(Rebar? rebar, RebarShape? shape)
         {
             if (rebar == null || shape == null)
                 return;
 
             try
             {
-                RebarShapeDrivenAccessor accessor = rebar.GetShapeDrivenAccessor();
+                RebarShapeDrivenAccessor? accessor = rebar.GetShapeDrivenAccessor();
                 accessor?.SetRebarShapeId(shape.Id);
             }
             catch
@@ -1232,12 +1233,12 @@ namespace SteelBIM.Services.PF
             }
         }
 
-        private static RebarShape GetRebarShape(Document doc, string name, RebarStyle expectedStyle)
+        private static RebarShape? GetRebarShape(Document doc, string? name, RebarStyle expectedStyle)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return null;
 
-            RebarShape shape = new FilteredElementCollector(doc)
+            RebarShape? shape = new FilteredElementCollector(doc)
                 .OfClass(typeof(RebarShape))
                 .Cast<RebarShape>()
                 .FirstOrDefault(x =>
@@ -1292,7 +1293,7 @@ namespace SteelBIM.Services.PF
             PfLapSpliceConfig lapConfig,
             int staggerIndex)
         {
-            PfAnchorageResult anchorage = CalculateAnchorageIfEnabled(barType, lapConfig);
+            PfAnchorageResult? anchorage = CalculateAnchorageIfEnabled(barType, lapConfig);
             if (anchorage == null)
             {
                 CreateOpenRebar(doc, host, RebarStyle.Standard, barType, frame.XAxis, CreateVerticalBar(frame, y, x, z0, z1));
@@ -1330,7 +1331,7 @@ namespace SteelBIM.Services.PF
             PfLapSpliceConfig lapConfig,
             int staggerIndex)
         {
-            PfAnchorageResult anchorage = CalculateAnchorageIfEnabled(barType, lapConfig);
+            PfAnchorageResult? anchorage = CalculateAnchorageIfEnabled(barType, lapConfig);
             if (anchorage == null)
             {
                 CreateOpenRebar(
@@ -1362,7 +1363,7 @@ namespace SteelBIM.Services.PF
             return ranges.Count;
         }
 
-        private static PfAnchorageResult CalculateAnchorageIfEnabled(RebarBarType barType, PfLapSpliceConfig lapConfig)
+        private static PfAnchorageResult? CalculateAnchorageIfEnabled(RebarBarType barType, PfLapSpliceConfig? lapConfig)
         {
             if (lapConfig == null || !lapConfig.Enabled)
                 return null;
@@ -1411,13 +1412,13 @@ namespace SteelBIM.Services.PF
             SetLookupParameter(rebar, "EMT_Emenda", hasLap ? $"Peca {pieceIndex}/{pieceCount}" : "Sem divisao");
         }
 
-        private static void SetStringParameter(Element element, BuiltInParameter builtInParameter, string value)
+        private static void SetStringParameter(Element? element, BuiltInParameter builtInParameter, string value)
         {
-            Parameter parameter = element?.get_Parameter(builtInParameter);
+            Parameter? parameter = element?.get_Parameter(builtInParameter);
             if (parameter == null || parameter.IsReadOnly || parameter.StorageType != StorageType.String)
                 return;
 
-            string existing = parameter.AsString();
+            string? existing = parameter.AsString();
             if (string.IsNullOrWhiteSpace(existing))
             {
                 parameter.Set(value);
@@ -1428,9 +1429,9 @@ namespace SteelBIM.Services.PF
                 parameter.Set(existing + " | " + value);
         }
 
-        private static void SetLookupParameter(Element element, string name, string value)
+        private static void SetLookupParameter(Element? element, string name, string value)
         {
-            Parameter parameter = element?.LookupParameter(name);
+            Parameter? parameter = element?.LookupParameter(name);
             if (parameter == null || parameter.IsReadOnly)
                 return;
 
@@ -1708,9 +1709,9 @@ namespace SteelBIM.Services.PF
             return false;
         }
 
-        private static bool HasPositiveParameter(Element element, string parameterName)
+        private static bool HasPositiveParameter(Element? element, string parameterName)
         {
-            Parameter parameter = element?.LookupParameter(parameterName);
+            Parameter? parameter = element?.LookupParameter(parameterName);
             return parameter != null &&
                    parameter.HasValue &&
                    parameter.StorageType == StorageType.Double &&
