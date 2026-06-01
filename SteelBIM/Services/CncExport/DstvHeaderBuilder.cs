@@ -55,8 +55,88 @@ namespace SteelBIM.Services.CncExport
             output.ProfileName = typeName;
             output.ProfileType = DstvProfileMapper.Map(familyName, typeName);
 
-            // ---------- Dimensoes do perfil (do tipo) ----------
+            // v2.8.10 (Etapa D): CHAPA tem mapeamento de dimensoes diferente de viga.
+            // A ordem dos 6 campos numericos do ST e' (comp, largura, esp, esp, esp, 0).
+            // Validado byte-a-byte contra CH02/CH03/CH04 do fabricante.
+            if (output.ProfileType == DstvProfileType.B)
+            {
+                PreencherDimensoesChapa(doc, element, output);
+            }
+            else
+            {
+                PreencherDimensoesPerfil(element, type, output);
+            }
 
+            // ---------- Comprimento (vigas/perfis — chapa ja' setou em PreencherDimensoesChapa) ----------
+            if (output.ProfileType != DstvProfileType.B)
+                output.CutLengthMm = GetCutLengthMm(element);
+
+            // ---------- Peso linear ----------
+            output.WeightPerMeter = ComputeWeightPerMeter(doc, element, output);
+
+            // v2.8.10 (Etapa D): area de pintura (m2/m) — fica em 0 ate' termos
+            // uma fonte confiavel (parametro shared "Painting Surface" ou calculo
+            // baseado em perimetro). Para vigas comuns, o fabricante tipicamente
+            // calcula a partir da secao; para chapa nao se aplica (fica 0 mesmo).
+            output.PaintingSurfacePerMeter = TryReadSharedLengthMm(type, "Painting Surface", "Area de Pintura", "m2/m");
+            if (output.PaintingSurfacePerMeter <= 0)
+            {
+                output.PaintingSurfacePerMeter = 0;
+                Logger.Info("[DstvHeaderBuilder] PaintingSurfacePerMeter = 0 para {Id} ({Profile}); sem parametro shared 'Painting Surface'.",
+                    element.Id?.Value, output.ProfileName);
+            }
+        }
+
+        // ============================================================
+        //  CHAPA (DstvProfileType.B) — mapeamento + contorno AK
+        // ============================================================
+        // v2.8.10 (Etapa D): mapeamento de dimensoes + extracao de contorno
+        // a partir da geometria do Revit. Validado byte-a-byte vs CH02/CH03/CH04.
+
+        private static void PreencherDimensoesChapa(Document doc, FamilyInstance element, DstvFile output)
+        {
+            // 1. Bounding box em world-space (chapas ficam horizontais na grande maioria
+            // dos casos do escritorio EMT — placas de base, gussets em planta etc).
+            // TODO(revit-bound): chapa em plano inclinado precisaria projetar no plano local.
+            BoundingBoxXYZ? bbox = element.get_BoundingBox(null);
+            if (bbox == null)
+            {
+                Logger.Warn("[DstvHeaderBuilder] Chapa {Id} sem bounding box — dimensoes ficam zeradas.", element.Id?.Value);
+                return;
+            }
+
+            double dxMm = UnitUtils.ConvertFromInternalUnits(bbox.Max.X - bbox.Min.X, UnitTypeId.Millimeters);
+            double dyMm = UnitUtils.ConvertFromInternalUnits(bbox.Max.Y - bbox.Min.Y, UnitTypeId.Millimeters);
+            double dzMm = UnitUtils.ConvertFromInternalUnits(bbox.Max.Z - bbox.Min.Z, UnitTypeId.Millimeters);
+
+            DstvChapaDimensionsMapper.ChapaDimensions dims =
+                DstvChapaDimensionsMapper.FromBoundingBox(dxMm, dyMm, dzMm);
+
+            output.CutLengthMm = dims.CutLengthMm;
+            output.ProfileHeightMm = dims.ProfileHeightMm;
+            output.FlangeWidthMm = dims.FlangeWidthMm;
+            output.WebThicknessMm = dims.WebThicknessMm;
+            output.FlangeThicknessMm = dims.FlangeThicknessMm;
+            output.FilletRadiusMm = dims.FilletRadiusMm;
+
+            // 2. Contorno externo (AK) — extracao da face principal (maior area planar
+            // perpendicular ao eixo de espessura). Quando ha recorte de canto, o
+            // EdgeArray vai trazer mais vertices que o bbox.
+            // ⚠️ Revit-bound: smoke test no Revit pelo Alef e' necessario antes do merge.
+            if (TentarExtrairContornoChapa(element, output, dims))
+            {
+                output.IncluirContornoAk = true;
+            }
+            else
+            {
+                output.IncluirContornoAk = false;
+                Logger.Warn("[DstvHeaderBuilder] Chapa {Id} ({Profile}) — falha ao extrair contorno externo; AK desligado.",
+                    element.Id?.Value, output.ProfileName);
+            }
+        }
+
+        private static void PreencherDimensoesPerfil(FamilyInstance element, ElementType? type, DstvFile output)
+        {
             output.ProfileHeightMm = ReadLengthMm(type, BuiltInParameter.STRUCTURAL_SECTION_COMMON_HEIGHT);
             output.FlangeWidthMm = ReadLengthMm(type, BuiltInParameter.STRUCTURAL_SECTION_COMMON_WIDTH);
             // Revit nao expoe BuiltInParameter universal para espessura mesa/alma em todas as versoes
@@ -66,14 +146,125 @@ namespace SteelBIM.Services.CncExport
 
             // Raio de filete — Revit nao tem BuiltInParameter universal, tentar shared parameter
             output.FilletRadiusMm = TryReadSharedLengthMm(type, "Fillet Radius", "Raio Filete", "k");
+        }
 
-            // ---------- Comprimento ----------
+        /// <summary>
+        /// Extrai o contorno externo da face principal (maior face planar perpendicular
+        /// ao eixo de espessura) e preenche <see cref="DstvFile.ContornoAk"/>.
+        /// Retorna true se conseguiu extrair pelo menos 3 pontos validos.
+        ///
+        /// ⚠️ Revit-bound: requer smoke test em projeto real.
+        /// </summary>
+        private static bool TentarExtrairContornoChapa(FamilyInstance element, DstvFile output, DstvChapaDimensionsMapper.ChapaDimensions dims)
+        {
+            Options opts = new Options
+            {
+                ComputeReferences = false,
+                IncludeNonVisibleObjects = false,
+                DetailLevel = ViewDetailLevel.Fine
+            };
 
-            output.CutLengthMm = GetCutLengthMm(element);
+            GeometryElement? geo;
+            try
+            { geo = element.get_Geometry(opts); }
+            catch (Exception ex)
+            {
+                Logger.Debug("[DstvHeaderBuilder] get_Geometry falhou para chapa {Id}: {Msg}", element.Id?.Value, ex.Message);
+                return false;
+            }
 
-            // ---------- Peso linear ----------
+            if (geo == null)
+                return false;
 
-            output.WeightPerMeter = ComputeWeightPerMeter(doc, element, output);
+            // Encontrar maior face planar (a face "principal" da chapa)
+            PlanarFace? maiorFace = EncontrarMaiorFacePlanar(geo);
+            if (maiorFace == null)
+                return false;
+
+            EdgeArrayArray loops = maiorFace.EdgeLoops;
+            if (loops == null || loops.Size == 0)
+                return false;
+
+            // Loop externo = primeiro (maior perimetro tipicamente). EdgeLoops do Revit
+            // tem o externo primeiro e os holes depois.
+            EdgeArray loopExterno = loops.get_Item(0);
+            if (loopExterno == null || loopExterno.Size == 0)
+                return false;
+
+            // Extrair pontos do loop e projetar no plano da face. As coordenadas DSTV
+            // sao 2D (X horizontal, Y vertical) no plano da chapa.
+            var pontosBruto = new System.Collections.Generic.List<(double X, double Y, double Raio)>();
+            try
+            {
+                XYZ origem = maiorFace.Origin;
+                XYZ vx = maiorFace.XVector;
+                XYZ vy = maiorFace.YVector;
+
+                foreach (Edge edge in loopExterno)
+                {
+                    Curve? c = edge.AsCurve();
+                    if (c == null)
+                        continue;
+                    XYZ p = c.GetEndPoint(0);
+                    XYZ local = p - origem;
+                    double u = local.DotProduct(vx);
+                    double v = local.DotProduct(vy);
+                    double uMm = UnitUtils.ConvertFromInternalUnits(u, UnitTypeId.Millimeters);
+                    double vMm = UnitUtils.ConvertFromInternalUnits(v, UnitTypeId.Millimeters);
+                    // Raio = 0 (canto reto). Arcos exigiriam inspecionar Curve.IsBound + Curve as Arc
+                    // — fica como follow-up Revit-bound.
+                    pontosBruto.Add((uMm, vMm, 0.0));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("[DstvHeaderBuilder] falha ao extrair pontos do loop da chapa {Id}: {Msg}", element.Id?.Value, ex.Message);
+                return false;
+            }
+
+            if (pontosBruto.Count < 3)
+                return false;
+
+            // Fechar e gravar
+            output.ContornoAk.Clear();
+            output.ContornoAk.AddRange(DstvContornoAkBuilder.FecharContorno(pontosBruto));
+            return output.ContornoAk.Count >= 4;
+        }
+
+        private static PlanarFace? EncontrarMaiorFacePlanar(GeometryElement geo)
+        {
+            PlanarFace? melhor = null;
+            double maiorArea = 0.0;
+
+            foreach (GeometryObject obj in geo)
+            {
+                if (obj is Solid solid && solid.Volume > 1e-9)
+                {
+                    foreach (Face f in solid.Faces)
+                    {
+                        if (f is PlanarFace pf && pf.Area > maiorArea)
+                        {
+                            maiorArea = pf.Area;
+                            melhor = pf;
+                        }
+                    }
+                }
+                else if (obj is GeometryInstance gi)
+                {
+                    GeometryElement? inner = gi.GetInstanceGeometry();
+                    if (inner != null)
+                    {
+                        PlanarFace? candidato = EncontrarMaiorFacePlanar(inner);
+                        if (candidato != null && candidato.Area > maiorArea)
+                        {
+                            maiorArea = candidato.Area;
+                            melhor = candidato;
+                        }
+                    }
+                }
+            }
+
+            return melhor;
         }
 
         // ============================================================
