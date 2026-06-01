@@ -148,7 +148,8 @@ jobs:
 
   # v2.7.7: job dedicado ao EmtKeyGen (tool em tools/EmtKeyGen). Antes era
   # compilado implicitamente pelo build da solution; agora tem job proprio
-  # com cache + artifact upload (uteis pra auditoria HMAC offline).
+  # com cache + artifact upload. Pos-ADR-011 o EmtKeyGen gera/assina licencas
+  # com a chave PRIVADA ECDsa P-256 (offline, so com o produtor).
   build-tool:
     name: Build EmtKeyGen
     runs-on: windows-latest
