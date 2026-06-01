@@ -14,6 +14,9 @@ namespace SteelBIM.Commands.PF
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
+            SteelBIM.Utils.DisclaimerService.MostrarUmaVezPorSessao(
+                "pf-armadura", CommandName, SteelBIM.Utils.DisclaimerTexts.Armadura);
+
             PfConsoloRebarWindow window = new PfConsoloRebarWindow(doc);
             if (window.ShowDialog() != true)
                 return Result.Cancelled;

@@ -207,6 +207,10 @@
     <!-- 1.3.0: Utils (NumberParsing) — pure C#, sem Revit -->
     <Compile Include="..\SteelBIM\Utils\NumberParsing.cs"
              Link="LinkedSources\Utils\NumberParsing.cs" />
+    <!-- v2.8.10: textos de disclaimer tecnico/legal (const puras) — DisclaimerService
+         NAO e' linkado (depende de AppDialogService/TaskDialog, Revit-bound). -->
+    <Compile Include="..\SteelBIM\Utils\DisclaimerTexts.cs"
+             Link="LinkedSources\Utils\DisclaimerTexts.cs" />
 
     <!-- 1.4.0 — Onda 3 (PR-1 incorporacao Victor): resultado de corte automatico -->
     <Compile Include="..\SteelBIM\Models\CortarElementosResultado.cs"

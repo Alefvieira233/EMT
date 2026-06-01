@@ -22,6 +22,9 @@ namespace SteelBIM.Commands
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
+            SteelBIM.Utils.DisclaimerService.MostrarUmaVezPorSessao(
+                "conexao", CommandName, SteelBIM.Utils.DisclaimerTexts.Conexoes);
+
             // Try/catch geral fica na FerramentaCommandBase. Aqui so deixamos a logica.
             Logger.Info("[CmdGerarConexao] Iniciando seleção de elementos");
 
