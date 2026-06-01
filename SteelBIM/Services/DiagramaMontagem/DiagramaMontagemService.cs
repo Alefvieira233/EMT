@@ -668,30 +668,11 @@ namespace SteelBIM.Services.DiagramaMontagem
             if (pontosZ.Count == 0)
                 return 0;
 
-            // Clusterizar
+            // v2.8.10 Etapa C: clusterizacao + limite delegados a helper puro
+            // (DiagramaMontagemElevacaoClusterer) testavel sem Revit.
             double tolFt = UnitUtils.ConvertToInternalUnits(tolMm, UnitTypeId.Millimeters);
-            pontosZ = pontosZ.OrderBy(z => z).ToList();
-            var clusters = new List<double>();
-            double zClusterAtual = pontosZ[0];
-            clusters.Add(zClusterAtual);
-            foreach (double z in pontosZ.Skip(1))
-            {
-                if (z - zClusterAtual > tolFt)
-                {
-                    clusters.Add(z);
-                    zClusterAtual = z;
-                }
-            }
-
-            // Limitar entre 3 e 15 cotas (regra do plano — nao poluir)
-            if (clusters.Count > 15)
-            {
-                var reduzido = new List<double>();
-                double passo = (clusters.Count - 1) / 14.0;
-                for (int i = 0; i < 15; i++)
-                    reduzido.Add(clusters[(int)Math.Round(i * passo)]);
-                clusters = reduzido.Distinct().ToList();
-            }
+            var clusters = DiagramaMontagemElevacaoClusterer.LimitarQuantidade(
+                DiagramaMontagemElevacaoClusterer.Clusterizar(pontosZ, tolFt));
 
             // v2.8.8 FIX #6 #7: bbox do CONJUNTO em world-space (pra qualquer
             // orientacao de vista, qualquer offset world). Cota fica 800mm a
