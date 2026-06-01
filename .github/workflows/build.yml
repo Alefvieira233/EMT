@@ -45,6 +45,24 @@ jobs:
           fi
           echo "OK - nenhum arquivo de segredo (.pfx/.key/dsn/apikey) commitado."
 
+  # v2.8.10 (Onda 1 da auditoria): varredura de CONTEUDO por segredos (gitleaks),
+  # complementando o secret-guard (que so olha extensao). Roda o binario direto
+  # (sem license gate de org) sobre a working tree (--no-git), com allowlist em
+  # .gitleaks.toml. Introdutorio/NAO-bloqueante (continue-on-error): promover a
+  # bloqueante removendo continue-on-error apos confirmar verde alguns ciclos.
+  gitleaks:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run gitleaks (working tree)
+        run: |
+          ver=8.18.4
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_linux_x64.tar.gz" | tar -xz gitleaks
+          ./gitleaks detect --no-git --source . --config .gitleaks.toml --redact --verbose
+
   build-main:
     name: Build SteelBIM (Release)
     runs-on: windows-latest

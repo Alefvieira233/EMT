@@ -15,6 +15,17 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
 - Guard de go-live testado no CI (`LicenseKeysTests`: falha se a chave pública for placeholder).
+- Job `gitleaks` (varredura de **conteúdo** por segredos) + `.gitleaks.toml` com allowlist
+  da chave pública e fixtures. Introdutório/não-bloqueante (`continue-on-error`) — promover a
+  bloqueante após confirmar verde. Complementa o `secret-guard` (que só olha extensão).
+- Comentário obsoleto HMAC→ECDsa atualizado no `build.yml`.
+
+**Onda 4 (domínio/UX — disclaimers normativos):**
+- Avisos técnicos/legais (`DisclaimerTexts` + `DisclaimerService`) exibidos **uma vez por
+  sessão** antes de gerar **armadura PF** (verificar bitolas/adensamento/suspensão/ancoragem
+  conforme projeto e NBR 6118) e **conexões metálicas** (geração geométrica/documental, sem
+  verificação de capacidade). Fecha o risco de responsabilidade técnica apontado na auditoria.
+  Texto centralizado e coberto por teste de regressão.
 
 **Onda 3 / Etapa D (DSTV CHAPA — produção) — 2026-06-01:**
 - **Writer NC1 reescrito para o formato real do fabricante** e travado por golden test
@@ -22,10 +33,12 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   bloco ST com colunas de largura fixa + linha-comentário `** <arquivo>.nc1`, bloco AK
   (face `v` + marcador `u` no 1º ponto), bloco BO único (marcador `s`), e **um único `EN`**
   no fim do arquivo (corrigido — antes emitia `EN` por bloco, fora da spec).
-- **Produtor CHAPA ligado** (`DstvHeaderBuilder`, `ProfileType == B`): dimensões via bounding
-  box (`DstvChapaDimensionsMapper`), contorno externo extraído da maior `PlanarFace` do Revit
-  e **normalizado** (`DstvContornoAkBuilder.Normalizar`: canto em 0,0 + maior extensão no X +
-  winding CCW), `OutputFileName` casando com o nome real do arquivo. Vigas/perfis mantêm o
+- **Produtor CHAPA ligado** (`DstvHeaderBuilder`, `ProfileType == B`): contorno externo
+  extraído da maior `PlanarFace` do Revit e **normalizado** (`DstvContornoAkBuilder.Normalizar`:
+  canto em 0,0 + maior extensão no X + winding CCW); **dimensões derivadas do PLANO da face**
+  (`DstvChapaDimensionsMapper.FromContorno` + espessura via volume/área) — funciona para chapa
+  em **qualquer orientação, inclusive inclinada** (resolve o TODO de plano inclinado); bounding
+  box vira fallback. `OutputFileName` casa com o nome real do arquivo. Vigas/perfis mantêm o
   caminho antigo intacto. Fail-safe: `IncluirContornoAk` só liga com ≥ 3 pontos válidos.
 - **Novos testes puros** (mapper de dimensões, fechamento de contorno, normalização sob
   transformações adversariais, `OutputFileName`). Suíte 100% verde; build Release 0 warnings;
