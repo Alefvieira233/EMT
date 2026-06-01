@@ -100,18 +100,10 @@ namespace SteelBIM.Services
             "volume", "área", "area", "id"
         };
 
-        private static readonly string[] TokensPesoLinear =
-        {
-            "kg/m", "kg por m", "kg por metro", "kg metro",
-            "peso linear", "massa linear",
-            "peso por metro", "massa por metro",
-            "mass per unit length", "mass per length", "mass/length",
-            "weight per unit length", "weight per length", "weight/length",
-            "unit mass", "unit weight"
-        };
-
-        private static readonly Regex NumeroTextoRegex =
-            new Regex(@"[-+]?\d+(?:[.,]\d+)?", RegexOptions.Compiled);
+        // v2.8.10 Etapa C: tokens + regex movidos pro helper puro
+        // ListaMateriaisPesoLinearParser. Mantemos alias local pra nao reescrever
+        // todos os call sites internos.
+        private static readonly string[] TokensPesoLinear = ListaMateriaisPesoLinearParser.TokensPesoLinear;
 
         /// <summary>
         /// Executa a exportacao da lista de materiais para .xlsx.
@@ -1041,37 +1033,12 @@ namespace SteelBIM.Services
             }
         }
 
+        // v2.8.10 Etapa C: delega pra ListaMateriaisPesoLinearParser (puro/testavel).
         private static bool ParametroNomeIndicaKgPorMetro(string? nomeParametro)
-        {
-            string nome = NormalizarToken(nomeParametro);
-            return !string.IsNullOrWhiteSpace(nome) && TokensPesoLinear.Any(nome.Contains);
-        }
+            => ListaMateriaisPesoLinearParser.ParametroNomeIndicaKgPorMetro(nomeParametro);
 
-        private static bool TryParsePesoLinearStringKgM(string texto, out double pesoLinearKgM)
-        {
-            pesoLinearKgM = 0.0;
-            if (string.IsNullOrWhiteSpace(texto))
-                return false;
-
-            Match match = NumeroTextoRegex.Match(texto);
-            if (!match.Success)
-                return false;
-
-            string numero = match.Value;
-            if (numero.Contains(",") && numero.Contains("."))
-            {
-                numero = numero.LastIndexOf(',') > numero.LastIndexOf('.')
-                    ? numero.Replace(".", string.Empty).Replace(',', '.')
-                    : numero.Replace(",", string.Empty);
-            }
-            else
-            {
-                numero = numero.Replace(',', '.');
-            }
-
-            return double.TryParse(numero, NumberStyles.Float, CultureInfo.InvariantCulture, out pesoLinearKgM) &&
-                   pesoLinearKgM > 0.0;
-        }
+        private static bool TryParsePesoLinearStringKgM(string? texto, out double pesoLinearKgM)
+            => ListaMateriaisPesoLinearParser.TryParsePesoLinearStringKgM(texto, out pesoLinearKgM);
 
         private static double ObterPesoPorDensidadeKg(Document doc, Material? material, double volumeM3)
         {

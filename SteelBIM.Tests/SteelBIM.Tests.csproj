@@ -94,6 +94,10 @@
          do DiagramaMontagemService.CriarCotasVerticais. -->
     <Compile Include="..\SteelBIM\Services\DiagramaMontagem\DiagramaMontagemElevacaoClusterer.cs"
              Link="LinkedSources\Services\DiagramaMontagem\DiagramaMontagemElevacaoClusterer.cs" />
+    <!-- v2.8.10 (Etapa C): parser puro de peso linear (kg/m) extraido do
+         ListaMateriaisExportService. Triagem por nome + parse PT-BR/EN-US. -->
+    <Compile Include="..\SteelBIM\Services\ListaMateriaisPesoLinearParser.cs"
+             Link="LinkedSources\Services\ListaMateriaisPesoLinearParser.cs" />
 
     <!-- v2.7.0: Conversor IFC -> Perfis Nativos. Helpers puros do servico de
          conversao (parser de IfcMaterial + calculadores de eixo via caps/PCA +
