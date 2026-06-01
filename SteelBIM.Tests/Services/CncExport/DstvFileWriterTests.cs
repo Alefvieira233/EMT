@@ -223,6 +223,35 @@ namespace SteelBIM.Tests.Services.CncExport
             act.Should().Throw<System.ArgumentNullException>();
         }
 
+        [Fact]
+        public void Write_OutputFileNameSetado_UsaNoHeaderEmVezDoDrawingNumber()
+        {
+            // v2.8.10 (Etapa D): a linha "** <arquivo>.nc1" precisa bater com o
+            // filename real (DstvExportService.Executar seta isso antes do Save).
+            var f = MinimalFile();
+            f.DrawingNumber = "DWG-OLD";
+            f.OutputFileName = "CH02.nc1";
+
+            string txt = DstvFileWriter.Write(f);
+
+            txt.Should().Contain("** CH02.nc1\r\n");
+            txt.Should().NotContain("** DWG-OLD.nc1");
+        }
+
+        [Fact]
+        public void Write_OutputFileNameVazio_DerivaDoDrawingNumber()
+        {
+            // Comportamento de fallback documentado: quando OutputFileName e' vazio
+            // (chamada direta ao writer sem passar pelo Executar), usa DrawingNumber.
+            var f = MinimalFile();
+            f.DrawingNumber = "DWG-XYZ";
+            f.OutputFileName = "";
+
+            string txt = DstvFileWriter.Write(f);
+
+            txt.Should().Contain("** DWG-XYZ.nc1\r\n");
+        }
+
         // ------------ helpers ------------
         private static DstvFile MinimalFile() => new DstvFile
         {

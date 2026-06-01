@@ -64,6 +64,14 @@
              Link="LinkedSources\Services\CncExport\DstvProfileMapper.cs" />
     <Compile Include="..\SteelBIM\Services\CncExport\DstvFileNameSanitizer.cs"
              Link="LinkedSources\Services\CncExport\DstvFileNameSanitizer.cs" />
+    <!-- v2.8.10 (Etapa D - Tarefa 1): mapeamento puro de dimensoes de CHAPA
+         (comp,largura,esp → 6 campos do ST na ordem do writer). -->
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvChapaDimensionsMapper.cs"
+             Link="LinkedSources\Services\CncExport\DstvChapaDimensionsMapper.cs" />
+    <!-- v2.8.10 (Etapa D - Tarefa 1): construcao do contorno externo AK
+         (fechamento idempotente + retangulo fallback). -->
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvContornoAkBuilder.cs"
+             Link="LinkedSources\Services\CncExport\DstvContornoAkBuilder.cs" />
 
     <!-- Sprint 6: Model Check (modelos sao pure C#) -->
     <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckSeverity.cs"
