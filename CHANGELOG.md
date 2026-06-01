@@ -16,9 +16,28 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
 - Guard de go-live testado no CI (`LicenseKeysTests`: falha se a chave pública for placeholder).
 
+**Onda 3 / Etapa D (DSTV CHAPA — produção) — 2026-06-01:**
+- **Writer NC1 reescrito para o formato real do fabricante** e travado por golden test
+  byte-a-byte contra 3 `.nc1` reais (CH02/CH03/CH04, embutidos como `EmbeddedResource`):
+  bloco ST com colunas de largura fixa + linha-comentário `** <arquivo>.nc1`, bloco AK
+  (face `v` + marcador `u` no 1º ponto), bloco BO único (marcador `s`), e **um único `EN`**
+  no fim do arquivo (corrigido — antes emitia `EN` por bloco, fora da spec).
+- **Produtor CHAPA ligado** (`DstvHeaderBuilder`, `ProfileType == B`): dimensões via bounding
+  box (`DstvChapaDimensionsMapper`), contorno externo extraído da maior `PlanarFace` do Revit
+  e **normalizado** (`DstvContornoAkBuilder.Normalizar`: canto em 0,0 + maior extensão no X +
+  winding CCW), `OutputFileName` casando com o nome real do arquivo. Vigas/perfis mantêm o
+  caminho antigo intacto. Fail-safe: `IncluirContornoAk` só liga com ≥ 3 pontos válidos.
+- **Novos testes puros** (mapper de dimensões, fechamento de contorno, normalização sob
+  transformações adversariais, `OutputFileName`). Suíte 100% verde; build Release 0 warnings;
+  `dotnet format --verify-no-changes` limpo nos 2 projetos.
+
 **Pendente de validação física (não-código — depende de Alef/Victor):**
-- **DSTV/CNC:** cabeçalho ST já conforme a spec NC1; falta gerar o bloco AK e **validar contra
-  um `.nc1` real do fabricante** (ou test-cut na máquina) antes de produção.
+- **DSTV/CNC:** writer + produtor prontos e validados byte-a-byte contra `.nc1` real. Falta
+  **smoke test no Revit** de uma chapa real: confirmar AK (orientação/winding com geometria
+  real) e a **convenção de modelagem dos furos** (o `DstvHoleExtractor` lê parâmetros
+  `Hole {i} X/Y/Diameter/Face`; se o escritório modela furos como vazios geométricos, o BO
+  virá vazio e a extração de furos por geometria fica como follow-up). Extração de arcos
+  (raio ≠ 0) também é follow-up — hoje arco vira canto reto.
 - **Revit:** rodar `docs/VALIDACAO-REVIT-v2.8.9.md` num modelo real (cota da treliça, Diagrama
   de Montagem, armaduras PF).
 - **Licença:** emitir/ativar as 2 chaves (Alef + Victor) com a chave privada via EmtKeyGen.
