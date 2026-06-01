@@ -79,6 +79,22 @@ namespace SteelBIM.Models.CncExport
         /// </summary>
         public bool IncluirContornoAk { get; set; }
 
+        // ---------- Bloco AK (contorno externo) ----------
+
+        /// <summary>
+        /// v2.8.10 — Pontos do contorno externo da CHAPA (face v), em mm: (X, Y, Raio).
+        /// Raio &gt; 0 = arco; Raio &lt; 0 = arco invertido; Raio = 0 = canto reto.
+        /// Usado pelo <c>DstvFileWriter</c> quando <see cref="IncluirContornoAk"/> = true.
+        ///
+        /// Quando vazio e <c>IncluirContornoAk</c> esta ligado, o writer pode gerar
+        /// o retangulo padrao (comprimento x altura — fallback v2.8.0 do CHAPA).
+        ///
+        /// Validacao byte-a-byte contra .nc1 do fabricante pendente (Etapa D do plano
+        /// Onda 3): aguardando arquivos CH02/CH03/CH04 do Alef pra rodar golden test.
+        /// </summary>
+        public List<(double X, double Y, double Raio)> ContornoAk { get; }
+            = new List<(double X, double Y, double Raio)>();
+
         // ---------- Bloco BO (furos) ----------
 
         public List<DstvHole> Holes { get; } = new List<DstvHole>();
