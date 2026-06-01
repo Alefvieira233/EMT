@@ -162,7 +162,7 @@ namespace SteelBIM.Tests.Services.CncExport
         // Permite comparar dois contornos como o "mesmo poligono".
         private static string ChaveCiclica(List<(double X, double Y, double Raio)> p)
         {
-            var b = p.Select(t => ($"{t.X:F2},{t.Y:F2}")).ToList();
+            var b = p.Select(t => $"{t.X:F2},{t.Y:F2}").ToList();
             IEnumerable<string> Rot(List<string> xs) =>
                 Enumerable.Range(0, xs.Count).Select(i => string.Join("|", xs.Skip(i).Concat(xs.Take(i))));
             var todas = Rot(b).ToList();

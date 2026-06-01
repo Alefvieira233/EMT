@@ -102,8 +102,10 @@ namespace SteelBIM.Services.CncExport
             double minY = double.MaxValue;
             foreach ((double X, double Y, double Raio) p in pontos)
             {
-                if (p.X < minX) minX = p.X;
-                if (p.Y < minY) minY = p.Y;
+                if (p.X < minX)
+                    minX = p.X;
+                if (p.Y < minY)
+                    minY = p.Y;
             }
 
             var saida = new List<(double X, double Y, double Raio)>(pontos.Count);
@@ -115,8 +117,10 @@ namespace SteelBIM.Services.CncExport
             double maxY = 0.0;
             foreach ((double X, double Y, double Raio) p in saida)
             {
-                if (p.X > maxX) maxX = p.X;
-                if (p.Y > maxY) maxY = p.Y;
+                if (p.X > maxX)
+                    maxX = p.X;
+                if (p.Y > maxY)
+                    maxY = p.Y;
             }
             if (maxY > maxX)
             {
