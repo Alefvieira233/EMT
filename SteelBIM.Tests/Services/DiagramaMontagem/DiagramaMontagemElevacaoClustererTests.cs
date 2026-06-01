@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 using DMC = SteelBIM.Services.DiagramaMontagem.DiagramaMontagemElevacaoClusterer;
