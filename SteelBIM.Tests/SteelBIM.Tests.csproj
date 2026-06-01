@@ -16,6 +16,15 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
+  <!-- Fixtures DSTV/NC1 (oraculo do golden test byte-a-byte). Embutidos como
+       recurso para preservar os bytes exatos (CRLF) independentemente de copia
+       de arquivo / normalizacao de fim de linha. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Fixtures\Dstv\CH02.nc1" />
+    <EmbeddedResource Include="Fixtures\Dstv\CH03.nc1" />
+    <EmbeddedResource Include="Fixtures\Dstv\CH04.nc1" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />

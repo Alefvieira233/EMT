@@ -58,6 +58,18 @@ namespace SteelBIM.Models.CncExport
         /// <summary>Peso linear em kg/m.</summary>
         public double WeightPerMeter { get; set; }
 
+        /// <summary>
+        /// Area de superficie de pintura em m2/m (campo 17 do bloco ST). 0 se nao calculado.
+        /// Aparece logo apos o peso nos arquivos NC1 de referencia do fabricante.
+        /// </summary>
+        public double PaintingSurfacePerMeter { get; set; }
+
+        /// <summary>
+        /// Nome do arquivo NC1 escrito na linha-comentario de cabecalho ("** &lt;nome&gt;.nc1").
+        /// Quando vazio, o writer deriva de <see cref="DrawingNumber"/> + ".nc1".
+        /// </summary>
+        public string OutputFileName { get; set; } = "";
+
         /// <summary>Tratamento de superficie (pintura, galvanizacao). Pode ser vazio.</summary>
         public string SurfaceTreatment { get; set; } = "";
 

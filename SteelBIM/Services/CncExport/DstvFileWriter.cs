@@ -14,15 +14,21 @@ namespace SteelBIM.Services.CncExport
     /// Implementacao pura — nao depende da API do Revit, totalmente testavel
     /// por unit tests.
     ///
-    /// Estrutura do arquivo NC1 (ordem dos blocos):
-    ///   ST     -> cabecalho (always present)
-    ///   EN     -> end of header
+    /// Estrutura do arquivo NC1 (ordem dos blocos), validada byte-a-byte contra
+    /// arquivos .nc1 reais do fabricante (fixtures CH02/CH03/CH04 — golden test):
+    ///   ST     -> cabecalho (always present). SEM terminador EN proprio.
     ///   AK     -> outer contour (opt-in via DstvFile.IncluirContornoAk; default off)
-    ///   IK     -> inner contour (omitido)
+    ///   BO     -> hole block unico, uma linha por furo (so se houver furos)
     ///   SC     -> cuts at ends (gerado se HasMiteredEnds())
-    ///   BO     -> hole block, um por face (so se houver furos)
     ///   SI     -> additional information (opcional)
-    ///   EN     -> end of file
+    ///   EN     -> end of file (UNICO EN do arquivo)
+    ///
+    /// IMPORTANTE: ao contrario de implementacoes ingenuas, o formato DSTV NC1 tem
+    /// apenas UM marcador EN (fim do arquivo). Os blocos ST/AK/BO/SC/SI NAO sao
+    /// terminados por EN — a leitura termina no proximo marcador de bloco de 2 letras.
+    ///
+    /// Campos numericos do bloco ST e blocos AK/BO usam colunas de largura fixa
+    /// (right-aligned), com casas decimais fixas — ver helper <see cref="Col"/>.
     ///
     /// Encoding: ASCII (cuidado com acentos no notes / piece mark).
     /// Line endings: CRLF (padrao da industria CNC).
@@ -47,10 +53,10 @@ namespace SteelBIM.Services.CncExport
 
             WriteHeader(sb, file);
             WriteOuterContour(sb, file);
-            WriteCuts(sb, file);
             WriteHoles(sb, file);
+            WriteCuts(sb, file);
             WriteNotes(sb, file);
-            sb.Append("EN").Append(NewLine);
+            sb.Append("EN").Append(NewLine); // unico EN — fim do arquivo
 
             return sb.ToString();
         }
@@ -73,39 +79,58 @@ namespace SteelBIM.Services.CncExport
         // ============================================================
         //  Bloco AK (contorno externo) — OPT-IN, desligado por padrao
         // ============================================================
-        // Gera o contorno retangular da face da alma (v): comprimento x altura do perfil
-        // — (0,0)->(L,0)->(L,h)->(0,h)->(0,0). Muitos leitores DSTV exigem AK, mas o
-        // contorno exato varia por perfil/maquina; por isso fica atras de
-        // DstvFile.IncluirContornoAk (default false) ate validar contra um .nc1 real.
+        // Emite os pontos de DstvFile.ContornoAk (X, Y, Raio). Quando o contorno
+        // esta vazio mas o usuario pediu AK, gera o retangulo padrao da face da alma
+        // — (0,0)->(L,0)->(L,h)->(0,h)->(0,0). Fica atras de IncluirContornoAk
+        // (default false) ate o contorno extraido do Revit ser validado na maquina alvo.
+        //
+        // Formato de cada linha (largura fixa, validado contra .nc1 do fabricante):
+        //   <face:3><X:11><flag:1><Y:10><Raio:11><0:11><0:11><0:11><0:11>
+        // A face 'v' e o marcador de inicio 'u' aparecem APENAS no primeiro ponto.
 
         private static void WriteOuterContour(StringBuilder sb, DstvFile f)
         {
             if (!f.IncluirContornoAk)
                 return;
-            if (f.CutLengthMm <= 0 || f.ProfileHeightMm <= 0)
-                return;
 
-            string len = FormatNumber(f.CutLengthMm);
-            string hgt = FormatNumber(f.ProfileHeightMm);
-            string zero = FormatNumber(0.0);
+            System.Collections.Generic.List<(double X, double Y, double Raio)> pts = f.ContornoAk;
+            if (pts == null || pts.Count == 0)
+            {
+                // Fallback retangular (comportamento v2.8.0) quando nao ha contorno explicito.
+                if (f.CutLengthMm <= 0 || f.ProfileHeightMm <= 0)
+                    return;
+                pts = RetanguloFallback(f.CutLengthMm, f.ProfileHeightMm);
+            }
 
             sb.Append("AK").Append(NewLine);
-            AppendContourPoint(sb, zero, zero);
-            AppendContourPoint(sb, len, zero);
-            AppendContourPoint(sb, len, hgt);
-            AppendContourPoint(sb, zero, hgt);
-            AppendContourPoint(sb, zero, zero); // fecha o contorno
-            sb.Append("EN").Append(NewLine);
+            for (int i = 0; i < pts.Count; i++)
+            {
+                (double x, double y, double raio) = pts[i];
+                string face = i == 0 ? "  v" : "   ";
+                string flag = i == 0 ? "u" : " ";
+                sb.Append(face)
+                  .Append(Col(x, 11, 2))
+                  .Append(flag)
+                  .Append(Col(y, 10, 2))
+                  .Append(Col(raio, 11, 2))
+                  .Append(Col(0.0, 11, 2))
+                  .Append(Col(0.0, 11, 2))
+                  .Append(Col(0.0, 11, 2))
+                  .Append(Col(0.0, 11, 2))
+                  .Append(NewLine);
+            }
         }
 
-        // Ponto de contorno na face da alma 'v': "<face> <x> <y> <raio=0>" (canto reto).
-        private static void AppendContourPoint(StringBuilder sb, string x, string y)
-        {
-            sb.Append(" v ").Append(x)
-              .Append(' ').Append(y)
-              .Append(' ').Append(FormatNumber(0.0))
-              .Append(NewLine);
-        }
+        // Contorno retangular fechado da face da alma (canto reto, raio 0).
+        private static System.Collections.Generic.List<(double X, double Y, double Raio)> RetanguloFallback(double l, double h)
+            => new System.Collections.Generic.List<(double, double, double)>
+            {
+                (0.0, 0.0, 0.0),
+                (l,   0.0, 0.0),
+                (l,   h,   0.0),
+                (0.0, h,   0.0),
+                (0.0, 0.0, 0.0), // fecha o contorno
+            };
 
         // ============================================================
         //  Bloco ST (cabecalho)
@@ -115,39 +140,51 @@ namespace SteelBIM.Services.CncExport
         {
             sb.Append("ST").Append(NewLine);
 
-            // Bloco ST na ordem padrao DSTV NC1 (24 campos, um por linha, prefixados por
-            // dois espacos). CORRECAO v2.8.9: o comprimento (Length) e' o campo 9 — logo
-            // apos o codigo do perfil — e NAO o ultimo (estava na pos. 16); o tratamento de
-            // superficie e' campo de TEXTO (21), nao numerico no meio das dimensoes. Os 4
-            // angulos de corte e a area de pintura completam os 24 campos que os leitores
-            // DSTV (Tekla/Advance/FICEP/Voortman/Peddinghaus) esperam.
-            AppendField(sb, f.OrderNumber);                       // 1.  order
-            AppendField(sb, f.DrawingNumber);                     // 2.  drawing
-            AppendField(sb, f.Phase);                             // 3.  phase
-            AppendField(sb, f.PieceMark);                         // 4.  piece mark
-            AppendField(sb, f.SteelQuality);                      // 5.  steel quality
-            AppendField(sb, f.Quantity.ToString(Inv));            // 6.  quantity
-            AppendField(sb, f.ProfileName);                       // 7.  profile
-            AppendField(sb, f.ProfileType.ToDstvCode());          // 8.  profile code
-            AppendField(sb, FormatNumber(f.CutLengthMm));         // 9.  length [mm]
-            AppendField(sb, FormatNumber(f.ProfileHeightMm));     // 10. height [mm]
-            AppendField(sb, FormatNumber(f.FlangeWidthMm));       // 11. flange width [mm]
-            AppendField(sb, FormatNumber(f.FlangeThicknessMm));   // 12. flange thickness [mm]
-            AppendField(sb, FormatNumber(f.WebThicknessMm));      // 13. web thickness [mm]
-            AppendField(sb, FormatNumber(f.FilletRadiusMm));      // 14. radius [mm]
-            AppendField(sb, FormatNumber(f.WeightPerMeter));      // 15. weight [kg/m]
-            AppendField(sb, FormatNumber(0.0));                   // 16. painting surface [m2/m] (nao calculado)
-            AppendField(sb, FormatNumber(0.0));                   // 17. web start angle (0 = corte reto; miter -> bloco SC)
-            AppendField(sb, FormatNumber(0.0));                   // 18. web end angle
-            AppendField(sb, FormatNumber(0.0));                   // 19. flange start angle
-            AppendField(sb, FormatNumber(0.0));                   // 20. flange end angle
-            AppendField(sb, f.SurfaceTreatment);                  // 21. text 1 (tratamento de superficie)
-            AppendField(sb, "");                                  // 22. text 2
-            AppendField(sb, "");                                  // 23. text 3
-            AppendField(sb, "");                                  // 24. text 4
+            // Linha-comentario com o nome do arquivo NC1 ("** CH02.nc1"), como nos
+            // arquivos reais do fabricante. Sem o recuo de 2 espacos dos demais campos.
+            string ncName = string.IsNullOrWhiteSpace(f.OutputFileName)
+                ? SanitizeAscii(f.DrawingNumber) + ".nc1"
+                : SanitizeAscii(f.OutputFileName);
+            sb.Append("** ").Append(ncName).Append(NewLine);
 
-            sb.Append("EN").Append(NewLine);
+            // 8 campos administrativos (texto, recuo de 2 espacos), na ordem DSTV.
+            AppendField(sb, f.OrderNumber);                  // order
+            AppendField(sb, f.DrawingNumber);                // drawing
+            AppendField(sb, f.Phase);                        // phase
+            AppendField(sb, f.PieceMark);                    // piece mark
+            AppendField(sb, f.SteelQuality);                 // steel quality
+            AppendField(sb, f.Quantity.ToString(Inv));       // quantity
+            AppendField(sb, f.ProfileName);                  // profile
+            AppendField(sb, f.ProfileType.ToDstvCode());     // profile code
+
+            // 12 campos numericos em colunas de largura fixa (11). As 6 dimensoes
+            // lineares com 2 casas; peso/area/4-angulos com 3 casas. Validado byte-a-byte
+            // contra CH02/CH03/CH04. A linha de comprimento repete o valor (alma,mesa)
+            // separado por virgula — "620.00,620.00".
+            sb.Append(Col(f.CutLengthMm, 11, 2)).Append(',')
+              .Append(f.CutLengthMm.ToString("F2", Inv)).Append(NewLine); // 1.  length [mm]
+            AppendNum(sb, f.ProfileHeightMm, 2);             // 2.  height [mm]
+            AppendNum(sb, f.FlangeWidthMm, 2);               // 3.  flange width [mm]
+            AppendNum(sb, f.WebThicknessMm, 2);              // 4.  web thickness [mm]
+            AppendNum(sb, f.FlangeThicknessMm, 2);           // 5.  flange thickness [mm]
+            AppendNum(sb, f.FilletRadiusMm, 2);              // 6.  radius [mm]
+            AppendNum(sb, f.WeightPerMeter, 3);              // 7.  weight [kg/m]
+            AppendNum(sb, f.PaintingSurfacePerMeter, 3);     // 8.  painting surface [m2/m]
+            AppendNum(sb, 0.0, 3);                           // 9.  web start angle (miter -> bloco SC)
+            AppendNum(sb, 0.0, 3);                           // 10. web end angle
+            AppendNum(sb, 0.0, 3);                           // 11. flange start angle
+            AppendNum(sb, 0.0, 3);                           // 12. flange end angle
+
+            // 4 linhas de texto vazias que encerram o bloco ST (campos texto 1-4 nao
+            // usados). Linhas REALMENTE vazias — sem o recuo de 2 espacos.
+            sb.Append(NewLine).Append(NewLine).Append(NewLine).Append(NewLine);
+
+            // NB: o bloco ST NAO tem terminador EN — flui direto para o proximo bloco.
         }
+
+        // Campo numerico do bloco ST: coluna largura 11, right-aligned, casas fixas.
+        private static void AppendNum(StringBuilder sb, double value, int decimals)
+            => sb.Append(Col(value, 11, decimals)).Append(NewLine);
 
         // ============================================================
         //  Bloco SC (cortes em extremidade)
@@ -159,60 +196,42 @@ namespace SteelBIM.Services.CncExport
                 return;
 
             sb.Append("SC").Append(NewLine);
-            // Formato simplificado: angulo de inicio e angulo de fim em graus
+            // Formato simplificado: angulo de inicio e angulo de fim em graus.
             sb.Append("  ")
               .Append(FormatNumber(f.CutAngleStartDeg))
               .Append(" ")
               .Append(FormatNumber(f.CutAngleEndDeg))
               .Append(NewLine);
-            sb.Append("EN").Append(NewLine);
+            // Sem EN proprio — encerra no proximo marcador de bloco / EN final.
         }
 
         // ============================================================
-        //  Bloco BO (furos) — um bloco por face com furos
+        //  Bloco BO (furos) — bloco unico, uma linha por furo
         // ============================================================
+        // Formato de cada linha (largura fixa, validado contra .nc1 do fabricante):
+        //   "  " + <faceCode> + <X:11> + 's' + <Y:10> + <Diametro:11>
+        // O marcador 's' (col. 14) acompanha cada furo nos arquivos de referencia.
+        // Ordenado por (X, Y, diametro) para arquivo deterministico (diff estavel).
 
         private static void WriteHoles(StringBuilder sb, DstvFile f)
         {
             if (f.Holes == null || f.Holes.Count == 0)
                 return;
 
-            // Agrupar por face e ordenar para reprodutibilidade
-            var byFace = new System.Collections.Generic.Dictionary<DstvFace, System.Collections.Generic.List<DstvHole>>();
-            foreach (DstvHole h in f.Holes)
+            var holes = new System.Collections.Generic.List<DstvHole>(f.Holes);
+            holes.Sort(CompareHoles);
+
+            sb.Append("BO").Append(NewLine);
+            foreach (DstvHole h in holes)
             {
-                if (!byFace.ContainsKey(h.Face))
-                    byFace[h.Face] = new System.Collections.Generic.List<DstvHole>();
-                byFace[h.Face].Add(h);
+                sb.Append("  ").Append(h.Face.ToDstvCode())
+                  .Append(Col(h.XMm, 11, 2))
+                  .Append('s')
+                  .Append(Col(h.YMm, 10, 2))
+                  .Append(Col(h.DiameterMm, 11, 2))
+                  .Append(NewLine);
             }
-
-            // Ordem fixa de faces para arquivo determinístico (facilita diff em git)
-            DstvFace[] orderedFaces = { DstvFace.WebFront, DstvFace.WebBack, DstvFace.TopFlange, DstvFace.BottomFlange, DstvFace.Side };
-
-            foreach (DstvFace face in orderedFaces)
-            {
-                if (!byFace.TryGetValue(face, out var holes) || holes.Count == 0)
-                    continue;
-
-                holes.Sort(CompareHoles);
-
-                sb.Append("BO").Append(NewLine);
-                foreach (DstvHole h in holes)
-                {
-                    // Formato:  <face> <x> <y> <diametro> [<profundidade>]
-                    sb.Append(' ')
-                      .Append(face.ToDstvCode())
-                      .Append(' ').Append(FormatNumber(h.XMm))
-                      .Append(' ').Append(FormatNumber(h.YMm))
-                      .Append(' ').Append(FormatNumber(h.DiameterMm));
-
-                    if (h.DepthMm > 0)
-                        sb.Append(' ').Append(FormatNumber(h.DepthMm));
-
-                    sb.Append(NewLine);
-                }
-                sb.Append("EN").Append(NewLine);
-            }
+            // Sem EN proprio.
         }
 
         // ============================================================
@@ -230,7 +249,7 @@ namespace SteelBIM.Services.CncExport
             {
                 sb.Append("  ").Append(SanitizeAscii(line.Trim())).Append(NewLine);
             }
-            sb.Append("EN").Append(NewLine);
+            // Sem EN proprio — encerra no EN final do arquivo.
         }
 
         // ============================================================
@@ -265,6 +284,24 @@ namespace SteelBIM.Services.CncExport
             double rounded = Math.Round(value, 2, MidpointRounding.AwayFromZero);
             string s = rounded.ToString("0.##", Inv);
             return s;
+        }
+
+        /// <summary>
+        /// Formata um numero em coluna de largura fixa, right-aligned, com numero fixo
+        /// de casas decimais (ponto invariante). Usado nos blocos ST/AK/BO do NC1, cujas
+        /// colunas tem posicao byte-exata. Ex.: <c>Col(620, 11, 2)</c> = <c>"     620.00"</c>.
+        /// NaN/Infinity caem para 0 (mesma politica defensiva de <see cref="FormatNumber"/>).
+        /// </summary>
+        public static string Col(double value, int width, int decimals)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+            {
+                System.Diagnostics.Debug.WriteLine("[DstvFileWriter] Valor nao-finito em coluna fixa, substituido por 0");
+                value = 0.0;
+            }
+
+            string s = value.ToString("F" + decimals.ToString(Inv), Inv);
+            return s.PadLeft(width);
         }
 
         /// <summary>

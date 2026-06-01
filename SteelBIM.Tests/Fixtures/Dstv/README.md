@@ -1,22 +1,24 @@
 # Fixtures DSTV — golden tests CHAPA
 
-**Status:** Aguardando arquivos `.nc1` reais do fabricante.
+**Status:** ✅ Implementado. Os 3 `.nc1` reais do fabricante sao o oraculo do golden
+test `DstvWriterGoldenChapaTests` (byte-a-byte). O `DstvFileWriter` foi alinhado ao
+formato real do fabricante (colunas de largura fixa, unico `EN` no fim, blocos
+ST/AK/BO validados).
 
-## Arquivos esperados
+## Arquivos
 
-- `CH02.nc1` — CHAPA 620×520×12,7 com 11 furos Ø21 + recorte de canto
-- `CH03.nc1` — TBD (variante CHAPA)
-- `CH04.nc1` — TBD (variante CHAPA)
+- `CH02.nc1` — CHAPA 620×520×12,7 com 11 furos Ø21 + recorte de canto (raio -13)
+- `CH03.nc1` — variante CHAPA (fase 104, qtd 72)
+- `CH04.nc1` — variante CHAPA (fase 101, qtd 36)
 
-## Como usar quando os arquivos chegarem
+## Como estao ligados
 
-1. Salvar os 3 `.nc1` neste diretorio (sao binarios ASCII, line ending CRLF).
-2. Marcar cada um como `Content` no `SteelBIM.Tests.csproj` com `CopyToOutputDirectory=PreserveNewest`.
-3. Implementar `DstvWriterGoldenChapaTests` em `SteelBIM.Tests/Services/CncExport/`:
-   - Montar um `DstvFile` equivalente ao CH02 (cabecalho + ContornoAk + Holes)
-   - Assertar `DstvFileWriter.Write(f)` IGUAL byte-a-byte ao conteudo de `CH02.nc1`
-4. Ajustar `DstvFileWriter` ate o golden passar (entrada do CH02 esta especificada
-   no prompt da Etapa D do plano Onda 3).
+1. Os 3 `.nc1` ficam neste diretorio (binarios ASCII, CRLF — ver `.gitattributes`).
+2. Sao embutidos como `EmbeddedResource` no `SteelBIM.Tests.csproj` (preserva os bytes
+   exatos, sem risco de normalizacao de fim de linha na copia).
+3. `DstvWriterGoldenChapaTests` monta um `DstvFile` equivalente a cada um
+   (cabecalho + `ContornoAk` + `Holes`) e assere `DstvFileWriter.Write(f)` IGUAL
+   byte-a-byte ao recurso embutido.
 
 ## Entrada do CH02 (referencia rapida)
 
