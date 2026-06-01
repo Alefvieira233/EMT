@@ -52,3 +52,7 @@
 *.xlsx     binary
 *.docx     binary
 *.pptx     binary
+
+# Fixtures DSTV/NC1 — oraculo byte-a-byte do golden test.
+# CRLF obrigatorio (formato NC1). binary = git nunca normaliza nem faz diff textual.
+*.nc1      binary
