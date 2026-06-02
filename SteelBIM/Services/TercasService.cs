@@ -173,7 +173,7 @@ namespace SteelBIM.Services
                     if (start.DistanceTo(end) < RevitUtils.EPS)
                         continue;
                     Line eixoTerca = Line.CreateBound(start, end);
-                    CreateTercaSegments(doc, eixoTerca, plane, curvasBanzos, config.DividirNosBanzos, config.SymbolSelecionado, nivel, config.ZJustificationValue, rotacaoRad);
+                    CreateTercaSegments(doc, eixoTerca, plane, curvasBanzos, config.DividirNosBanzos, config.SymbolSelecionado, nivel, config.ZJustificationValue, config.YJustificationValue, rotacaoRad);
                 }
                 t.Commit();
             }
@@ -191,6 +191,7 @@ namespace SteelBIM.Services
             FamilySymbol perfil,
             Level nivel,
             int zJustificationValue,
+            int yJustificationValue,
             double rotacaoRad)
         {
             if (eixoTerca == null || perfil == null || nivel == null)
@@ -220,7 +221,11 @@ namespace SteelBIM.Services
 
                 if (fi != null)
                 {
+                    // v2.8.11 (Onda 3): alem do Z (inferior, default da janela), aplicar a
+                    // justificacao lateral Y (esquerda, default 0) — antes a terça ficava
+                    // centralizada lateralmente por nunca setar Y_JUSTIFICATION.
                     RevitUtils.SetZJustification(fi, zJustificationValue);
+                    RevitUtils.SetYJustification(fi, yJustificationValue);
                     RevitUtils.SetYZOffsets(fi, 0.0, 0.0);
                     RevitUtils.SetSectionRotation(fi, rotacaoRad);
                 }

@@ -14,6 +14,12 @@ namespace SteelBIM.Models
         public double RotacaoSecaoGraus { get; set; }
         public bool InverterSentido { get; set; }
         public int ZJustificationValue { get; set; }
+
+        /// <summary>
+        /// v2.8.11 (Onda 3): justificacao lateral (Y). 0=Esquerda (default), 1=Centro,
+        /// 2=Origem, 3=Direita. Lança a terça "alinhada pela esquerda" em vez de centralizada.
+        /// </summary>
+        public int YJustificationValue { get; set; } = 0;
         public bool DividirNosBanzos { get; set; }
 
         // v2.8.1 (Victor): espacamento manual entre linhas.
