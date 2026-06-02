@@ -131,6 +131,13 @@ namespace SteelBIM.Models.PF
         public double EspacamentoCentralCm { get; set; } = 20.0;
         public double EspacamentoSuperiorCm { get; set; } = 12.0;
         public double AlturaZonaExtremidadeCm { get; set; } = 60.0;
+
+        /// <summary>
+        /// M11 (NBR): se &gt; 0, a zona de adensamento passa a ser max(AlturaZonaExtremidadeCm,
+        /// FatorZonaAdensamento x maior_lado_da_secao). Default 0 = só o valor fixo (sem
+        /// regressão). Coeficiente a definir pelo engenheiro responsável.
+        /// </summary>
+        public double FatorZonaAdensamento { get; set; } = 0.0;
     }
 
     /// <summary>

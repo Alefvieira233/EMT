@@ -340,7 +340,12 @@ namespace SteelBIM.Services.PF
             // ---- modo ZONEAMENTO NBR 6118 (pilar retangular) ----
             // zoneHeight = altura da zona de extremidade (inferior/superior)
             // middleHeight = altura da zona central (corpo do pilar)
-            double zoneHeight = Math.Min(ToFeetCm(config.AlturaZonaExtremidadeCm), clearHeight / 2.0);
+            // M11 (NBR): comprimento da zona pode escalar com a maior dimensao da secao
+            // (FatorZonaAdensamento). Default 0 -> usa so AlturaZonaExtremidadeCm (sem regressao).
+            double maiorLadoCm = ToCentimeters(Math.Max(frame.MaxX - frame.MinX, frame.MaxY - frame.MinY));
+            double zonaAdensamentoCm = PfRebarServicePure.ComprimentoZonaAdensamentoCm(
+                config.AlturaZonaExtremidadeCm, config.FatorZonaAdensamento, maiorLadoCm);
+            double zoneHeight = Math.Min(ToFeetCm(zonaAdensamentoCm), clearHeight / 2.0);
             double middleHeight = Math.Max(ToFeetMm(50), clearHeight - (zoneHeight * 2.0));
             int created = 0;
 

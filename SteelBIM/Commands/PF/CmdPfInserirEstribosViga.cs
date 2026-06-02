@@ -19,7 +19,7 @@ namespace SteelBIM.Commands.PF
             SteelBIM.Utils.DisclaimerService.MostrarUmaVezPorSessao(
                 "pf-armadura", CommandName, SteelBIM.Utils.DisclaimerTexts.Armadura);
 
-            List<Element> hosts = PfElementService.GetSelectionOrPick(
+            List<Element> hosts = PfElementService.PrepararHosts(
                 uidoc,
                 PfElementService.IsStructuralBeam,
                 "Selecione as vigas estruturais para configurar e lancar os estribos.");
@@ -27,7 +27,6 @@ namespace SteelBIM.Commands.PF
             if (hosts.Count == 0)
                 return Result.Cancelled;
 
-            uidoc.Selection.SetElementIds(hosts.Select(x => x.Id).ToList());
 
             PfBeamStirrupsWindow window = new PfBeamStirrupsWindow(doc, hosts[0]);
             if (window.ShowDialog() != true)

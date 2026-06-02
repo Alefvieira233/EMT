@@ -560,5 +560,32 @@ namespace SteelBIM.Tests.Services.PF
                 espInferiorCm: 0, espCentralCm: 0, espSuperiorCm: 0, alturaZonaExtremidadeCm: 60);
             g.Should().Be(0);
         }
+
+        // =============================================================
+        //  ComprimentoZonaAdensamentoCm (M11/M12 — NBR, default sem regressao)
+        // =============================================================
+
+        [Fact]
+        public void ZonaAdensamento_FatorZero_UsaSoOFixo()
+        {
+            // fator 0 = comportamento atual (sem regressao)
+            PfRebarServicePure.ComprimentoZonaAdensamentoCm(60.0, 0.0, 50.0).Should().Be(60.0);
+        }
+
+        [Fact]
+        public void ZonaAdensamento_FatorEscala_UsaOMaior()
+        {
+            // viga h=40cm, fator 2.0 -> 80cm > fixo 60 -> 80
+            PfRebarServicePure.ComprimentoZonaAdensamentoCm(60.0, 2.0, 40.0).Should().Be(80.0);
+            // pilar lado 30cm, fator 1.0 -> 30cm < fixo 60 -> mantem 60
+            PfRebarServicePure.ComprimentoZonaAdensamentoCm(60.0, 1.0, 30.0).Should().Be(60.0);
+        }
+
+        [Fact]
+        public void ZonaAdensamento_DimensaoZeroOuNegativa_IgnoraEscala()
+        {
+            PfRebarServicePure.ComprimentoZonaAdensamentoCm(60.0, 2.0, 0.0).Should().Be(60.0);
+            PfRebarServicePure.ComprimentoZonaAdensamentoCm(60.0, 2.0, -10.0).Should().Be(60.0);
+        }
     }
 }

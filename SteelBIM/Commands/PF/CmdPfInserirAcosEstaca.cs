@@ -19,7 +19,7 @@ namespace SteelBIM.Commands.PF
             SteelBIM.Utils.DisclaimerService.MostrarUmaVezPorSessao(
                 "pf-armadura", CommandName, SteelBIM.Utils.DisclaimerTexts.Armadura);
 
-            System.Collections.Generic.List<Element> hosts = PfElementService.GetSelectionOrPick(
+            System.Collections.Generic.List<Element> hosts = PfElementService.PrepararHosts(
                 uidoc,
                 PfElementService.IsStructuralPile,
                 "Selecione as estacas para lançar a armadura longitudinal...");
@@ -27,7 +27,6 @@ namespace SteelBIM.Commands.PF
             if (hosts.Count == 0)
                 return Result.Cancelled;
 
-            uidoc.Selection.SetElementIds(hosts.Select(x => x.Id).ToList());
 
             PfEstacaRebarWindow window = new PfEstacaRebarWindow(doc, hosts[0]);
             if (window.ShowDialog() != true)

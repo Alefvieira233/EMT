@@ -34,6 +34,40 @@ namespace SteelBIM.Services.Trelica
     public sealed class CotarTrelicaService
     {
         /// <summary>
+        /// M4: encapsula a TRANSACAO (antes aberta no Command) — abre, SwallowWarnings,
+        /// chama <see cref="Executar"/> (pipeline), commita; em erro faz rollback e relança.
+        /// Mantem o Command fino e uniformiza a camada (transacao no service).
+        /// </summary>
+        public CotarTrelicaReport ExecutarComTransacao(
+            UIDocument uidoc,
+            Document doc,
+            View vista,
+            IReadOnlyList<FamilyInstance> barras,
+            CotarTrelicaConfig config)
+        {
+            using (Transaction t = new Transaction(doc, "EMT - Cotar Treliça"))
+            {
+                t.Start();
+                // Pipeline cria muitas Dimensions/Tags/TextNotes; warnings comuns ("dimension
+                // outside view", "joined geometry...") nao podem bloquear o commit. Erros reais
+                // (Severity != Warning) seguem normais.
+                FailureHandlingHelper.SwallowWarnings(t);
+                try
+                {
+                    CotarTrelicaReport report = Executar(uidoc, doc, vista, barras, config);
+                    t.Commit();
+                    return report;
+                }
+                catch
+                {
+                    if (t.HasStarted() && !t.HasEnded())
+                        t.RollBack();
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
         /// Executa o pipeline completo de cotagem de trelica.
         /// </summary>
         /// <param name="uidoc">UIDocument ativo.</param>

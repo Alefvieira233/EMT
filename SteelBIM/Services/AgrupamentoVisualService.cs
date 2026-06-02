@@ -31,8 +31,9 @@ namespace SteelBIM.Services
     /// </summary>
     internal static class AgrupamentoVisualService
     {
-        private const string PrefixoGruposPilares = "EMT_COL_";
-        private const string PrefixoGruposVigas = "EMT_VIG_";
+        // B6: prefixos centralizados em EmtPrefixos (compartilhado com LimparModeloService).
+        private const string PrefixoGruposPilares = EmtPrefixos.GruposPilares;
+        private const string PrefixoGruposVigas = EmtPrefixos.GruposVigas;
 
         /// <summary>Resultado de uma operacao de agrupamento (pilares ou vigas).</summary>
         public sealed class ResultadoAgrupamento
@@ -480,7 +481,7 @@ namespace SteelBIM.Services
             AppendVolume(sb, instancia);
             AppendMaterialEstrutural(sb, instancia);
             AppendParametrosPorNome(sb, instancia, "WEIGHT", TokensPeso);
-            AppendCurveInvariante(sb, (instancia.Location as LocationCurve)?.Curve);
+            AppendCurveInvariante(sb, SteelBIM.Utils.RevitUtils.GetElementCurve(instancia));
 
             return sb.ToString();
         }
@@ -511,7 +512,7 @@ namespace SteelBIM.Services
             AppendParametro(sb, "SZ_OFF", instancia, BuiltInParameter.START_Z_OFFSET_VALUE);
             AppendParametro(sb, "EZ_OFF", instancia, BuiltInParameter.END_Z_OFFSET_VALUE);
             AppendParametrosPorNome(sb, instancia, "WEIGHT", TokensPeso);
-            AppendCurveInvariante(sb, (instancia.Location as LocationCurve)?.Curve);
+            AppendCurveInvariante(sb, SteelBIM.Utils.RevitUtils.GetElementCurve(instancia));
 
             return sb.ToString();
         }
@@ -525,7 +526,7 @@ namespace SteelBIM.Services
             AppendVolume(sb, instancia);
             AppendMaterialEstrutural(sb, instancia);
             AppendParametrosPorNome(sb, instancia, "WEIGHT", TokensPeso);
-            AppendCurveInvariante(sb, (instancia.Location as LocationCurve)?.Curve);
+            AppendCurveInvariante(sb, SteelBIM.Utils.RevitUtils.GetElementCurve(instancia));
 
             return sb.ToString();
         }

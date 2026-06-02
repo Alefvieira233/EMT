@@ -314,22 +314,13 @@ namespace SteelBIM.Services.CncExport
 
         public static string GetPieceMark(FamilyInstance element, ExportarDstvConfig? config)
         {
+            // A6: leitura dos valores Revit aqui; a PRECEDENCIA fica no helper puro testavel.
+            string? valorConfig = null;
             if (config != null && !string.IsNullOrWhiteSpace(config.NomeParametroMarca))
-            {
-                Parameter? p = element.LookupParameter(config.NomeParametroMarca);
-                string? v = p?.AsString();
-                if (!string.IsNullOrWhiteSpace(v))
-                    return v;
-            }
+                valorConfig = element.LookupParameter(config.NomeParametroMarca)?.AsString();
 
-            // ALL_MODEL_MARK
-            Parameter? pMark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
-            string? mark = pMark?.AsString();
-            if (!string.IsNullOrWhiteSpace(mark))
-                return mark;
-
-            // Fallback: usar ID do elemento
-            return $"ID-{element.Id?.Value ?? 0}";
+            string? mark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK)?.AsString();
+            return DstvPieceMark.Escolher(valorConfig, mark, element.Id?.Value ?? 0);
         }
 
         // ============================================================

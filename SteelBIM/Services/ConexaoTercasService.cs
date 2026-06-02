@@ -42,7 +42,7 @@ namespace SteelBIM.Services
     ///   <item>Para cada terça: extrai curva, p0/p1, GetTransform.</item>
     ///   <item>Filtra extremidades livres + proximas de viga.</item>
     ///   <item>Projeta endpoint escolhido na curva da viga mais proxima.</item>
-    ///   <item>Obtem solids via <c>GetAllSolids(false)</c> + maior face planar.</item>
+    ///   <item>Obtem solids via <c>GetAllSolids(true)</c> (mundo) + maior face planar.</item>
     ///   <item>Modo Completo opcional: raycast pra GetBottomFace + altura.</item>
     ///   <item><c>NewFamilyInstance(sideFace, finalPoint, ejeX, symbol)</c>.</item>
     ///   <item>Guard: corrige posicao via MoveElement se Location divergir
@@ -318,8 +318,11 @@ namespace SteelBIM.Services
         {
             try
             {
-                // Solids da terça (geometria local da familia — isRealLocation=false).
-                var solids = pt.Terca.Element.GetAllSolids(false, out var _);
+                // M13: solids em coordenadas do MUNDO (isRealLocation=true) — consistente com
+                // o ponto de insercao (pt.Base) e as direcoes (tercaDir/ejeX/BasisZ), tambem em
+                // mundo. Antes era symbol-space (false), o que so coincidia perto da origem;
+                // para terças longe da origem a face/heuristica/hosting saiam inconsistentes.
+                var solids = pt.Terca.Element.GetAllSolids(true, out var _);
 
                 // Eixos locais da terça pra orientar a familia (calculados PRIMEIRO
                 // pra usar na heuristica de face)
@@ -537,7 +540,7 @@ namespace SteelBIM.Services
                 return 0;
 
             // Raycast curto pra baixo a partir do ponto da terça
-            Line ray = Line.CreateBound(pt.Base, pt.Base - XYZ.BasisZ * (200.0 / 304.8));
+            Line ray = Line.CreateBound(pt.Base, pt.Base - XYZ.BasisZ * (200.0 * RevitUtils.FT_PER_MM));
             SetComparisonResult result = bottom.Intersect(ray, out IntersectionResultArray? results);
             if (result != SetComparisonResult.Overlap || results == null || results.Size == 0)
                 return 0;

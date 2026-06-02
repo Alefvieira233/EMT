@@ -67,30 +67,18 @@ namespace SteelBIM.Commands
 
             CotarTrelicaConfig config = wnd.BuildConfig();
 
-            // ===== 4. Executa servico dentro de uma transacao =====
+            // ===== 4. Executa servico (M4: transacao agora vive DENTRO do service) =====
             var service = new Services.Trelica.CotarTrelicaService();
             Services.Trelica.CotarTrelicaReport report;
-
-            using (var t = new Transaction(doc, "EMT - Cotar Treliça"))
+            try
             {
-                t.Start();
-                // P1.1 (2026-04-28): pipeline de 10 etapas cria muitas Dimensions/Tags/TextNotes;
-                // sem swallow warnings comuns ("dimension outside view", "joined geometry...")
-                // bloqueiam o commit com dialogo modal. Erros (Severity != Warning) seguem normais.
-                SteelBIM.Utils.FailureHandlingHelper.SwallowWarnings(t);
-                try
-                {
-                    Logger.Info("[{Cmd}] chamando service com {N} barras", CommandName, barras.Count);
-                    report = service.Executar(uidoc, doc, vistaAtiva, barras, config);
-                    t.Commit();
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "[{Cmd}] erro no service", CommandName);
-                    if (t.HasStarted() && !t.HasEnded())
-                        t.RollBack();
-                    throw;
-                }
+                Logger.Info("[{Cmd}] chamando service com {N} barras", CommandName, barras.Count);
+                report = service.ExecutarComTransacao(uidoc, doc, vistaAtiva, barras, config);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "[{Cmd}] erro no service", CommandName);
+                throw;
             }
 
             // ===== 5. Exibe relatorio ao usuario =====
