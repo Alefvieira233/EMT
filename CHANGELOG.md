@@ -11,6 +11,32 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
 `docs/audits/SUPER-RELATORIO-2026-05-31.md`. Nota global 7,6/10, **sem P0 ativo**.
 
+**Ajustes de campo (2026-06-02) — 6 pontos do escritório:**
+- **P1 — Estribos Pilar não gerava nada / ignorava o espaçamento:** a janela não setava
+  `UsarEspacamentoUnico`, então caía no zoneamento NBR (default) que ignorava o valor
+  digitado; agora honra o espaçamento único. Além disso, quando nada é criado a mensagem
+  mostra o **motivo provável** (sem RebarBarType, seção degenerada, altura < 100 mm) em vez
+  de só "0 armaduras". Helper puro `ContarGruposEstriboColuna` + 5 testes.
+- **P6 — Treliça com padrões + espaçamentos variáveis + treliça completa:** `TrussPattern`
+  (Pratt/Howe/Warren/Alternada/DiagonalDir/DiagonalEsq/EmX/SoMontantes/Personalizado),
+  `TrussSpacingMode` (uniforme/lista/posições), helper puro `TrelicaPatternBuilder` (12 testes),
+  modo "treliça completa" (1 linha-base + altura → gera banzos+montantes+diagonais). UI nova
+  na `TrelicaWindow`.
+- **P2 — Terça lançada alinhada pela esquerda:** `RevitUtils.SetYJustification` +
+  `TercasConfig.YJustificationValue` (default 0=Esquerda); antes ficava centralizada (Z já
+  era "Inferior").
+- **P3 — Chapa de ligação com ajuste fino de alinhamento:** `ConexaoTercasConfig.OffsetLateralMm`
+  (offset ao longo do eixo da terça) + campo na janela, para alinhar a chapa com a costa/esquerda
+  da terça sem mexer na heurística de face. Modo "mesma origem da terça" completo: follow-up de smoke.
+- **P5 — Botão "Limpar Modelo":** remove filtros de vista e grupos temporários `EMT` (limpeza
+  seletiva e segura, com confirmação); não apaga elementos modelados nem famílias (purge de
+  família = "Purgar Não Utilizados" nativo do Revit — sem API segura).
+- **P4 — Família da ligação desproporcional:** edição no Family Editor (`.rfa` fora do repo);
+  parâmetros de tamanho já ajustáveis pela janela de conexão quando a família os expõe.
+
+**Pendente de smoke test no Revit (Alef/Victor):** estribos pilar, treliça (padrões + completa),
+alinhamento da terça/costa, chapa (offset lateral). Tudo compila no CI; lógica pura coberta por testes.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
