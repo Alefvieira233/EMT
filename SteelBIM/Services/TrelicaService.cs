@@ -220,32 +220,28 @@ namespace SteelBIM.Services
         // Estacoes intermediarias (parametros 0..1) conforme o modo de espacamento.
         private List<double> CalcularParametros(TrelicaConfig config, double lenFt)
         {
-            switch (config.ModoEspacamento)
+            if (config.ModoEspacamento == TrussSpacingMode.ListaEspacamentos)
             {
-                case TrussSpacingMode.ListaEspacamentos:
-                {
-                    int qtd = Math.Max(1, config.EspacamentosCm.Count - 1);
-                    return TercasSpacingCalculator.CalcularParametrosPosicao(qtd, true, config.EspacamentosCm, lenFt);
-                }
-
-                case TrussSpacingMode.Posicoes:
-                {
-                    List<double> ps = new List<double>();
-                    if (lenFt <= 0)
-                        return ps;
-                    foreach (double posCm in config.EspacamentosCm)
-                    {
-                        double par = (posCm * TercasSpacingCalculator.FtPerCm) / lenFt;
-                        if (par > 0.0 && par < 1.0)
-                            ps.Add(Math.Clamp(par, 0.0, 1.0));
-                    }
-                    return ps;
-                }
-
-                case TrussSpacingMode.Uniforme:
-                default:
-                    return TercasSpacingCalculator.CalcularParametrosPosicao(config.Quantidade, false, null, lenFt);
+                int qtd = Math.Max(1, config.EspacamentosCm.Count - 1);
+                return TercasSpacingCalculator.CalcularParametrosPosicao(qtd, true, config.EspacamentosCm, lenFt);
             }
+
+            if (config.ModoEspacamento == TrussSpacingMode.Posicoes)
+            {
+                List<double> ps = new List<double>();
+                if (lenFt <= 0)
+                    return ps;
+                foreach (double posCm in config.EspacamentosCm)
+                {
+                    double par = (posCm * TercasSpacingCalculator.FtPerCm) / lenFt;
+                    if (par > 0.0 && par < 1.0)
+                        ps.Add(Math.Clamp(par, 0.0, 1.0));
+                }
+                return ps;
+            }
+
+            // Uniforme (default).
+            return TercasSpacingCalculator.CalcularParametrosPosicao(config.Quantidade, false, null, lenFt);
         }
 
         private static void AtivarSimbolos(TrelicaConfig config)
