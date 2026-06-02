@@ -313,5 +313,20 @@ namespace SteelBIM.Services.PF
                 grupos++;
             return grupos;
         }
+
+        /// <summary>
+        /// M11/M12 (NBR): comprimento da ZONA DE ADENSAMENTO de estribos (cm). A NBR 6118 liga
+        /// a regiao critica a' dimensao da peca (maior lado do pilar / altura da viga); este
+        /// helper retorna o MAIOR entre o valor FIXO informado e <paramref name="fatorDimensao"/>
+        /// x <paramref name="dimensaoCm"/>.
+        /// <para><paramref name="fatorDimensao"/> = 0 (default) -> usa so o fixo = comportamento
+        /// atual, SEM regressao. O coeficiente (ex.: ~2 x h para viga) deve ser definido pelo
+        /// engenheiro responsavel.</para>
+        /// </summary>
+        public static double ComprimentoZonaAdensamentoCm(double fixoCm, double fatorDimensao, double dimensaoCm)
+        {
+            double escalado = (fatorDimensao > 0.0 && dimensaoCm > 0.0) ? fatorDimensao * dimensaoCm : 0.0;
+            return Math.Max(fixoCm, escalado);
+        }
     }
 }
