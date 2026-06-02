@@ -237,6 +237,10 @@ namespace SteelBIM.Services
                     if (par > 0.0 && par < 1.0)
                         ps.Add(Math.Clamp(par, 0.0, 1.0));
                 }
+                // Posicoes sao absolutas e podem vir fora de ordem; ordenar para garantir
+                // estacoes monotonicas (senao diagonais/montantes cruzam). Coincidentes sao
+                // descartadas depois pelo guard de distancia em CriarMembro.
+                ps.Sort();
                 return ps;
             }
 
