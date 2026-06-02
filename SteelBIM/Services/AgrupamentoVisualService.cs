@@ -480,7 +480,7 @@ namespace SteelBIM.Services
             AppendVolume(sb, instancia);
             AppendMaterialEstrutural(sb, instancia);
             AppendParametrosPorNome(sb, instancia, "WEIGHT", TokensPeso);
-            AppendCurveInvariante(sb, (instancia.Location as LocationCurve)?.Curve);
+            AppendCurveInvariante(sb, SteelBIM.Utils.RevitUtils.GetElementCurve(instancia));
 
             return sb.ToString();
         }
@@ -511,7 +511,7 @@ namespace SteelBIM.Services
             AppendParametro(sb, "SZ_OFF", instancia, BuiltInParameter.START_Z_OFFSET_VALUE);
             AppendParametro(sb, "EZ_OFF", instancia, BuiltInParameter.END_Z_OFFSET_VALUE);
             AppendParametrosPorNome(sb, instancia, "WEIGHT", TokensPeso);
-            AppendCurveInvariante(sb, (instancia.Location as LocationCurve)?.Curve);
+            AppendCurveInvariante(sb, SteelBIM.Utils.RevitUtils.GetElementCurve(instancia));
 
             return sb.ToString();
         }
@@ -525,7 +525,7 @@ namespace SteelBIM.Services
             AppendVolume(sb, instancia);
             AppendMaterialEstrutural(sb, instancia);
             AppendParametrosPorNome(sb, instancia, "WEIGHT", TokensPeso);
-            AppendCurveInvariante(sb, (instancia.Location as LocationCurve)?.Curve);
+            AppendCurveInvariante(sb, SteelBIM.Utils.RevitUtils.GetElementCurve(instancia));
 
             return sb.ToString();
         }

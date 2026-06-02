@@ -211,7 +211,7 @@ namespace SteelBIM.Services
 
         private static int ObterExtremidadeMaisProxima(FamilyInstance viga, Element outroElemento, Reference? referencia)
         {
-            Curve? curva = (viga.Location as LocationCurve)?.Curve;
+            Curve? curva = SteelBIM.Utils.RevitUtils.GetElementCurve(viga);
             if (curva == null)
                 return 1;
 

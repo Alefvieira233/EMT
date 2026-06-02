@@ -537,7 +537,7 @@ namespace SteelBIM.Services
                 return 0;
 
             // Raycast curto pra baixo a partir do ponto da terça
-            Line ray = Line.CreateBound(pt.Base, pt.Base - XYZ.BasisZ * (200.0 / 304.8));
+            Line ray = Line.CreateBound(pt.Base, pt.Base - XYZ.BasisZ * (200.0 * RevitUtils.FT_PER_MM));
             SetComparisonResult result = bottom.Intersect(ray, out IntersectionResultArray? results);
             if (result != SetComparisonResult.Overlap || results == null || results.Size == 0)
                 return 0;

@@ -30,7 +30,7 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
             }
 
-            Curve curvaViga = (viga.Location as LocationCurve)?.Curve;
+            Curve curvaViga = RevitUtils.GetElementCurve(viga);
             if (curvaViga == null)
             {
                 AppDialogService.ShowWarning("Seccionar Viga", "Nao foi possivel obter a curva da viga selecionada.", "Curva indisponível");
@@ -80,7 +80,7 @@ namespace SteelBIM.Commands
                     if (!viga.CanSplit)
                         continue;
 
-                    Curve curvaAtual = (viga.Location as LocationCurve)?.Curve;
+                    Curve curvaAtual = RevitUtils.GetElementCurve(viga);
                     if (curvaAtual == null)
                         continue;
 
