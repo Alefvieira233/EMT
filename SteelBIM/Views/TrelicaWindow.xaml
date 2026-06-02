@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Configurar Treliça"
         Width="760"
-        Height="420"
-        MinWidth="680" MinHeight="340" MaxHeight="620"
+        Height="600"
+        MinWidth="680" MinHeight="420" MaxHeight="760"
         Background="{DynamicResource WindowBackgroundBrush}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
@@ -69,6 +69,46 @@
                 <TextBox x:Name="numZOffset" Grid.Row="7" Grid.Column="1" Width="100" Margin="6 2 0 2" HorizontalAlignment="Left" Text="0"/>
 
                 <CheckBox x:Name="chkInverterSentido" Grid.Row="7" Grid.Column="3" Grid.ColumnSpan="2" Margin="0 2 0 2" VerticalAlignment="Center" Content="Lançar com sentido invertido"/>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="1" Header="Treliçado e modulação" Padding="10" Margin="0 0 0 0" VerticalAlignment="Top">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Tipo de treliçado:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbPadrao" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
+                <CheckBox x:Name="chkMontantesExtremidade" Grid.Row="0" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="0 2 0 2" Content="Montantes nas extremidades" IsChecked="True"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Espaçamento:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbModoEspacamento" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2"/>
+                <CheckBox x:Name="chkMontantesIntermediarios" Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="0 2 0 2" Content="Montantes intermediários (Warren)"/>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Lista (cm, sep. ;):" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtEspacamentos" Grid.Row="2" Grid.Column="1" Margin="6 2 0 2" ToolTip="Ex.: 120 ; 150 ; 200 — distancias (Lista) ou posicoes (Posicoes) em cm"/>
+                <CheckBox x:Name="chkDiagonaisExtremidade" Grid.Row="2" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="0 2 0 2" Content="Diagonais nas extremidades" IsChecked="True"/>
+
+                <CheckBox x:Name="chkTrelicaCompleta" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="0 8 0 2" Content="Treliça completa (gera banzos)" Checked="ChkTrelicaCompleta_CheckedChanged" Unchecked="ChkTrelicaCompleta_CheckedChanged"/>
+                <Label Grid.Row="3" Grid.Column="3" Content="Altura (mm):" VerticalAlignment="Center" Margin="0 8 6 2"/>
+                <TextBox x:Name="txtAltura" Grid.Row="3" Grid.Column="4" Width="110" HorizontalAlignment="Left" Margin="0 8 0 2" Text="0"/>
+
+                <Label Grid.Row="4" Grid.Column="0" Content="Família Banzo:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbFamiliaBanzo" Grid.Row="4" Grid.Column="1" Margin="6 2 0 2" SelectionChanged="CmbFamiliaBanzo_SelectionChanged"/>
+                <Label Grid.Row="4" Grid.Column="3" Content="Perfil Banzo:" VerticalAlignment="Center" Margin="0 0 6 0"/>
+                <ComboBox x:Name="cmbBanzo" Grid.Row="4" Grid.Column="4" Margin="0 2 0 2"/>
             </Grid>
         </GroupBox>
 

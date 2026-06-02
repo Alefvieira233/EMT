@@ -47,6 +47,7 @@ namespace SteelBIM.Views
             {
                 cmbFamiliaMontante.Items.Add(family);
                 cmbFamiliaDiagonal.Items.Add(family);
+                cmbFamiliaBanzo.Items.Add(family);
             }
 
             SelecionarFamiliaSalva(cmbFamiliaMontante, _settings.LastSelectedTrelicaMontanteFamilyName);
@@ -59,6 +60,16 @@ namespace SteelBIM.Views
 
             PopulateMontanteProfiles();
             PopulateDiagonalProfiles();
+
+            if (cmbFamiliaBanzo.SelectedIndex == -1 && cmbFamiliaBanzo.Items.Count > 0)
+                cmbFamiliaBanzo.SelectedIndex = 0;
+            PopulateBanzoProfiles();
+
+            // v2.8.11 (Onda 2): padroes de treliçado + modo de espacamento.
+            cmbPadrao.ItemsSource = System.Enum.GetValues(typeof(TrussPattern));
+            cmbPadrao.SelectedItem = TrussPattern.Warren;
+            cmbModoEspacamento.ItemsSource = System.Enum.GetValues(typeof(TrussSpacingMode));
+            cmbModoEspacamento.SelectedItem = TrussSpacingMode.Uniforme;
 
             cmbZJust.Items.Add(new ZJustificationItem(0, "Origem"));
             cmbZJust.Items.Add(new ZJustificationItem(2, "Topo"));
@@ -143,6 +154,32 @@ namespace SteelBIM.Views
                 combo.SelectedIndex = 0;
         }
 
+        private void PopulateBanzoProfiles()
+        {
+            cmbBanzo.Items.Clear();
+            if (cmbFamiliaBanzo.SelectedItem is not string selectedFamily)
+                return;
+
+            foreach (FamilySymbol symbol in _symbols.Where(s => s.FamilyName == selectedFamily))
+                cmbBanzo.Items.Add(new SymbolItem(symbol));
+
+            if (cmbBanzo.SelectedIndex == -1 && cmbBanzo.Items.Count > 0)
+                cmbBanzo.SelectedIndex = 0;
+        }
+
+        private void CmbFamiliaBanzo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_isInitializing || cmbBanzo == null)
+                return;
+
+            PopulateBanzoProfiles();
+        }
+
+        private void ChkTrelicaCompleta_CheckedChanged(object sender, RoutedEventArgs e)
+        {
+            AtualizarEstadoControles();
+        }
+
         private void CmbFamiliaMontante_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             if (_isInitializing || cmbMontante == null)
@@ -188,6 +225,15 @@ namespace SteelBIM.Views
             cmbMontante.IsEnabled = lancarMontante;
             cmbFamiliaDiagonal.IsEnabled = lancarDiagonal;
             cmbDiagonal.IsEnabled = lancarDiagonal;
+
+            // v2.8.11: banzo + altura so fazem sentido no modo "treliça completa".
+            bool completa = chkTrelicaCompleta != null && chkTrelicaCompleta.IsChecked == true;
+            if (cmbFamiliaBanzo != null)
+                cmbFamiliaBanzo.IsEnabled = completa;
+            if (cmbBanzo != null)
+                cmbBanzo.IsEnabled = completa;
+            if (txtAltura != null)
+                txtAltura.IsEnabled = completa;
         }
 
         public TrelicaConfig BuildConfig()
@@ -205,30 +251,75 @@ namespace SteelBIM.Views
 
             int subd = 1;
             double zOffset = 0.0;
+            double altura = 0.0;
             int.TryParse(numSubd.Text, out subd);
             NumberParsing.TryParseDouble(numZOffset.Text, out zOffset);
+            NumberParsing.TryParseDouble(txtAltura.Text, out altura);
             if (subd <= 0)
                 subd = 1;
+
+            TrussPattern padrao = cmbPadrao.SelectedItem is TrussPattern tp ? tp : TrussPattern.Warren;
+            TrussSpacingMode modoEsp = cmbModoEspacamento.SelectedItem is TrussSpacingMode sm ? sm : TrussSpacingMode.Uniforme;
+            SymbolItem banzoItem = cmbBanzo.SelectedItem as SymbolItem;
 
             return new TrelicaConfig
             {
                 SymbolMontante = lancarMontante ? montanteItem.Symbol : null,
                 SymbolDiagonal = lancarDiagonal ? diagonalItem.Symbol : null,
+                SymbolBanzo = banzoItem?.Symbol,
                 LancarMontante = lancarMontante,
                 LancarDiagonal = lancarDiagonal,
                 Quantidade = subd,
+                Padrao = padrao,
+                ModoEspacamento = modoEsp,
+                EspacamentosCm = ParseEspacamentos(txtEspacamentos.Text),
+                MontantesIntermediarios = chkMontantesIntermediarios.IsChecked == true,
+                MontantesExtremidade = chkMontantesExtremidade.IsChecked == true,
+                DiagonaisExtremidade = chkDiagonaisExtremidade.IsChecked == true,
+                TrelicaCompleta = chkTrelicaCompleta.IsChecked == true,
+                AlturaMm = altura,
                 ZJustificationValue = zItem.Value,
                 ZOffsetMm = zOffset,
                 InverterSentido = chkInverterSentido.IsChecked == true
             };
         }
 
+        private static System.Collections.Generic.List<double> ParseEspacamentos(string texto)
+        {
+            var lista = new System.Collections.Generic.List<double>();
+            if (string.IsNullOrWhiteSpace(texto))
+                return lista;
+
+            foreach (string token in texto.Split(';'))
+            {
+                if (NumberParsing.TryParseDouble(token.Trim(), out double v) && v > 0)
+                    lista.Add(v);
+            }
+            return lista;
+        }
+
         private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
             bool lancarMontante = chkLancarMontante.IsChecked == true;
             bool lancarDiagonal = chkLancarDiagonal.IsChecked == true;
+            bool completa = chkTrelicaCompleta.IsChecked == true;
 
-            if (!lancarMontante && !lancarDiagonal)
+            if (completa)
+            {
+                if (cmbBanzo.SelectedItem == null)
+                {
+                    AppDialogService.ShowWarning("Treliça", "Selecione o perfil do banzo para a treliça completa.", "Dados incompletos");
+                    return;
+                }
+
+                NumberParsing.TryParseDouble(txtAltura.Text, out double alturaMm);
+                if (alturaMm <= 0)
+                {
+                    AppDialogService.ShowWarning("Treliça", "Informe a altura da treliça (mm) maior que zero.", "Dados incompletos");
+                    return;
+                }
+            }
+            else if (!lancarMontante && !lancarDiagonal)
             {
                 AppDialogService.ShowWarning("Treliça", "Selecione ao menos uma opção: montante ou diagonal.", "Dados incompletos");
                 return;
