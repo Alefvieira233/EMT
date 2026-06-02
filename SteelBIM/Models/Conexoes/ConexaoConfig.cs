@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.Conexoes
+﻿#nullable enable
+namespace SteelBIM.Models.Conexoes
 {
     /// <summary>
     /// Configuração completa de uma conexão estrutural, incluindo tipo e parâmetros específicos.

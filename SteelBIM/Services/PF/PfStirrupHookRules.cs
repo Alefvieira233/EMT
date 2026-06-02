@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Services.PF
+﻿#nullable enable
+namespace SteelBIM.Services.PF
 {
     /// <summary>
     /// Regras NBR 6118 secao 9.4.6.1 para o comprimento reto (rabo)

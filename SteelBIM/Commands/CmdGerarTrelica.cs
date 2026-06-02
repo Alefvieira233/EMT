@@ -41,7 +41,9 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
 
             config = wnd.BuildConfig();
-            if (config == null || (!config.LancarMontante && !config.LancarDiagonal))
+            // v2.8.11: no modo "treliça completa" os banzos sao criados mesmo sem montante/
+            // diagonal marcados — entao o guard so exige montante OU diagonal fora desse modo.
+            if (config == null || (!config.TrelicaCompleta && !config.LancarMontante && !config.LancarDiagonal))
             {
                 AppDialogService.ShowWarning(CommandName, "Configuração inválida.", "Dados incompletos");
                 return Result.Failed;

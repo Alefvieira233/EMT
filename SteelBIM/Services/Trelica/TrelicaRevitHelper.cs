@@ -46,7 +46,7 @@ namespace SteelBIM.Services.Trelica
                 if (!(fi.Location is LocationCurve locCurve))
                 {
                     Logger.Warn("TrelicaRevitHelper.ObterReferenciaExtremo: Location nao é LocationCurve");
-                    return new Reference(fi); // Fallback
+                    return null;
                 }
 
                 XYZ ponto0 = locCurve.Curve.GetEndPoint(0);
@@ -83,9 +83,13 @@ namespace SteelBIM.Services.Trelica
                     }
                 }
 
-                // 4. Fallback: retornar referencia da barra inteira
-                Logger.Info("TrelicaRevitHelper.ObterReferenciaExtremo: usando fallback (barra inteira)");
-                return new Reference(fi);
+                // 4. Sem face planar utilizavel no extremo: retornar null.
+                // v2.8.9 FIX: NUNCA retornar `new Reference(fi)` aqui — Reference cru de
+                // FamilyInstance e PROIBIDO em doc.Create.NewDimension (so face/edge/grid/
+                // level/ref-plane sao validos) e lancava ArgumentException no commit da
+                // transacao, derrubando a faixa inteira. O caller trata null pulando o segmento.
+                Logger.Info("TrelicaRevitHelper.ObterReferenciaExtremo: nenhuma face planar no extremo — segmento ignorado");
+                return null;
             }
             catch (Exception ex)
             {

@@ -16,6 +16,15 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
+  <!-- Fixtures DSTV/NC1 (oraculo do golden test byte-a-byte). Embutidos como
+       recurso para preservar os bytes exatos (CRLF) independentemente de copia
+       de arquivo / normalizacao de fim de linha. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Fixtures\Dstv\CH02.nc1" />
+    <EmbeddedResource Include="Fixtures\Dstv\CH03.nc1" />
+    <EmbeddedResource Include="Fixtures\Dstv\CH04.nc1" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -55,6 +64,14 @@
              Link="LinkedSources\Services\CncExport\DstvProfileMapper.cs" />
     <Compile Include="..\SteelBIM\Services\CncExport\DstvFileNameSanitizer.cs"
              Link="LinkedSources\Services\CncExport\DstvFileNameSanitizer.cs" />
+    <!-- v2.8.10 (Etapa D - Tarefa 1): mapeamento puro de dimensoes de CHAPA
+         (comp,largura,esp → 6 campos do ST na ordem do writer). -->
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvChapaDimensionsMapper.cs"
+             Link="LinkedSources\Services\CncExport\DstvChapaDimensionsMapper.cs" />
+    <!-- v2.8.10 (Etapa D - Tarefa 1): construcao do contorno externo AK
+         (fechamento idempotente + retangulo fallback). -->
+    <Compile Include="..\SteelBIM\Services\CncExport\DstvContornoAkBuilder.cs"
+             Link="LinkedSources\Services\CncExport\DstvContornoAkBuilder.cs" />
 
     <!-- Sprint 6: Model Check (modelos sao pure C#) -->
     <Compile Include="..\SteelBIM\Models\ModelCheck\ModelCheckSeverity.cs"
@@ -90,6 +107,14 @@
          DimensionPlanCalculator. -->
     <Compile Include="..\SteelBIM\Services\DiagramaMontagem\SectionBoxBuilder.cs"
              Link="LinkedSources\Services\DiagramaMontagem\SectionBoxBuilder.cs" />
+    <!-- v2.8.10 (Etapa C): clusterizacao Z + limite quantidade pura, extraida
+         do DiagramaMontagemService.CriarCotasVerticais. -->
+    <Compile Include="..\SteelBIM\Services\DiagramaMontagem\DiagramaMontagemElevacaoClusterer.cs"
+             Link="LinkedSources\Services\DiagramaMontagem\DiagramaMontagemElevacaoClusterer.cs" />
+    <!-- v2.8.10 (Etapa C): parser puro de peso linear (kg/m) extraido do
+         ListaMateriaisExportService. Triagem por nome + parse PT-BR/EN-US. -->
+    <Compile Include="..\SteelBIM\Services\ListaMateriaisPesoLinearParser.cs"
+             Link="LinkedSources\Services\ListaMateriaisPesoLinearParser.cs" />
 
     <!-- v2.7.0: Conversor IFC -> Perfis Nativos. Helpers puros do servico de
          conversao (parser de IfcMaterial + calculadores de eixo via caps/PCA +
@@ -162,6 +187,11 @@
              Link="LinkedSources\Licensing\KeySigner.cs" />
     <Compile Include="..\SteelBIM\Licensing\LicenseSecretProvider.cs"
              Link="LinkedSources\Licensing\LicenseSecretProvider.cs" />
+    <!-- v2.8.9 ADR-011: licenca assimetrica (ECDsa P-256) -->
+    <Compile Include="..\SteelBIM\Licensing\LicenseKeys.cs"
+             Link="LinkedSources\Licensing\LicenseKeys.cs" />
+    <Compile Include="..\SteelBIM\Licensing\LicensePrivateKeyProvider.cs"
+             Link="LinkedSources\Licensing\LicensePrivateKeyProvider.cs" />
 
     <!-- 1.3.0: Core (Result<T>, Progress) — pure C#, sem Revit -->
     <Compile Include="..\SteelBIM\Core\Result.cs"
@@ -177,6 +207,10 @@
     <!-- 1.3.0: Utils (NumberParsing) — pure C#, sem Revit -->
     <Compile Include="..\SteelBIM\Utils\NumberParsing.cs"
              Link="LinkedSources\Utils\NumberParsing.cs" />
+    <!-- v2.8.10: textos de disclaimer tecnico/legal (const puras) — DisclaimerService
+         NAO e' linkado (depende de AppDialogService/TaskDialog, Revit-bound). -->
+    <Compile Include="..\SteelBIM\Utils\DisclaimerTexts.cs"
+             Link="LinkedSources\Utils\DisclaimerTexts.cs" />
 
     <!-- 1.4.0 — Onda 3 (PR-1 incorporacao Victor): resultado de corte automatico -->
     <Compile Include="..\SteelBIM\Models\CortarElementosResultado.cs"
@@ -352,6 +386,13 @@
              Link="LinkedSources\Services\Trelica\CotaFaixaBuilder.cs" />
     <Compile Include="..\SteelBIM\Services\Trelica\CotarTrelicaReport.cs"
              Link="LinkedSources\Services\Trelica\CotarTrelicaReport.cs" />
+    <!-- v2.8.11 (Onda 2): geracao de treliça por padrao (Pratt/Howe/Warren/X/...) — helper puro -->
+    <Compile Include="..\SteelBIM\Models\TrussPattern.cs"
+             Link="LinkedSources\Models\TrussPattern.cs" />
+    <Compile Include="..\SteelBIM\Models\TrussSpacingMode.cs"
+             Link="LinkedSources\Models\TrussSpacingMode.cs" />
+    <Compile Include="..\SteelBIM\Services\Trelica\TrelicaPatternBuilder.cs"
+             Link="LinkedSources\Services\Trelica\TrelicaPatternBuilder.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,

@@ -1,4 +1,5 @@
-﻿using SteelBIM.Models.Conexoes;
+﻿#nullable enable
+using SteelBIM.Models.Conexoes;
 
 namespace SteelBIM.Services.Conexoes
 {

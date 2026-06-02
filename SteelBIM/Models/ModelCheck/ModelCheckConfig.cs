@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 
 namespace SteelBIM.Models.ModelCheck
 {
@@ -55,7 +56,7 @@ namespace SteelBIM.Models.ModelCheck
         public string TitleBlockTypeName { get; set; } = string.Empty;
 
         /// <summary>Lista de nomes de parametros do carimbo a conferir (ex: "Projetista", "Revisao").</summary>
-        public List<string> TitleBlockParameters { get; set; } = new List<string>();
+        public List<string>? TitleBlockParameters { get; set; } = new List<string>();
 
         // --- Escopo ---
 

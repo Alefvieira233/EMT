@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -48,7 +49,7 @@ namespace SteelBIM.Services
 
         private sealed class ResultadoTentativa
         {
-            internal ResultadoTentativa(StatusTentativa status, List<string> diagnostico = null)
+            internal ResultadoTentativa(StatusTentativa status, List<string>? diagnostico = null)
             {
                 Status = status;
                 Diagnostico = diagnostico ?? new List<string>();
@@ -60,7 +61,7 @@ namespace SteelBIM.Services
 
         private sealed class ResultadoPar
         {
-            internal ResultadoPar(bool aplicado, bool jaConforme, string estrategia, List<string> diagnostico)
+            internal ResultadoPar(bool aplicado, bool jaConforme, string estrategia, List<string>? diagnostico)
             {
                 Aplicado = aplicado;
                 JaConforme = jaConforme;
@@ -267,7 +268,7 @@ namespace SteelBIM.Services
         {
             List<Element> encontrados = new List<Element>();
 
-            BoundingBoxXYZ bbox = null;
+            BoundingBoxXYZ? bbox = null;
             try
             { bbox = origem?.get_BoundingBox(null); }
             catch (Exception ex) { Logger.Debug("[CortarElementos] BBox indisponivel para elemento {Id}: {Msg}", origem?.Id, ex.Message); }
@@ -306,10 +307,10 @@ namespace SteelBIM.Services
                 .ToList();
         }
 
-        private bool TemInterferenciaRelevante(Document doc, Element primeiro, Element segundo)
+        private bool TemInterferenciaRelevante(Document doc, Element? primeiro, Element? segundo)
         {
-            BoundingBoxXYZ bb1 = null;
-            BoundingBoxXYZ bb2 = null;
+            BoundingBoxXYZ? bb1 = null;
+            BoundingBoxXYZ? bb2 = null;
 
             try
             { bb1 = primeiro?.get_BoundingBox(null); }
@@ -323,7 +324,7 @@ namespace SteelBIM.Services
 
             try
             {
-                bool? intersecaoSolida = TemIntersecaoDeSolidos(primeiro, segundo);
+                bool? intersecaoSolida = TemIntersecaoDeSolidos(primeiro!, segundo!);
                 if (intersecaoSolida.HasValue)
                     return intersecaoSolida.Value;
             }
@@ -334,11 +335,11 @@ namespace SteelBIM.Services
 
             try
             {
-                if (ElementIntersectsFilter.IsElementSupported(primeiro) &&
-                    ElementIntersectsFilter.IsElementSupported(segundo))
+                if (ElementIntersectsFilter.IsElementSupported(primeiro!) &&
+                    ElementIntersectsFilter.IsElementSupported(segundo!))
                 {
-                    ElementIntersectsElementFilter filter = new ElementIntersectsElementFilter(primeiro);
-                    return filter.PassesFilter(doc, segundo.Id);
+                    ElementIntersectsElementFilter filter = new ElementIntersectsElementFilter(primeiro!);
+                    return filter.PassesFilter(doc, segundo!.Id);
                 }
             }
             catch (Exception ex)
@@ -386,7 +387,7 @@ namespace SteelBIM.Services
             if (elemento == null)
                 yield break;
 
-            GeometryElement geometria = null;
+            GeometryElement? geometria = null;
             try
             {
                 geometria = elemento.get_Geometry(new Options
@@ -419,7 +420,7 @@ namespace SteelBIM.Services
 
                 if (obj is GeometryInstance instancia)
                 {
-                    GeometryElement geometriaInstancia = null;
+                    GeometryElement? geometriaInstancia = null;
                     try
                     { geometriaInstancia = instancia.GetInstanceGeometry(); }
                     catch (Exception ex) { Logger.Debug("[CortarElementos] GetInstanceGeometry falhou: {Msg}", ex.Message); }
@@ -461,14 +462,14 @@ namespace SteelBIM.Services
         {
             List<string> acumulado = new List<string>();
 
-            ResultadoPar resultado;
+            ResultadoPar? resultado;
             if (ExecutarTentativaEmSubTransaction(
                 doc,
                 "join geometry",
                 d => TentarJoinGeometryComoCorte(doc, host, cutter, d),
                 acumulado,
                 out resultado))
-                return resultado;
+                return resultado!;
 
             if (ExecutarTentativaEmSubTransaction(
                 doc,
@@ -476,7 +477,7 @@ namespace SteelBIM.Services
                 d => TentarSolidSolidCut(doc, host, cutter, d),
                 acumulado,
                 out resultado))
-                return resultado;
+                return resultado!;
 
             return new ResultadoPar(false, false, "nenhum", acumulado);
         }
@@ -486,7 +487,7 @@ namespace SteelBIM.Services
             string nomeEstrategia,
             Func<List<string>, ResultadoTentativa> tentativa,
             List<string> acumulado,
-            out ResultadoPar resultado)
+            out ResultadoPar? resultado)
         {
             resultado = null;
 

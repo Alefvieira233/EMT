@@ -110,8 +110,17 @@ namespace SteelBIM.Services.ModelCheck.ModelCheckRules
                             Solid intersection = BooleanOperationsUtils.ExecuteBooleanOperation(
                                 solid1, solid2, BooleanOperationsType.Intersect);
 
-                            if (intersection != null && intersection.Volume > MinVolumeThreshold)
-                                return true;
+                            if (intersection != null)
+                            {
+                                // v2.8.9 FIX: intersection.Volume vem em PES CUBICOS (unidade
+                                // interna do Revit), mas o limiar e' em metros cubicos. Sem
+                                // converter, 0.0001 era tratado como 0.0001 ft³ (~2,8 cm³ em vez
+                                // de 100 cm³) — ~35x mais sensivel -> enxurrada de falsos positivos.
+                                double volumeM3 = UnitUtils.ConvertFromInternalUnits(
+                                    intersection.Volume, UnitTypeId.CubicMeters);
+                                if (volumeM3 > MinVolumeThreshold)
+                                    return true;
+                            }
                         }
                         catch
                         {

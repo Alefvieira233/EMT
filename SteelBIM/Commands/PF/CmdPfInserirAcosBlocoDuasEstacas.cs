@@ -43,7 +43,13 @@ namespace SteelBIM.Commands.PF
             }
 
             if (resultado.HostsComSucesso > 0)
-                ShowInfo(resultado.ToResumo(), "Processamento concluido");
+                // v2.8.9 (auditoria): o bloco sobre 2 estacas lanca apenas a malha de
+                // tirantes/pele — NAO inclui estribos de suspensao. Disclaimer explicito
+                // (elemento biela-tirante exige verificacao do engenheiro).
+                ShowInfo(resultado.ToResumo() +
+                    "\n\nATENÇÃO: lançada a malha de tirantes — estribos de suspensão NÃO são " +
+                    "gerados automaticamente. Verifique e complemente conforme o projeto estrutural.",
+                    "Processamento concluido");
             else
                 ShowWarning(resultado.ToResumo(), "Nenhuma armadura criada");
 

@@ -90,10 +90,13 @@ namespace SteelBIM.Services.Trelica
                 var barrasClassificadas = ClassificarBarras(vista, barras, boundingBox2D);
 
                 // ===== 4. Extrair nos dos banzos =====
+                // v2.8.9 FIX: reutiliza a classificacao do passo 3 (que desambigua banzo
+                // superior/inferior por altura). Antes o passo 4 re-classificava com
+                // ClassificarPorInclinacao e a deteccao SEMPRE falhava (ver ExtrairNosBanzo).
                 Logger.Info("[CotarTrelica] passo 4 — extraindo nos dos banzos");
-                var nosSuperior = ExtrairNosBanzo(vista, barras,
+                var nosSuperior = ExtrairNosBanzo(vista, barras, barrasClassificadas,
                     TrelicaClassificador.TipoMembro.BanzoSuperior);
-                var nosInferior = ExtrairNosBanzo(vista, barras,
+                var nosInferior = ExtrairNosBanzo(vista, barras, barrasClassificadas,
                     TrelicaClassificador.TipoMembro.BanzoInferior);
 
                 if (nosSuperior.Count == 0 || nosInferior.Count == 0)
@@ -266,34 +269,37 @@ namespace SteelBIM.Services.Trelica
         private IReadOnlyList<(double X, double Z)> ExtrairNosBanzo(
             View vista,
             IReadOnlyList<FamilyInstance> barras,
+            IReadOnlyDictionary<FamilyInstance, TrelicaClassificador.TipoMembro> classificacao,
             TrelicaClassificador.TipoMembro tipoBanzo)
         {
-            var nos = new HashSet<(double, double)>();
+            // v2.8.9 FIX (P0 — funcao 100% inoperante): este metodo re-classificava cada
+            // barra com ClassificarPorInclinacao, que SO devolve BanzoIndefinido/Montante/
+            // Diagonal — NUNCA BanzoSuperior/Inferior. Logo `tipo == tipoBanzo` era SEMPRE
+            // falso, nosSuperior/nosInferior saiam VAZIOS e o pipeline abortava em "banzos
+            // nao detectados" para TODA trelica. Agora reutiliza a classificacao do passo 3
+            // (que ja desambigua por altura via ClassificarBanzoPorAltura) e delega a coleta
+            // ao helper puro TrelicaGeometria.ColetarNosDoBanzo (testavel sem Revit).
             XYZ u = vista.RightDirection;
             XYZ v = vista.UpDirection;
             XYZ origem = vista.Origin;
+
+            var entrada =
+                new List<(TrelicaClassificador.TipoMembro Tipo, (double X, double Z) P0, (double X, double Z) P1)>();
 
             foreach (var fi in barras)
             {
                 try
                 {
+                    if (!classificacao.TryGetValue(fi, out var tipo) || tipo != tipoBanzo)
+                        continue;
+
                     if (fi.Location is LocationCurve locCurve && locCurve.Curve is Curve curve)
                     {
-                        // Classificar a barra
-                        double inclinacao = Math.Asin(Math.Abs(
-                            (curve.GetEndPoint(1) - curve.GetEndPoint(0)).Normalize().Z));
-                        var tipo = TrelicaClassificador.ClassificarPorInclinacao(inclinacao);
-
-                        if (tipo == tipoBanzo)
-                        {
-                            // Adicionar endpoints projetados
-                            foreach (var pt in new[] { curve.GetEndPoint(0), curve.GetEndPoint(1) })
-                            {
-                                double x2D = u.DotProduct(pt - origem);
-                                double z2D = v.DotProduct(pt - origem);
-                                nos.Add((x2D, z2D));
-                            }
-                        }
+                        XYZ a = curve.GetEndPoint(0);
+                        XYZ b = curve.GetEndPoint(1);
+                        (double, double) p0 = (u.DotProduct(a - origem), v.DotProduct(a - origem));
+                        (double, double) p1 = (u.DotProduct(b - origem), v.DotProduct(b - origem));
+                        entrada.Add((tipo, p0, p1));
                     }
                 }
                 catch
@@ -302,8 +308,7 @@ namespace SteelBIM.Services.Trelica
                 }
             }
 
-            // Retornar ordenado por X
-            return nos.OrderBy(p => p.Item1).ToList();
+            return TrelicaGeometria.ColetarNosDoBanzo(entrada, tipoBanzo);
         }
 
         // =====================================================================
@@ -330,10 +335,14 @@ namespace SteelBIM.Services.Trelica
                 if (config.CotarPaineisBanzoSuperior)
                     faixas.Add(CotaFaixaBuilder.FaixaPaineisBanzoSuperior(xSuperior, offsetPes));
 
-                if (config.CotarVaosEntreApoios && xSuperior.Count >= 2)
+                if (config.CotarVaosEntreApoios && xInferior.Count >= 2)
                 {
-                    var xApoios = new[] { xSuperior.First(), xSuperior.Last() }.ToList();
-                    faixas.Add(CotaFaixaBuilder.FaixaVaosEntreApoios(xApoios, offsetPes * 2.0));
+                    // v2.8.9 FIX: apoios = extremos do banzo INFERIOR (a trelica apoia
+                    // embaixo). Antes usava os extremos do banzo superior, que pode ter
+                    // balanco/beiral em treliça de duas aguas — vao entre apoios errado.
+                    var (xEsq, xDir) = TrelicaGeometria.ExtremosApoio(xInferior);
+                    faixas.Add(CotaFaixaBuilder.FaixaVaosEntreApoios(
+                        new[] { xEsq, xDir }.ToList(), offsetPes * 2.0));
                 }
 
                 if (config.CotarPaineisBanzoInferior && xInferior.Count >= 2)
@@ -385,40 +394,42 @@ namespace SteelBIM.Services.Trelica
                     // Para faixa 5 (alturas), criar TextNotes verticais
                     if (faixa.Tipo == CotaFaixaBuilder.Faixa.AlturasMontantes)
                     {
+                        var xsSup = nosSuperior.Select(p => p.X).ToList();
+                        var xsInf = nosInferior.Select(p => p.X).ToList();
+                        const double tolEstacaoPes = 0.05; // ~15 mm — casa estacao do montante ao no do banzo
+
                         foreach (var seg in faixa.Segmentos)
                         {
                             try
                             {
-                                // Encontrar a barra no no superior (Y = X do segmento)
+                                // Estacao X do montante (segmento degenerado: XInicio == XFim).
                                 double xEstacao = seg.XInicio;
-                                var barraSuperior = TrelicaRevitHelper.EncontrarBarraNoNo(
-                                    barras, xEstacao, vista);
-                                if (barraSuperior == null)
+
+                                // v2.8.9 FIX: localizar nos por indice (nao FirstOrDefault +
+                                // sentinela ".X==0", que descartava nos legitimamente em X≈0 e
+                                // aceitava "nao encontrado" — tuple default — como valido com Z=0).
+                                int iSup = TrelicaGeometria.IndiceNoMaisProximo(xsSup, xEstacao, tolEstacaoPes);
+                                int iInf = TrelicaGeometria.IndiceNoMaisProximo(xsInf, xEstacao, tolEstacaoPes);
+                                if (iSup < 0 || iInf < 0)
                                     continue;
 
-                                var barraInferior = TrelicaRevitHelper.EncontrarBarraNoNo(
-                                    barras, xEstacao, vista);
-                                if (barraInferior == null)
+                                var noSup = nosSuperior[iSup];
+                                var noInf = nosInferior[iInf];
+
+                                // v2.8.9 FIX: altura = separacao vertical 2D entre os banzos na
+                                // estacao (a coordenada Z 2D ja e' a vertical da elevacao). Antes
+                                // reconstruia 3D via DesprojetarPonto e lia .Z MUNDIAL — so coincidia
+                                // quando UpDirection == +Z mundial (quebrava em corte rotacionado).
+                                double alturaFt = Math.Abs(noSup.Z - noInf.Z);
+                                double alturaMm = UnitUtils.ConvertFromInternalUnits(alturaFt, UnitTypeId.Millimeters);
+                                if (alturaMm < 1.0)
                                     continue;
 
-                                // Obter coordenadas Z (elevacao) dos nos
-                                var noSup = nosSuperior.FirstOrDefault(p => Math.Abs(p.X - xEstacao) < 0.01);
-                                var noInf = nosInferior.FirstOrDefault(p => Math.Abs(p.X - xEstacao) < 0.01);
-
-                                if (noSup.X == 0 || noInf.X == 0)
-                                    continue;
-
-                                // Desprojetar para 3D
-                                XYZ pos3DSup = TrelicaRevitHelper.DesprojetarPonto(noSup.X, noSup.Z, vista);
-                                XYZ pos3DInf = TrelicaRevitHelper.DesprojetarPonto(noInf.X, noInf.Z, vista);
-
-                                // Calcular altura em milimetros
-                                double altura = pos3DSup.Z - pos3DInf.Z; // diferenca em pés
-                                double alturaMm = UnitUtils.ConvertFromInternalUnits(altura, UnitTypeId.Millimeters);
-
-                                // Criar TextNote com valor de altura
+                                // Texto no meio do montante, posicionado no plano da vista.
                                 ElementId textTypeId = doc.GetDefaultElementTypeId(ElementTypeGroup.TextNoteType);
-                                XYZ posText = new XYZ((pos3DSup.X + pos3DInf.X) / 2.0, (pos3DSup.Y + pos3DInf.Y) / 2.0, pos3DSup.Z + 0.5);
+                                double xMeio = (noSup.X + noInf.X) / 2.0;
+                                double zMeio = (noSup.Z + noInf.Z) / 2.0;
+                                XYZ posText = TrelicaRevitHelper.DesprojetarPonto(xMeio, zMeio, vista);
                                 string textoAltura = $"{alturaMm:F0}";
                                 var tn = TrelicaRevitHelper.CriarTextoNota(doc, vista, posText, textoAltura, textTypeId);
                                 if (tn != null)
@@ -484,7 +495,9 @@ namespace SteelBIM.Services.Trelica
                     var dim = TrelicaRevitHelper.CriarRunningDimension(doc, vista, refs, dimLinePoint, dimLineDir);
                     if (dim != null)
                     {
-                        cotasCriadas += faixa.Segmentos.Count;
+                        // v2.8.9 FIX: 1 Dimension encadeada por faixa. Antes somava
+                        // faixa.Segmentos.Count, inflando "cotas criadas" no relatorio.
+                        cotasCriadas++;
                         Logger.Debug("[CotarTrelica.CriarDimensions] faixa {Tipo} criada com sucesso",
                             faixa.Tipo);
                     }

@@ -5,108 +5,82 @@ using System.Text;
 namespace SteelBIM.Licensing
 {
     /// <summary>
-    /// Assina e valida chaves de licenca usando HMAC-SHA256.
+    /// Assina e valida chaves de licenca com assinatura ASSIMETRICA ECDsa P-256 / SHA-256.
+    /// Token: &lt;payload-base64url&gt;.&lt;signature-base64url&gt;. Assinatura usa a chave PRIVADA
+    /// (EmtKeyGen, via LicensePrivateKeyProvider); verificacao usa a PUBLICA embarcada
+    /// (LicenseKeys). Ver docs/ADR/ADR-011-licenca-assimetrica.md.
     /// </summary>
-    /// <remarks>
-    /// Modelo do token (formato compacto, sem dependencia de System.Text.Json no Revit):
-    ///
-    ///   <payload-base64url>.<hmac-base64url>
-    ///
-    /// Onde:
-    /// - payload-base64url e o JSON do <see cref="LicensePayload"/> codificado em Base64URL
-    /// - hmac-base64url e o HMAC-SHA256(payload-bytes, SECRET) tambem em Base64URL
-    ///
-    /// O segredo e resolvido dinamicamente via <see cref="LicenseSecretProvider"/> —
-    /// ambiente -> %LOCALAPPDATA% -> ao lado do assembly -> fallback DEV_ONLY. Quem
-    /// gera chaves (EmtKeyGen) e quem valida precisam usar o mesmo segredo; em
-    /// producao ambos sao injetados via variavel de ambiente ou arquivo.
-    ///
-    /// IMPORTANTE: trocar o segredo invalida TODAS as licencas em uso. Coordenar
-    /// rotacao com uma janela de transicao e reemissao para clientes ativos.
-    /// </remarks>
     public static class KeySigner
     {
-        // ---------------------------------------------------------------------
-        // SEGREDO HMAC — resolvido dinamicamente pelo LicenseSecretProvider.
-        // ---------------------------------------------------------------------
-        // O segredo e resolvido nesta ordem:
-        //   1. variavel de ambiente STEELBIM_LICENSE_SECRET
-        //   2. %LOCALAPPDATA%\SteelBIM\license.secret
-        //   3. arquivo license.secret ao lado do assembly
-        //   4. fallback DEV_ONLY hardcoded (logga warning)
-        //
-        // Consulte LicenseSecretProvider.cs para detalhes. Trocar o segredo
-        // invalida TODAS as licencas ja emitidas.
-        // ---------------------------------------------------------------------
-
-        /// <summary>
-        /// Gera o token assinado a partir de um payload.
-        /// Usado pelo EmtKeyGen.
-        /// </summary>
+        /// <summary>Assina um payload com a chave privada resolvida (EmtKeyGen).</summary>
         public static string Sign(LicensePayload payload)
         {
             if (payload == null)
                 throw new ArgumentNullException(nameof(payload));
-
-            string payloadJson = SimpleJson.Serialize(payload);
-            byte[] payloadBytes = Encoding.UTF8.GetBytes(payloadJson);
-            string payloadB64 = Base64Url.Encode(payloadBytes);
-
-            byte[] sigBytes = ComputeHmac(payloadBytes);
-            string sigB64 = Base64Url.Encode(sigBytes);
-
-            return $"{payloadB64}.{sigB64}";
+            using (ECDsa priv = LicensePrivateKeyProvider.CreatePrivateKey())
+                return Sign(payload, priv);
         }
 
-        /// <summary>
-        /// Valida o token e devolve o payload se OK.
-        /// Retorna null se a assinatura nao bater ou o token estiver mal formado.
-        /// </summary>
+        /// <summary>Assina com uma chave privada explicita (testes).</summary>
+        public static string Sign(LicensePayload payload, ECDsa privateKey)
+        {
+            if (payload == null)
+                throw new ArgumentNullException(nameof(payload));
+            if (privateKey == null)
+                throw new ArgumentNullException(nameof(privateKey));
+            byte[] payloadBytes = Encoding.UTF8.GetBytes(SimpleJson.Serialize(payload));
+            string payloadB64 = Base64Url.Encode(payloadBytes);
+            byte[] sig = privateKey.SignData(payloadBytes, HashAlgorithmName.SHA256);
+            return payloadB64 + "." + Base64Url.Encode(sig);
+        }
+
+        /// <summary>Valida o token com a chave PUBLICA embarcada (plugin). Null se invalido.</summary>
         public static LicensePayload Verify(string token)
         {
-            if (string.IsNullOrWhiteSpace(token))
+            ECDsa pub = SafeCreatePublicKey();
+            if (pub == null)
                 return null;
-
-            string trimmed = token.Trim();
-            int dotIndex = trimmed.IndexOf('.');
-            if (dotIndex <= 0 || dotIndex >= trimmed.Length - 1)
-                return null;
-
-            string payloadB64 = trimmed.Substring(0, dotIndex);
-            string sigB64 = trimmed.Substring(dotIndex + 1);
-
-            byte[] payloadBytes;
-            byte[] expectedSig;
-            try
-            {
-                payloadBytes = Base64Url.Decode(payloadB64);
-                expectedSig = Base64Url.Decode(sigB64);
-            }
-            catch
-            {
-                return null;
-            }
-
-            byte[] actualSig = ComputeHmac(payloadBytes);
-            if (!CryptographicOperations.FixedTimeEquals(expectedSig, actualSig))
-                return null;
-
-            try
-            {
-                string json = Encoding.UTF8.GetString(payloadBytes);
-                return SimpleJson.Deserialize(json);
-            }
-            catch
-            {
-                return null;
-            }
+            using (pub)
+                return Verify(token, pub);
         }
 
-        private static byte[] ComputeHmac(byte[] payload)
+        /// <summary>Valida com uma chave publica explicita (testes). Null se invalido.</summary>
+        public static LicensePayload Verify(string token, ECDsa publicKey)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(LicenseSecretProvider.GetSecret());
-            using HMACSHA256 hmac = new HMACSHA256(keyBytes);
-            return hmac.ComputeHash(payload);
+            if (string.IsNullOrWhiteSpace(token) || publicKey == null)
+                return null;
+            string trimmed = token.Trim();
+            int dot = trimmed.IndexOf('.');
+            if (dot <= 0 || dot >= trimmed.Length - 1)
+                return null;
+
+            byte[] payloadBytes;
+            byte[] sig;
+            try
+            {
+                payloadBytes = Base64Url.Decode(trimmed.Substring(0, dot));
+                sig = Base64Url.Decode(trimmed.Substring(dot + 1));
+            }
+            catch { return null; }
+
+            bool ok;
+            try
+            { ok = publicKey.VerifyData(payloadBytes, sig, HashAlgorithmName.SHA256); }
+            catch { return null; }
+            if (!ok)
+                return null;
+
+            try
+            { return SimpleJson.Deserialize(Encoding.UTF8.GetString(payloadBytes)); }
+            catch { return null; }
+        }
+
+        private static ECDsa SafeCreatePublicKey()
+        {
+            // Placeholder/chave invalida -> null -> fail-closed (nenhuma licenca valida).
+            try
+            { return LicenseKeys.CreatePublicKey(); }
+            catch { return null; }
         }
     }
 }

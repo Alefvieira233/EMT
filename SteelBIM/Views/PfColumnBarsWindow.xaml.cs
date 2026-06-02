@@ -98,27 +98,27 @@ namespace SteelBIM.Views
             PfColumnBarsConfig config = BuildConfig();
             if (string.IsNullOrWhiteSpace(config.BarTypeName))
             {
-                AppDialogService.ShowWarning("PM - Acos Pilar", "Selecione um tipo de vergalhao.", "Dados incompletos");
+                AppDialogService.ShowWarning("PF - Acos Pilar", "Selecione um tipo de vergalhao.", "Dados incompletos");
                 return;
             }
 
             if (config.CobrimentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Acos Pilar", "Informe um cobrimento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Acos Pilar", "Informe um cobrimento maior que zero.", "Dados invalidos");
                 return;
             }
 
             string lapError = ValidateLapConfig(config.Traspasse);
             if (!string.IsNullOrWhiteSpace(lapError))
             {
-                AppDialogService.ShowWarning("PM - Acos Pilar", lapError, "Traspasse invalido");
+                AppDialogService.ShowWarning("PF - Acos Pilar", lapError, "Traspasse invalido");
                 return;
             }
 
             lapError = ValidateLapCalculation(config.Traspasse, GetSelectedBarDiameterMm(cmbBarType));
             if (!string.IsNullOrWhiteSpace(lapError))
             {
-                AppDialogService.ShowWarning("PM - Acos Pilar", lapError, "Traspasse invalido");
+                AppDialogService.ShowWarning("PF - Acos Pilar", lapError, "Traspasse invalido");
                 return;
             }
 
@@ -126,7 +126,7 @@ namespace SteelBIM.Views
                 _sectionPreview?.IsCircular == true &&
                 config.QuantidadeCircular <= 0)
             {
-                AppDialogService.ShowWarning("PM - Acos Pilar", "Informe uma quantidade circular maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Acos Pilar", "Informe uma quantidade circular maior que zero.", "Dados invalidos");
                 return;
             }
 
@@ -134,7 +134,7 @@ namespace SteelBIM.Views
                 _sectionPreview?.IsCircular != true &&
                 (config.QuantidadeLargura <= 0 || config.QuantidadeProfundidade <= 0))
             {
-                AppDialogService.ShowWarning("PM - Acos Pilar", "Informe quantidades maiores que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Acos Pilar", "Informe quantidades maiores que zero.", "Dados invalidos");
                 return;
             }
 
@@ -142,20 +142,20 @@ namespace SteelBIM.Views
             {
                 if (!string.IsNullOrWhiteSpace(LastCoordinateError))
                 {
-                    AppDialogService.ShowWarning("PM - Acos Pilar", LastCoordinateError, "Coordenadas invalidas");
+                    AppDialogService.ShowWarning("PF - Acos Pilar", LastCoordinateError, "Coordenadas invalidas");
                     return;
                 }
 
                 if (config.Coordenadas.Count == 0)
                 {
-                    AppDialogService.ShowWarning("PM - Acos Pilar", "Informe ao menos uma coordenada de barra.", "Dados invalidos");
+                    AppDialogService.ShowWarning("PF - Acos Pilar", "Informe ao menos uma coordenada de barra.", "Dados invalidos");
                     return;
                 }
 
                 string coordinateBoundsError = ValidateCoordinateBounds(config);
                 if (!string.IsNullOrWhiteSpace(coordinateBoundsError))
                 {
-                    AppDialogService.ShowWarning("PM - Acos Pilar", coordinateBoundsError, "Coordenadas fora da secao");
+                    AppDialogService.ShowWarning("PF - Acos Pilar", coordinateBoundsError, "Coordenadas fora da secao");
                     return;
                 }
             }

@@ -58,19 +58,19 @@ namespace SteelBIM.Views
             PfBeamStirrupsConfig config = BuildConfig();
             if (config.DiametroMm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Viga", "Informe um diametro de barra maior que zero.", "Dados incompletos");
+                AppDialogService.ShowWarning("PF - Estribos Viga", "Informe um diametro de barra maior que zero.", "Dados incompletos");
                 return;
             }
 
             if (config.CobrimentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Viga", "Informe cobrimento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Estribos Viga", "Informe cobrimento maior que zero.", "Dados invalidos");
                 return;
             }
 
             if (config.EspacamentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Viga", "Informe espacamento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Estribos Viga", "Informe espacamento maior que zero.", "Dados invalidos");
                 return;
             }
 

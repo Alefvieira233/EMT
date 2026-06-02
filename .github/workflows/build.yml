@@ -17,13 +17,52 @@ concurrency:
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  # TODO (v2.7.7+): ativar secret apos configurar LICENSE_HMAC_SECRET em
-  # GitHub > Settings > Secrets > Actions. Sem isso, LicenseSecretProvider
-  # cai no fallback DEV_ONLY (logs emitem warning [Licensing] Segredo HMAC
-  # nao externalizado, mas build continua verde).
-  # EMT_LICENSE_SECRET: ${{ secrets.LICENSE_HMAC_SECRET }}
+  # v2.8.9: licenca migrada para ECDsa P-256 ASSIMETRICO (ADR-011). Nao ha mais
+  # segredo HMAC de licenca a configurar — o plugin embarca so a chave PUBLICA de
+  # verificacao (LicenseKeys.cs); a privada de assinatura fica so com o produtor.
+  # LicenseSecretProvider permanece apenas para o DSN do Sentry (ADR-007).
 
 jobs:
+  # v2.8.9 (Onda 1 da auditoria): barreira contra commit acidental de segredos.
+  # Complementa o .gitignore (defesa em profundidade para a chave PRIVADA de licenca,
+  # cuja exposicao = forja ilimitada). Check de arquivo simples e deterministico.
+  secret-guard:
+    name: Secret Guard (segredos commitados)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Bloquear arquivos de segredo no repositorio
+        run: |
+          bad=$(git ls-files | grep -E '\.(pfx|key)$|\.sentry\.dsn$|\.posthog\.apikey$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Arquivo de segredo commitado no repositorio:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "OK - nenhum arquivo de segredo (.pfx/.key/dsn/apikey) commitado."
+
+  # v2.8.10 (Onda 1 da auditoria): varredura de CONTEUDO por segredos (gitleaks),
+  # complementando o secret-guard (que so olha extensao). Roda o binario direto
+  # (sem license gate de org) sobre a working tree (--no-git), com allowlist em
+  # .gitleaks.toml. Introdutorio/NAO-bloqueante (continue-on-error): promover a
+  # bloqueante removendo continue-on-error apos confirmar verde alguns ciclos.
+  gitleaks:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run gitleaks (working tree)
+        run: |
+          ver=8.18.4
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_linux_x64.tar.gz" | tar -xz gitleaks
+          ./gitleaks detect --no-git --source . --config .gitleaks.toml --redact --verbose
+
   build-main:
     name: Build SteelBIM (Release)
     runs-on: windows-latest
@@ -127,7 +166,8 @@ jobs:
 
   # v2.7.7: job dedicado ao EmtKeyGen (tool em tools/EmtKeyGen). Antes era
   # compilado implicitamente pelo build da solution; agora tem job proprio
-  # com cache + artifact upload (uteis pra auditoria HMAC offline).
+  # com cache + artifact upload. Pos-ADR-011 o EmtKeyGen gera/assina licencas
+  # com a chave PRIVADA ECDsa P-256 (offline, so com o produtor).
   build-tool:
     name: Build EmtKeyGen
     runs-on: windows-latest
@@ -159,6 +199,10 @@ jobs:
     name: Code Quality (dotnet format)
     runs-on: windows-latest
     timeout-minutes: 10
+    env:
+      # CI=true habilita PackageReference Nice3point (Revit stubs) em vez do
+      # HintPath local. Ver docs/ADR/ADR-005-ci-revit-stubs.md.
+      CI: 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -170,6 +214,12 @@ jobs:
         # Removido continue-on-error em v2.0.2 - apos limpeza de formatting
         # em SteelBIM.Tests. Build deve falhar honesto se formatting quebrar.
         run: dotnet format --verify-no-changes --verbosity diagnostic
+
+      # v2.8.9 (Onda 3): gate de formatacao tambem no projeto principal
+      # (SteelBIM.csproj). Antes so SteelBIM.Tests era checado, entao codigo
+      # mal-formatado em Commands/Services/Views passava no CI.
+      - name: Verify formatting (SteelBIM main project)
+        run: dotnet format SteelBIM/SteelBIM.csproj --verify-no-changes --verbosity diagnostic
 
 # TODO (multi-Revit, v3.0 fase 1): job matrix building against Revit 2024 /
 # 2025 / 2026 reference assemblies. Depende de converter SteelBIM.csproj

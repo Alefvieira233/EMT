@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models
+﻿#nullable enable
+namespace SteelBIM.Models
 {
     /// <summary>
     /// Escopo de busca de elementos para o comando Numerar Itens.

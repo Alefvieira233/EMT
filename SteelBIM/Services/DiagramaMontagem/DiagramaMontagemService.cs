@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -51,7 +52,7 @@ namespace SteelBIM.Services.DiagramaMontagem
                 // v2.8.0 F12 (Wave 3): logica de naming extraida pra DiagramaMontagemViewNamer (testado).
                 string nomeBase = DiagramaMontagemViewNamer.BuildContextualName(config.NomeVista, config.Orientacao);
 
-                ViewSection vista;
+                ViewSection? vista;
                 using (Transaction tx1 = new Transaction(doc, "Criar vista do Diagrama de Montagem"))
                 {
                     tx1.Start();
@@ -320,9 +321,9 @@ namespace SteelBIM.Services.DiagramaMontagem
         // ============================================
         // 2C. CRIAR SECTION VIEW
         // ============================================
-        private ViewSection CriarSectionView(Document doc, BoundingBoxXYZ sectionBbox, string nomeBase)
+        private ViewSection? CriarSectionView(Document doc, BoundingBoxXYZ sectionBbox, string nomeBase)
         {
-            ViewFamilyType vft = new FilteredElementCollector(doc)
+            ViewFamilyType? vft = new FilteredElementCollector(doc)
                 .OfClass(typeof(ViewFamilyType))
                 .Cast<ViewFamilyType>()
                 .FirstOrDefault(x => x.ViewFamily == ViewFamily.Section);
@@ -344,7 +345,7 @@ namespace SteelBIM.Services.DiagramaMontagem
             // estar disponivel — try/catch silencioso, smoke visual confirma.
             try
             {
-                XYZ expectedUp = sectionBbox.Transform?.BasisY;
+                XYZ? expectedUp = sectionBbox.Transform?.BasisY;
                 if (expectedUp != null && section.UpDirection != null)
                 {
                     XYZ actualUp = section.UpDirection;
@@ -594,15 +595,15 @@ namespace SteelBIM.Services.DiagramaMontagem
             {
                 try
                 {
-                    Parameter mark = e.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
-                    string markValue = mark?.AsString();
+                    Parameter? mark = e.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
+                    string? markValue = mark?.AsString();
                     if (string.IsNullOrWhiteSpace(markValue))
                         semMark++;
                     else
                         comMark++;
 
                     // Ponto de tag: centro do bbox em coords da vista
-                    BoundingBoxXYZ bb = e.get_BoundingBox(vista);
+                    BoundingBoxXYZ? bb = e.get_BoundingBox(vista);
                     if (bb == null)
                         continue;
                     XYZ centro = (bb.Min + bb.Max) * 0.5;
@@ -667,30 +668,11 @@ namespace SteelBIM.Services.DiagramaMontagem
             if (pontosZ.Count == 0)
                 return 0;
 
-            // Clusterizar
+            // v2.8.10 Etapa C: clusterizacao + limite delegados a helper puro
+            // (DiagramaMontagemElevacaoClusterer) testavel sem Revit.
             double tolFt = UnitUtils.ConvertToInternalUnits(tolMm, UnitTypeId.Millimeters);
-            pontosZ = pontosZ.OrderBy(z => z).ToList();
-            var clusters = new List<double>();
-            double zClusterAtual = pontosZ[0];
-            clusters.Add(zClusterAtual);
-            foreach (double z in pontosZ.Skip(1))
-            {
-                if (z - zClusterAtual > tolFt)
-                {
-                    clusters.Add(z);
-                    zClusterAtual = z;
-                }
-            }
-
-            // Limitar entre 3 e 15 cotas (regra do plano — nao poluir)
-            if (clusters.Count > 15)
-            {
-                var reduzido = new List<double>();
-                double passo = (clusters.Count - 1) / 14.0;
-                for (int i = 0; i < 15; i++)
-                    reduzido.Add(clusters[(int)Math.Round(i * passo)]);
-                clusters = reduzido.Distinct().ToList();
-            }
+            var clusters = DiagramaMontagemElevacaoClusterer.LimitarQuantidade(
+                DiagramaMontagemElevacaoClusterer.Clusterizar(pontosZ, tolFt));
 
             // v2.8.8 FIX #6 #7: bbox do CONJUNTO em world-space (pra qualquer
             // orientacao de vista, qualquer offset world). Cota fica 800mm a
@@ -724,14 +706,14 @@ namespace SteelBIM.Services.DiagramaMontagem
                     // v2.8.8 FIX #5: achar FamilyInstance com Top ou Bottom
                     // batendo no zCluster, depois extrair a Reference correta
                     // via GetReferences. Pula elementos sem refs.
-                    FamilyInstance refFI = null;
+                    FamilyInstance? refFI = null;
                     FamilyInstanceReferenceType tipoRef = FamilyInstanceReferenceType.Top;
 
                     foreach (Element e in elementos)
                     {
                         if (!(e is FamilyInstance fi))
                             continue;
-                        BoundingBoxXYZ bb = fi.get_BoundingBox(null);
+                        BoundingBoxXYZ? bb = fi.get_BoundingBox(null);
                         if (bb == null)
                             continue;
 
@@ -1000,7 +982,7 @@ namespace SteelBIM.Services.DiagramaMontagem
                     Line dimLine = Line.CreateUnbound(origem, direcao);
 
                     // FamilyInstance.GetReferences(Left/Right) — refs canonicas
-                    Dimension dim = CriarCotaViaFamilyRefs(doc, vista, elem, dimLine);
+                    Dimension? dim = CriarCotaViaFamilyRefs(doc, vista, elem, dimLine);
                     if (dim == null)
                     {
                         Logger.Warn("[DiagramaMontagem] Peca {Id} sem refs Left/Right — pulando", e.Id);
@@ -1064,7 +1046,7 @@ namespace SteelBIM.Services.DiagramaMontagem
         /// Retorna null se a peca nao tiver os tipos de Reference solicitados
         /// (caller pula silenciosamente + loga warn).
         /// </summary>
-        private Dimension CriarCotaViaFamilyRefs(Document doc, View view, FamilyInstance elem, Line dimLine)
+        private Dimension? CriarCotaViaFamilyRefs(Document doc, View view, FamilyInstance elem, Line dimLine)
         {
             try
             {
@@ -1095,10 +1077,10 @@ namespace SteelBIM.Services.DiagramaMontagem
         /// </summary>
         private double LerComprimentoFabricacao(Element e)
         {
-            Parameter pCut = e.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
+            Parameter? pCut = e.get_Parameter(BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH);
             if (pCut != null && pCut.StorageType == StorageType.Double && pCut.AsDouble() > 0)
                 return pCut.AsDouble();
-            Parameter pLen = e.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
+            Parameter? pLen = e.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM);
             if (pLen != null && pLen.StorageType == StorageType.Double && pLen.AsDouble() > 0)
                 return pLen.AsDouble();
             return 0;
@@ -1116,7 +1098,7 @@ namespace SteelBIM.Services.DiagramaMontagem
         {
             nomeFolha = string.Empty;
 
-            FamilySymbol titleBlock = new FilteredElementCollector(doc)
+            FamilySymbol? titleBlock = new FilteredElementCollector(doc)
                 .OfClass(typeof(FamilySymbol))
                 .OfCategory(BuiltInCategory.OST_TitleBlocks)
                 .Cast<FamilySymbol>()
@@ -1125,7 +1107,7 @@ namespace SteelBIM.Services.DiagramaMontagem
             // Se nenhum ativo, tenta ativar o primeiro
             if (titleBlock == null)
             {
-                FamilySymbol qualquer = new FilteredElementCollector(doc)
+                FamilySymbol? qualquer = new FilteredElementCollector(doc)
                     .OfClass(typeof(FamilySymbol))
                     .OfCategory(BuiltInCategory.OST_TitleBlocks)
                     .Cast<FamilySymbol>()

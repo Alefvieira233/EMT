@@ -227,6 +227,12 @@ namespace SteelBIM.Services.CncExport
                         continue;
                     }
 
+                    // v2.8.10 (Etapa D): a linha-comentario "** <arquivo>.nc1" do header
+                    // precisa bater com o nome real do arquivo gravado, nao com o
+                    // DrawingNumber. Fabricantes usam o filename pra rastrear no chao
+                    // de fabrica (golden test CH02/CH03/CH04 valida isso).
+                    kvp.Value.OutputFileName = nomeArquivo;
+
                     DstvFileWriter.Save(kvp.Value, caminhoCompleto);
                     resultado.ArquivosGerados++;
                     resultado.ArquivosCriados.Add(nomeArquivo);

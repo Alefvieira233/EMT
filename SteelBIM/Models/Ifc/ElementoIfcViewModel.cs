@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -11,10 +12,10 @@ namespace SteelBIM.Models.Ifc
     {
         private readonly IReadOnlyList<SymbolItem> _allPerfis;
         private bool _selecionado = true;
-        private string _familiaSelecionada;
-        private SymbolItem _perfilSelecionado;
-        private string _ifcMaterial;
-        private string _secaoSugerida;
+        private string? _familiaSelecionada;
+        private SymbolItem? _perfilSelecionado;
+        private string? _ifcMaterial;
+        private string? _secaoSugerida;
 
         public ElementoIfcViewModel(IReadOnlyList<SymbolItem> allPerfis)
         {
@@ -29,20 +30,20 @@ namespace SteelBIM.Models.Ifc
 
         public IReadOnlyList<SymbolItem> AllPerfis => _allPerfis;
 
-        public ElementId ElementId { get; set; }
-        public string IfcName { get; set; }
-        public string Categoria { get; set; }
+        public ElementId? ElementId { get; set; }
+        public string? IfcName { get; set; }
+        public string? Categoria { get; set; }
 
         /// <summary>Todos os parametros IFC encontrados no elemento (nome -> valor).</summary>
         public Dictionary<string, string> ParametrosIfc { get; }
 
-        public string IfcMaterial
+        public string? IfcMaterial
         {
             get => _ifcMaterial;
             set { _ifcMaterial = value; Notify(nameof(IfcMaterial)); }
         }
 
-        public string SecaoSugerida
+        public string? SecaoSugerida
         {
             get => _secaoSugerida;
             set { _secaoSugerida = value; Notify(nameof(SecaoSugerida)); }
@@ -56,7 +57,7 @@ namespace SteelBIM.Models.Ifc
 
         public IReadOnlyList<string> Familias { get; }
 
-        public string FamiliaSelecionada
+        public string? FamiliaSelecionada
         {
             get => _familiaSelecionada;
             set
@@ -81,7 +82,7 @@ namespace SteelBIM.Models.Ifc
                 ? new List<SymbolItem>(_allPerfis)
                 : _allPerfis.Where(s => s.Symbol.FamilyName == _familiaSelecionada).ToList();
 
-        public SymbolItem PerfilSelecionado
+        public SymbolItem? PerfilSelecionado
         {
             get => _perfilSelecionado;
             set
@@ -107,13 +108,13 @@ namespace SteelBIM.Models.Ifc
         /// </summary>
         public void RecalcularSugestao(string nomeParam)
         {
-            string valor = ParametrosIfc.TryGetValue(nomeParam, out string v) ? v : string.Empty;
+            string valor = ParametrosIfc.TryGetValue(nomeParam, out string? v) ? v : string.Empty;
             IfcMaterial = valor;
 
             string secao = IfcMaterialParser.ExtrairNomeSecao(valor);
             SecaoSugerida = secao;
 
-            SymbolItem melhor = null;
+            SymbolItem? melhor = null;
             // v2.7.0 BUG 3: 49 -> 59 (alinhado com ScoreMinimo 60 do command)
             int melhorScore = 59;
             foreach (SymbolItem si in _allPerfis)
@@ -129,7 +130,7 @@ namespace SteelBIM.Models.Ifc
             PerfilSelecionado = melhor;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         private void Notify(string prop) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
     }

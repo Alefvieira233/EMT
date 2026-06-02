@@ -380,6 +380,10 @@ namespace SteelBIM.Services.Conexoes
             if (symbol?.Family == null)
                 return false;
 
+            // NOTA (auditoria): aceitar tambem placas face-based seria desejavel, mas o
+            // enum FamilyPlacementType nao tem membro "FaceBased" — familias face-based sao
+            // OneLevelBasedHosted. Requer verificacao na API Revit real antes de ampliar
+            // (evita aceitar hosts inadequados). Mantido WorkPlaneBased ate validar.
             return symbol.Family.FamilyPlacementType == FamilyPlacementType.WorkPlaneBased;
         }
 

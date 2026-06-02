@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿#nullable enable
+using System.Globalization;
 
 namespace SteelBIM.Services.PF
 {
@@ -13,7 +14,7 @@ namespace SteelBIM.Services.PF
         /// Monta "{prefixo}{numero}{sufixo}" culture-invariant.
         /// Prefixo/sufixo nulos sao tratados como string vazia.
         /// </summary>
-        public static string Formatar(string prefixo, int numero, string sufixo)
+        public static string Formatar(string? prefixo, int numero, string? sufixo)
         {
             string p = prefixo ?? string.Empty;
             string s = sufixo ?? string.Empty;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -99,18 +100,10 @@ namespace SteelBIM.Services
             "volume", "área", "area", "id"
         };
 
-        private static readonly string[] TokensPesoLinear =
-        {
-            "kg/m", "kg por m", "kg por metro", "kg metro",
-            "peso linear", "massa linear",
-            "peso por metro", "massa por metro",
-            "mass per unit length", "mass per length", "mass/length",
-            "weight per unit length", "weight per length", "weight/length",
-            "unit mass", "unit weight"
-        };
-
-        private static readonly Regex NumeroTextoRegex =
-            new Regex(@"[-+]?\d+(?:[.,]\d+)?", RegexOptions.Compiled);
+        // v2.8.10 Etapa C: tokens + regex movidos pro helper puro
+        // ListaMateriaisPesoLinearParser. Mantemos alias local pra nao reescrever
+        // todos os call sites internos.
+        private static readonly string[] TokensPesoLinear = ListaMateriaisPesoLinearParser.TokensPesoLinear;
 
         /// <summary>
         /// Executa a exportacao da lista de materiais para .xlsx.
@@ -138,7 +131,7 @@ namespace SteelBIM.Services
         public Core.Result<ResultadoExport> Exportar(
             UIDocument uidoc,
             ExportarListaMateriaisConfig config,
-            IProgress<ProgressReport> progress = null,
+            IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
             if (uidoc == null)
@@ -194,6 +187,16 @@ namespace SteelBIM.Services
             {
                 SalvarWorkbook(config.CaminhoArquivo, grupos, config, doc.Title);
             }
+            catch (Exception ex) when (ex is System.IO.IOException || ex is System.UnauthorizedAccessException)
+            {
+                // v2.8.9: causa mais comum — arquivo aberto no Excel ou pasta sem permissao.
+                // Antes caia no catch generico e mostrava a Message tecnica do .NET.
+                Logger.Error(ex, "ListaMateriaisExport: arquivo bloqueado/sem acesso {Path}", config.CaminhoArquivo);
+                return Core.Result<ResultadoExport>.Fail(
+                    "Nao foi possivel gravar a planilha.\n\nO arquivo pode estar ABERTO no Excel, " +
+                    "ou a pasta nao tem permissao de escrita. Feche o arquivo e tente novamente:\n\n" +
+                    config.CaminhoArquivo);
+            }
             catch (Exception ex)
             {
                 Logger.Error(ex, "ListaMateriaisExport: falha ao gravar workbook {Path}", config.CaminhoArquivo);
@@ -246,7 +249,7 @@ namespace SteelBIM.Services
             Document doc,
             UIDocument uidoc,
             ExportarListaMateriaisConfig config,
-            ProgressReporter reporter = null)
+            ProgressReporter? reporter = null)
         {
             List<Element> elementos = ColetarElementos(doc, uidoc, config);
             List<ListaMateriaisLinha> linhas = new List<ListaMateriaisLinha>();
@@ -272,8 +275,8 @@ namespace SteelBIM.Services
                     continue;
                 }
 
-                ElementType tipo = ObterTipoElemento(doc, elemento, tiposCache);
-                Material material = ObterMaterialPrincipal(doc, elemento, tipo, materiaisCache);
+                ElementType? tipo = ObterTipoElemento(doc, elemento, tiposCache);
+                Material? material = ObterMaterialPrincipal(doc, elemento, tipo, materiaisCache);
                 string nomeMaterial = material?.Name ?? "<Sem material estrutural>";
 
                 double comprimentoM = ObterComprimentoCorteMetros(elemento);
@@ -433,7 +436,7 @@ namespace SteelBIM.Services
             };
         }
 
-        private static Material ObterMaterialPrincipal(Document doc, Element elemento, ElementType tipo)
+        private static Material? ObterMaterialPrincipal(Document doc, Element elemento, ElementType? tipo)
         {
             // Overload sem cache (mantido por compatibilidade — uso interno e via cache)
             return ObterMaterialPrincipal(doc, elemento, tipo, null);
@@ -442,34 +445,34 @@ namespace SteelBIM.Services
         /// <summary>
         /// Sprint 2: variante com cache para evitar N+1 doc.GetElement em listas grandes.
         /// </summary>
-        private static Material ObterMaterialPrincipal(
+        private static Material? ObterMaterialPrincipal(
             Document doc,
             Element elemento,
-            ElementType tipo,
-            Dictionary<ElementId, Material> cache)
+            ElementType? tipo,
+            Dictionary<ElementId, Material>? cache)
         {
-            ElementId materialId = ObterMaterialEstruturalId(elemento) ??
+            ElementId? materialId = ObterMaterialEstruturalId(elemento) ??
                                    ObterMaterialEstruturalId(tipo) ??
                                    ObterPrimeiroMaterialGeometrico(elemento);
 
             if (materialId == null || materialId == ElementId.InvalidElementId)
                 return null;
 
-            if (cache != null && cache.TryGetValue(materialId, out Material cached))
+            if (cache != null && cache.TryGetValue(materialId, out Material? cached))
                 return cached;
 
-            Material mat = doc.GetElement(materialId) as Material;
-            if (cache != null)
+            Material? mat = doc.GetElement(materialId) as Material;
+            if (cache != null && mat != null)
                 cache[materialId] = mat;
             return mat;
         }
 
-        private static ElementId ObterMaterialEstruturalId(Element elemento)
+        private static ElementId? ObterMaterialEstruturalId(Element? elemento)
         {
             if (elemento == null)
                 return null;
 
-            Parameter parametro = elemento.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
+            Parameter? parametro = elemento.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
             if (parametro != null && parametro.HasValue)
             {
                 ElementId id = parametro.AsElementId();
@@ -480,7 +483,7 @@ namespace SteelBIM.Services
             return null;
         }
 
-        private static ElementId ObterPrimeiroMaterialGeometrico(Element elemento)
+        private static ElementId? ObterPrimeiroMaterialGeometrico(Element? elemento)
         {
             if (elemento == null)
                 return null;
@@ -498,12 +501,12 @@ namespace SteelBIM.Services
 
         private static string ObterMarca(Element elemento)
         {
-            Parameter parametro = elemento?.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
-            string marca = parametro?.AsString();
+            Parameter? parametro = elemento?.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
+            string? marca = parametro?.AsString();
             return string.IsNullOrWhiteSpace(marca) ? string.Empty : marca.Trim();
         }
 
-        private static string ObterNomeFamilia(Element elemento, ElementType tipo)
+        private static string ObterNomeFamilia(Element elemento, ElementType? tipo)
         {
             if (elemento is FamilyInstance instancia &&
                 instancia.Symbol != null &&
@@ -518,7 +521,7 @@ namespace SteelBIM.Services
             return "<Sem família>";
         }
 
-        private static string ObterNomeTipoPerfil(Element elemento, ElementType tipo)
+        private static string ObterNomeTipoPerfil(Element elemento, ElementType? tipo)
         {
             if (tipo != null && !string.IsNullOrWhiteSpace(tipo.Name))
                 return tipo.Name;
@@ -570,7 +573,7 @@ namespace SteelBIM.Services
             };
         }
 
-        private static ElementType ObterTipoElemento(
+        private static ElementType? ObterTipoElemento(
             Document doc,
             Element elemento,
             Dictionary<ElementId, ElementType> tiposCache)
@@ -582,12 +585,13 @@ namespace SteelBIM.Services
             if (tipoId == null || tipoId == ElementId.InvalidElementId)
                 return null;
 
-            if (tiposCache.TryGetValue(tipoId, out ElementType tipo))
+            if (tiposCache.TryGetValue(tipoId, out ElementType? tipo))
                 return tipo;
 
-            tipo = doc.GetElement(tipoId) as ElementType;
-            tiposCache[tipoId] = tipo;
-            return tipo;
+            ElementType? loaded = doc.GetElement(tipoId) as ElementType;
+            if (loaded != null)
+                tiposCache[tipoId] = loaded;
+            return loaded;
         }
 
         private static ListaMateriaisSecaoPlanilha ObterSecaoPlanilha(ListaMateriaisCategoriaLogica categoria)
@@ -706,7 +710,7 @@ namespace SteelBIM.Services
 
         private static MaterialBaseTipo ClassificarMaterialBase(
             Document doc,
-            Material material,
+            Material? material,
             ListaMateriaisCategoriaLogica categoria)
         {
             if (categoria == ListaMateriaisCategoriaLogica.PerfisConexao ||
@@ -720,8 +724,8 @@ namespace SteelBIM.Services
 
             try
             {
-                PropertySetElement assetElement = doc.GetElement(material.StructuralAssetId) as PropertySetElement;
-                Parameter classeParametro = assetElement?.get_Parameter(BuiltInParameter.PHY_MATERIAL_PARAM_CLASS);
+                PropertySetElement? assetElement = doc.GetElement(material.StructuralAssetId) as PropertySetElement;
+                Parameter? classeParametro = assetElement?.get_Parameter(BuiltInParameter.PHY_MATERIAL_PARAM_CLASS);
                 if (classeParametro == null || !classeParametro.HasValue)
                     return MaterialBaseTipo.Outro;
 
@@ -741,7 +745,7 @@ namespace SteelBIM.Services
 
         private static string MontarDetalheAgrupamento(
             Element elemento,
-            ElementType tipo,
+            ElementType? tipo,
             ListaMateriaisCategoriaLogica categoria,
             double comprimentoM)
         {
@@ -759,7 +763,7 @@ namespace SteelBIM.Services
             return partes.Count == 0 ? "-" : string.Join("; ", partes);
         }
 
-        private static void AppendParametrosDimensaoDisplay(List<string> partes, string prefixo, Element elemento)
+        private static void AppendParametrosDimensaoDisplay(List<string> partes, string prefixo, Element? elemento)
         {
             if (elemento == null)
                 return;
@@ -795,9 +799,9 @@ namespace SteelBIM.Services
             };
         }
 
-        private static void AppendBoundingBoxDisplay(List<string> partes, Element elemento)
+        private static void AppendBoundingBoxDisplay(List<string> partes, Element? elemento)
         {
-            BoundingBoxXYZ box = elemento?.get_BoundingBox(null);
+            BoundingBoxXYZ? box = elemento?.get_BoundingBox(null);
             if (box == null)
                 return;
 
@@ -835,7 +839,7 @@ namespace SteelBIM.Services
             return UnitUtils.ConvertFromInternalUnits(comprimentoInterno, UnitTypeId.Meters);
         }
 
-        private static double ObterAreaMetrosQuadrados(Element elemento, Material material)
+        private static double ObterAreaMetrosQuadrados(Element elemento, Material? material)
         {
             if (elemento == null || material == null)
                 return 0.0;
@@ -854,7 +858,7 @@ namespace SteelBIM.Services
             return 0.0;
         }
 
-        private static double ObterVolumeMetrosCubicos(Element elemento, Material material)
+        private static double ObterVolumeMetrosCubicos(Element elemento, Material? material)
         {
             if (elemento == null)
                 return 0.0;
@@ -882,8 +886,8 @@ namespace SteelBIM.Services
         private static (double PesoKg, string OrigemPeso) ObterPesoInfo(
             Document doc,
             Element elemento,
-            ElementType tipo,
-            Material material,
+            ElementType? tipo,
+            Material? material,
             ListaMateriaisCategoriaLogica categoria,
             double comprimentoM,
             double volumeM3)
@@ -906,7 +910,7 @@ namespace SteelBIM.Services
             return (0.0, "sem base");
         }
 
-        private static bool TryObterPesoLinearKgM(Element elemento, ElementType tipo, out double pesoLinearKgM)
+        private static bool TryObterPesoLinearKgM(Element elemento, ElementType? tipo, out double pesoLinearKgM)
         {
             pesoLinearKgM = 0.0;
 
@@ -914,7 +918,7 @@ namespace SteelBIM.Services
                    TryObterPesoLinearKgM(tipo, out pesoLinearKgM);
         }
 
-        private static bool TryObterPesoLinearKgM(Element origem, out double pesoLinearKgM)
+        private static bool TryObterPesoLinearKgM(Element? origem, out double pesoLinearKgM)
         {
             pesoLinearKgM = 0.0;
             if (origem == null)
@@ -935,7 +939,7 @@ namespace SteelBIM.Services
             return false;
         }
 
-        private static bool ParametroParecePesoLinear(Parameter parametro)
+        private static bool ParametroParecePesoLinear(Parameter? parametro)
         {
             if (parametro == null || !parametro.HasValue || parametro.Definition == null)
                 return false;
@@ -944,7 +948,7 @@ namespace SteelBIM.Services
             if (!string.IsNullOrWhiteSpace(nome) && TokensPesoLinear.Any(nome.Contains))
                 return true;
 
-            ForgeTypeId dataType = null;
+            ForgeTypeId? dataType = null;
             try
             {
                 dataType = parametro.Definition.GetDataType();
@@ -957,7 +961,7 @@ namespace SteelBIM.Services
             if (dataType != null && dataType.Equals(SpecTypeId.MassPerUnitLength))
                 return true;
 
-            string valorTexto = parametro.StorageType == StorageType.String
+            string? valorTexto = parametro.StorageType == StorageType.String
                 ? parametro.AsString()
                 : parametro.AsValueString();
 
@@ -965,7 +969,7 @@ namespace SteelBIM.Services
             return !string.IsNullOrWhiteSpace(valorNormalizado) && TokensPesoLinear.Any(valorNormalizado.Contains);
         }
 
-        private static bool TryConverterParametroParaKgM(Parameter parametro, out double pesoLinearKgM)
+        private static bool TryConverterParametroParaKgM(Parameter? parametro, out double pesoLinearKgM)
         {
             pesoLinearKgM = 0.0;
             if (parametro == null || !parametro.HasValue)
@@ -977,7 +981,7 @@ namespace SteelBIM.Services
                 {
                     case StorageType.Double:
                         {
-                            ForgeTypeId dataType = null;
+                            ForgeTypeId? dataType = null;
                             try
                             {
                                 dataType = parametro.Definition?.GetDataType();
@@ -1029,39 +1033,14 @@ namespace SteelBIM.Services
             }
         }
 
-        private static bool ParametroNomeIndicaKgPorMetro(string nomeParametro)
-        {
-            string nome = NormalizarToken(nomeParametro);
-            return !string.IsNullOrWhiteSpace(nome) && TokensPesoLinear.Any(nome.Contains);
-        }
+        // v2.8.10 Etapa C: delega pra ListaMateriaisPesoLinearParser (puro/testavel).
+        private static bool ParametroNomeIndicaKgPorMetro(string? nomeParametro)
+            => ListaMateriaisPesoLinearParser.ParametroNomeIndicaKgPorMetro(nomeParametro);
 
-        private static bool TryParsePesoLinearStringKgM(string texto, out double pesoLinearKgM)
-        {
-            pesoLinearKgM = 0.0;
-            if (string.IsNullOrWhiteSpace(texto))
-                return false;
+        private static bool TryParsePesoLinearStringKgM(string? texto, out double pesoLinearKgM)
+            => ListaMateriaisPesoLinearParser.TryParsePesoLinearStringKgM(texto, out pesoLinearKgM);
 
-            Match match = NumeroTextoRegex.Match(texto);
-            if (!match.Success)
-                return false;
-
-            string numero = match.Value;
-            if (numero.Contains(",") && numero.Contains("."))
-            {
-                numero = numero.LastIndexOf(',') > numero.LastIndexOf('.')
-                    ? numero.Replace(".", string.Empty).Replace(',', '.')
-                    : numero.Replace(",", string.Empty);
-            }
-            else
-            {
-                numero = numero.Replace(',', '.');
-            }
-
-            return double.TryParse(numero, NumberStyles.Float, CultureInfo.InvariantCulture, out pesoLinearKgM) &&
-                   pesoLinearKgM > 0.0;
-        }
-
-        private static double ObterPesoPorDensidadeKg(Document doc, Material material, double volumeM3)
+        private static double ObterPesoPorDensidadeKg(Document doc, Material? material, double volumeM3)
         {
             if (doc == null || material == null || volumeM3 <= 0.0)
                 return 0.0;
@@ -1071,8 +1050,8 @@ namespace SteelBIM.Services
                 if (material.StructuralAssetId == ElementId.InvalidElementId)
                     return 0.0;
 
-                PropertySetElement assetElement = doc.GetElement(material.StructuralAssetId) as PropertySetElement;
-                StructuralAsset asset = assetElement?.GetStructuralAsset();
+                PropertySetElement? assetElement = doc.GetElement(material.StructuralAssetId) as PropertySetElement;
+                StructuralAsset? asset = assetElement?.GetStructuralAsset();
                 if (asset == null || asset.Density <= 0.0)
                     return 0.0;
 
@@ -1087,7 +1066,7 @@ namespace SteelBIM.Services
 
         private static double ObterPesoPadraoKg(
             Document doc,
-            Material material,
+            Material? material,
             ListaMateriaisCategoriaLogica categoria,
             double volumeM3)
         {
@@ -1105,7 +1084,7 @@ namespace SteelBIM.Services
 
         private static string ObterOrigemPesoPadrao(
             Document doc,
-            Material material,
+            Material? material,
             ListaMateriaisCategoriaLogica categoria)
         {
             MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria);
@@ -1119,7 +1098,7 @@ namespace SteelBIM.Services
 
         private static MaterialBaseTipo InferirMaterialBaseTipo(
             Document doc,
-            Material material,
+            Material? material,
             ListaMateriaisCategoriaLogica categoria)
         {
             MaterialBaseTipo classificado = ClassificarMaterialBase(doc, material, categoria);
@@ -1141,8 +1120,8 @@ namespace SteelBIM.Services
 
         private static string MontarAssinaturaFabricacao(
             Element elemento,
-            ElementType tipo,
-            Material material,
+            ElementType? tipo,
+            Material? material,
             ListaMateriaisCategoriaLogica categoria,
             double comprimentoM)
         {
@@ -1163,7 +1142,7 @@ namespace SteelBIM.Services
             return sb.ToString();
         }
 
-        private static void AppendParametrosDimensao(StringBuilder sb, string prefixo, Element elemento)
+        private static void AppendParametrosDimensao(StringBuilder sb, string prefixo, Element? elemento)
         {
             if (elemento == null)
                 return;
@@ -1209,9 +1188,9 @@ namespace SteelBIM.Services
             };
         }
 
-        private static void AppendBoundingBox(StringBuilder sb, Element elemento)
+        private static void AppendBoundingBox(StringBuilder sb, Element? elemento)
         {
-            BoundingBoxXYZ box = elemento?.get_BoundingBox(null);
+            BoundingBoxXYZ? box = elemento?.get_BoundingBox(null);
             if (box == null)
                 return;
 
@@ -1229,7 +1208,7 @@ namespace SteelBIM.Services
               .Append(FormatarNumeroChave(medidas[2])).Append('|');
         }
 
-        private static string NormalizarToken(string valor)
+        private static string NormalizarToken(string? valor)
         {
             return string.IsNullOrWhiteSpace(valor)
                 ? string.Empty
@@ -1241,18 +1220,18 @@ namespace SteelBIM.Services
             return Math.Round(valor, 6).ToString("0.######", CultureInfo.InvariantCulture);
         }
 
-        private static double? ObterParametroDouble(Element elemento, BuiltInParameter parametro)
+        private static double? ObterParametroDouble(Element? elemento, BuiltInParameter parametro)
         {
-            Parameter p = elemento?.get_Parameter(parametro);
+            Parameter? p = elemento?.get_Parameter(parametro);
             if (p == null || !p.HasValue || p.StorageType != StorageType.Double)
                 return null;
 
             return p.AsDouble();
         }
 
-        private static int? ObterParametroInteiro(Element elemento, BuiltInParameter parametro)
+        private static int? ObterParametroInteiro(Element? elemento, BuiltInParameter parametro)
         {
-            Parameter p = elemento?.get_Parameter(parametro);
+            Parameter? p = elemento?.get_Parameter(parametro);
             if (p == null || !p.HasValue || p.StorageType != StorageType.Integer)
                 return null;
 
@@ -1319,7 +1298,7 @@ namespace SteelBIM.Services
             ExportarListaMateriaisConfig config,
             string documentTitle)
         {
-            string diretorio = Path.GetDirectoryName(caminhoArquivo);
+            string? diretorio = Path.GetDirectoryName(caminhoArquivo);
             if (!string.IsNullOrWhiteSpace(diretorio) && !Directory.Exists(diretorio))
                 Directory.CreateDirectory(diretorio);
 
@@ -1400,7 +1379,7 @@ namespace SteelBIM.Services
 
         private static void RemoverWorksheetSeExistir(XLWorkbook workbook, string nome)
         {
-            IXLWorksheet worksheet = workbook.Worksheets.FirstOrDefault(x =>
+            IXLWorksheet? worksheet = workbook.Worksheets.FirstOrDefault(x =>
                 string.Equals(x.Name, nome, StringComparison.OrdinalIgnoreCase));
 
             worksheet?.Delete();
@@ -1783,7 +1762,7 @@ namespace SteelBIM.Services
             AplicarEstiloLinhaLdm(ws, linha, null, false);
         }
 
-        private static void AplicarEstiloLinhaLdm(IXLWorksheet ws, int linha, string corHex, bool negrito)
+        private static void AplicarEstiloLinhaLdm(IXLWorksheet ws, int linha, string? corHex, bool negrito)
         {
             IXLRange range = ws.Range(linha, 1, linha, 4);
             range.Style.Font.FontName = "Arial";

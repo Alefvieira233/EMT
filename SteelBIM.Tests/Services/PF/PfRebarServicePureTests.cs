@@ -504,5 +504,61 @@ namespace SteelBIM.Tests.Services.PF
                 spacingMm: 90.0, pathLengthMm: 100.0);
             count.Should().BeGreaterThanOrEqualTo(2);
         }
+
+        // =============================================================
+        //  ContarGruposEstriboColuna — decisao simples vs zoneamento + gate de altura
+        //  (P1: documenta os caminhos que retornavam "0 armaduras" silencioso)
+        // =============================================================
+
+        [Fact]
+        public void ContarGrupos_EspacamentoUnico_RetornaUmGrupo()
+        {
+            int g = PfRebarServicePure.ContarGruposEstriboColuna(
+                usarEspacamentoUnico: true, isCircular: false, clearHeightMm: 3000.0,
+                espInferiorCm: 12, espCentralCm: 20, espSuperiorCm: 12, alturaZonaExtremidadeCm: 60);
+            g.Should().Be(1);
+        }
+
+        [Fact]
+        public void ContarGrupos_PilarCircular_RetornaUmGrupo()
+        {
+            int g = PfRebarServicePure.ContarGruposEstriboColuna(
+                usarEspacamentoUnico: false, isCircular: true, clearHeightMm: 3000.0,
+                espInferiorCm: 12, espCentralCm: 20, espSuperiorCm: 12, alturaZonaExtremidadeCm: 60);
+            g.Should().Be(1);
+        }
+
+        [Fact]
+        public void ContarGrupos_ZoneamentoNBR_PilarAlto_RetornaTresGrupos()
+        {
+            // 3000mm, zonas 60cm cada -> inferior + central + superior.
+            int g = PfRebarServicePure.ContarGruposEstriboColuna(
+                usarEspacamentoUnico: false, isCircular: false, clearHeightMm: 3000.0,
+                espInferiorCm: 12, espCentralCm: 20, espSuperiorCm: 12, alturaZonaExtremidadeCm: 60);
+            g.Should().Be(3);
+        }
+
+        [Theory]
+        [InlineData(0.0)]
+        [InlineData(50.0)]
+        [InlineData(100.0)]
+        public void ContarGrupos_AlturaAbaixoDoGate_RetornaZero(double clearHeightMm)
+        {
+            // Gate de altura (<= 100mm): pilar nao lido como vertical -> "0 armaduras".
+            int g = PfRebarServicePure.ContarGruposEstriboColuna(
+                usarEspacamentoUnico: false, isCircular: false, clearHeightMm: clearHeightMm,
+                espInferiorCm: 12, espCentralCm: 20, espSuperiorCm: 12, alturaZonaExtremidadeCm: 60);
+            g.Should().Be(0);
+        }
+
+        [Fact]
+        public void ContarGrupos_TodosEspacamentosZero_RetornaZero()
+        {
+            // Zoneamento sem nenhum espacamento valido -> nenhum grupo (causa de 0 criados).
+            int g = PfRebarServicePure.ContarGruposEstriboColuna(
+                usarEspacamentoUnico: false, isCircular: false, clearHeightMm: 3000.0,
+                espInferiorCm: 0, espCentralCm: 0, espSuperiorCm: 0, alturaZonaExtremidadeCm: 60);
+            g.Should().Be(0);
+        }
     }
 }

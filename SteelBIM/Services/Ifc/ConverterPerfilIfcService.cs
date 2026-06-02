@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -45,7 +46,7 @@ namespace SteelBIM.Services.Ifc
         public (int convertidos, int ignorados) Executar(
             Document doc,
             ConverterPerfilIfcConfig config,
-            IProgress<ProgressReport> progress = null,
+            IProgress<ProgressReport>? progress = null,
             CancellationToken ct = default)
         {
             int convertidos = 0;
@@ -89,7 +90,7 @@ namespace SteelBIM.Services.Ifc
                         // sao retornados pro chamador como feedback.
                         ct.ThrowIfCancellationRequested();
 
-                        Element origem = doc.GetElement(conversao.ElementoOrigem);
+                        Element? origem = doc.GetElement(conversao.ElementoOrigem);
                         if (origem == null)
                         {
                             // v2.8.7: Debug em vez de Warn — agregado abaixo no resumo final.
@@ -101,7 +102,7 @@ namespace SteelBIM.Services.Ifc
                             continue;
                         }
 
-                        Line linha = ObterLinhaDoElemento(origem);
+                        Line? linha = ObterLinhaDoElemento(origem);
                         if (linha == null)
                         {
                             Logger.Debug("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — SectionAxisExtractor + bbox fallback nao conseguiram extrair linha de eixo",
@@ -112,7 +113,7 @@ namespace SteelBIM.Services.Ifc
                             continue;
                         }
 
-                        Level nivel = ObterNivelDoElemento(origem, doc, niveis, config.NivelPadrao);
+                        Level? nivel = ObterNivelDoElemento(origem, doc, niveis, config.NivelPadrao);
                         if (nivel == null)
                         {
                             Logger.Debug("[ConverterPerfilIfc] IGNORADO #{Idx}/{Tot}: elemento {Id} ({Cat}) — sem Level associado e sem NivelPadrao",
@@ -123,7 +124,11 @@ namespace SteelBIM.Services.Ifc
                             continue;
                         }
 
-                        FamilySymbol simbolo = conversao.PerfilDestino;
+                        // TODO(nullable): PerfilDestino e' FamilySymbol? mas a Window/wizard
+                        // ja' valida que esta setado antes de incluir na lista de Conversoes.
+                        // Mantido ! pra preservar comportamento; se a validacao falhar, NRE
+                        // como antes.
+                        FamilySymbol simbolo = conversao.PerfilDestino!;
                         if (!simbolo.IsActive)
                         {
                             simbolo.Activate();
@@ -169,7 +174,7 @@ namespace SteelBIM.Services.Ifc
 
                             TentarAplicarRotacaoSecao(nova, origem, linha, doc);
 
-                            string ifcMaterial = origem.LookupParameter("IfcMaterial")?.AsString();
+                            string? ifcMaterial = origem.LookupParameter("IfcMaterial")?.AsString();
                             if (!string.IsNullOrWhiteSpace(ifcMaterial))
                                 TentarAplicarMaterial(nova, ifcMaterial, doc);
 
@@ -296,7 +301,7 @@ namespace SteelBIM.Services.Ifc
         /// </summary>
         public static bool EhElementoIfc(Element e)
         {
-            Parameter guid = e.LookupParameter("IfcGUID");
+            Parameter? guid = e.LookupParameter("IfcGUID");
             return guid != null
                 && guid.StorageType == StorageType.String
                 && !string.IsNullOrWhiteSpace(guid.AsString());
@@ -328,7 +333,7 @@ namespace SteelBIM.Services.Ifc
             if (catId == (long)BuiltInCategory.OST_StructuralColumns)
                 return true;
 
-            BoundingBoxXYZ bbox = e.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = e.get_BoundingBox(null);
             if (bbox == null)
                 return false;
 
@@ -346,7 +351,7 @@ namespace SteelBIM.Services.Ifc
             var resultado = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (Parameter p in e.Parameters)
             {
-                string nome = p.Definition?.Name;
+                string? nome = p.Definition?.Name;
                 if (nome == null
                     || !nome.StartsWith("Ifc", StringComparison.OrdinalIgnoreCase)
                     || p.StorageType != StorageType.String)
@@ -361,7 +366,7 @@ namespace SteelBIM.Services.Ifc
 
         public static bool TemIfcMaterial(Element e)
         {
-            Parameter p = e.LookupParameter("IfcMaterial");
+            Parameter? p = e.LookupParameter("IfcMaterial");
             return p != null
                 && p.StorageType == StorageType.String
                 && !string.IsNullOrWhiteSpace(p.AsString());
@@ -441,7 +446,7 @@ namespace SteelBIM.Services.Ifc
             if (string.IsNullOrWhiteSpace(nomeMaterial))
                 return;
 
-            Material material = new FilteredElementCollector(doc)
+            Material? material = new FilteredElementCollector(doc)
                 .OfClass(typeof(Material))
                 .Cast<Material>()
                 .FirstOrDefault(m =>
@@ -451,7 +456,7 @@ namespace SteelBIM.Services.Ifc
             if (material == null)
                 return;
 
-            Parameter p = instancia.LookupParameter("Structural Material")
+            Parameter? p = instancia.LookupParameter("Structural Material")
                 ?? instancia.LookupParameter("Material Estrutural")
                 ?? instancia.LookupParameter("Material");
 
@@ -459,7 +464,7 @@ namespace SteelBIM.Services.Ifc
                 p.Set(material.Id);
         }
 
-        private Line ObterLinhaDoElemento(Element elemento)
+        private Line? ObterLinhaDoElemento(Element elemento)
         {
             // Caminho rapido para elementos com LocationCurve linear (raro em DirectShape IFC)
             if (elemento.Location is LocationCurve lc && lc.Curve is Line ln)
@@ -469,14 +474,14 @@ namespace SteelBIM.Services.Ifc
             // (centroides de PlanarFaces extremas anti-paralelas) com fallback PCA
             // sobre vertices. Preserva inclinacao 3D real — diagonal de tesoura
             // 45 graus mantem 45 graus apos conversao.
-            Line eixo = SectionAxisExtractor.ExtrairEixo(elemento);
+            Line? eixo = SectionAxisExtractor.ExtrairEixo(elemento);
             if (eixo != null)
                 return eixo;
 
             // Fallback ultimo recurso: AABB world-aligned (comportamento legado do
             // Victor). So acionado se SectionAxisExtractor falhar — preserva
             // compatibilidade com pecas sem geometria visivel.
-            BoundingBoxXYZ bbox = elemento.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = elemento.get_BoundingBox(null);
             if (bbox == null)
                 return null;
 
@@ -509,11 +514,11 @@ namespace SteelBIM.Services.Ifc
             return Line.CreateBound(start, end);
         }
 
-        private Level ObterNivelDoElemento(
+        private Level? ObterNivelDoElemento(
             Element elemento,
             Document doc,
             IReadOnlyList<Level> niveisOrdenados,
-            Level fallback)
+            Level? fallback)
         {
             // Caminho 1: LevelId direto (preservado do MVP do Victor)
             if (elemento.LevelId != null && elemento.LevelId != ElementId.InvalidElementId)
@@ -523,7 +528,7 @@ namespace SteelBIM.Services.Ifc
             }
 
             // Caminho 2: parametros "Level"/"Nivel" via LookupParameter (preservado)
-            Parameter paramNivel = elemento.LookupParameter("Level")
+            Parameter? paramNivel = elemento.LookupParameter("Level")
                 ?? elemento.LookupParameter("Nivel");
 
             if (paramNivel?.StorageType == StorageType.ElementId)
@@ -535,7 +540,7 @@ namespace SteelBIM.Services.Ifc
             // v2.7.0 BUG 2: nivel mais proximo do Z medio do bbox (substitui
             // fallback fixo do MVP do Victor que desaclopava pecas em pisos
             // diferentes em modelos multi-pavimento).
-            BoundingBoxXYZ bbox = elemento.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = elemento.get_BoundingBox(null);
             if (bbox != null && niveisOrdenados != null && niveisOrdenados.Count > 0)
             {
                 double zCentro = (bbox.Min.Z + bbox.Max.Z) / 2.0;

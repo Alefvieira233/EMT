@@ -11,7 +11,7 @@ namespace SteelBIM.Commands.PF
     [Transaction(TransactionMode.Manual)]
     public class CmdPfLancarFundacoes : FerramentaCommandBase
     {
-        protected override string CommandName => "ECC - Lançar Fundação";
+        protected override string CommandName => "PF - Lançar Fundação";
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {

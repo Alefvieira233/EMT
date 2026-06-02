@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -272,6 +273,45 @@ namespace SteelBIM.Services.PF
             int count = Math.Max(2, (int)Math.Floor(pathLengthMm / spacingMm) + 1);
             double realSpacing = pathLengthMm / Math.Max(1, count - 1);
             return (Count: count, RealSpacingMm: realSpacing);
+        }
+
+        /// <summary>
+        /// P1 (fix "0 armaduras"): espelha a decisao de <c>InsertColumnStirrups</c> sobre
+        /// QUANTOS grupos de estribo seriam criados num pilar, dada a altura livre util (mm)
+        /// e a config de espacamento. Documenta/testa os caminhos que retornavam 0 silencioso:
+        /// <list type="bullet">
+        ///   <item>altura livre &lt;= 100 mm → 0 (gate de altura — pilar nao lido como vertical);</item>
+        ///   <item>espacamento unico (ou pilar circular) → 1 grupo uniforme;</item>
+        ///   <item>zoneamento NBR → 0..3 grupos (inferior/central/superior) conforme as
+        ///         alturas de zona e os espacamentos &gt; 0.</item>
+        /// </list>
+        /// NAO cobre a degeneracao geometrica da secao (Revit-bound) — so a decisao de altura/zona.
+        /// </summary>
+        public static int ContarGruposEstriboColuna(
+            bool usarEspacamentoUnico,
+            bool isCircular,
+            double clearHeightMm,
+            double espInferiorCm,
+            double espCentralCm,
+            double espSuperiorCm,
+            double alturaZonaExtremidadeCm)
+        {
+            if (clearHeightMm <= 100.0)
+                return 0;
+            if (usarEspacamentoUnico || isCircular)
+                return 1;
+
+            double zoneMm = Math.Min(alturaZonaExtremidadeCm * 10.0, clearHeightMm / 2.0);
+            double middleMm = Math.Max(50.0, clearHeightMm - (zoneMm * 2.0));
+
+            int grupos = 0;
+            if (espInferiorCm > 0 && zoneMm > 10.0)
+                grupos++;
+            if (espCentralCm > 0 && middleMm > 10.0)
+                grupos++;
+            if (espSuperiorCm > 0 && zoneMm > 10.0)
+                grupos++;
+            return grupos;
         }
     }
 }

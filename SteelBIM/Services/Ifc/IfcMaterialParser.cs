@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -68,7 +69,7 @@ namespace SteelBIM.Services.Ifc
         /// v2.7.0: rejeita pseudo-secoes de concreto (R_M1, SQ_M1, 12phi10,
         /// 200/400 sozinho) que antes eram tratadas como perfil estrutural.
         /// </summary>
-        public static string ExtrairNomeSecao(string ifcMaterial)
+        public static string ExtrairNomeSecao(string? ifcMaterial)
         {
             if (string.IsNullOrWhiteSpace(ifcMaterial))
                 return string.Empty;
@@ -116,7 +117,7 @@ namespace SteelBIM.Services.Ifc
         /// Extrai o nome do material de engenharia do campo IfcMaterial.
         /// "A572, Grade 50 (HR Shapes) | AISC 360-16 (W 360x44.6)" -> "A572, Grade 50"
         /// </summary>
-        public static string ExtrairNomeMaterial(string ifcMaterial)
+        public static string ExtrairNomeMaterial(string? ifcMaterial)
         {
             if (string.IsNullOrWhiteSpace(ifcMaterial))
                 return string.Empty;
@@ -134,7 +135,7 @@ namespace SteelBIM.Services.Ifc
         /// Normaliza o nome para comparacao: sem espacos, maiusculas.
         /// "W 360x44.6" -> "W360X44.6"
         /// </summary>
-        public static string NormalizarNome(string nome)
+        public static string NormalizarNome(string? nome)
         {
             if (string.IsNullOrWhiteSpace(nome))
                 return string.Empty;
@@ -145,7 +146,7 @@ namespace SteelBIM.Services.Ifc
         /// <summary>
         /// Correspondencia simples por substring (mantida para compatibilidade).
         /// </summary>
-        public static bool CorresponderNome(string nomeSecao, string nomePerfil)
+        public static bool CorresponderNome(string? nomeSecao, string? nomePerfil)
         {
             if (string.IsNullOrWhiteSpace(nomeSecao) || string.IsNullOrWhiteSpace(nomePerfil))
                 return false;
@@ -183,7 +184,7 @@ namespace SteelBIM.Services.Ifc
         /// Leva em conta tipo estrutural (C->Ue, RHS->SHS, etc.) e dimensoes.
         /// Retorna 0 se os tipos sao incompativeis.
         /// </summary>
-        public static int CalcularScore(string nomeSecaoIfc, string nomeTipoPerfil)
+        public static int CalcularScore(string? nomeSecaoIfc, string? nomeTipoPerfil)
         {
             if (string.IsNullOrWhiteSpace(nomeSecaoIfc) || string.IsNullOrWhiteSpace(nomeTipoPerfil))
                 return 0;
@@ -206,7 +207,7 @@ namespace SteelBIM.Services.Ifc
             return tipoScore + dimScore;
         }
 
-        private static int ScoreTipo(string tipoSecao, string tipoPerfil)
+        private static int ScoreTipo(string? tipoSecao, string? tipoPerfil)
         {
             if (string.IsNullOrEmpty(tipoSecao) || string.IsNullOrEmpty(tipoPerfil))
                 return 0;
@@ -214,7 +215,7 @@ namespace SteelBIM.Services.Ifc
             if (tipoSecao.Equals(tipoPerfil, StringComparison.OrdinalIgnoreCase))
                 return 100;
 
-            if (_tipoMap.TryGetValue(tipoSecao, out string[] compat))
+            if (_tipoMap.TryGetValue(tipoSecao, out string[]? compat) && compat != null)
             {
                 for (int i = 0; i < compat.Length && i < _tipoPts.Length; i++)
                 {

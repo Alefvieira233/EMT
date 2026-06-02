@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.Conexoes
+﻿#nullable enable
+namespace SteelBIM.Models.Conexoes
 {
     public sealed class PlacaBaseLancamentoResultado
     {

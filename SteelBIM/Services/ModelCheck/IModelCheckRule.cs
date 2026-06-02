@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using SteelBIM.Models.ModelCheck;
 
@@ -25,6 +26,6 @@ namespace SteelBIM.Services.ModelCheck
         /// para determinar o escopo (p.ex., todos os elementos estruturais).
         /// </param>
         /// <returns>Colecao de problemas encontrados.</returns>
-        IEnumerable<ModelCheckIssue> Check(Document doc, IList<ElementId> scopeIds);
+        IEnumerable<ModelCheckIssue> Check(Document doc, IList<ElementId>? scopeIds);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -76,8 +77,8 @@ namespace SteelBIM.Services
                 if (config.CriarDegraus && config.TipoDegrau == EscadaTipoDegrau.PerfilLinear)
                     AtivarSymbolSeNecessario(config.SymbolDegrau, doc);
 
-                FamilyInstance longarinaEsquerda = CriarViga(doc, geometry.LeftStringerStart, geometry.LeftStringerEnd, config.SymbolLongarina, config.NivelReferencia, config);
-                FamilyInstance longarinaDireita = CriarViga(doc, geometry.RightStringerStart, geometry.RightStringerEnd, config.SymbolLongarina, config.NivelReferencia, config);
+                FamilyInstance? longarinaEsquerda = CriarViga(doc, geometry.LeftStringerStart, geometry.LeftStringerEnd, config.SymbolLongarina, config.NivelReferencia, config);
+                FamilyInstance? longarinaDireita = CriarViga(doc, geometry.RightStringerStart, geometry.RightStringerEnd, config.SymbolLongarina, config.NivelReferencia, config);
 
                 ConfigurarOrientacaoLongarina(longarinaEsquerda, false);
                 ConfigurarOrientacaoLongarina(longarinaDireita, true);
@@ -109,7 +110,7 @@ namespace SteelBIM.Services
                         }
                         else
                         {
-                            FamilyInstance degrau = CriarDegrauPerfilLinear(doc, geometry, stepData, config, i);
+                            FamilyInstance? degrau = CriarDegrauPerfilLinear(doc, geometry, stepData, config, i);
                             if (degrau != null)
                             {
                                 elementosCriados.Add(degrau.Id);
@@ -132,7 +133,7 @@ namespace SteelBIM.Services
             _ui.Info(
                 Titulo,
                 "Escada criada com sucesso.\n\n" +
-                "Longarina: " + config.SymbolLongarina.FamilyName + " : " + config.SymbolLongarina.Name + "\n" +
+                "Longarina: " + config.SymbolLongarina!.FamilyName + " : " + config.SymbolLongarina.Name + "\n" +
                 "Degrau: " + ObterDescricaoDegrau(config) + "\n\n" +
                 "Lado de inserção: " + config.LadoInsercao + "\n" +
                 "Largura: " + config.LarguraCm + " cm\n" +
@@ -273,7 +274,7 @@ namespace SteelBIM.Services
                 topCenter + rightOffset + stringerVerticalOffset);
         }
 
-        private void AtivarSymbolSeNecessario(FamilySymbol symbol, Document doc)
+        private void AtivarSymbolSeNecessario(FamilySymbol? symbol, Document doc)
         {
             if (symbol == null)
                 return;
@@ -285,12 +286,12 @@ namespace SteelBIM.Services
             }
         }
 
-        private FamilyInstance CriarDegrauPerfilLinear(Document doc, StairGeometryData geometry, StairStepData stepData, EscadaConfig config, int stepIndex)
+        private FamilyInstance? CriarDegrauPerfilLinear(Document doc, StairGeometryData geometry, StairStepData stepData, EscadaConfig config, int stepIndex)
         {
             XYZ leftPoint;
             XYZ rightPoint;
             CalcularLinhaCentroDegrauPerfil(stepIndex, geometry, stepData, out leftPoint, out rightPoint);
-            FamilyInstance degrau = CriarViga(doc, leftPoint, rightPoint, config.SymbolDegrau, config.NivelReferencia, config);
+            FamilyInstance? degrau = CriarViga(doc, leftPoint, rightPoint, config.SymbolDegrau, config.NivelReferencia, config);
             ConfigurarOrientacaoDegrau(degrau);
             return degrau;
         }
@@ -373,7 +374,7 @@ namespace SteelBIM.Services
             rightPoint = backCenterPoint - geometry.LeftDirection.Multiply(stepData.WidthFt / 2.0);
         }
 
-        private FamilyInstance CriarViga(Document doc, XYZ inicio, XYZ fim, FamilySymbol symbol, Level nivel, EscadaConfig config)
+        private FamilyInstance? CriarViga(Document doc, XYZ inicio, XYZ fim, FamilySymbol? symbol, Level? nivel, EscadaConfig config)
         {
             if (symbol == null || inicio.DistanceTo(fim) < RevitUtils.EPS)
                 return null;
@@ -393,7 +394,7 @@ namespace SteelBIM.Services
             return instancia;
         }
 
-        private void ConfigurarOrientacaoLongarina(FamilyInstance instancia, bool flipProfile)
+        private void ConfigurarOrientacaoLongarina(FamilyInstance? instancia, bool flipProfile)
         {
             if (instancia == null)
                 return;
@@ -402,7 +403,7 @@ namespace SteelBIM.Services
             RevitUtils.SetSectionRotation(instancia, flipProfile ? Math.PI : 0.0);
         }
 
-        private void ConfigurarOrientacaoDegrau(FamilyInstance instancia)
+        private void ConfigurarOrientacaoDegrau(FamilyInstance? instancia)
         {
             if (instancia == null)
                 return;

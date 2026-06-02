@@ -30,8 +30,11 @@
     <Compile Include="..\..\SteelBIM\Licensing\KeySigner.cs">
       <Link>Linked\KeySigner.cs</Link>
     </Compile>
-    <Compile Include="..\..\SteelBIM\Licensing\LicenseSecretProvider.cs">
-      <Link>Linked\LicenseSecretProvider.cs</Link>
+    <Compile Include="..\..\SteelBIM\Licensing\LicenseKeys.cs">
+      <Link>Linked\LicenseKeys.cs</Link>
+    </Compile>
+    <Compile Include="..\..\SteelBIM\Licensing\LicensePrivateKeyProvider.cs">
+      <Link>Linked\LicensePrivateKeyProvider.cs</Link>
     </Compile>
     <Compile Include="..\..\SteelBIM\Licensing\Base64Url.cs">
       <Link>Linked\Base64Url.cs</Link>

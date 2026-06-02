@@ -1,0 +1,18 @@
+# Config do gitleaks para o SteelBIM (varredura de conteudo por segredos).
+# Complementa o job secret-guard (que bloqueia por EXTENSAO de arquivo) com
+# deteccao de segredos embutidos em texto. Usa as regras padrao do gitleaks +
+# allowlist de itens que NAO sao segredos.
+title = "SteelBIM gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Itens publicos / nao-secretos (evita falso-positivo)"
+paths = [
+  # Chave PUBLICA ECDsa P-256 de verificacao de licenca (ADR-011). Por design
+  # fica embutida no binario; verifica assinaturas, nao assina — NAO e' segredo.
+  '''SteelBIM/Licensing/LicenseKeys\.cs''',
+  # Fixtures binarias .nc1 (oraculo do golden test DSTV) — dados, nao segredos.
+  '''SteelBIM\.Tests/Fixtures/Dstv/.*\.nc1''',
+]

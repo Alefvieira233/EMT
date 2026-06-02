@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.DiagramaMontagem
+﻿#nullable enable
+namespace SteelBIM.Models.DiagramaMontagem
 {
     /// <summary>
     /// Orientacao do plano de secao do diagrama de montagem.

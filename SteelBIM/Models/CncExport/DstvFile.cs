@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 
 namespace SteelBIM.Models.CncExport
 {
@@ -57,6 +58,18 @@ namespace SteelBIM.Models.CncExport
         /// <summary>Peso linear em kg/m.</summary>
         public double WeightPerMeter { get; set; }
 
+        /// <summary>
+        /// Area de superficie de pintura em m2/m (campo 17 do bloco ST). 0 se nao calculado.
+        /// Aparece logo apos o peso nos arquivos NC1 de referencia do fabricante.
+        /// </summary>
+        public double PaintingSurfacePerMeter { get; set; }
+
+        /// <summary>
+        /// Nome do arquivo NC1 escrito na linha-comentario de cabecalho ("** &lt;nome&gt;.nc1").
+        /// Quando vazio, o writer deriva de <see cref="DrawingNumber"/> + ".nc1".
+        /// </summary>
+        public string OutputFileName { get; set; } = "";
+
         /// <summary>Tratamento de superficie (pintura, galvanizacao). Pode ser vazio.</summary>
         public string SurfaceTreatment { get; set; } = "";
 
@@ -69,6 +82,30 @@ namespace SteelBIM.Models.CncExport
         /// </summary>
         public double CutAngleStartDeg { get; set; } = 90.0;
         public double CutAngleEndDeg { get; set; } = 90.0;
+
+        /// <summary>
+        /// Emitir o bloco AK (contorno externo retangular da face da alma) no NC1.
+        /// DESLIGADO por padrao: embora muitos leitores DSTV exijam AK, o contorno exato
+        /// varia por perfil/maquina e PRECISA ser validado contra um .nc1 real do fabricante
+        /// (ou test-cut) antes de producao. Ligar somente apos validar na maquina alvo.
+        /// </summary>
+        public bool IncluirContornoAk { get; set; }
+
+        // ---------- Bloco AK (contorno externo) ----------
+
+        /// <summary>
+        /// v2.8.10 — Pontos do contorno externo da CHAPA (face v), em mm: (X, Y, Raio).
+        /// Raio &gt; 0 = arco; Raio &lt; 0 = arco invertido; Raio = 0 = canto reto.
+        /// Usado pelo <c>DstvFileWriter</c> quando <see cref="IncluirContornoAk"/> = true.
+        ///
+        /// Quando vazio e <c>IncluirContornoAk</c> esta ligado, o writer pode gerar
+        /// o retangulo padrao (comprimento x altura — fallback v2.8.0 do CHAPA).
+        ///
+        /// Validacao byte-a-byte contra .nc1 do fabricante pendente (Etapa D do plano
+        /// Onda 3): aguardando arquivos CH02/CH03/CH04 do Alef pra rodar golden test.
+        /// </summary>
+        public List<(double X, double Y, double Raio)> ContornoAk { get; }
+            = new List<(double X, double Y, double Raio)>();
 
         // ---------- Bloco BO (furos) ----------
 

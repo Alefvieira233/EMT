@@ -47,6 +47,13 @@ namespace SteelBIM.Views
                 DiametroMm = ParseDouble(txtDiametro.Text, 6.3),
                 CobrimentoCm = ParseDouble(txtCover.Text, 3.0),
                 EspacamentoCm = ParseDouble(txtEspacamento.Text, 12.0),
+                // FIX (P1): a janela so expoe um campo de espacamento, entao o estribo deve
+                // usar esse valor UNIFORMEMENTE. Sem isto, o service caia no zoneamento NBR
+                // (default) que IGNORA o espacamento digitado e usava zonas-default 12/20/12/60
+                // — alem de poder gerar "0 armaduras" em pilares curtos. Para zoneamento NBR
+                // (mais denso nas extremidades) seria preciso expor os 3 espacamentos + altura
+                // de zona na UI (melhoria futura).
+                UsarEspacamentoUnico = true,
                 Dobra = cmbDobra.SelectedIndex == 1
                     ? PfStirrupHookAngle.Graus90
                     : PfStirrupHookAngle.Graus135
@@ -58,19 +65,19 @@ namespace SteelBIM.Views
             PfColumnStirrupsConfig config = BuildConfig();
             if (config.DiametroMm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Pilar", "Informe um diametro de barra maior que zero.", "Dados incompletos");
+                AppDialogService.ShowWarning("PF - Estribos Pilar", "Informe um diametro de barra maior que zero.", "Dados incompletos");
                 return;
             }
 
             if (config.CobrimentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Pilar", "Informe cobrimento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Estribos Pilar", "Informe cobrimento maior que zero.", "Dados invalidos");
                 return;
             }
 
             if (config.EspacamentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Estribos Pilar", "Informe espacamento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Estribos Pilar", "Informe espacamento maior que zero.", "Dados invalidos");
                 return;
             }
 
@@ -79,10 +86,9 @@ namespace SteelBIM.Views
 
         private static double ParseDouble(string text, double fallback)
         {
-            string normalized = (text ?? string.Empty).Trim().Replace(',', '.');
-            return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
-                ? value
-                : fallback;
+            // v2.8.9 FIX: padronizar no helper oficial (Invariant -> pt-BR). A variante
+            // Replace(',','.')+Invariant divergia das demais janelas e quebrava "1,000".
+            return SteelBIM.Utils.NumberParsing.ParseDoubleOrDefault(text, fallback);
         }
 
         private static string Format(double value)

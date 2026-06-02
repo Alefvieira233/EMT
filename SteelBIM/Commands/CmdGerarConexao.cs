@@ -22,6 +22,9 @@ namespace SteelBIM.Commands
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
+            SteelBIM.Utils.DisclaimerService.MostrarUmaVezPorSessao(
+                "conexao", CommandName, SteelBIM.Utils.DisclaimerTexts.Conexoes);
+
             // Try/catch geral fica na FerramentaCommandBase. Aqui so deixamos a logica.
             Logger.Info("[CmdGerarConexao] Iniciando seleção de elementos");
 
@@ -88,7 +91,14 @@ namespace SteelBIM.Commands
 
             if (sucesso)
             {
-                ShowSuccess("Conexão gerada com sucesso.", "Sucesso");
+                // v2.8.9 (auditoria): a conexao e' geometrica/documental — o SteelBIM nao
+                // verifica resistencia (parafusos, solda, chapa). Disclaimer evita que o
+                // aluno suponha que a ligacao gerada esta dimensionada/verificada.
+                ShowSuccess(
+                    "Conexão gerada com sucesso.\n\nATENÇÃO: representação geométrica/documental " +
+                    "— o SteelBIM não verifica a resistência da ligação (parafusos, solda, chapa). " +
+                    "Dimensione e verifique conforme o projeto estrutural.",
+                    "Sucesso");
                 Logger.Info("[CmdGerarConexao] Conexão gerada com sucesso");
             }
             else

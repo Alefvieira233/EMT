@@ -8,20 +8,178 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-**Auditoria 2026-05-25 CONCLUÍDA** com v2.8.0 (3 waves, 13 PRs estruturais).
-**Incorporação Victor** em v2.8.1 (2 PRs).
-**Conexão Terça v2** em v2.8.2 (algoritmo face-based + spec da família).
-**Hotfix Conexão Terça v3** em v2.8.3 (centramento automático + 3 fixes campo).
-**Hotfix IFC falso-cancel** em v2.8.6 (6 fixes + 1 enhancement).
-**Sprint Hardening Dia 1** em v2.8.7 (7 melhorias defensivas pós-auditoria 5-agents).
-**Hotfix Diagrama de Montagem — cotas inválidas** em v2.8.8 (5 ondas, reescrita das 3 funções de cota + failure handler).
+Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
+`docs/audits/SUPER-RELATORIO-2026-05-31.md`. Nota global 7,6/10, **sem P0 ativo**.
 
-Próximas atividades dependem de eventos externos:
+**Onda 1 (gates de CI / processo) — em andamento:**
+- `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
+  `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
+- Guard de go-live testado no CI (`LicenseKeysTests`: falha se a chave pública for placeholder).
+- Job `gitleaks` (varredura de **conteúdo** por segredos) + `.gitleaks.toml` com allowlist
+  da chave pública e fixtures. Introdutório/não-bloqueante (`continue-on-error`) — promover a
+  bloqueante após confirmar verde. Complementa o `secret-guard` (que só olha extensão).
+- Comentário obsoleto HMAC→ECDsa atualizado no `build.yml`.
 
-- **External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra), bump Authenticode flag default → TRUE (após primeira release assinada), EULA/Privacy/TOS revisados (aguarda advogado TI)
-- **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM; infra não criada pra evitar dead code)
-- **Manual no Revit (Alef + Victor):** validar v2.8.3 no mesmo galpão do teste anterior — confirmar que conexão fica na altura da terça, viga do meio recebe conexão, face externa selecionada (ou marca "Inverter face" se preciso)
-- **Manual no Revit (Alef):** validar v2.8.6 conversão IFC no mesmo arquivo que apresentou "Cancelado" falso — confirmar que conversão completa sem dialog de cancelamento, perfis inclinados são preservados, log lista ignorados com motivo
+**Onda 4 (domínio/UX — disclaimers normativos):**
+- Avisos técnicos/legais (`DisclaimerTexts` + `DisclaimerService`) exibidos **uma vez por
+  sessão** antes de gerar **armadura PF** (verificar bitolas/adensamento/suspensão/ancoragem
+  conforme projeto e NBR 6118) e **conexões metálicas** (geração geométrica/documental, sem
+  verificação de capacidade). Fecha o risco de responsabilidade técnica apontado na auditoria.
+  Texto centralizado e coberto por teste de regressão.
+
+**Onda 3 / Etapa D (DSTV CHAPA — produção) — 2026-06-01:**
+- **Writer NC1 reescrito para o formato real do fabricante** e travado por golden test
+  byte-a-byte contra 3 `.nc1` reais (CH02/CH03/CH04, embutidos como `EmbeddedResource`):
+  bloco ST com colunas de largura fixa + linha-comentário `** <arquivo>.nc1`, bloco AK
+  (face `v` + marcador `u` no 1º ponto), bloco BO único (marcador `s`), e **um único `EN`**
+  no fim do arquivo (corrigido — antes emitia `EN` por bloco, fora da spec).
+- **Produtor CHAPA ligado** (`DstvHeaderBuilder`, `ProfileType == B`): contorno externo
+  extraído da maior `PlanarFace` do Revit e **normalizado** (`DstvContornoAkBuilder.Normalizar`:
+  canto em 0,0 + maior extensão no X + winding CCW); **dimensões derivadas do PLANO da face**
+  (`DstvChapaDimensionsMapper.FromContorno` + espessura via volume/área) — funciona para chapa
+  em **qualquer orientação, inclusive inclinada** (resolve o TODO de plano inclinado); bounding
+  box vira fallback. `OutputFileName` casa com o nome real do arquivo. Vigas/perfis mantêm o
+  caminho antigo intacto. Fail-safe: `IncluirContornoAk` só liga com ≥ 3 pontos válidos.
+- **Novos testes puros** (mapper de dimensões, fechamento de contorno, normalização sob
+  transformações adversariais, `OutputFileName`). Suíte 100% verde; build Release 0 warnings;
+  `dotnet format --verify-no-changes` limpo nos 2 projetos.
+
+**Pendente de validação física (não-código — depende de Alef/Victor):**
+- **DSTV/CNC:** writer + produtor prontos e validados byte-a-byte contra `.nc1` real. Falta
+  **smoke test no Revit** de uma chapa real: confirmar AK (orientação/winding com geometria
+  real) e a **convenção de modelagem dos furos** (o `DstvHoleExtractor` lê parâmetros
+  `Hole {i} X/Y/Diameter/Face`; se o escritório modela furos como vazios geométricos, o BO
+  virá vazio e a extração de furos por geometria fica como follow-up). Extração de arcos
+  (raio ≠ 0) também é follow-up — hoje arco vira canto reto.
+- **Revit:** rodar `docs/VALIDACAO-REVIT-v2.8.9.md` num modelo real (cota da treliça, Diagrama
+  de Montagem, armaduras PF).
+- **Licença:** emitir/ativar as 2 chaves (Alef + Victor) com a chave privada via EmtKeyGen.
+
+**External-dependent:** code signing efetivo (cert Sectigo OV — aguarda compra) + bump da flag
+Authenticode após primeira release assinada; EULA/Privacy/TOS (aguarda jurídico).
+
+**Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM).
+
+---
+
+## [2.8.11] - 2026-06-02
+
+**Ajustes de campo — 6 pontos levantados no uso real (escritório EMT):**
+
+- **P1 — Estribos Pilar não gerava nada / ignorava o espaçamento:** a janela não setava
+  `UsarEspacamentoUnico`, então caía no zoneamento NBR (default) que ignorava o valor digitado;
+  agora honra o espaçamento único. Quando nada é criado, a mensagem mostra o **motivo provável**
+  (sem RebarBarType, seção degenerada, altura < 100 mm) em vez de só "0 armaduras". Helper puro
+  `ContarGruposEstriboColuna` + 5 testes.
+- **P6 — Treliça com padrões + espaçamentos variáveis + treliça completa:** `TrussPattern`
+  (Pratt/Howe/Warren/Alternada/DiagonalDir/DiagonalEsq/EmX/SoMontantes), `TrussSpacingMode`
+  (uniforme/lista/posições — posições ordenadas), helper puro `TrelicaPatternBuilder` (12 testes),
+  modo "treliça completa" (1 linha-base + altura → gera banzos+montantes+diagonais) e UI nova.
+- **P2 — Terça alinhada pela esquerda no lançamento:** `RevitUtils.SetYJustification` +
+  `TercasConfig.YJustificationValue` (default 0 = Esquerda); antes ficava centralizada (o Z já
+  era "Inferior").
+- **P3 — Chapa de ligação alinhada à referência da terça:** `OffsetLateralMm` (ajuste fino ao
+  longo do eixo da terça) + modo `ReferenciaChapa.OrigemTerca` (honra a origem nativa da família,
+  sem recentralizar) — ambos opt-in, default = comportamento provado (centra no cruzamento).
+- **P5 — Botão "Limpar Modelo":** desfaz os grupos temporários `EMT_` (preservando os membros)
+  para preparar o arquivo de entrega — seletivo e seguro, com confirmação; não apaga elementos
+  modelados nem famílias (purge de família = "Purgar Não Utilizados" nativo do Revit).
+- **P4 — Família da ligação desproporcional:** handoff Family Editor (`.rfa` fora do repo);
+  parâmetros de tamanho já ajustáveis pela janela quando a família os expõe.
+
+Qualidade: auditoria sênior (rastreabilidade + estática + regressão) e `/code-review high`
+(3 finders) → achados resolvidos (enum morto `Personalizado`, filtro de grupos por
+`GroupType.Name`, ordenação no modo Posições). Build Release 0 warning, `dotnet format` limpo,
+testes verdes. **Pendente de smoke test no Revit** (estribo, treliça, terça, chapa) e da edição
+da família (P4).
+
+## [2.8.9] - 2026-05-30
+
+Auditoria profunda do codebase (6 agentes sênior em paralelo: bootstrap/infra,
+licenciamento, metálico-geometria, documentação/CNC, PF pré-fabricado, build/CI)
+seguida de correções de alta confiança (lógica pura + hardening + docs). Relatório
+completo e backlog priorizado em `docs/audits/AUDITORIA-PROFUNDA-2026-05-30.md`.
+
+### Fixed
+
+#### Cotar Treliça — função estava 100% inoperante (P0)
+
+- `CotarTrelicaService.ExtrairNosBanzo` reclassificava cada barra com
+  `TrelicaClassificador.ClassificarPorInclinacao`, que **nunca** retorna
+  `BanzoSuperior`/`BanzoInferior` (só `BanzoIndefinido`/`Montante`/`Diagonal`). A
+  comparação `tipo == tipoBanzo` era **sempre falsa** → `nosSuperior`/`nosInferior`
+  saíam vazios → o pipeline abortava em "Não foi possível detectar banzos válidos"
+  para **toda** treliça. Agora reutiliza a classificação do passo 3 (que desambigua
+  por altura via `ClassificarBanzoPorAltura`) e delega a coleta de nós ao novo
+  helper puro `TrelicaGeometria.ColetarNosDoBanzo`.
+- `TrelicaRevitHelper.ObterReferenciaExtremo` retornava `new Reference(FamilyInstance)`
+  como fallback — **proibido** em `doc.Create.NewDimension` (lança no commit da
+  transação, derrubando a faixa de cota inteira). Agora retorna `null` e o caller
+  pula o segmento.
+- Sentinela `noSup.X == 0 || noInf.X == 0` na faixa de alturas descartava nós
+  legitimamente em X≈0 e aceitava "não encontrado" (tuple default) como válido com
+  Z=0 → alturas de montante ausentes/absurdas. Substituído por busca por índice com
+  tolerância (`TrelicaGeometria.IndiceNoMaisProximo`).
+- Altura do montante calculada via round-trip 3D (`DesprojetarPonto` + leitura do
+  `.Z` mundial) — só correto quando `UpDirection == +Z` mundial. Agora usa a
+  separação vertical 2D direta (`|noSup.Z − noInf.Z|`).
+- Gate duplicado (`EncontrarBarraNoNo` chamado 2× com os mesmos argumentos) removido.
+- "Cotas criadas" no relatório somava `faixa.Segmentos.Count` em vez de contar 1 por
+  `Dimension` encadeada (inflava a contagem).
+- Vãos entre apoios passam a derivar dos extremos do **banzo inferior** (onde a
+  treliça apoia), não do superior (que pode ter balanço em duas águas).
+- +6 testes de regressão em `TrelicaGeometriaTests` (`ColetarNosDoBanzo`,
+  `IndiceNoMaisProximo`).
+
+#### Outras correções de campo
+
+- **Verificar Modelo** (`OverlappingElementsRule`): `intersection.Volume` (pés³,
+  unidade interna do Revit) era comparado contra um limiar documentado como m³
+  (`0.0001`). Sem conversão, o limiar efetivo era ~35× mais sensível (~2,8 cm³ em
+  vez de 100 cm³) → enxurrada de falsos positivos de sobreposição. Agora converte
+  para m³ antes de comparar.
+- **Janelas PF** (`PfEstacaRebarWindow`, `PfColumnStirrupsWindow`): parsing decimal
+  padronizado em `SteelBIM.Utils.NumberParsing`. A estaca tentava `CurrentCulture`
+  primeiro (viola a regra de ouro do projeto; "1.5" quebrava em PC pt-BR) e dava
+  `NullReferenceException` se o texto fosse null — cobrimento/espaçamento podiam ser
+  lidos errado, posicionando armadura indevidamente.
+- **Marcar Peças** (`GravarMarca`): a proteção "não sobrescrever" usava só
+  `param.AsString()`, que retorna null em parâmetro numérico → marca existente era
+  sobrescrita mesmo com `SobrescreverExistentes=false` (perda de dado). Agora usa
+  `AsString() ?? AsValueString()`.
+- **Travamento** (`TravamentoService`): `catch {}` genérico no `PickObjects`
+  mascarava todas as exceções; agora trata só `OperationCanceledException` e deixa o
+  resto subir para o handler de `FerramentaCommandBase`.
+- **Boot** (`App.OnStartup`): construção do ribbon protegida por try/catch raiz — uma
+  exceção ali (internalName duplicado em reload, PNG corrompido) escapava do
+  `OnStartup` e o Revit **desabilitava o add-in inteiro**. Agora loga e segue (ribbon
+  parcial em vez de plugin que não carrega).
+- **Privacidade/LGPD** (`CrashReporter`): `Environment.UserName` (PII) não é mais
+  gravado no crash dump local — arquivo que o usuário envia ao suporte. Alinha com a
+  decisão da v2.8.7 que removeu o UserName do Logger.
+
+### Changed
+
+- Bump de versão 2.8.8 → 2.8.9 (`AssemblyInfo.cs`).
+- Documentação sincronizada com o estado real: `CLAUDE.md` (dizia v2.0.3/777 testes
+  e apontava `SteelBIM.Distribuicao/` inexistente), `README.md` (badge de versão +
+  contagem de testes contraditória 1223 vs 1241 + contagem de comandos 48→50),
+  `docs/ROADMAP.md` e `SECURITY.md` (versão estável defasada).
+- Arquivos órfãos da era v1.6.0 movidos para `docs/historico/`.
+
+### Backlog aberto (detalhado em `docs/audits/AUDITORIA-PROFUNDA-2026-05-30.md`)
+
+- **Licenciamento (P0 arquitetural — requer decisão):** esquema HMAC simétrico — o
+  segredo que verifica a chave é o mesmo que a assina e é distribuído com o plugin;
+  um aluno técnico pode extraí-lo do próprio disco e forjar chaves ilimitadas.
+  Recomendação: migrar para assinatura assimétrica (Ed25519/RSA) com a chave privada
+  só no EmtKeyGen e a pública embarcada no plugin.
+- **DSTV/NC1 (P1 — requer Revit + referência real):** o formato emitido diverge da
+  spec NC1 (ordem de campos do bloco ST, blocos AK/BO/SC), provável causa de arquivos
+  recusados por leitores/máquinas CNC.
+- Itens que exigem validação no Revit real (cotas verticais do Diagrama de Montagem
+  em vistas ao longo de Y; nomes de parâmetro com mojibake no bloco de 2 estacas;
+  sobreposição de estribos PF na junção de zonas) estão catalogados no relatório.
 
 ---
 

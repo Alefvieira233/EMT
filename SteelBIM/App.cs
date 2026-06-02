@@ -164,13 +164,9 @@ namespace SteelBIM
             { application.Idling += OnFirstIdling; }
             catch (Exception idlEx) { Logger.Warn(idlEx, "[Privacy] falha ao registrar Idling handler"); }
 
-            // 1.3.0: logar fonte do segredo HMAC
-            try
-            {
-                LicenseSecretProvider.SecretSource source = LicenseSecretProvider.GetResolvedSource();
-                Logger.Info("[Licensing] Segredo HMAC carregado de {Source}", source);
-            }
-            catch (Exception secEx) { Logger.Error(secEx, "[App] Falha ao consultar fonte do segredo HMAC"); }
+            // v2.8.9: licenca agora usa assinatura assimetrica (ECDsa). O plugin embarca
+            // apenas a chave PUBLICA de verificacao — nao ha mais segredo HMAC a resolver.
+            Logger.Info("[Licensing] verificacao de licenca por chave publica embarcada (ECDsa P-256)");
 
             // v2.6.0: ribbon dividido em DUAS abas (decisao do Alef):
             //   "SteelBIM | Modelagem"    -> modelagem, conexoes, armaduras PF, visualizacao
@@ -180,17 +176,30 @@ namespace SteelBIM
             // trabalho (modelar vs detalhar), mantendo a marca no prefixo da aba.
             // Apenas reorganizacao visual: nenhum command/service/AddInId mudou e
             // os internalName dos botoes foram preservados (atalhos do usuario OK).
-            RevitWindowThemeService.Initialize(application);
+            // v2.8.9: construcao do ribbon protegida por try/catch raiz. Uma excecao
+            // aqui (ex.: internalName duplicado em reload, PNG corrompido, mudanca de
+            // API do Revit) escaparia do OnStartup e o Revit DESABILITARIA o add-in
+            // inteiro — o usuario pagante "fica sem a ferramenta". Melhor um ribbon
+            // parcial (logado) que um plugin que nao carrega.
+            try
+            {
+                RevitWindowThemeService.Initialize(application);
 
-            string tabModelagem = "SteelBIM | Modelagem";
-            string tabDetalhamento = "SteelBIM | Detalhamento";
-            CreateRibbonTabSafe(application, tabModelagem);
-            CreateRibbonTabSafe(application, tabDetalhamento);
+                string tabModelagem = "SteelBIM | Modelagem";
+                string tabDetalhamento = "SteelBIM | Detalhamento";
+                CreateRibbonTabSafe(application, tabModelagem);
+                CreateRibbonTabSafe(application, tabDetalhamento);
 
-            string assemblyPath = Assembly.GetExecutingAssembly().Location;
+                string assemblyPath = Assembly.GetExecutingAssembly().Location;
 
-            BuildAbaModelagem(application, tabModelagem, assemblyPath);
-            BuildAbaDetalhamento(application, tabDetalhamento, assemblyPath);
+                BuildAbaModelagem(application, tabModelagem, assemblyPath);
+                BuildAbaDetalhamento(application, tabDetalhamento, assemblyPath);
+            }
+            catch (Exception ribbonEx)
+            {
+                Logger.Error(ribbonEx,
+                    "[App] Falha ao construir o ribbon — plugin continua carregado (ribbon pode estar parcial)");
+            }
 
             return Result.Succeeded;
         }
@@ -615,6 +624,19 @@ namespace SteelBIM
                 // v2.6.8: broom_large compartilhado com btnVerificarModelo (semantico OK:
                 // vassoura = limpeza/manutencao, "verificar" e parente proximo). Decisao OPCAO B
                 // do revert v2.6.3 -> Victor lucide_blue.
+                "broom_large.png",
+                "broom_small.png"
+            );
+
+            // v2.8.11 (Onda 4 — P5): preparar arquivo para entrega (desfaz grupos temporarios
+            // EMT_, preservando os membros). Reusa o icone de vassoura (limpeza).
+            AddButton(
+                panelVisualizacao,
+                "btnLimparModelo",
+                "Limpar\nModelo",
+                assemblyPath,
+                "SteelBIM.Commands.CmdLimparModelo",
+                "Prepara o arquivo para entrega: desfaz os grupos temporarios criados pelo SteelBIM (prefixo EMT_), preservando os membros. Nao remove elementos modelados.",
                 "broom_large.png",
                 "broom_small.png"
             );

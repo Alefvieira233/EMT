@@ -1,4 +1,5 @@
-﻿using SteelBIM.Models.DiagramaMontagem;
+﻿#nullable enable
+using SteelBIM.Models.DiagramaMontagem;
 
 namespace SteelBIM.Services.DiagramaMontagem
 {
@@ -19,7 +20,7 @@ namespace SteelBIM.Services.DiagramaMontagem
         /// <summary>
         /// Constroi o nome contextual da vista a partir do nome base + orientacao.
         /// </summary>
-        public static string BuildContextualName(string nomeBase, OrientacaoDiagrama orientacao)
+        public static string BuildContextualName(string? nomeBase, OrientacaoDiagrama orientacao)
         {
             string baseSanitized = nomeBase ?? string.Empty;
             return orientacao == OrientacaoDiagrama.Superior

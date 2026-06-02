@@ -53,6 +53,16 @@ namespace SteelBIM.Licensing
                     Logger.Info("[License] Primeira execucao — trial de {Dias} dias iniciado", TrialDurationDays);
                 }
 
+                // v2.8.9: guard de go-live — avisa alto se a chave publica embarcada ainda
+                // for o placeholder (senao o sintoma e' "trial silencioso", confuso no campo).
+                if (LicenseKeys.ChavePublicaEhPlaceholder)
+                {
+                    Logger.Error("[License] CHAVE PUBLICA DE PRODUCAO NAO CONFIGURADA — " +
+                        "LicenseKeys.PublicKeySpkiBase64 ainda e' o placeholder. Nenhuma licenca " +
+                        "paga sera validada (apenas trial). Cole a chave publica do 'EmtKeyGen " +
+                        "genkeypair' antes de distribuir.");
+                }
+
                 LicenseState state = ComputeState();
                 Logger.Info("[License] Estado inicial: {Status} (dias restantes: {Dias})",
                     state.Status, state.DiasRestantes);

@@ -7,9 +7,9 @@ Usuarios em versoes antigas devem fazer upgrade antes de reportar.
 
 | Versao | Suporte |
 |---|---|
-| v2.7.x (atual) | ✅ Patches de seguranca |
-| v2.6.x | ⚠️ So bugs criticos comprovados |
-| < v2.6.0 | ❌ Sem suporte |
+| v2.8.x (atual) | ✅ Patches de seguranca |
+| v2.7.x | ⚠️ So bugs criticos comprovados |
+| < v2.7.0 | ❌ Sem suporte |
 
 ## Como reportar uma vulnerabilidade
 

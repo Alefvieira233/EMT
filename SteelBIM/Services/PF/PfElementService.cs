@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -48,7 +49,7 @@ namespace SteelBIM.Services.PF
                 .WhereElementIsNotElementType()
                 .ToElements()
                 .Cast<Element>()
-                .Where(x => predicate?.Invoke(x as FamilyInstance) == true)
+                .Where(x => x is FamilyInstance fi && predicate?.Invoke(fi) == true)
                 .Select(x => x.Id)
                 .Distinct()
                 .ToList();
@@ -66,13 +67,13 @@ namespace SteelBIM.Services.PF
                 .ToList();
         }
 
-        public static bool IsStructuralColumn(Element element)
+        public static bool IsStructuralColumn(Element? element)
         {
             return element is FamilyInstance fi &&
                    fi.Category?.BuiltInCategory == BuiltInCategory.OST_StructuralColumns;
         }
 
-        public static bool IsStructuralBeam(Element element)
+        public static bool IsStructuralBeam(Element? element)
         {
             return element is FamilyInstance fi &&
                    fi.Category?.BuiltInCategory == BuiltInCategory.OST_StructuralFraming &&
@@ -86,7 +87,7 @@ namespace SteelBIM.Services.PF
         /// (max(dx, dy)). Sem essa heuristica, qualquer OST_StructuralFoundation seria
         /// detectado como pile, colidindo com IsTwoPileCap.
         /// </summary>
-        public static bool IsStructuralPile(Element element)
+        public static bool IsStructuralPile(Element? element)
         {
             if (!(element is FamilyInstance fi))
                 return false;
@@ -94,7 +95,7 @@ namespace SteelBIM.Services.PF
             if (fi.Category?.BuiltInCategory != BuiltInCategory.OST_StructuralFoundation)
                 return false;
 
-            BoundingBoxXYZ bbox = element.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = element.get_BoundingBox(null);
             if (bbox == null)
                 return false;
 
@@ -120,7 +121,7 @@ namespace SteelBIM.Services.PF
         /// estacas individuais — o que fazia o CmdPfInserirAcosBlocoDuasEstacas
         /// tentar lancar barras de bloco em estaca, comportamento indesejado.
         /// </summary>
-        public static bool IsTwoPileCap(Element element)
+        public static bool IsTwoPileCap(Element? element)
         {
             if (!(element is FamilyInstance fi))
                 return false;
@@ -131,54 +132,54 @@ namespace SteelBIM.Services.PF
             return !IsStructuralPile(element);
         }
 
-        public static bool IsPfLaje(Element element)
+        public static bool IsPfLaje(Element? element)
         {
             return element?.Category?.BuiltInCategory == BuiltInCategory.OST_Floors ||
                    (element is FamilyInstance fi && IsPfModelElement(fi, "laje"));
         }
 
-        public static bool IsPfConsolo(Element element)
+        public static bool IsPfConsolo(Element? element)
         {
             return element is FamilyInstance fi && IsPfModelElement(fi, "consolo");
         }
 
-        public static XYZ GetRepresentativePoint(Element element, View view)
+        public static XYZ GetRepresentativePoint(Element? element, View? view)
         {
             if (element?.Location is LocationPoint lp)
                 return lp.Point;
 
             if (element?.Location is LocationCurve lc)
             {
-                Curve curve = lc.Curve;
+                Curve? curve = lc.Curve;
                 if (curve != null)
                     return (curve.GetEndPoint(0) + curve.GetEndPoint(1)) / 2.0;
             }
 
-            BoundingBoxXYZ bbox = element?.get_BoundingBox(view) ?? element?.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = element?.get_BoundingBox(view) ?? element?.get_BoundingBox(null);
             if (bbox != null)
                 return (bbox.Min + bbox.Max) / 2.0;
 
             return XYZ.Zero;
         }
 
-        public static bool TrySetElementMark(Element element, string value)
+        public static bool TrySetElementMark(Element? element, string value)
         {
             if (element == null)
                 return false;
 
-            Parameter mark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
+            Parameter? mark = element.get_Parameter(BuiltInParameter.ALL_MODEL_MARK);
             if (CanWrite(mark))
             {
-                mark.Set(value);
+                mark!.Set(value);
                 return true;
             }
 
             foreach (string parameterName in new[] { "Mark", "Marca" })
             {
-                Parameter fallback = element.LookupParameter(parameterName);
+                Parameter? fallback = element.LookupParameter(parameterName);
                 if (CanWrite(fallback))
                 {
-                    fallback.Set(value);
+                    fallback!.Set(value);
                     return true;
                 }
             }
@@ -186,7 +187,7 @@ namespace SteelBIM.Services.PF
             return false;
         }
 
-        public static bool IsPfModelElement(FamilyInstance instance, string expectedModelToken)
+        public static bool IsPfModelElement(FamilyInstance? instance, string expectedModelToken)
         {
             string model = GetModelValue(instance?.Symbol);
             if (string.IsNullOrWhiteSpace(model))
@@ -195,14 +196,14 @@ namespace SteelBIM.Services.PF
             return Normalize(model).Contains(Normalize(expectedModelToken));
         }
 
-        public static double GetHorizontalOrder(View view, XYZ point)
+        public static double GetHorizontalOrder(View? view, XYZ point)
         {
             XYZ origin = view?.Origin ?? XYZ.Zero;
             XYZ right = view?.RightDirection ?? XYZ.BasisX;
             return (point - origin).DotProduct(right);
         }
 
-        public static double GetVerticalOrder(View view, XYZ point)
+        public static double GetVerticalOrder(View? view, XYZ point)
         {
             XYZ origin = view?.Origin ?? XYZ.Zero;
             XYZ up = view?.UpDirection ?? XYZ.BasisY;
@@ -229,8 +230,8 @@ namespace SteelBIM.Services.PF
         /// detectar a "caixa" ocupada por cada fundacao na vista (e agrupar por linhas).
         /// </summary>
         public static (double MinHorizontal, double MaxHorizontal, double MinVertical, double MaxVertical) GetViewOrderExtents(
-            Element element,
-            View view)
+            Element? element,
+            View? view)
         {
             List<XYZ> points = GetOrderingPoints(element, view);
             if (points.Count == 0)
@@ -250,7 +251,7 @@ namespace SteelBIM.Services.PF
                 verticals.Max());
         }
 
-        public static int GetBeamAxisGroup(Element element, View view)
+        public static int GetBeamAxisGroup(Element? element, View? view)
         {
             if (!(element?.Location is LocationCurve lc) || lc.Curve == null)
                 return 2;
@@ -267,12 +268,12 @@ namespace SteelBIM.Services.PF
             return onRight >= onUp ? 0 : 1;
         }
 
-        public static string GetHostPreview(Element element)
+        public static string GetHostPreview(Element? element)
         {
             if (element == null)
                 return string.Empty;
 
-            BoundingBoxXYZ bbox = element.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = element.get_BoundingBox(null);
             if (bbox == null)
                 return string.Empty;
 
@@ -295,18 +296,18 @@ namespace SteelBIM.Services.PF
             return $"Amostra selecionada: {dx:F1} x {dy:F1} x {dz:F1} cm";
         }
 
-        private static string GetModelValue(Element element)
+        private static string GetModelValue(Element? element)
         {
             if (element == null)
                 return string.Empty;
 
             foreach (string parameterName in new[] { "Modelo", "Model", "MODELO" })
             {
-                Parameter parameter = element.LookupParameter(parameterName);
+                Parameter? parameter = element.LookupParameter(parameterName);
                 if (parameter == null)
                     continue;
 
-                string value = parameter.AsString();
+                string? value = parameter.AsString();
                 if (!string.IsNullOrWhiteSpace(value))
                     return value;
 
@@ -318,7 +319,7 @@ namespace SteelBIM.Services.PF
             return string.Empty;
         }
 
-        private static string Normalize(string value)
+        private static string Normalize(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return string.Empty;
@@ -327,7 +328,7 @@ namespace SteelBIM.Services.PF
             return new string(normalized.Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark).ToArray());
         }
 
-        private static bool CanWrite(Parameter parameter)
+        private static bool CanWrite(Parameter? parameter)
         {
             return parameter != null &&
                    !parameter.IsReadOnly &&
@@ -339,7 +340,7 @@ namespace SteelBIM.Services.PF
             return UnitUtils.ConvertFromInternalUnits(value, UnitTypeId.Centimeters);
         }
 
-        private static List<XYZ> GetOrderingPoints(Element element, View view)
+        private static List<XYZ> GetOrderingPoints(Element? element, View? view)
         {
             List<XYZ> points = new List<XYZ>();
 
@@ -352,7 +353,7 @@ namespace SteelBIM.Services.PF
                 points.Add(lc.Curve.GetEndPoint(1));
             }
 
-            BoundingBoxXYZ bbox = element?.get_BoundingBox(view) ?? element?.get_BoundingBox(null);
+            BoundingBoxXYZ? bbox = element?.get_BoundingBox(view) ?? element?.get_BoundingBox(null);
             if (bbox != null)
             {
                 points.AddRange(GetBoundingBoxCorners(bbox));

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -30,14 +31,14 @@ namespace SteelBIM.Models.ModelCheck
         /// Null se nao foi solicitada exportacao ou se a exportacao falhou
         /// (neste caso ver <see cref="ExportError"/>).
         /// </summary>
-        public string ExportedToPath { get; set; }
+        public string? ExportedToPath { get; set; }
 
         /// <summary>
         /// Mensagem de erro da exportacao para Excel, quando configurada e falha.
         /// Null quando nao houve falha (inclusive quando exportacao nao foi solicitada).
         /// Analise de regras sempre e preservada mesmo se Excel falhar.
         /// </summary>
-        public string ExportError { get; set; }
+        public string? ExportError { get; set; }
 
         /// <summary>
         /// Conta o total de problemas por severidade.

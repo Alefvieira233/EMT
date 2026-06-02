@@ -34,12 +34,55 @@ namespace SteelBIM.Tests.Services.CncExport
             string txt = DstvFileWriter.Write(f);
 
             txt.Should().StartWith("ST\r\n");
+            txt.Should().Contain("** DWG-001.nc1\r\n");  // linha-comentario do nome do arquivo
             txt.Should().Contain("\r\n  PRJ-001\r\n");
             txt.Should().Contain("\r\n  V-001\r\n");
             txt.Should().Contain("\r\n  W12X26\r\n");
-            txt.Should().Contain("\r\n  I\r\n");        // codigo do perfil
-            txt.Should().Contain("\r\n  6000\r\n");     // length
+            txt.Should().Contain("\r\n  I\r\n");                      // codigo do perfil
+            txt.Should().Contain("\r\n    6000.00,6000.00\r\n");      // length (coluna fixa, alma,mesa)
             txt.Should().EndWith("EN\r\n");
+        }
+
+        [Fact]
+        public void Write_ST_OrdemDSTV_LengthAposCodigoEAntesDaAltura()
+        {
+            var f = MinimalFile(); // code "I", length 6000, height 310
+            string txt = DstvFileWriter.Write(f);
+
+            int posCode = txt.IndexOf("\r\n  I\r\n", System.StringComparison.Ordinal);
+            int posLength = txt.IndexOf("\r\n    6000.00,6000.00\r\n", System.StringComparison.Ordinal);
+            int posHeight = txt.IndexOf("\r\n     310.00\r\n", System.StringComparison.Ordinal);
+
+            posCode.Should().BeGreaterThan(0);
+            posLength.Should().BeGreaterThan(posCode);    // comprimento logo apos o codigo do perfil
+            posHeight.Should().BeGreaterThan(posLength);  // altura depois do comprimento (ordem DSTV)
+        }
+
+        [Fact]
+        public void Write_ContornoAkDesligadoPorPadrao_NaoEmiteBlocoAK()
+        {
+            var f = MinimalFile(); // IncluirContornoAk = false (default)
+            DstvFileWriter.Write(f).Should().NotContain("AK\r\n");
+        }
+
+        [Fact]
+        public void Write_ContornoAkLigado_EmiteRetanguloDaFaceV()
+        {
+            var f = MinimalFile(); // L=6000, h=310
+            f.IncluirContornoAk = true;
+
+            string txt = DstvFileWriter.Write(f);
+
+            txt.Should().Contain("AK\r\n");
+            // Primeiro ponto (0,0): face 'v' + marcador de inicio 'u' em colunas fixas.
+            txt.Should().Contain("  v       0.00u      0.00");
+            // Cantos com o comprimento L=6000 (coluna largura 11) aparecem no contorno.
+            txt.Should().Contain("    6000.00");
+
+            // AK vem depois do cabecalho ST
+            int posSt = txt.IndexOf("ST\r\n", System.StringComparison.Ordinal);
+            int posAk = txt.IndexOf("AK\r\n", System.StringComparison.Ordinal);
+            posAk.Should().BeGreaterThan(posSt);
         }
 
         [Fact]
@@ -51,7 +94,7 @@ namespace SteelBIM.Tests.Services.CncExport
         }
 
         [Fact]
-        public void Write_ComFuros_EmiteBlocoBOAgrupadoPorFace()
+        public void Write_ComFuros_EmiteBlocoBOUnicoComCodigoDeFacePorLinha()
         {
             var f = MinimalFile();
             f.Holes.Add(new DstvHole { Face = DstvFace.WebFront, XMm = 100, YMm = 50, DiameterMm = 22 });
@@ -60,7 +103,7 @@ namespace SteelBIM.Tests.Services.CncExport
 
             string txt = DstvFileWriter.Write(f);
 
-            // Deve ter dois blocos BO (um para web front, um para top flange)
+            // Formato DSTV real: um unico bloco BO, com o codigo de face por linha.
             int boCount = 0;
             int idx = 0;
             while ((idx = txt.IndexOf("BO\r\n", idx, System.StringComparison.Ordinal)) >= 0)
@@ -68,12 +111,12 @@ namespace SteelBIM.Tests.Services.CncExport
                 boCount++;
                 idx += 2;
             }
-            boCount.Should().Be(2);
+            boCount.Should().Be(1);
 
-            // Os furos devem aparecer com codigo de face
-            txt.Should().Contain(" v 100 50 22");
-            txt.Should().Contain(" v 200 50 22");
-            txt.Should().Contain(" o 150 0 18");
+            // Os furos aparecem com codigo de face + marcador 's' em colunas fixas.
+            txt.Should().Contain("  v     100.00s     50.00      22.00");
+            txt.Should().Contain("  o     150.00s      0.00      18.00");
+            txt.Should().Contain("  v     200.00s     50.00      22.00");
         }
 
         [Fact]
@@ -87,10 +130,11 @@ namespace SteelBIM.Tests.Services.CncExport
 
             string txt = DstvFileWriter.Write(f);
 
-            int p100 = txt.IndexOf(" v 100", System.StringComparison.Ordinal);
-            int p150 = txt.IndexOf(" v 150", System.StringComparison.Ordinal);
-            int p200 = txt.IndexOf(" v 200", System.StringComparison.Ordinal);
+            int p100 = txt.IndexOf("  v     100.00s", System.StringComparison.Ordinal);
+            int p150 = txt.IndexOf("  v     150.00s", System.StringComparison.Ordinal);
+            int p200 = txt.IndexOf("  v     200.00s", System.StringComparison.Ordinal);
 
+            p100.Should().BeGreaterThan(0);
             p100.Should().BeLessThan(p150);
             p150.Should().BeLessThan(p200);
         }
@@ -177,6 +221,35 @@ namespace SteelBIM.Tests.Services.CncExport
         {
             System.Action act = () => DstvFileWriter.Write(null);
             act.Should().Throw<System.ArgumentNullException>();
+        }
+
+        [Fact]
+        public void Write_OutputFileNameSetado_UsaNoHeaderEmVezDoDrawingNumber()
+        {
+            // v2.8.10 (Etapa D): a linha "** <arquivo>.nc1" precisa bater com o
+            // filename real (DstvExportService.Executar seta isso antes do Save).
+            var f = MinimalFile();
+            f.DrawingNumber = "DWG-OLD";
+            f.OutputFileName = "CH02.nc1";
+
+            string txt = DstvFileWriter.Write(f);
+
+            txt.Should().Contain("** CH02.nc1\r\n");
+            txt.Should().NotContain("** DWG-OLD.nc1");
+        }
+
+        [Fact]
+        public void Write_OutputFileNameVazio_DerivaDoDrawingNumber()
+        {
+            // Comportamento de fallback documentado: quando OutputFileName e' vazio
+            // (chamada direta ao writer sem passar pelo Executar), usa DrawingNumber.
+            var f = MinimalFile();
+            f.DrawingNumber = "DWG-XYZ";
+            f.OutputFileName = "";
+
+            string txt = DstvFileWriter.Write(f);
+
+            txt.Should().Contain("** DWG-XYZ.nc1\r\n");
         }
 
         // ------------ helpers ------------

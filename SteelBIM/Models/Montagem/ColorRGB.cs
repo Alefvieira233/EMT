@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models.Montagem
+﻿#nullable enable
+namespace SteelBIM.Models.Montagem
 {
     /// <summary>
     /// Representa uma cor RGB independente de Autodesk.Revit.DB.

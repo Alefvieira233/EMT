@@ -16,6 +16,9 @@ namespace SteelBIM.Commands.PF
 
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
+            SteelBIM.Utils.DisclaimerService.MostrarUmaVezPorSessao(
+                "pf-armadura", CommandName, SteelBIM.Utils.DisclaimerTexts.Armadura);
+
             List<Element> hosts = PfElementService.GetSelectionOrPick(
                 uidoc,
                 PfElementService.IsStructuralBeam,

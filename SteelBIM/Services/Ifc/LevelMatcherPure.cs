@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 
 namespace SteelBIM.Services.Ifc
@@ -16,7 +17,7 @@ namespace SteelBIM.Services.Ifc
         /// vazia. Empate: retorna o de menor indice (determinismo).
         /// </summary>
         public static int EncontrarIndiceMaisProximoDeZ(
-            IReadOnlyList<double> elevacoesFt,
+            IReadOnlyList<double>? elevacoesFt,
             double zCentroFt)
         {
             if (elevacoesFt == null || elevacoesFt.Count == 0)

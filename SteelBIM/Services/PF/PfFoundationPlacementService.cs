@@ -57,7 +57,7 @@ namespace SteelBIM.Services.PF
                 PilaresProcessados = pilares.Count
             };
 
-            using (Transaction tx = new Transaction(doc, "ECC - Lançar Fundações"))
+            using (Transaction tx = new Transaction(doc, "PF - Lançar Fundações"))
             {
                 tx.Start();
 

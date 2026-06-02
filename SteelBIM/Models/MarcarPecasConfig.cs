@@ -1,4 +1,5 @@
-﻿namespace SteelBIM.Models
+﻿#nullable enable
+namespace SteelBIM.Models
 {
     public enum EscopoMarcacao
     {

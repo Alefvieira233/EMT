@@ -101,12 +101,18 @@ namespace SteelBIM.Infrastructure
                 sb.AppendLine($"CLR version:  {Environment.Version}");
                 sb.AppendLine($"OS version:   {Environment.OSVersion}");
                 sb.AppendLine($"Machine:      {Environment.MachineName}");
-                sb.AppendLine($"User:         {Environment.UserName}");
+                // v2.8.9 privacidade: NAO gravar Environment.UserName (PII) no dump.
+                // Este arquivo eh enviado ao suporte pelo usuario; o Logger ja removeu
+                // UserName do enrich (v2.8.7) pelo mesmo motivo de vazamento via suporte.
                 sb.AppendLine();
                 if (ex != null)
                 {
                     sb.AppendLine("=== Exception ===");
-                    sb.AppendLine(ex.ToString());
+                    // v2.8.9 (auditoria de seguranca): scrub de PII no texto da excecao
+                    // antes de gravar. ex.ToString() costuma conter paths 'C:\Users\<nome>\...'
+                    // e nomes de .rvt do cliente; este dump e' enviado ao suporte pelo usuario.
+                    // Coerente com o scrub ja aplicado no pipeline Sentry.
+                    sb.AppendLine(PiiScrubber.Scrub(ex.ToString()));
                 }
                 else
                 {

@@ -126,6 +126,26 @@ namespace SteelBIM.Utils
             catch (Exception ex) { Logger.Warn(ex, "Falha ao definir Z justification"); }
         }
 
+        /// <summary>
+        /// v2.8.11 (Onda 3): justificacao lateral (Y) da viga/terça.
+        /// Y_JUSTIFICATION: 0=Esquerda, 1=Centro, 2=Origem, 3=Direita.
+        /// Usado para lançar a terça "alinhada pela esquerda" (default 0) em vez de
+        /// centralizada (que era o comportamento ao nunca setar este parametro).
+        /// </summary>
+        public static void SetYJustification(FamilyInstance fi, int yJustificationValue)
+        {
+            if (fi == null)
+                return;
+
+            try
+            {
+                Parameter p = fi.get_Parameter(BuiltInParameter.Y_JUSTIFICATION);
+                if (p != null && !p.IsReadOnly)
+                    p.Set(yJustificationValue);
+            }
+            catch (Exception ex) { Logger.Warn(ex, "Falha ao definir Y justification"); }
+        }
+
         public static void SetYZOffsets(FamilyInstance fi, double y, double z)
         {
             if (fi == null)

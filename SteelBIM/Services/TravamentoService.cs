@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
@@ -22,13 +23,16 @@ namespace SteelBIM.Services
                 return;
             }
             double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
-            IList<Reference> refs = null;
+            IList<Reference>? refs = null;
             try
             {
                 refs = uidoc.Selection.PickObjects(ObjectType.Element, "Selecione TODAS as TERÇAS em ordem");
             }
-            catch
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
             {
+                // ESC do usuario — cancelamento normal. v2.8.9 FIX: antes o catch generico
+                // engolia TODAS as excecoes (mascarando erros reais da API); agora so trata
+                // cancelamento e deixa o resto subir para o handler de FerramentaCommandBase.
                 return;
             }
 
@@ -102,7 +106,7 @@ namespace SteelBIM.Services
                     {
                         for (int k = 0; k < ptsA.Count - 1; k++)
                         {
-                            Line line = null;
+                            Line? line = null;
                             bool diagonalPadrao = (k % 2 == 0);
                             if (config.InverterSentido)
                                 diagonalPadrao = !diagonalPadrao;

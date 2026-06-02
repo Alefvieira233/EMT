@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace SteelBIM.Services
     public class NumeracaoItensService
     {
         private const string Titulo = "Numerar Itens";
-        private static NumeracaoItensSessao _sessaoAtiva;
+        private static NumeracaoItensSessao? _sessaoAtiva;
 
         /// <summary>
         /// Resultado do kickoff da sessao de numeracao. ADR-003: o servico nao fala
@@ -115,9 +116,9 @@ namespace SteelBIM.Services
                 new Dictionary<long, OverrideGraphicSettings>();
             private readonly Action<NumeracaoItensSessao> _aoFinalizar;
 
-            private NumeracaoItensControleWindow _janela;
-            private NumeracaoItensExternalEventHandler _handler;
-            private ExternalEvent _externalEvent;
+            private NumeracaoItensControleWindow? _janela;
+            private NumeracaoItensExternalEventHandler? _handler;
+            private ExternalEvent? _externalEvent;
             private bool _fechandoJanelaProgramaticamente;
             private bool _encerrarAposPausa;
             private int _numeroAtual;
@@ -314,7 +315,7 @@ namespace SteelBIM.Services
                         if (elemento == null)
                             continue;
 
-                        Parameter parametro = NumeracaoItensCatalog.EncontrarParametro(
+                        Parameter? parametro = NumeracaoItensCatalog.EncontrarParametro(
                             elemento,
                             _config.ParametroChave,
                             _config.ParametroStorageType);
@@ -426,7 +427,7 @@ namespace SteelBIM.Services
                 if (elemento == null)
                     return;
 
-                Parameter parametro = NumeracaoItensCatalog.EncontrarParametro(
+                Parameter? parametro = NumeracaoItensCatalog.EncontrarParametro(
                     elemento,
                     _config.ParametroChave,
                     ultimo.StorageType);
@@ -583,7 +584,7 @@ namespace SteelBIM.Services
 
             private void RestaurarOverride(ElementId elementId)
             {
-                if (!_overridesOriginais.TryGetValue(elementId.Value, out OverrideGraphicSettings original))
+                if (!_overridesOriginais.TryGetValue(elementId.Value, out OverrideGraphicSettings? original) || original == null)
                     return;
 
                 _view.SetElementOverrides(elementId, original);
@@ -591,8 +592,8 @@ namespace SteelBIM.Services
 
             private void Enfileirar(RequisicaoSessao requisicao)
             {
-                _handler.DefinirRequisicao(requisicao);
-                _externalEvent.Raise();
+                _handler!.DefinirRequisicao(requisicao);
+                _externalEvent!.Raise();
             }
 
             private static void ConfigurarTratamentoDeFalhas(Transaction transaction)
@@ -668,7 +669,7 @@ namespace SteelBIM.Services
         internal sealed class NumeracaoItensExternalEventHandler : IExternalEventHandler
         {
             private readonly NumeracaoItensSessao _sessao;
-            private RequisicaoSessao _requisicao;
+            private RequisicaoSessao _requisicao = RequisicaoSessao.RetomarSelecao;
 
             public NumeracaoItensExternalEventHandler(NumeracaoItensSessao sessao)
             {

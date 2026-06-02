@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.DB;
+﻿#nullable enable
+using Autodesk.Revit.DB;
 
 namespace SteelBIM.Models
 {
@@ -17,9 +18,9 @@ namespace SteelBIM.Models
 
     public class EscadaConfig
     {
-        public FamilySymbol SymbolLongarina { get; set; }
-        public FamilySymbol SymbolDegrau { get; set; }
-        public Level NivelReferencia { get; set; }
+        public FamilySymbol? SymbolLongarina { get; set; }
+        public FamilySymbol? SymbolDegrau { get; set; }
+        public Level? NivelReferencia { get; set; }
         public double LarguraCm { get; set; } = 100.0;
         public double AlturaEspelhoCm { get; set; } = 19.0;
         public double PisadaCm { get; set; } = 30.0;

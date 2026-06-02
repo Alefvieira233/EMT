@@ -76,7 +76,7 @@ namespace SteelBIM.Views
         {
             if (BuildConfig() == null)
             {
-                AppDialogService.ShowWarning("ECC - Lançar Fundação", "Revise o tipo selecionado e a tolerância informada.", "Configuração inválida");
+                AppDialogService.ShowWarning("PF - Lançar Fundação", "Revise o tipo selecionado e a tolerância informada.", "Configuração inválida");
                 return;
             }
 

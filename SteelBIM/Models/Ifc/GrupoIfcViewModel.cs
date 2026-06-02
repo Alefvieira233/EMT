@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -10,8 +11,8 @@ namespace SteelBIM.Models.Ifc
     {
         private readonly IReadOnlyList<SymbolItem> _allPerfis;
         private bool _selecionado = true;
-        private string _familiaSelecionada;
-        private SymbolItem _perfilSelecionado;
+        private string? _familiaSelecionada;
+        private SymbolItem? _perfilSelecionado;
 
         public GrupoIfcViewModel(IReadOnlyList<SymbolItem> allPerfis)
         {
@@ -26,8 +27,8 @@ namespace SteelBIM.Models.Ifc
 
         public List<ElementId> ElementIds { get; }
         public int Quantidade => ElementIds.Count;
-        public string SecaoSugerida { get; set; }
-        public string ValorIfc { get; set; }
+        public string? SecaoSugerida { get; set; }
+        public string? ValorIfc { get; set; }
 
         public bool Selecionado
         {
@@ -37,7 +38,7 @@ namespace SteelBIM.Models.Ifc
 
         public IReadOnlyList<string> Familias { get; }
 
-        public string FamiliaSelecionada
+        public string? FamiliaSelecionada
         {
             get => _familiaSelecionada;
             set
@@ -61,7 +62,7 @@ namespace SteelBIM.Models.Ifc
                 ? new List<SymbolItem>(_allPerfis)
                 : _allPerfis.Where(s => s.Symbol.FamilyName == _familiaSelecionada).ToList();
 
-        public SymbolItem PerfilSelecionado
+        public SymbolItem? PerfilSelecionado
         {
             get => _perfilSelecionado;
             set
@@ -80,7 +81,7 @@ namespace SteelBIM.Models.Ifc
 
         public string PerfilNome => _perfilSelecionado?.Symbol?.Name ?? "(nenhum)";
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         private void Notify(string prop) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
     }

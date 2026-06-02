@@ -19,10 +19,10 @@ Alvo: .NET 8.0-windows / Revit 2025 API / WPF.
 ## Onde estão as coisas
 
 - `SteelBIM/` — código-fonte do plugin (Commands, Services, Views, Models, etc.).
-- `SteelBIM.Tests/` — testes unitários (777 testes passando em v2.0.3).
-- `SteelBIM.Distribuicao/` — projeto de instalador/distribuição.
+- `SteelBIM.Tests/` — testes unitários (suite xUnit; ~1247 casos verdes em v2.8.9).
+- `SteelBIM/installer/` — scripts de instalação/distribuição (PowerShell + `SetupBootstrapper/`). Não existe pasta `SteelBIM.Distribuicao/`.
 - `docs/reference-projects/` — **projetos executivos reais do escritório usados como referência de estilo**. Sempre consultar antes de escrever funções novas relacionadas a cotagem, tags, vistas, detalhes.
-- `CHANGELOG.md` — histórico de versões (v2.0.3 é o estado atual estável).
+- `CHANGELOG.md` — histórico de versões (v2.8.9 é o estado atual).
 
 ## Padrões a seguir
 

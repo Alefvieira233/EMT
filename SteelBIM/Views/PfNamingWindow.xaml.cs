@@ -156,7 +156,7 @@ namespace SteelBIM.Views
 
             if (filtrados.Count == 0)
             {
-                AppDialogService.ShowWarning("Numerar Automatico", "Nenhum elemento PM elegivel foi encontrado com os filtros atuais.", "Nenhum item encontrado");
+                AppDialogService.ShowWarning("Numerar Automatico", "Nenhum elemento PF elegivel foi encontrado com os filtros atuais.", "Nenhum item encontrado");
                 return;
             }
 
@@ -469,7 +469,7 @@ namespace SteelBIM.Views
 
             if (elementos == null || elementos.Count == 0)
             {
-                lstElementos.Items.Add("Nenhum elemento PM encontrado com os filtros atuais.");
+                lstElementos.Items.Add("Nenhum elemento PF encontrado com os filtros atuais.");
                 return;
             }
 

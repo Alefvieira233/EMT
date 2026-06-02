@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
@@ -97,7 +98,7 @@ namespace SteelBIM.Services
             List<Curve> curvasBanzos = new List<Curve>();
             if (config.DividirNosBanzos)
             {
-                IList<Reference> refsBanzos = null;
+                IList<Reference>? refsBanzos = null;
                 try
                 {
                     refsBanzos = uidoc.Selection.PickObjects(ObjectType.Element, "Selecione os BANZOS que devem dividir as terças");
@@ -114,7 +115,7 @@ namespace SteelBIM.Services
                 foreach (Reference r in refsBanzos)
                 {
                     Element el = doc.GetElement(r);
-                    Curve c = RevitUtils.GetElementCurve(el);
+                    Curve? c = RevitUtils.GetElementCurve(el);
                     if (c != null)
                         curvasBanzos.Add(c);
                 }
@@ -147,7 +148,10 @@ namespace SteelBIM.Services
             using (Transaction t = new Transaction(doc, "Criar Terças por Plano"))
             {
                 t.Start();
-                if (!config.SymbolSelecionado.IsActive)
+                // TODO(nullable): SymbolSelecionado e' FamilySymbol? mas o command/window
+                // ja' valida que esta setado antes de chamar Executar. Mantido ! pra preservar
+                // comportamento; caso a validacao do caller falhe, ainda NRE como antes.
+                if (!config.SymbolSelecionado!.IsActive)
                     config.SymbolSelecionado.Activate();
                 doc.Regenerate();
 
@@ -169,7 +173,7 @@ namespace SteelBIM.Services
                     if (start.DistanceTo(end) < RevitUtils.EPS)
                         continue;
                     Line eixoTerca = Line.CreateBound(start, end);
-                    CreateTercaSegments(doc, eixoTerca, plane, curvasBanzos, config.DividirNosBanzos, config.SymbolSelecionado, nivel, config.ZJustificationValue, rotacaoRad);
+                    CreateTercaSegments(doc, eixoTerca, plane, curvasBanzos, config.DividirNosBanzos, config.SymbolSelecionado, nivel, config.ZJustificationValue, config.YJustificationValue, rotacaoRad);
                 }
                 t.Commit();
             }
@@ -187,6 +191,7 @@ namespace SteelBIM.Services
             FamilySymbol perfil,
             Level nivel,
             int zJustificationValue,
+            int yJustificationValue,
             double rotacaoRad)
         {
             if (eixoTerca == null || perfil == null || nivel == null)
@@ -216,7 +221,11 @@ namespace SteelBIM.Services
 
                 if (fi != null)
                 {
+                    // v2.8.11 (Onda 3): alem do Z (inferior, default da janela), aplicar a
+                    // justificacao lateral Y (esquerda, default 0) — antes a terça ficava
+                    // centralizada lateralmente por nunca setar Y_JUSTIFICATION.
                     RevitUtils.SetZJustification(fi, zJustificationValue);
+                    RevitUtils.SetYJustification(fi, yJustificationValue);
                     RevitUtils.SetYZOffsets(fi, 0.0, 0.0);
                     RevitUtils.SetSectionRotation(fi, rotacaoRad);
                 }

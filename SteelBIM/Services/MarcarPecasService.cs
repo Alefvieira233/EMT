@@ -576,7 +576,11 @@ namespace SteelBIM.Services
             // Verificar se ja tem marca e se devemos sobrescrever
             if (!config.SobrescreverExistentes)
             {
-                string? valorAtual = param.AsString();
+                // v2.8.9 FIX: AsString() retorna null em parametro numerico (Integer/Double)
+                // -> era tratado como "vazio" e a marca existente era SOBRESCRITA mesmo com
+                // SobrescreverExistentes=false (perda de dado). AsValueString() cobre os
+                // tipos nao-string.
+                string? valorAtual = param.AsString() ?? param.AsValueString();
                 if (!string.IsNullOrWhiteSpace(valorAtual))
                     return false;
             }

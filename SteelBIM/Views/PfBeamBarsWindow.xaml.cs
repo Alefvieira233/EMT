@@ -114,34 +114,34 @@ namespace SteelBIM.Views
                 string.IsNullOrWhiteSpace(config.BarTypeInferiorName) ||
                 string.IsNullOrWhiteSpace(config.BarTypeLateralName))
             {
-                AppDialogService.ShowWarning("PM - Acos Viga", "Selecione todos os tipos de vergalhao.", "Dados incompletos");
+                AppDialogService.ShowWarning("PF - Acos Viga", "Selecione todos os tipos de vergalhao.", "Dados incompletos");
                 return;
             }
 
             if (config.CobrimentoCm <= 0)
             {
-                AppDialogService.ShowWarning("PM - Acos Viga", "Informe um cobrimento maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Acos Viga", "Informe um cobrimento maior que zero.", "Dados invalidos");
                 return;
             }
 
             string lapError = ValidateLapConfig(config.Traspasse);
             if (!string.IsNullOrWhiteSpace(lapError))
             {
-                AppDialogService.ShowWarning("PM - Acos Viga", lapError, "Traspasse invalido");
+                AppDialogService.ShowWarning("PF - Acos Viga", lapError, "Traspasse invalido");
                 return;
             }
 
             lapError = ValidateLapCalculation(config.Traspasse, GetMaxSelectedBarDiameterMm());
             if (!string.IsNullOrWhiteSpace(lapError))
             {
-                AppDialogService.ShowWarning("PM - Acos Viga", lapError, "Traspasse invalido");
+                AppDialogService.ShowWarning("PF - Acos Viga", lapError, "Traspasse invalido");
                 return;
             }
 
             if (config.ModoLancamento == PfRebarPlacementMode.Automatico &&
                 config.QuantidadeSuperior <= 0 && config.QuantidadeInferior <= 0 && config.QuantidadeLateral <= 0)
             {
-                AppDialogService.ShowWarning("PM - Acos Viga", "Informe ao menos uma quantidade maior que zero.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Acos Viga", "Informe ao menos uma quantidade maior que zero.", "Dados invalidos");
                 return;
             }
 
@@ -149,27 +149,27 @@ namespace SteelBIM.Views
             {
                 if (!string.IsNullOrWhiteSpace(LastCoordinateError))
                 {
-                    AppDialogService.ShowWarning("PM - Acos Viga", LastCoordinateError, "Coordenadas invalidas");
+                    AppDialogService.ShowWarning("PF - Acos Viga", LastCoordinateError, "Coordenadas invalidas");
                     return;
                 }
 
                 if (config.Coordenadas.Count == 0)
                 {
-                    AppDialogService.ShowWarning("PM - Acos Viga", "Informe ao menos uma coordenada de barra.", "Dados invalidos");
+                    AppDialogService.ShowWarning("PF - Acos Viga", "Informe ao menos uma coordenada de barra.", "Dados invalidos");
                     return;
                 }
 
                 string coordinateBoundsError = ValidateCoordinateBounds(config);
                 if (!string.IsNullOrWhiteSpace(coordinateBoundsError))
                 {
-                    AppDialogService.ShowWarning("PM - Acos Viga", coordinateBoundsError, "Coordenadas fora da secao");
+                    AppDialogService.ShowWarning("PF - Acos Viga", coordinateBoundsError, "Coordenadas fora da secao");
                     return;
                 }
             }
 
             if (config.ComprimentoGanchoCm < 0)
             {
-                AppDialogService.ShowWarning("PM - Acos Viga", "O comprimento da dobra nao pode ser negativo.", "Dados invalidos");
+                AppDialogService.ShowWarning("PF - Acos Viga", "O comprimento da dobra nao pode ser negativo.", "Dados invalidos");
                 return;
             }
 

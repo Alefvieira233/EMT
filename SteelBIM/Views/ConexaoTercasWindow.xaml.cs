@@ -172,6 +172,7 @@ namespace SteelBIM.Views
 
             NumberParsing.TryParseDouble(numRotacaoOffset.Text, out double rot);
             NumberParsing.TryParseDouble(numOffsetVertical.Text, out double offV);
+            NumberParsing.TryParseDouble(numOffsetLateral.Text, out double offL);
 
             // Converte valores editados de volta para unidades internas Revit (pes / radianos)
             var parametros = new Dictionary<string, double>();
@@ -195,6 +196,10 @@ namespace SteelBIM.Views
                 InverterFace = chkInverterFace.IsChecked == true,
                 OffsetRotacaoGraus = rot,
                 OffsetVerticalAdicionalMm = offV,
+                OffsetLateralMm = offL,
+                Referencia = cmbReferenciaChapa.SelectedIndex == 1
+                    ? ReferenciaChapa.OrigemTerca
+                    : ReferenciaChapa.Cruzamento,
                 ParametrosInternos = parametros
             };
         }

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿#nullable enable
+using System.IO;
 using System.Windows.Media.Imaging;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -8,12 +9,12 @@ namespace SteelBIM.Services.PF
 {
     internal static class PfRebarShapePreviewService
     {
-        public static BitmapImage LoadPreview(Document doc, PfRebarShapeOption option, int sizePx = 220)
+        public static BitmapImage? LoadPreview(Document? doc, PfRebarShapeOption? option, int sizePx = 220)
         {
             if (doc == null || option == null || option.IsAutomatic || option.ElementIdValue <= 0)
                 return null;
 
-            RebarShape shape = doc.GetElement(new ElementId(option.ElementIdValue)) as RebarShape;
+            RebarShape? shape = doc.GetElement(new ElementId(option.ElementIdValue)) as RebarShape;
             if (shape == null)
                 return null;
 

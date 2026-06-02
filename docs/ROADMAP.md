@@ -6,9 +6,9 @@
 
 ## Status atual
 
-- **Versão estável:** v2.7.6 (2026-05-24)
+- **Versão estável:** v2.8.9 (2026-05-30)
 - **Fase:** soft launch funcional com beta selecionado
-- **Próxima major:** v2.8.0 (production-grade, ~10 semanas)
+- **Próxima major:** a definir (série v2.8.x já em produção; v2.8.0→v2.8.9 entregues)
 - **Auditoria técnica:** 2026-05-25 (5 dimensões, 3 senior reviewers)
   → roadmap consolidado abaixo
 

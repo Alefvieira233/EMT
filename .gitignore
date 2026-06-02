@@ -87,6 +87,14 @@ appsettings.Local.json
 # %LOCALAPPDATA%\FerramentaEMT\ ou via variavel EMT_LICENSE_SECRET.
 license.secret
 *.license.secret
+# Chave PRIVADA de licenca (ECDsa P-256, PKCS#8) — NUNCA commitar. O
+# LicensePrivateKeyProvider a resolve de %LOCALAPPDATA%\SteelBIM\ OU "ao lado do
+# executavel", entao ela pode acabar na arvore do repo. Bloqueio por nome e por
+# extensao. Comprometer esta chave = forja ILIMITADA de licencas (o oposto do
+# ganho do cutover ECDsa). Ver ADR-011.
+license.private.key
+*.private.key
+*.key
 # DSN do Sentry — carregado em runtime, nao deve ficar no repo.
 # Match em qualquer profundidade. *.sentry.dsn cobre backups/variantes
 # (ex.: dev.sentry.dsn, prod.sentry.dsn) por paranoia, mesmo padrao do

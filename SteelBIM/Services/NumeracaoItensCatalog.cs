@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -81,6 +82,7 @@ namespace SteelBIM.Services
                 .Where(EhElementoElegivel)
                 .Select(x => CriarInfo(doc, x))
                 .Where(x => x != null)
+                .Select(x => x!)
                 .GroupBy(x => x.Id.Value)
                 .Select(x => x.First())
                 .OrderBy(x => x.CategoriaNome, StringComparer.CurrentCultureIgnoreCase)
@@ -115,7 +117,7 @@ namespace SteelBIM.Services
             if (doc is null || elementosInfo is null)
                 return new List<NumeracaoParametroInfo>();
 
-            Dictionary<string, NumeracaoParametroInfo> intersecao = null;
+            Dictionary<string, NumeracaoParametroInfo>? intersecao = null;
 
             foreach (NumeracaoElementoInfo info in elementosInfo)
             {
@@ -135,8 +137,8 @@ namespace SteelBIM.Services
                 else
                 {
                     intersecao = intersecao
-                        .Where(x => parametrosDoElemento.TryGetValue(x.Key, out NumeracaoParametroInfo atual) &&
-                                    atual.StorageType == x.Value.StorageType)
+                        .Where(x => parametrosDoElemento.TryGetValue(x.Key, out NumeracaoParametroInfo? atual) &&
+                                    atual!.StorageType == x.Value.StorageType)
                         .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
                 }
 
@@ -153,7 +155,7 @@ namespace SteelBIM.Services
                     .ToList();
         }
 
-        public static Parameter EncontrarParametro(Element elemento, string chave, StorageType storageType)
+        public static Parameter? EncontrarParametro(Element? elemento, string? chave, StorageType storageType)
         {
             if (elemento == null || string.IsNullOrWhiteSpace(chave))
                 return null;
@@ -174,7 +176,7 @@ namespace SteelBIM.Services
             return null;
         }
 
-        private static bool EhElementoElegivel(Element elemento)
+        private static bool EhElementoElegivel(Element? elemento)
         {
             if (elemento == null || elemento.Category == null)
                 return false;
@@ -188,12 +190,12 @@ namespace SteelBIM.Services
             return true;
         }
 
-        private static NumeracaoElementoInfo CriarInfo(Document doc, Element elemento)
+        private static NumeracaoElementoInfo? CriarInfo(Document doc, Element? elemento)
         {
             if (elemento?.Category == null)
                 return null;
 
-            ElementType tipo = doc.GetElement(elemento.GetTypeId()) as ElementType;
+            ElementType? tipo = doc.GetElement(elemento.GetTypeId()) as ElementType;
             string familiaNome = ObterNomeFamilia(elemento, tipo);
             string tipoNome = ObterNomeTipo(elemento, tipo);
 
@@ -205,7 +207,7 @@ namespace SteelBIM.Services
                 tipoNome);
         }
 
-        private static string ObterNomeFamilia(Element elemento, ElementType tipo)
+        private static string ObterNomeFamilia(Element? elemento, ElementType? tipo)
         {
             if (elemento is FamilyInstance instancia &&
                 instancia.Symbol != null &&
@@ -220,7 +222,7 @@ namespace SteelBIM.Services
             return SemFamilia;
         }
 
-        private static string ObterNomeTipo(Element elemento, ElementType tipo)
+        private static string ObterNomeTipo(Element? elemento, ElementType? tipo)
         {
             if (tipo != null && !string.IsNullOrWhiteSpace(tipo.Name))
                 return tipo.Name;
@@ -261,7 +263,7 @@ namespace SteelBIM.Services
             }
         }
 
-        private static string ObterChaveParametro(Parameter parametro)
+        private static string ObterChaveParametro(Parameter? parametro)
         {
             return parametro?.Id == null
                 ? string.Empty

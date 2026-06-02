@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using SteelBIM.Infrastructure;
 using SteelBIM.Services.DiagramaMontagem;
@@ -23,7 +24,7 @@ namespace SteelBIM.Services.Ifc
         /// Extrai o eixo do elemento. Retorna null se nao for possivel
         /// (sem Solid, sem geometria valida).
         /// </summary>
-        public static Line ExtrairEixo(Element elemento)
+        public static Line? ExtrairEixo(Element? elemento)
         {
             if (elemento == null)
                 return null;
@@ -35,7 +36,7 @@ namespace SteelBIM.Services.Ifc
                 DetailLevel = ViewDetailLevel.Fine
             };
 
-            GeometryElement geo;
+            GeometryElement? geo;
             try
             { geo = elemento.get_Geometry(opts); }
             catch
@@ -107,7 +108,7 @@ namespace SteelBIM.Services.Ifc
                     {
                         try
                         {
-                            Curve c = edge.AsCurve();
+                            Curve? c = edge.AsCurve();
                             if (c == null)
                                 continue;
                             XYZ p0 = c.GetEndPoint(0);
@@ -122,14 +123,14 @@ namespace SteelBIM.Services.Ifc
                 {
                     // DirectShape de IFC tipicamente expoe Solid direto, mas alguns
                     // wrappers usam GeometryInstance — descer recursivamente.
-                    GeometryElement inner = gi.GetInstanceGeometry();
+                    GeometryElement? inner = gi.GetInstanceGeometry();
                     if (inner != null)
                         ColetarGeometria(inner, faces, vertices);
                 }
             }
         }
 
-        private static Line ConstruirLine(AxisLineData data)
+        private static Line? ConstruirLine(AxisLineData data)
         {
             XYZ start = new XYZ(data.Start.X, data.Start.Y, data.Start.Z);
             XYZ end = new XYZ(data.End.X, data.End.Y, data.End.Z);
@@ -143,7 +144,7 @@ namespace SteelBIM.Services.Ifc
         /// Usado por <see cref="SectionOrientationExtractor"/> para extrair a
         /// orientacao da secao transversal sem repetir a travessia do Solid.
         /// </summary>
-        public static List<FaceData> ColetarFaces(Element elemento)
+        public static List<FaceData> ColetarFaces(Element? elemento)
         {
             var faces = new List<FaceData>();
             var vertices = new List<Vec3>();
@@ -158,7 +159,7 @@ namespace SteelBIM.Services.Ifc
                 DetailLevel = ViewDetailLevel.Fine
             };
 
-            GeometryElement geo;
+            GeometryElement? geo;
             try
             { geo = elemento.get_Geometry(opts); }
             catch { return faces; }

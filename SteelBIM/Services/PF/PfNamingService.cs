@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -32,7 +33,7 @@ namespace SteelBIM.Services.PF
             {
                 AppDialogService.ShowWarning(
                     commandName,
-                    "Nenhum elemento PM elegivel foi encontrado com os filtros atuais.",
+                    "Nenhum elemento PF elegivel foi encontrado com os filtros atuais.",
                     "Nenhum item encontrado");
                 return Result.Cancelled;
             }
@@ -51,6 +52,7 @@ namespace SteelBIM.Services.PF
             List<Element> ordenados = filtrados
                 .Select(x => doc.GetElement(x.Id))
                 .Where(x => x != null)
+                .Select(x => x!)
                 .OrderBy(x => config.Alvo == PfNamingTarget.Vigas
                     ? PfElementService.GetBeamAxisGroup(x, view)
                     : 0)
@@ -69,7 +71,7 @@ namespace SteelBIM.Services.PF
 
                 foreach (Element elemento in ordenados)
                 {
-                    Parameter parametro = NumeracaoItensCatalog.EncontrarParametro(
+                    Parameter? parametro = NumeracaoItensCatalog.EncontrarParametro(
                         elemento,
                         config.ParametroChave,
                         config.ParametroStorageType);

@@ -18,6 +18,21 @@ namespace SteelBIM.Models
         public double OffsetRotacaoGraus { get; set; } = 0.0;
         public double OffsetVerticalAdicionalMm { get; set; } = 0.0;
 
+        /// <summary>
+        /// v2.8.11 (Onda 3 — P3): ajuste fino lateral da chapa ao longo do EIXO da terça
+        /// (BasisX local). Permite alinhar a chapa com a referencia da terça (costa/esquerda)
+        /// sem mexer na heuristica de selecao de face. Positivo desloca no sentido da terça.
+        /// Default 0 = comportamento atual (chapa no cruzamento terça x viga).
+        /// </summary>
+        public double OffsetLateralMm { get; set; } = 0.0;
+
+        /// <summary>
+        /// v2.8.11 (P3 completo): como ancorar a chapa. <see cref="ReferenciaChapa.Cruzamento"/>
+        /// (default) centra pelo centroide; <see cref="ReferenciaChapa.OrigemTerca"/> honra a
+        /// origem nativa da familia (alinha pela mesma referencia da terça).
+        /// </summary>
+        public ReferenciaChapa Referencia { get; set; } = ReferenciaChapa.Cruzamento;
+
         // Valores de parametros de tipo (em unidades internas Revit: pes, radianos).
         // Aplicados ao FamilySymbol antes do lancamento das instancias.
         public Dictionary<string, double> ParametrosInternos { get; set; } = new Dictionary<string, double>();
