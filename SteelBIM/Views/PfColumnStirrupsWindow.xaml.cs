@@ -47,6 +47,13 @@ namespace SteelBIM.Views
                 DiametroMm = ParseDouble(txtDiametro.Text, 6.3),
                 CobrimentoCm = ParseDouble(txtCover.Text, 3.0),
                 EspacamentoCm = ParseDouble(txtEspacamento.Text, 12.0),
+                // FIX (P1): a janela so expoe um campo de espacamento, entao o estribo deve
+                // usar esse valor UNIFORMEMENTE. Sem isto, o service caia no zoneamento NBR
+                // (default) que IGNORA o espacamento digitado e usava zonas-default 12/20/12/60
+                // — alem de poder gerar "0 armaduras" em pilares curtos. Para zoneamento NBR
+                // (mais denso nas extremidades) seria preciso expor os 3 espacamentos + altura
+                // de zona na UI (melhoria futura).
+                UsarEspacamentoUnico = true,
                 Dobra = cmbDobra.SelectedIndex == 1
                     ? PfStirrupHookAngle.Graus90
                     : PfStirrupHookAngle.Graus135

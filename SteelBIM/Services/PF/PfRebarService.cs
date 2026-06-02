@@ -245,6 +245,22 @@ namespace SteelBIM.Services.PF
                       "projeto estrutural (zonas de adensamento de estribos, ancoragens e " +
                       "armadura de suspensão). Não substitui a verificação do engenheiro responsável.";
 
+            // FIX (P1): quando NADA foi criado, nao mostrar so "0 armaduras" — promover o
+            // primeiro motivo (ex.: "Nenhum tipo de vergalhao", "secao degenerada", "altura
+            // livre < 100mm") para o topo e usar aviso, em vez de "concluido".
+            if (rebarsCriados == 0)
+            {
+                string motivo = avisos.Count > 0
+                    ? avisos[0]
+                    : "verifique se ha tipo de vergalhao (RebarBarType) carregado no projeto, " +
+                      "se o elemento e' pilar estrutural e se a geometria/cobrimento sao validos.";
+                AppDialogService.ShowWarning(
+                    commandName,
+                    "Nenhuma armadura foi criada.\nMotivo provável: " + motivo + "\n\n" + resumo,
+                    "Nada gerado");
+                return Result.Failed;
+            }
+
             AppDialogService.ShowInfo(commandName, resumo, "Processamento concluído");
             return hostsOk > 0 ? Result.Succeeded : Result.Failed;
         }
@@ -271,7 +287,9 @@ namespace SteelBIM.Services.PF
             double clearHeight = maxZ - minZ;
             bool isCircular = IsCircularColumn(column, frame);
             if (clearHeight <= ToFeetMm(100))
-                return 0;
+                throw new InvalidOperationException(
+                    $"altura livre util = {(clearHeight * 304.8):F0} mm (< 100 mm). O pilar pode " +
+                    "nao estar sendo lido como vertical, ou o cobrimento e' maior que a peca.");
 
             // Helper local para criar o loop horizontal num Z dado.
             IList<Curve>? BuildHorizontalLoopAtZ(double zPos)
@@ -298,7 +316,9 @@ namespace SteelBIM.Services.PF
             {
                 IList<Curve>? loop = BuildHorizontalLoopAtZ(minZ);
                 if (loop == null)
-                    return 0;
+                    throw new InvalidOperationException(
+                        "contorno do estribo nao pode ser criado: secao util muito pequena apos " +
+                        $"cobrimento de {config.CobrimentoCm:0.#} cm. Verifique as dimensoes do pilar.");
 
                 Rebar stirrup = CreateClosedRebar(
                     doc, column, RebarStyle.StirrupTie, barType, frame.ZAxis, loop, hookType, shape);
@@ -348,6 +368,11 @@ namespace SteelBIM.Services.PF
                     created++;
                 }
             }
+
+            if (created == 0)
+                throw new InvalidOperationException(
+                    $"nenhuma zona de estribo elegivel (altura livre {(clearHeight * 304.8):F0} mm). " +
+                    "Marque espacamento unico ou revise a geometria do pilar.");
 
             return created;
         }
