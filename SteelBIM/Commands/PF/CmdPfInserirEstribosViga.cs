@@ -34,7 +34,7 @@ namespace SteelBIM.Commands.PF
                 return Result.Cancelled;
 
             PfBeamStirrupsConfig config = window.BuildConfig();
-            return new PfRebarService().ExecuteBeamStirrups(uidoc, config);
+            return new PfRebarService().ExecuteBeamStirrups(uidoc, config, hosts);
         }
     }
 }

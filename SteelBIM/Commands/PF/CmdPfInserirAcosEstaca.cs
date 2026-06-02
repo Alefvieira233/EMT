@@ -34,7 +34,7 @@ namespace SteelBIM.Commands.PF
                 return Result.Cancelled;
 
             PfEstacaRebarConfig config = window.BuildConfig();
-            return new PfRebarService().ExecuteEstacaBars(uidoc, config);
+            return new PfRebarService().ExecuteEstacaBars(uidoc, config, hosts);
         }
     }
 }
