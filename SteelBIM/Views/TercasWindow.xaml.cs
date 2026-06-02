@@ -86,6 +86,14 @@ namespace SteelBIM.Views
             // da viga, comportamento esperado em telhado tipico.
             cmbZJust.SelectedIndex = 3;
 
+            // v2.8.11 (A3): justificacao lateral Y. Y_JUSTIFICATION: 0=Esquerda..3=Direita.
+            // Default Esquerda (padrao EMT: terca alinhada pela esquerda/costa).
+            cmbYJust.Items.Add(new ZJustificationItem(0, "Esquerda"));
+            cmbYJust.Items.Add(new ZJustificationItem(1, "Centro"));
+            cmbYJust.Items.Add(new ZJustificationItem(2, "Origem"));
+            cmbYJust.Items.Add(new ZJustificationItem(3, "Direita"));
+            cmbYJust.SelectedIndex = 0;
+
             // default numeric values
             numBeiralIni.Text = "0";
             numBeiralFim.Text = "0";
@@ -179,6 +187,7 @@ namespace SteelBIM.Views
                     RotacaoSecaoGraus = rot,
                     InverterSentido = chkInverter.IsChecked == true,
                     ZJustificationValue = zItem.Value,
+                    YJustificationValue = cmbYJust.SelectedItem is ZJustificationItem yItem ? yItem.Value : 0,
                     DividirNosBanzos = chkDividir.IsChecked == true,
                     // v2.8.1 (Victor): persiste estado do espacamento manual.
                     UsarEspacamentoManual = _usarEspacamentoManual,

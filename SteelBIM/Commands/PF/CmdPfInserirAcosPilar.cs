@@ -34,7 +34,7 @@ namespace SteelBIM.Commands.PF
                 return Result.Cancelled;
 
             PfColumnBarsConfig config = window.BuildConfig();
-            return new PfRebarService().ExecuteColumnBars(uidoc, config);
+            return new PfRebarService().ExecuteColumnBars(uidoc, config, hosts);
         }
     }
 }

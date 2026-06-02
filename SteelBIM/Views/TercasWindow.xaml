@@ -116,6 +116,9 @@
                         <Label Grid.Row="2" Grid.Column="0" Content="Justificação Z:" VerticalAlignment="Center"/>
                         <ComboBox x:Name="cmbZJust" Grid.Row="2" Grid.Column="1" Width="120" Margin="4" TabIndex="14"/>
 
+                        <Label Grid.Row="2" Grid.Column="2" Content="Justificação Y:" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <ComboBox x:Name="cmbYJust" Grid.Row="2" Grid.Column="3" Width="120" Margin="4" TabIndex="14"/>
+
                         <CheckBox x:Name="chkInverter" Grid.Row="3" Grid.Column="0" Content="Inverter sentido das terças" Margin="0,6,0,0" TabIndex="15"/>
                         <CheckBox x:Name="chkDividir" Grid.Row="3" Grid.Column="1" Content="Dividir terças nos banzos selecionados" IsChecked="True" Margin="20,6,0,0" TabIndex="16"/>
 

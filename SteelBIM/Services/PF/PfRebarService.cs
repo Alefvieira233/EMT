@@ -54,64 +54,70 @@ namespace SteelBIM.Services.PF
         private const double MinSegmentMm = PfRebarServicePure.MinSegmentMm;
         private const double MaxSupportZoneMm = 1000.0;
 
-        public Result ExecuteColumnStirrups(UIDocument uidoc, PfColumnStirrupsConfig config)
+        public Result ExecuteColumnStirrups(UIDocument uidoc, PfColumnStirrupsConfig config, IList<Element>? hosts = null)
         {
             return ExecuteForHosts(
                 uidoc,
                 "PF - Estribos Pilar",
                 PfElementService.IsStructuralColumn,
                 "Selecione os pilares estruturais para lançar os estribos.",
-                host => InsertColumnStirrups(uidoc.Document, host, config));
+                host => InsertColumnStirrups(uidoc.Document, host, config),
+                hosts);
         }
 
-        public Result ExecuteColumnBars(UIDocument uidoc, PfColumnBarsConfig config)
+        public Result ExecuteColumnBars(UIDocument uidoc, PfColumnBarsConfig config, IList<Element>? hosts = null)
         {
             return ExecuteForHosts(
                 uidoc,
                 "PF - Acos Pilar",
                 PfElementService.IsStructuralColumn,
                 "Selecione os pilares estruturais para lançar as barras longitudinais.",
-                host => InsertColumnBars(uidoc.Document, host, config));
+                host => InsertColumnBars(uidoc.Document, host, config),
+                hosts);
         }
 
-        public Result ExecuteBeamStirrups(UIDocument uidoc, PfBeamStirrupsConfig config)
+        public Result ExecuteBeamStirrups(UIDocument uidoc, PfBeamStirrupsConfig config, IList<Element>? hosts = null)
         {
             return ExecuteForHosts(
                 uidoc,
                 "PF - Estribos Viga",
                 PfElementService.IsStructuralBeam,
                 "Selecione as vigas estruturais para lançar os estribos.",
-                host => InsertBeamStirrups(uidoc.Document, host, config));
+                host => InsertBeamStirrups(uidoc.Document, host, config),
+                hosts);
         }
 
-        public Result ExecuteBeamBars(UIDocument uidoc, PfBeamBarsConfig config)
+        public Result ExecuteBeamBars(UIDocument uidoc, PfBeamBarsConfig config, IList<Element>? hosts = null)
         {
             return ExecuteForHosts(
                 uidoc,
                 "PF - Acos Viga",
                 PfElementService.IsStructuralBeam,
                 "Selecione as vigas estruturais para lançar as barras.",
-                host => InsertBeamBars(uidoc.Document, host, config));
+                host => InsertBeamBars(uidoc.Document, host, config),
+                hosts);
         }
 
-        public Result ExecuteConsoloBars(UIDocument uidoc, PfConsoloRebarConfig config)
+        public Result ExecuteConsoloBars(UIDocument uidoc, PfConsoloRebarConfig config, IList<Element>? hosts = null)
         {
             return ExecuteForHosts(
                 uidoc,
                 "PF - Acos Consolo",
                 PfElementService.IsPfConsolo,
                 "Selecione os consolos PF para lançar a armadura base.",
-                host => InsertConsoloBars(uidoc.Document, host, config));
+                host => InsertConsoloBars(uidoc.Document, host, config),
+                hosts);
         }
 
-        public Result ExecuteEstacaBars(UIDocument uidoc, PfEstacaRebarConfig config)
+        public Result ExecuteEstacaBars(UIDocument uidoc, PfEstacaRebarConfig config, IList<Element>? hosts = null)
         {
             return ExecuteForHosts(
                 uidoc,
                 "PF - Acos Estaca",
                 PfElementService.IsStructuralPile,
                 "Selecione as estacas para lançar as barras longitudinais.",
-                host => InsertEstacaBars(uidoc.Document, host, config));
+                host => InsertEstacaBars(uidoc.Document, host, config),
+                hosts);
         }
 
         public static PfRebarSectionPreview BuildBeamSectionPreview(FamilyInstance beam)
@@ -171,9 +177,14 @@ namespace SteelBIM.Services.PF
             string commandName,
             Func<Element, bool> predicate,
             string prompt,
-            Func<FamilyInstance, int> processor)
+            Func<FamilyInstance, int> processor,
+            IList<Element>? hostsPreSelecionados = null)
         {
-            List<Element> selecionados = PfElementService.GetSelectionOrPick(uidoc, predicate, prompt);
+            // A1: se o Command ja' escolheu os hosts (e os passou), usa-os direto — sem
+            // re-selecionar. Mantem fallback de selecao quando nao vierem (compatibilidade).
+            List<Element> selecionados = (hostsPreSelecionados != null && hostsPreSelecionados.Count > 0)
+                ? new List<Element>(hostsPreSelecionados)
+                : PfElementService.GetSelectionOrPick(uidoc, predicate, prompt);
             List<FamilyInstance> hosts = selecionados.OfType<FamilyInstance>().ToList();
             if (hosts.Count == 0)
             {

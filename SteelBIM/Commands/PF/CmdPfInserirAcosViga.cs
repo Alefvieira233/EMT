@@ -34,7 +34,7 @@ namespace SteelBIM.Commands.PF
                 return Result.Cancelled;
 
             PfBeamBarsConfig config = window.BuildConfig();
-            return new PfRebarService().ExecuteBeamBars(uidoc, config);
+            return new PfRebarService().ExecuteBeamBars(uidoc, config, hosts);
         }
     }
 }

@@ -63,8 +63,12 @@ namespace SteelBIM.Services
             }
 
             if (refs == null || refs.Count < 2)
+            {
+                AppDialogService.ShowWarning("Treliça", "Selecione pelo menos 2 banzos/terças em ordem.", "Seleção insuficiente");
                 return;
+            }
 
+            int criados = 0;
             using (Transaction t = new Transaction(doc, "Criar Treliça"))
             {
                 t.Start();
@@ -87,13 +91,16 @@ namespace SteelBIM.Services
                     Curve cSup = zA >= zB ? cA : cB;
                     Curve cInf = zA >= zB ? cB : cA;
 
-                    GerarVao(doc, nivel, cSup, cInf, incluirBanzos: false, config, zOffsetFt);
+                    criados += GerarVao(doc, nivel, cSup, cInf, incluirBanzos: false, config, zOffsetFt);
                 }
 
                 t.Commit();
             }
 
-            AppDialogService.ShowInfo("Treliça", "Treliça criada com sucesso.", "Modelagem concluída");
+            if (criados > 0)
+                AppDialogService.ShowInfo("Treliça", $"Treliça criada com sucesso ({criados} membros).", "Modelagem concluída");
+            else
+                AppDialogService.ShowWarning("Treliça", "Nenhum membro foi criado. Verifique perfis, geometria e opções (montantes/diagonais).", "Nada gerado");
         }
 
         // ---- Modo B: treliça completa a partir de 1 linha-base (banzo inferior) + altura ----
@@ -138,6 +145,19 @@ namespace SteelBIM.Services
                 return;
             }
 
+            // B7: pico invertido (vale) — altura central menor que a extremidade. Geometria
+            // valida, mas normalmente nao intencional; avisa antes de modelar.
+            if (config.AlturaCentralMm < config.AlturaExtremidadeMm
+                && !AppDialogService.ShowConfirmation(
+                    "Treliça",
+                    $"A altura central (B={config.AlturaCentralMm:0.#} mm) é MENOR que a da extremidade " +
+                    $"(H={config.AlturaExtremidadeMm:0.#} mm): o banzo superior vai formar um VALE (pico invertido). Continuar?",
+                    "Confirmar geometria"))
+            {
+                return;
+            }
+
+            int criados;
             using (Transaction t = new Transaction(doc, "Criar Treliça completa"))
             {
                 t.Start();
@@ -146,19 +166,22 @@ namespace SteelBIM.Services
 
                 Level nivel = RevitUtils.GetElementLevel(doc, elBase);
                 // cSup = null -> banzo superior calculado por altura variavel (H/B, duas aguas).
-                GerarVao(doc, nivel, null, cInf, incluirBanzos: true, config, zOffsetFt);
+                criados = GerarVao(doc, nivel, null, cInf, incluirBanzos: true, config, zOffsetFt);
 
                 t.Commit();
             }
 
-            AppDialogService.ShowInfo("Treliça", "Treliça completa criada com sucesso.", "Modelagem concluída");
+            if (criados > 0)
+                AppDialogService.ShowInfo("Treliça", $"Treliça completa criada com sucesso ({criados} membros).", "Modelagem concluída");
+            else
+                AppDialogService.ShowWarning("Treliça", "Nenhum membro foi criado. Verifique o perfil do banzo e a geometria.", "Nada gerado");
         }
 
         // ---- Geracao de um vao (par de banzos), comum aos dois modos ----
         // cSup != null  -> modo "entre banzos" (curva real selecionada).
         // cSup == null   -> modo "treliça completa": o banzo superior e' calculado a partir do
         //                   inferior + altura variavel (H nas extremidades, B no centro).
-        private void GerarVao(Document doc, Level nivel, Curve? cSup, Curve cInf, bool incluirBanzos, TrelicaConfig config, double zOffsetFt)
+        private int GerarVao(Document doc, Level nivel, Curve? cSup, Curve cInf, bool incluirBanzos, TrelicaConfig config, double zOffsetFt)
         {
             double lenFt = cInf.Length;
             List<double> intermed = CalcularParametros(config, lenFt);
@@ -196,6 +219,8 @@ namespace SteelBIM.Services
             };
 
             List<TrussSegment> segmentos = TrelicaPatternBuilder.Construir(nEstacoes, opcoes);
+            bool banzoSuperiorEmPico = Math.Abs(config.AlturaCentralMm - config.AlturaExtremidadeMm) > 1e-6;
+            int criados = 0;
 
             foreach (TrussSegment seg in segmentos)
             {
@@ -214,20 +239,34 @@ namespace SteelBIM.Services
                 if (sym == null)
                     continue;
 
-                // Banzo: cria um membro por trecho entre estacoes consecutivas, seguindo os
-                // pontos reais — assim o banzo superior acompanha o pico (duas aguas).
                 if (seg.Tipo == TrussMemberKind.Banzo)
                 {
-                    XYZ[] arr = seg.De.Chord == TrussChord.Superior ? ptsSup : ptsInf;
-                    for (int k = seg.De.Estacao; k < seg.Para.Estacao; k++)
-                        CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt);
+                    bool superior = seg.De.Chord == TrussChord.Superior;
+                    XYZ[] arr = superior ? ptsSup : ptsInf;
+                    // Banzo inferior (reto) e superior paralelo (H==B): 1 membro continuo.
+                    // Banzo superior em duas aguas (H!=B): um membro por trecho, seguindo o pico.
+                    if (superior && banzoSuperiorEmPico)
+                    {
+                        for (int k = seg.De.Estacao; k < seg.Para.Estacao; k++)
+                        {
+                            if (CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt))
+                                criados++;
+                        }
+                    }
+                    else if (CriarMembro(doc, nivel, sym, arr[seg.De.Estacao], arr[seg.Para.Estacao], config.ZJustificationValue, zOffsetFt))
+                    {
+                        criados++;
+                    }
                     continue;
                 }
 
                 XYZ p1 = PontoDe(seg.De, ptsSup, ptsInf);
                 XYZ p2 = PontoDe(seg.Para, ptsSup, ptsInf);
-                CriarMembro(doc, nivel, sym, p1, p2, config.ZJustificationValue, zOffsetFt);
+                if (CriarMembro(doc, nivel, sym, p1, p2, config.ZJustificationValue, zOffsetFt))
+                    criados++;
             }
+
+            return criados;
         }
 
         private static XYZ PontoDe(TrussNode no, XYZ[] sup, XYZ[] inf)
@@ -258,10 +297,17 @@ namespace SteelBIM.Services
                         ps.Add(Math.Clamp(par, 0.0, 1.0));
                 }
                 // Posicoes sao absolutas e podem vir fora de ordem; ordenar para garantir
-                // estacoes monotonicas (senao diagonais/montantes cruzam). Coincidentes sao
-                // descartadas depois pelo guard de distancia em CriarMembro.
+                // estacoes monotonicas (senao diagonais/montantes cruzam).
                 ps.Sort();
-                return ps;
+                // B8: remover coincidentes (dentro de tolerancia) — senao o painel entre duas
+                // posicoes iguais sumiria sem aviso (membro de comprimento zero descartado).
+                List<double> dedup = new List<double>();
+                foreach (double par in ps)
+                {
+                    if (dedup.Count == 0 || (par - dedup[dedup.Count - 1]) > 1e-6)
+                        dedup.Add(par);
+                }
+                return dedup;
             }
 
             // Uniforme (default).
@@ -278,7 +324,7 @@ namespace SteelBIM.Services
                 config.SymbolBanzo.Activate();
         }
 
-        private void CriarMembro(
+        private bool CriarMembro(
             Document doc,
             Level nivel,
             FamilySymbol symbol,
@@ -288,16 +334,17 @@ namespace SteelBIM.Services
             double zOffsetFt)
         {
             if (inicio == null || fim == null || inicio.DistanceTo(fim) < RevitUtils.EPS)
-                return;
+                return false;
 
             Line line = Line.CreateBound(inicio, fim);
             FamilyInstance fi = doc.Create.NewFamilyInstance(line, symbol, nivel, StructuralType.Beam);
             if (fi == null)
-                return;
+                return false;
 
             RevitUtils.SetZJustification(fi, zJustificationValue);
             RevitUtils.SetYZOffsets(fi, 0.0, zOffsetFt);
             RevitUtils.DisallowJoins(fi);
+            return true;
         }
     }
 }

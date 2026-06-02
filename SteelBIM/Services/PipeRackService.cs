@@ -50,15 +50,20 @@ namespace SteelBIM.Services
                 return;
             }
 
-            // TODO(nullable): NivelBase/NivelTopoPilares sao Level? no config mas a Window
-            // ja' valida que estao setados antes de chamar Executar. Mantido ! pra preservar
-            // comportamento; se a validacao do caller falhar, ainda NRE como antes.
-            origem = new XYZ(origem.X, origem.Y, config.NivelBase!.Elevation);
+            // v2.8.11 (A5): NivelBase/NivelTopoPilares sao Level? — valida aqui (defesa em
+            // profundidade) em vez de confiar so na Window. Evita NRE se outro caller chamar.
+            if (config.NivelBase == null || config.NivelTopoPilares == null)
+            {
+                _ui.Warn(Titulo, "Selecione os níveis de base e de topo dos pilares.", "Níveis não definidos");
+                return;
+            }
+
+            origem = new XYZ(origem.X, origem.Y, config.NivelBase.Elevation);
 
             XYZ dirTrans = XYZ.BasisZ.CrossProduct(dirLong);
             dirTrans = RevitUtils.SafeNormalize(dirTrans);
 
-            double alturaTotalMm = (config.NivelTopoPilares!.Elevation - config.NivelBase.Elevation) / RevitUtils.FT_PER_MM;
+            double alturaTotalMm = (config.NivelTopoPilares.Elevation - config.NivelBase.Elevation) / RevitUtils.FT_PER_MM;
             if (alturaTotalMm <= 0)
             {
                 _ui.Warn(Titulo, "O nível de topo precisa estar acima do nível de base.", "Níveis incompatíveis");

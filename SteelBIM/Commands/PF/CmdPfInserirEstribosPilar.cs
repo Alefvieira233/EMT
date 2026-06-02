@@ -34,7 +34,7 @@ namespace SteelBIM.Commands.PF
                 return Result.Cancelled;
 
             PfColumnStirrupsConfig config = window.BuildConfig();
-            return new PfRebarService().ExecuteColumnStirrups(uidoc, config);
+            return new PfRebarService().ExecuteColumnStirrups(uidoc, config, hosts);
         }
     }
 }
