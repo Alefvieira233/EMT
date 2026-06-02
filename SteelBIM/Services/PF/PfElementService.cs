@@ -12,6 +12,22 @@ namespace SteelBIM.Services.PF
 {
     internal static class PfElementService
     {
+        /// <summary>
+        /// M6: pre-fluxo comum dos comandos PF — seleciona/pede os hosts e, se houver,
+        /// fixa a selecao (SetElementIds) para a janela/preview usarem. Retorna a lista
+        /// (vazia = usuario cancelou/nada elegivel). Dedup do boilerplate dos 6 comandos PF.
+        /// </summary>
+        public static List<Element> PrepararHosts(
+            UIDocument uidoc,
+            Func<Element, bool> predicate,
+            string prompt)
+        {
+            List<Element> hosts = GetSelectionOrPick(uidoc, predicate, prompt);
+            if (hosts.Count > 0)
+                uidoc.Selection.SetElementIds(hosts.Select(x => x.Id).ToList());
+            return hosts;
+        }
+
         public static List<Element> GetSelectionOrPick(
             UIDocument uidoc,
             Func<Element, bool> predicate,
