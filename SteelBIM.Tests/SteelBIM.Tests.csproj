@@ -386,6 +386,13 @@
              Link="LinkedSources\Services\Trelica\CotaFaixaBuilder.cs" />
     <Compile Include="..\SteelBIM\Services\Trelica\CotarTrelicaReport.cs"
              Link="LinkedSources\Services\Trelica\CotarTrelicaReport.cs" />
+    <!-- v2.8.11 (Onda 2): geracao de treliça por padrao (Pratt/Howe/Warren/X/...) — helper puro -->
+    <Compile Include="..\SteelBIM\Models\TrussPattern.cs"
+             Link="LinkedSources\Models\TrussPattern.cs" />
+    <Compile Include="..\SteelBIM\Models\TrussSpacingMode.cs"
+             Link="LinkedSources\Models\TrussSpacingMode.cs" />
+    <Compile Include="..\SteelBIM\Services\Trelica\TrelicaPatternBuilder.cs"
+             Link="LinkedSources\Services\Trelica\TrelicaPatternBuilder.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,
