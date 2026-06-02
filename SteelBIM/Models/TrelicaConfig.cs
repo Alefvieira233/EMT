@@ -48,8 +48,12 @@ namespace SteelBIM.Models
         /// (banzo inferior) + altura; se false, preenche o miolo entre 2 banzos selecionados.</summary>
         public bool TrelicaCompleta { get; set; }
 
-        /// <summary>v2.8.11: altura da treliça (mm) — usada no modo "treliça completa".</summary>
-        public double AlturaMm { get; set; }
+        /// <summary>v2.8.11: altura da treliça nas EXTREMIDADES (apoios), em mm — modo "treliça completa".</summary>
+        public double AlturaExtremidadeMm { get; set; }
+
+        /// <summary>v2.8.11: altura da treliça no CENTRO (cumeeira), em mm — modo "treliça completa".
+        /// Igual à extremidade = banzos paralelos; maior = duas águas (tesoura).</summary>
+        public double AlturaCentralMm { get; set; }
 
         // ---- Justificacao / offset ----
         public int ZJustificationValue { get; set; }

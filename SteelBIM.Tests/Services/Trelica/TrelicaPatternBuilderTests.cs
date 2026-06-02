@@ -127,5 +127,40 @@ namespace SteelBIM.Tests.Services.Trelica
             var diagonais = segs.Where(s => s.Tipo == TrussMemberKind.Diagonal).ToList();
             diagonais.Should().OnlyContain(d => d.De.Chord == TrussChord.Inferior && d.Para.Chord == TrussChord.Superior);
         }
+
+        // =============================================================
+        //  AlturaNaPosicao — altura variavel H (extremidade) -> B (centro), duas aguas
+        // =============================================================
+
+        [Theory]
+        [InlineData(0.0, 100.0)]   // extremidade esquerda -> H
+        [InlineData(1.0, 100.0)]   // extremidade direita  -> H
+        [InlineData(0.5, 300.0)]   // centro                -> B
+        [InlineData(0.25, 200.0)]  // meio caminho          -> H + (B-H)*0.5
+        [InlineData(0.75, 200.0)]
+        public void AlturaNaPosicao_DuasAguas_InterpolaHaB(double t, double esperado)
+        {
+            // H=100, B=300
+            PfArredonda(TrelicaPatternBuilder.AlturaNaPosicao(t, 100.0, 300.0)).Should().Be(esperado);
+        }
+
+        [Fact]
+        public void AlturaNaPosicao_HIgualB_AlturaConstante()
+        {
+            TrelicaPatternBuilder.AlturaNaPosicao(0.0, 150.0, 150.0).Should().Be(150.0);
+            TrelicaPatternBuilder.AlturaNaPosicao(0.5, 150.0, 150.0).Should().Be(150.0);
+            TrelicaPatternBuilder.AlturaNaPosicao(0.83, 150.0, 150.0).Should().Be(150.0);
+        }
+
+        [Theory]
+        [InlineData(-0.5)]
+        [InlineData(1.5)]
+        public void AlturaNaPosicao_ForaDoIntervalo_ClampaNaExtremidade(double t)
+        {
+            // t clampado para [0,1] -> extremidade -> H
+            TrelicaPatternBuilder.AlturaNaPosicao(t, 100.0, 300.0).Should().Be(100.0);
+        }
+
+        private static double PfArredonda(double v) => System.Math.Round(v, 6);
     }
 }
