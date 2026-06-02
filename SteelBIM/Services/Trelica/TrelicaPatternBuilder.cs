@@ -137,6 +137,19 @@ namespace SteelBIM.Services.Trelica
             return segs;
         }
 
+        /// <summary>
+        /// v2.8.11: altura da treliça (unidade consistente) na posicao normalizada t in [0,1]
+        /// ao longo do vao, interpolando LINEARMENTE de H nas extremidades ate B no centro
+        /// (duas aguas / tesoura). t=0 e t=1 -> H; t=0.5 -> B. H==B -> altura constante (banzos
+        /// paralelos). Pura/testavel.
+        /// </summary>
+        public static double AlturaNaPosicao(double t, double alturaExtremidade, double alturaCentral)
+        {
+            double tc = System.Math.Clamp(t, 0.0, 1.0);
+            double fatorCentro = 1.0 - System.Math.Abs((2.0 * tc) - 1.0);
+            return alturaExtremidade + ((alturaCentral - alturaExtremidade) * fatorCentro);
+        }
+
         private static TrussSegment Diagonal(bool subindo, int painel)
         {
             return subindo

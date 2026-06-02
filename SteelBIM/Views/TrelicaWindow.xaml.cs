@@ -232,8 +232,10 @@ namespace SteelBIM.Views
                 cmbFamiliaBanzo.IsEnabled = completa;
             if (cmbBanzo != null)
                 cmbBanzo.IsEnabled = completa;
-            if (txtAltura != null)
-                txtAltura.IsEnabled = completa;
+            if (txtAlturaExtremidade != null)
+                txtAlturaExtremidade.IsEnabled = completa;
+            if (txtAlturaCentral != null)
+                txtAlturaCentral.IsEnabled = completa;
         }
 
         public TrelicaConfig BuildConfig()
@@ -251,10 +253,12 @@ namespace SteelBIM.Views
 
             int subd = 1;
             double zOffset = 0.0;
-            double altura = 0.0;
+            double alturaExt = 0.0;
+            double alturaCentral = 0.0;
             int.TryParse(numSubd.Text, out subd);
             NumberParsing.TryParseDouble(numZOffset.Text, out zOffset);
-            NumberParsing.TryParseDouble(txtAltura.Text, out altura);
+            NumberParsing.TryParseDouble(txtAlturaExtremidade.Text, out alturaExt);
+            NumberParsing.TryParseDouble(txtAlturaCentral.Text, out alturaCentral);
             if (subd <= 0)
                 subd = 1;
 
@@ -277,7 +281,8 @@ namespace SteelBIM.Views
                 MontantesExtremidade = chkMontantesExtremidade.IsChecked == true,
                 DiagonaisExtremidade = chkDiagonaisExtremidade.IsChecked == true,
                 TrelicaCompleta = chkTrelicaCompleta.IsChecked == true,
-                AlturaMm = altura,
+                AlturaExtremidadeMm = alturaExt,
+                AlturaCentralMm = alturaCentral,
                 ZJustificationValue = zItem.Value,
                 ZOffsetMm = zOffset,
                 InverterSentido = chkInverterSentido.IsChecked == true
@@ -312,10 +317,11 @@ namespace SteelBIM.Views
                     return;
                 }
 
-                NumberParsing.TryParseDouble(txtAltura.Text, out double alturaMm);
-                if (alturaMm <= 0)
+                NumberParsing.TryParseDouble(txtAlturaExtremidade.Text, out double alturaExtMm);
+                NumberParsing.TryParseDouble(txtAlturaCentral.Text, out double alturaCentralMm);
+                if (alturaExtMm <= 0 || alturaCentralMm <= 0)
                 {
-                    AppDialogService.ShowWarning("Treliça", "Informe a altura da treliça (mm) maior que zero.", "Dados incompletos");
+                    AppDialogService.ShowWarning("Treliça", "Informe as alturas de extremidade (H) e central (B) maiores que zero.", "Dados incompletos");
                     return;
                 }
             }

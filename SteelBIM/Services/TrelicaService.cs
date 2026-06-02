@@ -104,14 +104,13 @@ namespace SteelBIM.Services
                 AppDialogService.ShowError("Treliça", "Selecione o perfil dos banzos para a treliça completa.", "Configuração inválida");
                 return;
             }
-            if (config.AlturaMm <= 0)
+            if (config.AlturaExtremidadeMm <= 0 || config.AlturaCentralMm <= 0)
             {
-                AppDialogService.ShowError("Treliça", "Informe uma altura de treliça maior que zero.", "Configuração inválida");
+                AppDialogService.ShowError("Treliça", "Informe as alturas de extremidade e central (mm) maiores que zero.", "Configuração inválida");
                 return;
             }
 
             double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
-            double alturaFt = config.AlturaMm * RevitUtils.FT_PER_MM;
 
             Reference rBase;
             try
@@ -139,8 +138,6 @@ namespace SteelBIM.Services
                 return;
             }
 
-            Curve cSup = cInf.CreateTransformed(Transform.CreateTranslation(new XYZ(0, 0, alturaFt)));
-
             using (Transaction t = new Transaction(doc, "Criar Treliça completa"))
             {
                 t.Start();
@@ -148,7 +145,8 @@ namespace SteelBIM.Services
                 doc.Regenerate();
 
                 Level nivel = RevitUtils.GetElementLevel(doc, elBase);
-                GerarVao(doc, nivel, cSup, cInf, incluirBanzos: true, config, zOffsetFt);
+                // cSup = null -> banzo superior calculado por altura variavel (H/B, duas aguas).
+                GerarVao(doc, nivel, null, cInf, incluirBanzos: true, config, zOffsetFt);
 
                 t.Commit();
             }
@@ -157,7 +155,10 @@ namespace SteelBIM.Services
         }
 
         // ---- Geracao de um vao (par de banzos), comum aos dois modos ----
-        private void GerarVao(Document doc, Level nivel, Curve cSup, Curve cInf, bool incluirBanzos, TrelicaConfig config, double zOffsetFt)
+        // cSup != null  -> modo "entre banzos" (curva real selecionada).
+        // cSup == null   -> modo "treliça completa": o banzo superior e' calculado a partir do
+        //                   inferior + altura variavel (H nas extremidades, B no centro).
+        private void GerarVao(Document doc, Level nivel, Curve? cSup, Curve cInf, bool incluirBanzos, TrelicaConfig config, double zOffsetFt)
         {
             double lenFt = cInf.Length;
             List<double> intermed = CalcularParametros(config, lenFt);
@@ -171,8 +172,17 @@ namespace SteelBIM.Services
             XYZ[] ptsInf = new XYZ[nEstacoes];
             for (int k = 0; k < nEstacoes; k++)
             {
-                ptsSup[k] = cSup.Evaluate(full[k], true);
                 ptsInf[k] = cInf.Evaluate(full[k], true);
+                if (cSup != null)
+                {
+                    ptsSup[k] = cSup.Evaluate(full[k], true);
+                }
+                else
+                {
+                    double altFt = TrelicaPatternBuilder.AlturaNaPosicao(
+                        full[k], config.AlturaExtremidadeMm, config.AlturaCentralMm) * RevitUtils.FT_PER_MM;
+                    ptsSup[k] = ptsInf[k] + new XYZ(0, 0, altFt);
+                }
             }
 
             TrussBuildOptions opcoes = new TrussBuildOptions
@@ -203,6 +213,16 @@ namespace SteelBIM.Services
                 };
                 if (sym == null)
                     continue;
+
+                // Banzo: cria um membro por trecho entre estacoes consecutivas, seguindo os
+                // pontos reais — assim o banzo superior acompanha o pico (duas aguas).
+                if (seg.Tipo == TrussMemberKind.Banzo)
+                {
+                    XYZ[] arr = seg.De.Chord == TrussChord.Superior ? ptsSup : ptsInf;
+                    for (int k = seg.De.Estacao; k < seg.Para.Estacao; k++)
+                        CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt);
+                    continue;
+                }
 
                 XYZ p1 = PontoDe(seg.De, ptsSup, ptsInf);
                 XYZ p2 = PontoDe(seg.Para, ptsSup, ptsInf);
