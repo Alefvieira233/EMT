@@ -37,10 +37,14 @@ namespace SteelBIM.Services
                 t.Start();
 
                 // Desfazer grupos temporarios do plugin (prefixo EMT_), preservando os membros.
+                // Mesma estrategia do AgrupamentoVisualService.DesfazerGruposCriados (provado):
+                // filtra por GroupType.Name (nao Group.Name) com guarda de null.
                 List<Group> grupos = new FilteredElementCollector(doc)
                     .OfClass(typeof(Group))
                     .Cast<Group>()
-                    .Where(g => (g.Name ?? string.Empty).StartsWith(PrefixoEmt, StringComparison.OrdinalIgnoreCase))
+                    .Where(g => g.GroupType != null
+                                && g.GroupType.Name != null
+                                && g.GroupType.Name.StartsWith(PrefixoEmt, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 foreach (Group g in grupos)
                 {

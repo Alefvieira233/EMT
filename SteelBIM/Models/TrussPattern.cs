@@ -31,9 +31,6 @@ namespace SteelBIM.Models
         EmX = 6,
 
         /// <summary>Apenas montantes verticais, sem diagonais.</summary>
-        SoMontantes = 7,
-
-        /// <summary>Personalizado — por ora cai no padrao Warren (reservado para edicao manual futura).</summary>
-        Personalizado = 8
+        SoMontantes = 7
     }
 }

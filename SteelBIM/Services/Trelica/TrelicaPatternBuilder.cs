@@ -167,7 +167,7 @@ namespace SteelBIM.Services.Trelica
                 case TrussPattern.DiagonalEsquerda:
                     return false;              // todas descendo
                 default:
-                    return (painel % 2) == 0;  // Warren / Alternada / Personalizado: zigue-zague
+                    return (painel % 2) == 0;  // Warren / Alternada: zigue-zague
             }
         }
     }
