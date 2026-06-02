@@ -140,6 +140,7 @@ namespace SteelBIM.Services
             var colocados = new List<XYZ>();
             int count = 0;
 
+            int falhas = 0;
             using (Transaction t = new Transaction(doc, "Inserir Conexões de Terça"))
             {
                 t.Start();
@@ -172,17 +173,26 @@ namespace SteelBIM.Services
                         colocados.Add(pt.Base);
                         count++;
                     }
+                    else
+                    {
+                        falhas++;
+                    }
                 }
 
                 t.Commit();
             }
 
-            AppDialogService.ShowInfo(
-                "Conexão de Terça",
-                $"{count} conexão(ões) inserida(s) com sucesso.",
-                "Concluído");
+            // M1: reportar terças ignoradas (face nao planar/geometria) em vez de so o sucesso.
+            string resumo = $"{count} conexão(ões) inserida(s) com sucesso.";
+            if (falhas > 0)
+                resumo += $"\n{falhas} terça(s) ignorada(s): face não planar ou geometria inválida (ver log).";
 
-            return Result.Succeeded;
+            if (count > 0)
+                AppDialogService.ShowInfo("Conexão de Terça", resumo, "Concluído");
+            else
+                AppDialogService.ShowWarning("Conexão de Terça", resumo, "Nada inserido");
+
+            return count > 0 ? Result.Succeeded : Result.Failed;
         }
 
         // ---------- Helpers de resolucao ----------
