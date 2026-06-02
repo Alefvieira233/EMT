@@ -26,6 +26,13 @@ namespace SteelBIM.Models
         /// </summary>
         public double OffsetLateralMm { get; set; } = 0.0;
 
+        /// <summary>
+        /// v2.8.11 (P3 completo): como ancorar a chapa. <see cref="ReferenciaChapa.Cruzamento"/>
+        /// (default) centra pelo centroide; <see cref="ReferenciaChapa.OrigemTerca"/> honra a
+        /// origem nativa da familia (alinha pela mesma referencia da terça).
+        /// </summary>
+        public ReferenciaChapa Referencia { get; set; } = ReferenciaChapa.Cruzamento;
+
         // Valores de parametros de tipo (em unidades internas Revit: pes, radianos).
         // Aplicados ao FamilySymbol antes do lancamento das instancias.
         public Dictionary<string, double> ParametrosInternos { get; set; } = new Dictionary<string, double>();

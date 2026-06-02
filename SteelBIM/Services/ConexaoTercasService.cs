@@ -414,12 +414,15 @@ namespace SteelBIM.Services
                 // geometria inserida e mover a instancia pra centrar no insertPt.
                 // Funciona pra famílias com origem em QUALQUER lugar — centro,
                 // canto, ponto arbitrário — sem exigir convenção rígida.
+                // v2.8.11 (P3 completo): no modo OrigemTerca NAO recentralizamos — a chapa
+                // fica ancorada pela origem nativa da familia (mesma referencia da terça).
+                bool recentralizar = config.Referencia == ReferenciaChapa.Cruzamento;
                 try
                 {
                     var instSolids = fi.GetAllSolids(isRealLocation: true, out _);
                     XYZ centroide = EngineerGeometry.ComputeWeightedCentroid(instSolids);
 
-                    if (!centroide.IsZeroLength())
+                    if (recentralizar && !centroide.IsZeroLength())
                     {
                         XYZ offsetCentramento = insertPt - centroide;
                         if (offsetCentramento.GetLength() > MoveGuardThresholdFt)

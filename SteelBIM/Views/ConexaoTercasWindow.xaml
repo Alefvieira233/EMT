@@ -98,6 +98,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="160"/>
@@ -126,12 +127,22 @@
 
                             <TextBlock Grid.Row="2" Grid.Column="0"
                                        Text="Offset lateral (eixo da terça):"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center" Margin="0 0 0 8"/>
                             <TextBox x:Name="numOffsetLateral"
                                      Grid.Row="2" Grid.Column="1"
-                                     Text="0" TextAlignment="Right"/>
+                                     Text="0" TextAlignment="Right" Margin="0 0 0 8"/>
                             <TextBlock Grid.Row="2" Grid.Column="2"
-                                       Text="mm" Margin="6 0 0 0" VerticalAlignment="Center"/>
+                                       Text="mm" Margin="6 0 0 8" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0"
+                                       Text="Referência da chapa:"
+                                       VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbReferenciaChapa"
+                                      Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                      ToolTip="Cruzamento (default): centra no encontro terça x viga. Origem da terça: honra a origem da família (alinha pela referência da terça).">
+                                <ComboBoxItem Content="Centralizar no cruzamento" IsSelected="True"/>
+                                <ComboBoxItem Content="Origem da terça (não centralizar)"/>
+                            </ComboBox>
                         </Grid>
 
                         <!-- v2.8.2: Modo Completo + Viga tipo I -->

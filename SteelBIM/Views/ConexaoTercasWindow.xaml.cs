@@ -197,6 +197,9 @@ namespace SteelBIM.Views
                 OffsetRotacaoGraus = rot,
                 OffsetVerticalAdicionalMm = offV,
                 OffsetLateralMm = offL,
+                Referencia = cmbReferenciaChapa.SelectedIndex == 1
+                    ? ReferenciaChapa.OrigemTerca
+                    : ReferenciaChapa.Cruzamento,
                 ParametrosInternos = parametros
             };
         }
