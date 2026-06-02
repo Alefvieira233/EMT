@@ -393,6 +393,9 @@
              Link="LinkedSources\Models\TrussSpacingMode.cs" />
     <Compile Include="..\SteelBIM\Services\Trelica\TrelicaPatternBuilder.cs"
              Link="LinkedSources\Services\Trelica\TrelicaPatternBuilder.cs" />
+    <!-- v2.8.11 (Onda D): deduplicacao pura de referencias de cota -->
+    <Compile Include="..\SteelBIM\Services\Cotas\CotasDeduplicador.cs"
+             Link="LinkedSources\Services\Cotas\CotasDeduplicador.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,

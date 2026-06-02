@@ -1122,23 +1122,10 @@ namespace SteelBIM.Services
 
         private List<ReferenciaCota> RemoverDuplicadasPorPosicao(List<ReferenciaCota> todas)
         {
-            List<ReferenciaCota> ordenadas = todas.OrderBy(r => r.Posicao).ToList();
-            List<ReferenciaCota> unicas = new();
-            HashSet<string> chaves = new(StringComparer.Ordinal);
-
-            foreach (ReferenciaCota ref_ in ordenadas)
-            {
-                if (!chaves.Add(ref_.Chave))
-                    continue;
-
-                if (unicas.Count > 0 &&
-                    Math.Abs(unicas[^1].Posicao - ref_.Posicao) <= ToleranciaDeduplicacao)
-                    continue;
-
-                unicas.Add(ref_);
-            }
-
-            return unicas;
+            // v2.8.11 (Onda D): decisao extraida para helper PURO testavel (CotasDeduplicador).
+            List<(double, string)> itens = todas.Select(r => (r.Posicao, r.Chave)).ToList();
+            List<int> manter = SteelBIM.Services.Cotas.CotasDeduplicador.IndicesAManter(itens, ToleranciaDeduplicacao);
+            return manter.Select(i => todas[i]).ToList();
         }
 
         private bool EhElementoCotavel(Element el) =>
