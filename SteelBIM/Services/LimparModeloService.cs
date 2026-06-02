@@ -16,9 +16,9 @@ namespace SteelBIM.Services
     /// </summary>
     public static class LimparModeloService
     {
-        // Prefixo real dos grupos do plugin (vide AgrupamentoVisualService: EMT_COL_/EMT_VIG_).
-        // Com o underscore para nao pegar grupos do usuario que comecem com "EMT".
-        private const string PrefixoEmt = "EMT_";
+        // B6: prefixo centralizado em EmtPrefixos (mesmo de AgrupamentoVisualService).
+        // Underscore evita pegar grupos do usuario que comecem com "EMT".
+        private const string PrefixoEmt = EmtPrefixos.Comum;
 
         public sealed class Resultado
         {

@@ -31,8 +31,9 @@ namespace SteelBIM.Services
     /// </summary>
     internal static class AgrupamentoVisualService
     {
-        private const string PrefixoGruposPilares = "EMT_COL_";
-        private const string PrefixoGruposVigas = "EMT_VIG_";
+        // B6: prefixos centralizados em EmtPrefixos (compartilhado com LimparModeloService).
+        private const string PrefixoGruposPilares = EmtPrefixos.GruposPilares;
+        private const string PrefixoGruposVigas = EmtPrefixos.GruposVigas;
 
         /// <summary>Resultado de uma operacao de agrupamento (pilares ou vigas).</summary>
         public sealed class ResultadoAgrupamento
