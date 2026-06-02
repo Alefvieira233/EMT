@@ -95,7 +95,7 @@
 
                 <Label Grid.Row="1" Grid.Column="0" Content="Espaçamento:" VerticalAlignment="Center"/>
                 <ComboBox x:Name="cmbModoEspacamento" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2"/>
-                <CheckBox x:Name="chkMontantesIntermediarios" Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="0 2 0 2" Content="Montantes intermediários (Warren)"/>
+                <CheckBox x:Name="chkMontantesIntermediarios" Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="0 2 0 2" Content="Montantes intermediários (Warren)" IsChecked="True"/>
 
                 <Label Grid.Row="2" Grid.Column="0" Content="Lista (cm, sep. ;):" VerticalAlignment="Center"/>
                 <TextBox x:Name="txtEspacamentos" Grid.Row="2" Grid.Column="1" Margin="6 2 0 2" ToolTip="Ex.: 120 ; 150 ; 200 — distancias (Lista) ou posicoes (Posicoes) em cm"/>

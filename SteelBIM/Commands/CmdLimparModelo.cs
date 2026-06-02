@@ -20,8 +20,8 @@ namespace SteelBIM.Commands
         protected override Result ExecuteCore(UIDocument uidoc, Document doc)
         {
             bool ok = Confirm(
-                "Remover os elementos AUXILIARES criados pelo SteelBIM (filtros de vista e " +
-                "grupos temporários com prefixo 'EMT')?\n\n" +
+                "Desfazer os grupos temporários criados pelo SteelBIM (prefixo 'EMT_'), " +
+                "preservando os membros?\n\n" +
                 "Isto NÃO remove elementos modelados (pilares, vigas, armaduras). " +
                 "Para remover famílias/tipos não utilizados, use também " +
                 "'Gerenciar → Purgar Não Utilizados' do Revit.",
@@ -31,9 +31,7 @@ namespace SteelBIM.Commands
 
             LimparModeloService.Resultado r = LimparModeloService.Limpar(doc);
 
-            string resumo =
-                $"Filtros de vista removidos: {r.FiltrosRemovidos}\n" +
-                $"Grupos temporários desfeitos: {r.GruposDesfeitos}";
+            string resumo = $"Grupos temporários desfeitos: {r.GruposDesfeitos}";
 
             if (r.Falhas.Count > 0)
                 resumo += "\n\nOcorrências:\n• " + string.Join("\n• ", r.Falhas.Take(10));

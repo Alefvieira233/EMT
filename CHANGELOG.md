@@ -28,9 +28,9 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
 - **P3 — Chapa de ligação com ajuste fino de alinhamento:** `ConexaoTercasConfig.OffsetLateralMm`
   (offset ao longo do eixo da terça) + campo na janela, para alinhar a chapa com a costa/esquerda
   da terça sem mexer na heurística de face. Modo "mesma origem da terça" completo: follow-up de smoke.
-- **P5 — Botão "Limpar Modelo":** remove filtros de vista e grupos temporários `EMT` (limpeza
-  seletiva e segura, com confirmação); não apaga elementos modelados nem famílias (purge de
-  família = "Purgar Não Utilizados" nativo do Revit — sem API segura).
+- **P5 — Botão "Limpar Modelo":** desfaz os grupos temporários `EMT_` (preservando os membros)
+  para preparar o arquivo de entrega — limpeza seletiva e segura, com confirmação; não apaga
+  elementos modelados nem famílias (purge de família = "Purgar Não Utilizados" nativo do Revit).
 - **P4 — Família da ligação desproporcional:** edição no Family Editor (`.rfa` fora do repo);
   parâmetros de tamanho já ajustáveis pela janela de conexão quando a família os expõe.
 

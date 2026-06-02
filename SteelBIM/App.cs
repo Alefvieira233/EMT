@@ -628,15 +628,15 @@ namespace SteelBIM
                 "broom_small.png"
             );
 
-            // v2.8.11 (Onda 4 — P5): preparar arquivo para entrega (remove filtros de vista
-            // e grupos temporarios EMT). Reusa o icone de vassoura (limpeza).
+            // v2.8.11 (Onda 4 — P5): preparar arquivo para entrega (desfaz grupos temporarios
+            // EMT_, preservando os membros). Reusa o icone de vassoura (limpeza).
             AddButton(
                 panelVisualizacao,
                 "btnLimparModelo",
                 "Limpar\nModelo",
                 assemblyPath,
                 "SteelBIM.Commands.CmdLimparModelo",
-                "Prepara o arquivo para entrega: remove filtros de vista e grupos temporarios criados pelo SteelBIM (prefixo EMT). Nao remove elementos modelados.",
+                "Prepara o arquivo para entrega: desfaz os grupos temporarios criados pelo SteelBIM (prefixo EMT_), preservando os membros. Nao remove elementos modelados.",
                 "broom_large.png",
                 "broom_small.png"
             );
