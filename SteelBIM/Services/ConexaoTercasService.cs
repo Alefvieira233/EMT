@@ -384,7 +384,10 @@ namespace SteelBIM.Services
 
                 // v2.8.3: pt.Base.Z ja eh Z da terça (preservado pelo IntersectXY).
                 // offsetVertFt continua sendo apenas o ajuste opcional do usuario.
-                XYZ insertPt = new XYZ(pt.Base.X, pt.Base.Y, pt.Base.Z - offsetVertFt);
+                // v2.8.11 (P3): ajuste fino lateral ao longo do eixo da terça (ejeX) — alinha
+                // a chapa com a referencia da terça sem mexer na face hospedeira.
+                double offsetLateralFt = config.OffsetLateralMm * RevitUtils.FT_PER_MM;
+                XYZ insertPt = new XYZ(pt.Base.X, pt.Base.Y, pt.Base.Z - offsetVertFt) + (ejeX * offsetLateralFt);
 
                 FamilyInstance fi = doc.Create.NewFamilyInstance(
                     sideFace, insertPt, ejeX, config.SymbolSelecionado);

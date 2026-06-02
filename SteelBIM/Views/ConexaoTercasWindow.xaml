@@ -97,6 +97,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="160"/>
@@ -116,11 +117,20 @@
 
                             <TextBlock Grid.Row="1" Grid.Column="0"
                                        Text="Offset vertical adicional:"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center" Margin="0 0 0 8"/>
                             <TextBox x:Name="numOffsetVertical"
                                      Grid.Row="1" Grid.Column="1"
-                                     Text="0" TextAlignment="Right"/>
+                                     Text="0" TextAlignment="Right" Margin="0 0 0 8"/>
                             <TextBlock Grid.Row="1" Grid.Column="2"
+                                       Text="mm" Margin="6 0 0 8" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Text="Offset lateral (eixo da terça):"
+                                       VerticalAlignment="Center"/>
+                            <TextBox x:Name="numOffsetLateral"
+                                     Grid.Row="2" Grid.Column="1"
+                                     Text="0" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="2" Grid.Column="2"
                                        Text="mm" Margin="6 0 0 0" VerticalAlignment="Center"/>
                         </Grid>
 
