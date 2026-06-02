@@ -1,7 +1,7 @@
 # SteelBIM
 
 [![Build & Test](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml/badge.svg)](https://github.com/Alefvieira233/EMT/actions/workflows/build.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.9-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v2.8.11-blue)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-propriet%C3%A1ria-lightgrey)
 ![Testes](https://img.shields.io/badge/testes-1247%20passing-brightgreen)
 ![Plataforma](https://img.shields.io/badge/Revit-2025-orange)

@@ -11,32 +11,6 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
 `docs/audits/SUPER-RELATORIO-2026-05-31.md`. Nota global 7,6/10, **sem P0 ativo**.
 
-**Ajustes de campo (2026-06-02) — 6 pontos do escritório:**
-- **P1 — Estribos Pilar não gerava nada / ignorava o espaçamento:** a janela não setava
-  `UsarEspacamentoUnico`, então caía no zoneamento NBR (default) que ignorava o valor
-  digitado; agora honra o espaçamento único. Além disso, quando nada é criado a mensagem
-  mostra o **motivo provável** (sem RebarBarType, seção degenerada, altura < 100 mm) em vez
-  de só "0 armaduras". Helper puro `ContarGruposEstriboColuna` + 5 testes.
-- **P6 — Treliça com padrões + espaçamentos variáveis + treliça completa:** `TrussPattern`
-  (Pratt/Howe/Warren/Alternada/DiagonalDir/DiagonalEsq/EmX/SoMontantes/Personalizado),
-  `TrussSpacingMode` (uniforme/lista/posições), helper puro `TrelicaPatternBuilder` (12 testes),
-  modo "treliça completa" (1 linha-base + altura → gera banzos+montantes+diagonais). UI nova
-  na `TrelicaWindow`.
-- **P2 — Terça lançada alinhada pela esquerda:** `RevitUtils.SetYJustification` +
-  `TercasConfig.YJustificationValue` (default 0=Esquerda); antes ficava centralizada (Z já
-  era "Inferior").
-- **P3 — Chapa de ligação com ajuste fino de alinhamento:** `ConexaoTercasConfig.OffsetLateralMm`
-  (offset ao longo do eixo da terça) + campo na janela, para alinhar a chapa com a costa/esquerda
-  da terça sem mexer na heurística de face. Modo "mesma origem da terça" completo: follow-up de smoke.
-- **P5 — Botão "Limpar Modelo":** desfaz os grupos temporários `EMT_` (preservando os membros)
-  para preparar o arquivo de entrega — limpeza seletiva e segura, com confirmação; não apaga
-  elementos modelados nem famílias (purge de família = "Purgar Não Utilizados" nativo do Revit).
-- **P4 — Família da ligação desproporcional:** edição no Family Editor (`.rfa` fora do repo);
-  parâmetros de tamanho já ajustáveis pela janela de conexão quando a família os expõe.
-
-**Pendente de smoke test no Revit (Alef/Victor):** estribos pilar, treliça (padrões + completa),
-alinhamento da terça/costa, chapa (offset lateral). Tudo compila no CI; lógica pura coberta por testes.
-
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
@@ -87,6 +61,37 @@ Authenticode após primeira release assinada; EULA/Privacy/TOS (aguarda jurídic
 **Strategic-dependent:** i18n EN/ES (F13 deferido — depende de decisão de expansão LATAM).
 
 ---
+
+## [2.8.11] - 2026-06-02
+
+**Ajustes de campo — 6 pontos levantados no uso real (escritório EMT):**
+
+- **P1 — Estribos Pilar não gerava nada / ignorava o espaçamento:** a janela não setava
+  `UsarEspacamentoUnico`, então caía no zoneamento NBR (default) que ignorava o valor digitado;
+  agora honra o espaçamento único. Quando nada é criado, a mensagem mostra o **motivo provável**
+  (sem RebarBarType, seção degenerada, altura < 100 mm) em vez de só "0 armaduras". Helper puro
+  `ContarGruposEstriboColuna` + 5 testes.
+- **P6 — Treliça com padrões + espaçamentos variáveis + treliça completa:** `TrussPattern`
+  (Pratt/Howe/Warren/Alternada/DiagonalDir/DiagonalEsq/EmX/SoMontantes), `TrussSpacingMode`
+  (uniforme/lista/posições — posições ordenadas), helper puro `TrelicaPatternBuilder` (12 testes),
+  modo "treliça completa" (1 linha-base + altura → gera banzos+montantes+diagonais) e UI nova.
+- **P2 — Terça alinhada pela esquerda no lançamento:** `RevitUtils.SetYJustification` +
+  `TercasConfig.YJustificationValue` (default 0 = Esquerda); antes ficava centralizada (o Z já
+  era "Inferior").
+- **P3 — Chapa de ligação alinhada à referência da terça:** `OffsetLateralMm` (ajuste fino ao
+  longo do eixo da terça) + modo `ReferenciaChapa.OrigemTerca` (honra a origem nativa da família,
+  sem recentralizar) — ambos opt-in, default = comportamento provado (centra no cruzamento).
+- **P5 — Botão "Limpar Modelo":** desfaz os grupos temporários `EMT_` (preservando os membros)
+  para preparar o arquivo de entrega — seletivo e seguro, com confirmação; não apaga elementos
+  modelados nem famílias (purge de família = "Purgar Não Utilizados" nativo do Revit).
+- **P4 — Família da ligação desproporcional:** handoff Family Editor (`.rfa` fora do repo);
+  parâmetros de tamanho já ajustáveis pela janela quando a família os expõe.
+
+Qualidade: auditoria sênior (rastreabilidade + estática + regressão) e `/code-review high`
+(3 finders) → achados resolvidos (enum morto `Personalizado`, filtro de grupos por
+`GroupType.Name`, ordenação no modo Posições). Build Release 0 warning, `dotnet format` limpo,
+testes verdes. **Pendente de smoke test no Revit** (estribo, treliça, terça, chapa) e da edição
+da família (P4).
 
 ## [2.8.9] - 2026-05-30
 
