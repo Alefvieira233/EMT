@@ -198,7 +198,11 @@ namespace SteelBIM.Services.Portico
             SymbolBanzoInferior = c.SymbolBanzoInferior,
             SymbolBanzo = c.SymbolBanzoInferior ?? c.SymbolBanzoSuperior, // fallback p/ guards internos
             SymbolDiagonal = c.SymbolDiagonal,
-            SymbolMontante = c.SymbolMontante
+            SymbolMontante = c.SymbolMontante,
+            RotacaoBanzoSuperiorGraus = c.RotacaoBanzoSuperiorGraus,
+            RotacaoBanzoInferiorGraus = c.RotacaoBanzoInferiorGraus,
+            RotacaoDiagonalGraus = c.RotacaoDiagonalGraus,
+            RotacaoMontanteGraus = c.RotacaoMontanteGraus
         };
 
         private static void AtivarSimbolos(Document doc, GerarPorticoConfig c)

@@ -274,6 +274,8 @@ namespace SteelBIM.Services
                 if (sym == null)
                     continue;
 
+                double rotacaoRad = RotacaoDoSegmento(config, seg);
+
                 if (seg.Tipo == TrussMemberKind.Banzo)
                 {
                     bool superior = seg.De.Chord == TrussChord.Superior;
@@ -284,11 +286,11 @@ namespace SteelBIM.Services
                     {
                         for (int k = seg.De.Estacao; k < seg.Para.Estacao; k++)
                         {
-                            if (CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt))
+                            if (CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt, rotacaoRad))
                                 criados++;
                         }
                     }
-                    else if (CriarMembro(doc, nivel, sym, arr[seg.De.Estacao], arr[seg.Para.Estacao], config.ZJustificationValue, zOffsetFt))
+                    else if (CriarMembro(doc, nivel, sym, arr[seg.De.Estacao], arr[seg.Para.Estacao], config.ZJustificationValue, zOffsetFt, rotacaoRad))
                     {
                         criados++;
                     }
@@ -297,7 +299,7 @@ namespace SteelBIM.Services
 
                 XYZ p1 = PontoDe(seg.De, ptsSup, ptsInf);
                 XYZ p2 = PontoDe(seg.Para, ptsSup, ptsInf);
-                if (CriarMembro(doc, nivel, sym, p1, p2, config.ZJustificationValue, zOffsetFt))
+                if (CriarMembro(doc, nivel, sym, p1, p2, config.ZJustificationValue, zOffsetFt, rotacaoRad))
                     criados++;
             }
 
@@ -374,6 +376,21 @@ namespace SteelBIM.Services
             return config.SymbolBanzoInferior ?? config.SymbolBanzo;
         }
 
+        /// <summary>v2.8.14: rotacao da secao (rad) conforme o tipo/cordao do segmento. Default 0.</summary>
+        private static double RotacaoDoSegmento(TrelicaConfig config, TrussSegment seg)
+        {
+            double graus;
+            if (seg.Tipo == TrussMemberKind.Banzo)
+                graus = seg.De.Chord == TrussChord.Superior ? config.RotacaoBanzoSuperiorGraus : config.RotacaoBanzoInferiorGraus;
+            else if (seg.Tipo == TrussMemberKind.Montante)
+                graus = config.RotacaoMontanteGraus;
+            else if (seg.Tipo == TrussMemberKind.Diagonal)
+                graus = config.RotacaoDiagonalGraus;
+            else
+                graus = 0.0;
+            return graus * Math.PI / 180.0;
+        }
+
         private bool CriarMembro(
             Document doc,
             Level nivel,
@@ -381,7 +398,8 @@ namespace SteelBIM.Services
             XYZ inicio,
             XYZ fim,
             int zJustificationValue,
-            double zOffsetFt)
+            double zOffsetFt,
+            double rotacaoRad)
         {
             if (inicio == null || fim == null || inicio.DistanceTo(fim) < RevitUtils.EPS)
                 return false;
@@ -393,6 +411,8 @@ namespace SteelBIM.Services
 
             RevitUtils.SetZJustification(fi, zJustificationValue);
             RevitUtils.SetYZOffsets(fi, 0.0, zOffsetFt);
+            if (Math.Abs(rotacaoRad) > RevitUtils.EPS)
+                RevitUtils.SetSectionRotation(fi, rotacaoRad);
             RevitUtils.DisallowJoins(fi);
             return true;
         }

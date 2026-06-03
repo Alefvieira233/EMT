@@ -31,6 +31,12 @@ namespace SteelBIM.Models
         public FamilySymbol? SymbolDiagonal { get; set; }
         public FamilySymbol? SymbolMontante { get; set; }
 
+        // Rotação da seção do perfil por tipo (graus); default 0 = sem rotação (R4).
+        public double RotacaoBanzoSuperiorGraus { get; set; }
+        public double RotacaoBanzoInferiorGraus { get; set; }
+        public double RotacaoDiagonalGraus { get; set; }
+        public double RotacaoMontanteGraus { get; set; }
+
         public FamilySymbol? SymbolViga { get; set; }
         public double AlturaCumeeiraMm { get; set; } = 1500.0;     // elevacao da agua (modo viga)
 

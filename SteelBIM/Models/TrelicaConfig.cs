@@ -68,5 +68,18 @@ namespace SteelBIM.Models
         public int ZJustificationValue { get; set; }
         public double ZOffsetMm { get; set; }
         public bool InverterSentido { get; set; }
+
+        // ---- Rotacao da secao por tipo de membro (graus); default 0 = sem rotacao ----
+        /// <summary>v2.8.14: rotacao da secao do banzo SUPERIOR (graus). 0 = sem rotacao.</summary>
+        public double RotacaoBanzoSuperiorGraus { get; set; }
+
+        /// <summary>v2.8.14: rotacao da secao do banzo INFERIOR (graus). 0 = sem rotacao.</summary>
+        public double RotacaoBanzoInferiorGraus { get; set; }
+
+        /// <summary>v2.8.14: rotacao da secao das DIAGONAIS (graus). 0 = sem rotacao.</summary>
+        public double RotacaoDiagonalGraus { get; set; }
+
+        /// <summary>v2.8.14: rotacao da secao dos MONTANTES (graus). 0 = sem rotacao.</summary>
+        public double RotacaoMontanteGraus { get; set; }
     }
 }
