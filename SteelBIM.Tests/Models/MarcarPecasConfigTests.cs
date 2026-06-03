@@ -111,5 +111,38 @@ namespace SteelBIM.Tests.Models
 
             config.DestaqueVisual.Should().BeTrue();
         }
+
+        // v2.8.12 (Onda 2): categoria Fundação
+        [Fact]
+        public void Fundacao_DefaultsMarcadoComPrefixoF()
+        {
+            var config = new MarcarPecasConfig();
+
+            config.MarcarFundacoes.Should().BeTrue();
+            config.PrefixoFundacoes.Should().Be("F");
+            config.ObterPrefixo("Fundação").Should().Be("F");
+        }
+
+        [Fact]
+        public void TemCategoriaSelecionada_SoFundacao_RetornaTrue()
+        {
+            var config = new MarcarPecasConfig
+            {
+                MarcarVigas = false,
+                MarcarPilares = false,
+                MarcarContraventamentos = false,
+                MarcarFundacoes = true
+            };
+
+            config.TemCategoriaSelecionada().Should().BeTrue();
+        }
+
+        [Fact]
+        public void ObterPrefixo_FundacaoCustomizado()
+        {
+            var config = new MarcarPecasConfig { PrefixoFundacoes = "FND" };
+
+            config.ObterPrefixo("Fundação").Should().Be("FND");
+        }
     }
 }

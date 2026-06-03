@@ -68,9 +68,11 @@ namespace SteelBIM.Views
                 MarcarVigas = chkVigas.IsChecked == true,
                 MarcarPilares = chkPilares.IsChecked == true,
                 MarcarContraventamentos = chkContrav.IsChecked == true,
+                MarcarFundacoes = chkFundacoes.IsChecked == true,
                 PrefixoVigas = txtPrefixoVigas.Text?.Trim() ?? "V",
                 PrefixoPilares = txtPrefixoPilares.Text?.Trim() ?? "P",
                 PrefixoContraventamentos = txtPrefixoContrav.Text?.Trim() ?? "C",
+                PrefixoFundacoes = txtPrefixoFundacoes.Text?.Trim() ?? "F",
                 NumeroInicial = numInicial,
                 Digitos = digitos,
                 Destino = destino,
@@ -192,6 +194,7 @@ namespace SteelBIM.Views
                 chkVigas?.IsChecked == true ? $"Vigas ({txtPrefixoVigas?.Text ?? "V"})" : null,
                 chkPilares?.IsChecked == true ? $"Pilares ({txtPrefixoPilares?.Text ?? "P"})" : null,
                 chkContrav?.IsChecked == true ? $"Contrav. ({txtPrefixoContrav?.Text ?? "C"})" : null,
+                chkFundacoes?.IsChecked == true ? $"Fundações ({txtPrefixoFundacoes?.Text ?? "F"})" : null,
             }.Where(x => x != null));
 
             if (string.IsNullOrEmpty(categorias))

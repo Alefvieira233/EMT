@@ -60,6 +60,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Categoria" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -87,6 +88,14 @@
                         <Label Grid.Row="3" Grid.Column="1" Content="→" HorizontalContentAlignment="Center" VerticalAlignment="Center"/>
                         <TextBox x:Name="txtPrefixoContrav" Grid.Row="3" Grid.Column="2"
                                  Text="C" VerticalContentAlignment="Center" Margin="4,2"
+                                 TextChanged="TxtPrefixo_TextChanged"/>
+
+                        <CheckBox x:Name="chkFundacoes" Grid.Row="4" Grid.Column="0"
+                                  Content="Fundações estruturais" IsChecked="True"
+                                  Checked="Configuracao_Changed" Unchecked="Configuracao_Changed"/>
+                        <Label Grid.Row="4" Grid.Column="1" Content="→" HorizontalContentAlignment="Center" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtPrefixoFundacoes" Grid.Row="4" Grid.Column="2"
+                                 Text="F" VerticalContentAlignment="Center" Margin="4,2"
                                  TextChanged="TxtPrefixo_TextChanged"/>
                     </Grid>
                 </GroupBox>

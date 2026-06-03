@@ -29,11 +29,13 @@ namespace SteelBIM.Models
         public bool MarcarVigas { get; set; } = true;
         public bool MarcarPilares { get; set; } = true;
         public bool MarcarContraventamentos { get; set; } = true;
+        public bool MarcarFundacoes { get; set; } = true;
 
         // --- Prefixos por categoria ---
         public string PrefixoVigas { get; set; } = "V";
         public string PrefixoPilares { get; set; } = "P";
         public string PrefixoContraventamentos { get; set; } = "C";
+        public string PrefixoFundacoes { get; set; } = "F";
 
         // --- Numeracao ---
         public int NumeroInicial { get; set; } = 1;
@@ -55,7 +57,7 @@ namespace SteelBIM.Models
 
         public bool TemCategoriaSelecionada()
         {
-            return MarcarVigas || MarcarPilares || MarcarContraventamentos;
+            return MarcarVigas || MarcarPilares || MarcarContraventamentos || MarcarFundacoes;
         }
 
         public string ObterPrefixo(string categoriaLogica)
@@ -65,6 +67,7 @@ namespace SteelBIM.Models
                 "Viga" => PrefixoVigas,
                 "Pilar" => PrefixoPilares,
                 "Contraventamento" => PrefixoContraventamentos,
+                "Fundação" => PrefixoFundacoes,
                 _ => "X"
             };
         }

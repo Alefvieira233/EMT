@@ -149,7 +149,8 @@ namespace SteelBIM.Services
                 {
                     { "Viga", config.NumeroInicial },
                     { "Pilar", config.NumeroInicial },
-                    { "Contraventamento", config.NumeroInicial }
+                    { "Contraventamento", config.NumeroInicial },
+                    { "Fundação", config.NumeroInicial }
                 };
 
                 foreach (var par in gruposOrdenados)
@@ -231,7 +232,8 @@ namespace SteelBIM.Services
             var result = new List<FamilyInstance>();
             var cats = new[] {
                 BuiltInCategory.OST_StructuralFraming,
-                BuiltInCategory.OST_StructuralColumns
+                BuiltInCategory.OST_StructuralColumns,
+                BuiltInCategory.OST_StructuralFoundation
             };
 
             foreach (var cat in cats)
@@ -252,7 +254,8 @@ namespace SteelBIM.Services
             View vista = doc.ActiveView;
             var cats = new[] {
                 BuiltInCategory.OST_StructuralFraming,
-                BuiltInCategory.OST_StructuralColumns
+                BuiltInCategory.OST_StructuralColumns,
+                BuiltInCategory.OST_StructuralFoundation
             };
 
             foreach (var cat in cats)
@@ -277,7 +280,8 @@ namespace SteelBIM.Services
                 {
                     var cat = fi.Category?.BuiltInCategory;
                     return cat == BuiltInCategory.OST_StructuralFraming
-                        || cat == BuiltInCategory.OST_StructuralColumns;
+                        || cat == BuiltInCategory.OST_StructuralColumns
+                        || cat == BuiltInCategory.OST_StructuralFoundation;
                 })
                 .ToList();
 
@@ -324,6 +328,8 @@ namespace SteelBIM.Services
                     continue;
                 if (categoriaLogica == "Contraventamento" && !config.MarcarContraventamentos)
                     continue;
+                if (categoriaLogica == "Fundação" && !config.MarcarFundacoes)
+                    continue;
 
                 ElementType? tipo = doc.GetElement(elem.GetTypeId()) as ElementType;
                 Material? material = ObterMaterialPrincipal(doc, elem, tipo);
@@ -352,6 +358,8 @@ namespace SteelBIM.Services
             var cat = elem.Category?.BuiltInCategory;
             if (cat == BuiltInCategory.OST_StructuralColumns)
                 return "Pilar";
+            if (cat == BuiltInCategory.OST_StructuralFoundation)
+                return "Fundação";
             if (cat == BuiltInCategory.OST_StructuralFraming)
             {
                 if (elem.StructuralType == StructuralType.Brace)
@@ -727,7 +735,8 @@ namespace SteelBIM.Services
             {
                 var cat = elem.Category?.BuiltInCategory;
                 return cat == BuiltInCategory.OST_StructuralFraming
-                    || cat == BuiltInCategory.OST_StructuralColumns;
+                    || cat == BuiltInCategory.OST_StructuralColumns
+                    || cat == BuiltInCategory.OST_StructuralFoundation;
             }
 
             public bool AllowReference(Reference reference, XYZ position)
