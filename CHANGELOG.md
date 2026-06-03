@@ -35,6 +35,14 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   banzo superior; (R4) campos de **rotação da seção** por tipo (banzo sup/inf, diagonal, montante)
   aplicados no lançamento (`SetSectionRotation`), preservando o fluxo interativo da treliça
   (rotação default 0 ⇒ sem alteração). Testes do núcleo puro atualizados/novos.
+- **Lapidação V3 (2026-06-03) — v2.8.15** — plano em `docs/PLANO-GERAR-PORTICO-V3.md`:
+  (C1) **contraventamento de cobertura** deixa de ser 1 X gigante e passa a **1 X a cada N
+  terças** (ancorado nas posições de terça, ladrilhando cada água nos vãos de extremidade) —
+  campo "X a cada (terças)", default 2; pilares seguem com nº de vãos com X vertical;
+  (C2) campo **"Nº fileiras"** de linha de corrente (default 3, distribuídas nos vãos);
+  (C3) opção **"Inserir ligação de terça"** (combo de família "onex") que, após gerar o
+  galpão, insere a conexão em cada cruzamento terça × banzo superior reusando o
+  `ConexaoTercasService` headless (atrás de flag, em try/catch).
 
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
