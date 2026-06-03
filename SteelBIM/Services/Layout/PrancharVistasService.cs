@@ -51,7 +51,7 @@ namespace SteelBIM.Services.Layout
                 BoundingBoxUV ol = sheet.Outline;
                 XYZ temp = new XYZ((ol.Min.U + ol.Max.U) / 2.0, (ol.Min.V + ol.Max.V) / 2.0, 0);
 
-                var viewports = new List<Viewport>();
+                var viewports = new List<(Viewport Vp, string NomeVista)>();
                 foreach (View v in ordenadas)
                 {
                     if (!Viewport.CanAddViewToSheet(doc, sheet.Id, v.Id))
@@ -60,9 +60,21 @@ namespace SteelBIM.Services.Layout
                         continue;
                     }
 
-                    Viewport vp = Viewport.Create(doc, sheet.Id, v.Id, temp);
-                    if (vp != null)
-                        viewports.Add(vp);
+                    // M5: Viewport.Create pode lancar (vista virou nao-colocavel entre o check
+                    // e o create) — isola por vista pra nao abortar a prancha toda.
+                    try
+                    {
+                        Viewport vp = Viewport.Create(doc, sheet.Id, v.Id, temp);
+                        if (vp != null)
+                            viewports.Add((vp, v.Name));
+                        else
+                            naoCoube.Add(v.Name);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.Warn(ex, "[PrancharVistas] falha ao colocar a vista {Nome}", v.Name);
+                        naoCoube.Add(v.Name);
+                    }
                 }
 
                 doc.Regenerate();
@@ -75,7 +87,7 @@ namespace SteelBIM.Services.Layout
 
                 var caixas = new List<CaixaVista>();
                 var dados = new Dictionary<string, (Viewport Vp, double CxMm, double CyMm, string Nome)>();
-                foreach (Viewport vp in viewports)
+                foreach ((Viewport vp, string nomeVista) in viewports)
                 {
                     Outline bo = vp.GetBoxOutline();
                     double wMm = ToMm(bo.MaximumPoint.X - bo.MinimumPoint.X);
@@ -84,7 +96,8 @@ namespace SteelBIM.Services.Layout
                     double cyMm = ToMm((bo.MinimumPoint.Y + bo.MaximumPoint.Y) / 2.0);
                     string id = vp.Id.ToString();
                     caixas.Add(new CaixaVista(id, wMm, hMm, cxMm, cyMm));
-                    dados[id] = (vp, cxMm, cyMm, vp.Name);
+                    // M1: guarda o nome da VISTA (nao o do tipo de viewport) para o relatorio.
+                    dados[id] = (vp, cxMm, cyMm, nomeVista);
                 }
 
                 ResultadoGrade grade = LayoutVistasCalculator.Grade(
@@ -102,10 +115,15 @@ namespace SteelBIM.Services.Layout
                     colocados++;
                 }
 
+                // M4: viewports que nao couberam (maiores que a area) NAO podem ficar empilhados
+                // no centro temporario — remove-os da folha (a vista volta a 'nao colocada').
                 foreach (string id in grade.NaoCoube)
                 {
                     if (dados.TryGetValue(id, out var d))
+                    {
                         naoCoube.Add(d.Nome);
+                        doc.Delete(d.Vp.Id);
+                    }
                 }
 
                 t.Commit();

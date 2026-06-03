@@ -96,10 +96,15 @@ namespace SteelBIM.Services.Layout
                     if (!dadosPorId.TryGetValue(pos.Id, out var d))
                         continue;
 
-                    double deltaXFt = ToFt(pos.CentroXMm - d.CentroXMm);
-                    double deltaYFt = ToFt(pos.CentroYMm - d.CentroYMm);
-                    if (System.Math.Abs(deltaXFt) < RevitUtils.EPS && System.Math.Abs(deltaYFt) < RevitUtils.EPS)
+                    double deltaXMm = pos.CentroXMm - d.CentroXMm;
+                    double deltaYMm = pos.CentroYMm - d.CentroYMm;
+                    // limiar real (~0,01 mm): evita "mover" por ruido de ponto-flutuante e
+                    // inflar a contagem em vistas que ja' estavam alinhadas.
+                    if (System.Math.Abs(deltaXMm) < 0.01 && System.Math.Abs(deltaYMm) < 0.01)
                         continue;
+
+                    double deltaXFt = ToFt(deltaXMm);
+                    double deltaYFt = ToFt(deltaYMm);
 
                     XYZ centroAtual = d.Vp.GetBoxCenter();
                     d.Vp.SetBoxCenter(new XYZ(centroAtual.X + deltaXFt, centroAtual.Y + deltaYFt, centroAtual.Z));

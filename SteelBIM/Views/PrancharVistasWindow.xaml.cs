@@ -33,10 +33,9 @@ namespace SteelBIM.Views
             if (cmbTitleBlock.SelectedItem is not TitleBlockItem tb)
                 return null;
 
-            double margem = 20.0, espac = 10.0, reserva = 0.0;
-            NumberParsing.TryParseDouble(txtMargem.Text, out margem);
-            NumberParsing.TryParseDouble(txtEspacamento.Text, out espac);
-            NumberParsing.TryParseDouble(txtReservaCarimbo.Text, out reserva);
+            double margem = NumberParsing.ParseDoubleOrDefault(txtMargem.Text, 20.0);
+            double espac = NumberParsing.ParseDoubleOrDefault(txtEspacamento.Text, 10.0);
+            double reserva = NumberParsing.ParseDoubleOrDefault(txtReservaCarimbo.Text, 0.0);
 
             int? colunas = null;
             if (int.TryParse(txtColunas.Text?.Trim(), out int c) && c > 0)
