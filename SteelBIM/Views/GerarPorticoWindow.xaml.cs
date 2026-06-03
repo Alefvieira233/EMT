@@ -89,7 +89,7 @@ namespace SteelBIM.Views
                 ElevacaoTercasMm = NumberParsing.ParseDoubleOrDefault(txtElevTercas.Text, 150.0),
                 ContravCobertura = chkContravCob.IsChecked == true,
                 SymbolContravCobertura = Sym(cmbContravCob),
-                NumeroXCobertura = ParseInt(txtNumXCobertura.Text, 2),
+                TercasPorXCobertura = ParseInt(txtNumXCobertura.Text, 2),
                 ContravPilares = chkContravPil.IsChecked == true,
                 SymbolContravPilares = Sym(cmbContravPil),
                 NumeroXPilares = ParseInt(txtNumXPilares.Text, 2),

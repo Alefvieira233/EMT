@@ -49,14 +49,15 @@ namespace SteelBIM.Models
         // ===== Contraventamentos =====
         public bool ContravCobertura { get; set; }
         public FamilySymbol? SymbolContravCobertura { get; set; }
-        public int NumeroXCobertura { get; set; } = 2;          // nº de vãos com X na cobertura
+        public int TercasPorXCobertura { get; set; } = 2;       // 1 X de cobertura a cada N terças
         public bool ContravPilares { get; set; }
         public FamilySymbol? SymbolContravPilares { get; set; }
-        public int NumeroXPilares { get; set; } = 2;            // nº de vãos com X nas paredes
+        public int NumeroXPilares { get; set; } = 2;            // nº de vãos com X vertical (paredes)
 
         // ===== Linha de corrente =====
         public bool LancarLinhaCorrente { get; set; }
         public FamilySymbol? SymbolLinhaCorrente { get; set; }
+        public int NumeroLinhasCorrente { get; set; } = 3;      // nº de fileiras de linha de corrente
 
         // ===== Extras =====
         public bool CriarEixos { get; set; } = true;

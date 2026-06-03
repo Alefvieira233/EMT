@@ -179,10 +179,11 @@ namespace SteelBIM.Services.Portico
             EspacamentoTercasMm = c.EspacamentoTercasMm,
             ElevacaoTercasMm = c.ElevacaoTercasMm,
             ContravCobertura = c.ContravCobertura,
-            NumeroXCobertura = c.NumeroXCobertura,
+            TercasPorXCobertura = c.TercasPorXCobertura,
             ContravPilares = c.ContravPilares,
             NumeroXPilares = c.NumeroXPilares,
-            LancarLinhaCorrente = c.LancarLinhaCorrente
+            LancarLinhaCorrente = c.LancarLinhaCorrente,
+            NumeroLinhasCorrente = c.NumeroLinhasCorrente
         };
 
         private static TrelicaConfig MapearTrelicaConfig(GerarPorticoConfig c) => new TrelicaConfig

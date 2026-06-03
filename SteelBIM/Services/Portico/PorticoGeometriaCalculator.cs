@@ -31,10 +31,11 @@ namespace SteelBIM.Services.Portico
         public double ElevacaoTercasMm { get; set; } = 150.0;     // sobe a terça acima do banzo superior
 
         public bool ContravCobertura { get; set; }
-        public int NumeroXCobertura { get; set; } = 2;            // nº de vãos com X na cobertura
+        public int TercasPorXCobertura { get; set; } = 2;         // 1 X de cobertura a cada N terças
         public bool ContravPilares { get; set; }
-        public int NumeroXPilares { get; set; } = 2;              // nº de vãos com X nas paredes
+        public int NumeroXPilares { get; set; } = 2;              // nº de vãos com X vertical (paredes)
         public bool LancarLinhaCorrente { get; set; }
+        public int NumeroLinhasCorrente { get; set; } = 3;        // nº de fileiras de linha de corrente
     }
 
     /// <summary>Geometria calculada do galpao (todas as listas em mm).</summary>
@@ -130,32 +131,24 @@ namespace SteelBIM.Services.Portico
                 }
             }
 
-            // vaos contraventados: K distribuidos uniformemente (R2), por cobertura e por pilares.
+            // vaos contraventados dos pilares: K distribuidos uniformemente.
             int nVaos = n - 1;
-            IReadOnlyList<int> vaosCobertura = DistribuirVaos(nVaos, e.NumeroXCobertura);
             IReadOnlyList<int> vaosPilares = DistribuirVaos(nVaos, e.NumeroXPilares);
 
-            // ===== CONTRAVENTAMENTO DA COBERTURA (X no plano das aguas) =====
-            if (e.ContravCobertura)
+            // ===== CONTRAVENTAMENTO DA COBERTURA (1 X a cada N terças, vaos de extremidade) =====
+            if (e.ContravCobertura && e.TercasPorXCobertura > 0 && e.EspacamentoTercasMm > Eps)
             {
-                double zApoio = ZTopo(e, hp, w, 0.0);
-                double zCume = ZTopo(e, hp, w, w / 2.0);
-                foreach (int vao in vaosCobertura)
+                IReadOnlyList<double> purlinsMeia = PosicoesTercasMeiaAgua(e, w);
+                foreach (int vao in VaosExtremidade(n))
                 {
                     double xa = xPorticos[vao];
                     double xb = xPorticos[vao + 1];
-                    // agua 1: apoio em y=0, cumeeira em y=w/2.
-                    AddX(contravCobertura,
-                        new Ponto3D(xa, 0.0, zApoio), new Ponto3D(xb, w / 2.0, zCume),
-                        new Ponto3D(xb, 0.0, zApoio), new Ponto3D(xa, w / 2.0, zCume));
-                    // agua 2: apoio em y=w, cumeeira em y=w/2.
-                    AddX(contravCobertura,
-                        new Ponto3D(xa, w, zApoio), new Ponto3D(xb, w / 2.0, zCume),
-                        new Ponto3D(xb, w, zApoio), new Ponto3D(xa, w / 2.0, zCume));
+                    AddXsEntrePurlins(contravCobertura, e, hp, w, xa, xb, purlinsMeia, e.TercasPorXCobertura, false); // agua 1
+                    AddXsEntrePurlins(contravCobertura, e, hp, w, xa, xb, purlinsMeia, e.TercasPorXCobertura, true);  // agua 2
                 }
             }
 
-            // ===== CONTRAVENTAMENTO DOS PILARES (X vertical nas paredes y=0 e y=w) =====
+            // ===== CONTRAVENTAMENTO DOS PILARES (X vertical por vao contraventado) =====
             if (e.ContravPilares)
             {
                 foreach (int vao in vaosPilares)
@@ -171,16 +164,16 @@ namespace SteelBIM.Services.Portico
                 }
             }
 
-            // ===== LINHA DE CORRENTE (sag-rods subindo a agua, no meio de cada vao) =====
-            // Liga o meio da terça (no meio do vao entre porticos) ate o meio da terça da cumeeira,
-            // por agua. Fica no nivel das terças (ZTopo + elevacao), coplanar com elas.
-            if (e.LancarLinhaCorrente)
+            // ===== LINHA DE CORRENTE (sag-rods subindo a agua; N fileiras distribuidas) =====
+            // Liga o meio da terça (no meio do vao) ate o meio da terça da cumeeira, por agua.
+            // Fica no nivel das terças (ZTopo + elevacao), coplanar com elas.
+            if (e.LancarLinhaCorrente && e.NumeroLinhasCorrente > 0)
             {
                 double meia = w / 2.0;
                 double elev = e.ElevacaoTercasMm;
-                for (int b = 0; b < xPorticos.Count - 1; b++)
+                foreach (int vao in DistribuirVaos(nVaos, e.NumeroLinhasCorrente))
                 {
-                    double xMid = (xPorticos[b] + xPorticos[b + 1]) / 2.0;
+                    double xMid = (xPorticos[vao] + xPorticos[vao + 1]) / 2.0;
                     // agua 1: beiral (y=0) -> cumeeira (y=w/2).
                     linhasCorrente.Add(new Segmento(
                         new Ponto3D(xMid, 0.0, ZTopo(e, hp, w, 0.0) + elev),
@@ -230,6 +223,37 @@ namespace SteelBIM.Services.Portico
         {
             destino.Add(new Segmento(a1, b1));
             destino.Add(new Segmento(a2, b2));
+        }
+
+        /// <summary>Vaos de extremidade do galpao: {0} e {n-2} (distintos so quando n &gt;= 3).</summary>
+        private static IReadOnlyList<int> VaosExtremidade(int n)
+        {
+            var v = new List<int> { 0 };
+            if (n - 2 > 0)
+                v.Add(n - 2);
+            return v;
+        }
+
+        /// <summary>Coloca um X de contraventamento de cobertura a cada 'passo' terças, ancorado nas
+        /// posicoes de terça da meia-agua (espelhado na agua 2). z no plano do banzo (ZTopo).</summary>
+        private static void AddXsEntrePurlins(List<Segmento> dest, GerarPorticoEntrada e, double hp,
+            double w, double xa, double xb, IReadOnlyList<double> purlinsMeia, int passo, bool espelhar)
+        {
+            int m = purlinsMeia.Count;
+            if (m < 2 || passo < 1)
+                return;
+
+            for (int j = 0; j < m - 1; j += passo)
+            {
+                int j2 = Math.Min(j + passo, m - 1);
+                double yA = espelhar ? w - purlinsMeia[j] : purlinsMeia[j];
+                double yB = espelhar ? w - purlinsMeia[j2] : purlinsMeia[j2];
+                double zA = ZTopo(e, hp, w, yA);
+                double zB = ZTopo(e, hp, w, yB);
+                AddX(dest,
+                    new Ponto3D(xa, yA, zA), new Ponto3D(xb, yB, zB),
+                    new Ponto3D(xb, yA, zA), new Ponto3D(xa, yB, zB));
+            }
         }
 
         /// <summary>Ate 'quantidade' vaos (0..nVaos-1) distribuidos uniformemente; extremos

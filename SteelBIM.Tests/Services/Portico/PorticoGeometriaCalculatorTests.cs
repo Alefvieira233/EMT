@@ -24,10 +24,11 @@ namespace SteelBIM.Tests.Services.Portico
             EspacamentoTercasMm = 1500.0,
             ElevacaoTercasMm = 150.0,
             ContravCobertura = false,
-            NumeroXCobertura = 2,
+            TercasPorXCobertura = 2,
             ContravPilares = false,
             NumeroXPilares = 2,
-            LancarLinhaCorrente = false
+            LancarLinhaCorrente = false,
+            NumeroLinhasCorrente = 3
         };
 
         [Fact]
@@ -105,14 +106,18 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
-        public void Calcular_ContravCobertura_SoNosVaosDeExtremidade()
+        public void Calcular_ContravCobertura_XACadaNTercas_NosVaosDeExtremidade()
         {
             var e = BaseTrelica();
-            e.ContravCobertura = true;
+            e.ContravCobertura = true; // TercasPorXCobertura = 2 (default)
             var r = PorticoGeometriaCalculator.Calcular(e);
-            r.ContravCobertura.Should().HaveCount(8); // 2 vaos x 2 aguas x 2 diagonais
+            // 6 posicoes de terça na meia-agua -> passo 2 -> 3 X por agua;
+            // 2 vaos de extremidade x 2 aguas x 3 X x 2 diagonais = 24.
+            r.ContravCobertura.Should().HaveCount(24);
             r.ContravCobertura.Should().OnlyContain(s =>
                 s.A.XMm == 0.0 || s.A.XMm == 5000.0 || s.A.XMm == 25000.0 || s.A.XMm == 30000.0);
+            // nao e' mais 1 X gigante: varios Y distintos subindo a agua.
+            r.ContravCobertura.Select(s => s.A.YMm).Distinct().Count().Should().BeGreaterThan(2);
         }
 
         [Fact]
@@ -126,16 +131,24 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
-        public void Calcular_NumeroX_Configuravel()
+        public void Calcular_ContravCobertura_PassoMaior_GeraMenosXs()
         {
             var e = BaseTrelica();
             e.ContravCobertura = true;
-            e.NumeroXCobertura = 3;
+            e.TercasPorXCobertura = 3; // 1 X a cada 3 terças -> menos X
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 6 posicoes -> passo 3 -> 2 X por agua; 2 vaos x 2 aguas x 2 X x 2 diag = 16.
+            r.ContravCobertura.Should().HaveCount(16);
+        }
+
+        [Fact]
+        public void Calcular_NumeroXPilares_Configuravel()
+        {
+            var e = BaseTrelica();
             e.ContravPilares = true;
             e.NumeroXPilares = 1;
             var r = PorticoGeometriaCalculator.Calcular(e);
-            r.ContravCobertura.Should().HaveCount(12); // 3 vaos x 2 aguas x 2 diagonais
-            r.ContravPilares.Should().HaveCount(4);     // 1 vao x 2 paredes x 2 diagonais
+            r.ContravPilares.Should().HaveCount(4); // 1 vao x 2 paredes x 2 diagonais
         }
 
         [Fact]
@@ -144,8 +157,8 @@ namespace SteelBIM.Tests.Services.Portico
             var e = BaseTrelica();
             e.LancarLinhaCorrente = true;
             var r = PorticoGeometriaCalculator.Calcular(e);
-            // 2 aguas por vao x (N-1)=6 vaos = 12 sag-rods.
-            r.LinhasCorrente.Should().HaveCount(12);
+            // NumeroLinhasCorrente=3 (default) -> 3 fileiras x 2 aguas = 6 sag-rods.
+            r.LinhasCorrente.Should().HaveCount(6);
             // sobe a agua: X constante (meio do vao) e Y varia (do beiral a cumeeira).
             r.LinhasCorrente.Should().OnlyContain(s => s.A.XMm == s.B.XMm && s.A.YMm != s.B.YMm);
             // no meio do primeiro vao (entre x=0 e x=5000 -> 2500).
@@ -164,8 +177,8 @@ namespace SteelBIM.Tests.Services.Portico
             var r = PorticoGeometriaCalculator.Calcular(e);
             r.XPorticosMm.Should().Equal(new[] { 0.0, 5000.0 });
             r.Pilares.Should().HaveCount(4);
-            r.ContravCobertura.Should().HaveCount(4); // 1 vao x 2 aguas x 2
-            r.ContravPilares.Should().HaveCount(4);   // 1 vao x 2 paredes x 2
+            r.ContravCobertura.Should().HaveCount(12); // 1 vao x 2 aguas x 3 X x 2
+            r.ContravPilares.Should().HaveCount(4);    // 1 vao x 2 paredes x 2
         }
 
         [Fact]
