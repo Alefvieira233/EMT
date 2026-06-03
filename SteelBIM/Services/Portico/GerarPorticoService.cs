@@ -142,7 +142,7 @@ namespace SteelBIM.Services.Portico
             if (config.InserirLigacaoTerca && config.SymbolLigacaoTerca != null
                 && tercaIds.Count > 0 && banzoSupIds.Count > 0)
             {
-                ligacoes = InserirLigacoesTerca(uidoc, doc, config.SymbolLigacaoTerca, tercaIds, banzoSupIds);
+                ligacoes = InserirLigacoesTerca(uidoc, doc, config, tercaIds, banzoSupIds);
             }
 
             string resumo = $"Pórtico gerado.\nPilares: {pilares}";
@@ -408,9 +408,13 @@ namespace SteelBIM.Services.Portico
         }
 
         // ===== Ligação de terça (opcional) — reusa ConexaoTercasService headless =====
-        private static int InserirLigacoesTerca(UIDocument uidoc, Document doc, FamilySymbol symbol,
+        private static int InserirLigacoesTerca(UIDocument uidoc, Document doc, GerarPorticoConfig config,
             List<ElementId> tercaIds, List<ElementId> banzoSupIds)
         {
+            FamilySymbol? symbol = config.SymbolLigacaoTerca;
+            if (symbol == null)
+                return 0;
+
             try
             {
                 if (!symbol.IsActive)
@@ -432,7 +436,10 @@ namespace SteelBIM.Services.Portico
                     ColocarExtremidades = true,
                     ColocarMeio = false,
                     Referencia = ReferenciaChapa.Cruzamento,
-                    VigasRefs = vigasRefs
+                    VigasRefs = vigasRefs,
+                    OffsetVerticalAdicionalMm = config.LigacaoOffsetZmm,
+                    OffsetLateralMm = config.LigacaoOffsetXmm,
+                    InverterFace = config.LigacaoInverterFace
                 };
                 new ConexaoTercasService().Executar(uidoc, doc, cfg, tercasRefs);
                 return tercasRefs.Count;

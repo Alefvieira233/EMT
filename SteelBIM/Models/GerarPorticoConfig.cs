@@ -49,6 +49,9 @@ namespace SteelBIM.Models
         // Ligação de terça (opcional) — conexão inserida em cada cruzamento terça × banzo superior.
         public bool InserirLigacaoTerca { get; set; }
         public FamilySymbol? SymbolLigacaoTerca { get; set; }
+        public double LigacaoOffsetZmm { get; set; }      // ajuste vertical (Z) da ligação
+        public double LigacaoOffsetXmm { get; set; }      // ajuste lateral (ao longo do eixo da terça)
+        public bool LigacaoInverterFace { get; set; }     // inverte a face da terça onde a ligação assenta
 
         // ===== Contraventamentos =====
         public bool ContravCobertura { get; set; }

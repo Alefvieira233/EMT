@@ -152,6 +152,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -168,6 +170,12 @@
                         <CheckBox x:Name="chkLigacaoTerca" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="Inserir ligação de terça (conexão no cruzamento com o banzo)" Margin="0 8 0 4"/>
                         <Label Grid.Row="4" Grid.Column="0" Content="Perfil da ligação:" VerticalAlignment="Center"/>
                         <ComboBox x:Name="cmbLigacaoTerca" Grid.Row="4" Grid.Column="1" Margin="6 2 0 2"/>
+                        <Label Grid.Row="5" Grid.Column="0" Content="Ajuste ligação Z / lateral (mm):" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                            <TextBox x:Name="txtLigOffsetZ" Width="70" Margin="6 2 8 2" Text="0" ToolTip="Move a ligação no eixo vertical (Z)."/>
+                            <TextBox x:Name="txtLigOffsetX" Width="70" Margin="0 2 0 2" Text="0" ToolTip="Move a ligação ao longo do eixo da terça (lateral)."/>
+                        </StackPanel>
+                        <CheckBox x:Name="chkLigInverterFace" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Content="Inverter face da ligação (se sair no lado errado)" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>
 
