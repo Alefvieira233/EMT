@@ -407,6 +407,9 @@
              Link="LinkedSources\Services\Layout\LayoutVistasCalculator.cs" />
     <Compile Include="..\SteelBIM\Services\Layout\OrdenacaoNatural.cs"
              Link="LinkedSources\Services\Layout\OrdenacaoNatural.cs" />
+    <!-- v2.8.14: nucleo puro do gerador de portico (Gerar Projeto Completo) -->
+    <Compile Include="..\SteelBIM\Services\Portico\PorticoGeometriaCalculator.cs"
+             Link="LinkedSources\Services\Portico\PorticoGeometriaCalculator.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,
