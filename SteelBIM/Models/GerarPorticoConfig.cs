@@ -18,6 +18,7 @@ namespace SteelBIM.Models
 
         // ===== Pilar =====
         public FamilySymbol? SymbolPilar { get; set; }
+        public bool PilarCentral { get; set; }   // pilar no meio do vão (mesmo perfil), por pórtico
 
         // ===== Cobertura: treliça (UsarTrelica=true) OU viga metálica =====
         public bool UsarTrelica { get; set; } = true;

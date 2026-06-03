@@ -20,6 +20,7 @@ namespace SteelBIM.Services.Portico
         public double EspacamentoPorticosMm { get; set; } = 5000.0;
         public double VaoGalpaoMm { get; set; } = 15010.0;
         public double AlturaPilarMm { get; set; } = 4000.0;
+        public bool PilarCentral { get; set; }                    // pilar no meio do vão (y=w/2), por pórtico
 
         public bool UsarTrelica { get; set; } = true;
         public double AlturaExtremidadeMm { get; set; } = 600.0;   // H (treliça, no apoio)
@@ -90,11 +91,13 @@ namespace SteelBIM.Services.Portico
             yEixos.Add(0.0);
             yEixos.Add(w);
 
-            // ===== PILARES (2 por portico: y=0 e y=w) =====
+            // ===== PILARES (2 por portico: y=0 e y=w; + central opcional em y=w/2) =====
             foreach (double x in xPorticos)
             {
                 pilares.Add(new Segmento(new Ponto3D(x, 0.0, 0.0), new Ponto3D(x, 0.0, hp)));
                 pilares.Add(new Segmento(new Ponto3D(x, w, 0.0), new Ponto3D(x, w, hp)));
+                if (e.PilarCentral)
+                    pilares.Add(new Segmento(new Ponto3D(x, w / 2.0, 0.0), new Ponto3D(x, w / 2.0, hp)));
             }
 
             // ===== COBERTURA =====

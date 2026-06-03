@@ -187,6 +187,7 @@ namespace SteelBIM.Services.Portico
             EspacamentoPorticosMm = c.EspacamentoPorticosMm,
             VaoGalpaoMm = c.VaoGalpaoMm,
             AlturaPilarMm = c.AlturaPilarMm,
+            PilarCentral = c.PilarCentral,
             UsarTrelica = c.UsarTrelica,
             AlturaExtremidadeMm = c.AlturaExtremidadeMm,
             AlturaCentralMm = c.AlturaCentralMm,

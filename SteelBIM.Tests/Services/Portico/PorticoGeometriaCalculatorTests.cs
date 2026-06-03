@@ -50,6 +50,16 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
+        public void Calcular_PilarCentral_AdicionaColunaNoMeioDoVao()
+        {
+            var e = BaseTrelica();
+            e.PilarCentral = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Pilares.Should().HaveCount(21); // 7 porticos x 3 (y=0, y=w, y=w/2)
+            r.Pilares.Should().Contain(p => p.A.YMm == 15010.0 / 2.0 && p.A.ZMm == 0.0 && p.B.ZMm == 4000.0);
+        }
+
+        [Fact]
         public void Calcular_Trelica_EixoInferiorPorPortico_NoBeiral()
         {
             var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());

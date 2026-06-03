@@ -60,12 +60,17 @@
 
                 <GroupBox Header="Pilares" Padding="10" Margin="0 0 0 10">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Content="Perfil do pilar:" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="cmbPilar" Grid.Column="1" Margin="6 2 0 2"/>
+                        <Label Grid.Row="0" Grid.Column="0" Content="Perfil do pilar:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbPilar" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
+                        <CheckBox x:Name="chkPilarCentral" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Pilar central (no meio do vão, em cada pórtico)" Margin="0 6 0 2"/>
                     </Grid>
                 </GroupBox>
 

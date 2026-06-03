@@ -71,6 +71,7 @@ namespace SteelBIM.Views
                 VaoGalpaoMm = NumberParsing.ParseDoubleOrDefault(txtVao.Text, 15010.0),
                 AlturaPilarMm = NumberParsing.ParseDoubleOrDefault(txtAlturaPilar.Text, 4000.0),
                 SymbolPilar = Sym(cmbPilar),
+                PilarCentral = chkPilarCentral.IsChecked == true,
                 UsarTrelica = usarTrelica,
                 PadraoTrelica = cmbPadrao.SelectedItem is TrussPattern tp ? tp : TrussPattern.Warren,
                 AlturaExtremidadeMm = NumberParsing.ParseDoubleOrDefault(txtH.Text, 600.0),
