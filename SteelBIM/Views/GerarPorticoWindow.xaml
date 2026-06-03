@@ -84,6 +84,8 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -113,6 +115,16 @@
 
                             <Label Grid.Row="5" Grid.Column="0" Content="Perfil montante:" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cmbMontante" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
+
+                            <Label Grid.Row="6" Grid.Column="0" Content="Rotação banzo sup (°):" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtRotBanzoSup" Grid.Row="6" Grid.Column="1" Margin="6 2 0 2" Text="0" ToolTip="Ex.: 270 para o perfil U ficar na posição correta."/>
+                            <Label Grid.Row="6" Grid.Column="2" Content="inf (°):" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                            <TextBox x:Name="txtRotBanzoInf" Grid.Row="6" Grid.Column="3" Margin="0 2 0 2" Text="0"/>
+
+                            <Label Grid.Row="7" Grid.Column="0" Content="Rotação diagonal (°):" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtRotDiagonal" Grid.Row="7" Grid.Column="1" Margin="6 2 0 2" Text="0"/>
+                            <Label Grid.Row="7" Grid.Column="2" Content="mont (°):" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                            <TextBox x:Name="txtRotMontante" Grid.Row="7" Grid.Column="3" Margin="0 2 0 2" Text="0"/>
                         </Grid>
 
                         <Grid x:Name="painelViga" Margin="0 6 0 0">
@@ -137,6 +149,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -148,6 +161,8 @@
                             <ComboBox x:Name="cmbTerca" Width="290" Margin="6 2 8 2"/>
                             <TextBox x:Name="txtEspTercas" Width="80" Margin="0 2 0 2" Text="1500"/>
                         </StackPanel>
+                        <Label Grid.Row="2" Grid.Column="0" Content="Elevação sobre o banzo (mm):" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtElevTercas" Grid.Row="2" Grid.Column="1" Width="80" HorizontalAlignment="Left" Margin="6 2 0 2" Text="150" ToolTip="Eleva a terça acima do banzo superior (ajuste conforme a altura do perfil)."/>
                     </Grid>
                 </GroupBox>
 
@@ -160,11 +175,17 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="230"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="55"/>
                         </Grid.ColumnDefinitions>
                         <CheckBox x:Name="chkContravCob" Grid.Row="0" Grid.Column="0" Content="Plano da cobertura" VerticalAlignment="Center" Margin="0 2 0 4"/>
                         <ComboBox x:Name="cmbContravCob" Grid.Row="0" Grid.Column="1" Margin="6 2 0 4"/>
+                        <Label Grid.Row="0" Grid.Column="2" Content="Nº X:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumXCobertura" Grid.Row="0" Grid.Column="3" Margin="0 2 0 4" Text="2"/>
                         <CheckBox x:Name="chkContravPil" Grid.Row="1" Grid.Column="0" Content="Plano dos pilares (lateral)" VerticalAlignment="Center" Margin="0 2 0 2"/>
                         <ComboBox x:Name="cmbContravPil" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2"/>
+                        <Label Grid.Row="1" Grid.Column="2" Content="Nº X:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumXPilares" Grid.Row="1" Grid.Column="3" Margin="0 2 0 2" Text="2"/>
                     </Grid>
                 </GroupBox>
 

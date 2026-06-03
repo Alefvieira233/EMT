@@ -177,8 +177,11 @@ namespace SteelBIM.Services.Portico
             AlturaCumeeiraMm = c.AlturaCumeeiraMm,
             LancarTercas = c.LancarTercas,
             EspacamentoTercasMm = c.EspacamentoTercasMm,
+            ElevacaoTercasMm = c.ElevacaoTercasMm,
             ContravCobertura = c.ContravCobertura,
+            NumeroXCobertura = c.NumeroXCobertura,
             ContravPilares = c.ContravPilares,
+            NumeroXPilares = c.NumeroXPilares,
             LancarLinhaCorrente = c.LancarLinhaCorrente
         };
 

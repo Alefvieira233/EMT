@@ -44,12 +44,15 @@ namespace SteelBIM.Models
         public bool LancarTercas { get; set; } = true;
         public FamilySymbol? SymbolTerca { get; set; }
         public double EspacamentoTercasMm { get; set; } = 1500.0;
+        public double ElevacaoTercasMm { get; set; } = 150.0;   // eleva a terça acima do banzo superior
 
         // ===== Contraventamentos =====
         public bool ContravCobertura { get; set; }
         public FamilySymbol? SymbolContravCobertura { get; set; }
+        public int NumeroXCobertura { get; set; } = 2;          // nº de vãos com X na cobertura
         public bool ContravPilares { get; set; }
         public FamilySymbol? SymbolContravPilares { get; set; }
+        public int NumeroXPilares { get; set; } = 2;            // nº de vãos com X nas paredes
 
         // ===== Linha de corrente =====
         public bool LancarLinhaCorrente { get; set; }
