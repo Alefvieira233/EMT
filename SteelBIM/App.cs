@@ -701,6 +701,18 @@ namespace SteelBIM
                 "vista_peca_small.png"
             );
 
+            // v2.8.13 (Onda 3): criar prancha + distribuir as vistas selecionadas em grade.
+            AddButton(
+                panelVistas,
+                "btnPrancharVistas",
+                "Pranchar\nVistas",
+                assemblyPath,
+                "SteelBIM.Commands.CmdPrancharVistas",
+                "Cria uma prancha (carimbo escolhido) e distribui automaticamente em grade as vistas selecionadas no Navegador de Projeto.",
+                "vista_peca_large.png",
+                "vista_peca_small.png"
+            );
+
             // --- Cotagem ---
             AddButton(
                 panelCotagem,

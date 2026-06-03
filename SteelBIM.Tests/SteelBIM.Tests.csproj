@@ -405,6 +405,8 @@
     <!-- v2.8.13: nucleo puro do layout de vistas na prancha -->
     <Compile Include="..\SteelBIM\Services\Layout\LayoutVistasCalculator.cs"
              Link="LinkedSources\Services\Layout\LayoutVistasCalculator.cs" />
+    <Compile Include="..\SteelBIM\Services\Layout\OrdenacaoNatural.cs"
+             Link="LinkedSources\Services\Layout\OrdenacaoNatural.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,
