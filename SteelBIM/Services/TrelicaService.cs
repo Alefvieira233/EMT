@@ -117,8 +117,6 @@ namespace SteelBIM.Services
                 return;
             }
 
-            double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
-
             Reference rBase;
             try
             {
@@ -161,13 +159,8 @@ namespace SteelBIM.Services
             using (Transaction t = new Transaction(doc, "Criar Treliça completa"))
             {
                 t.Start();
-                AtivarSimbolos(config);
-                doc.Regenerate();
-
                 Level nivel = RevitUtils.GetElementLevel(doc, elBase);
-                // cSup = null -> banzo superior calculado por altura variavel (H/B, duas aguas).
-                criados = GerarVao(doc, nivel, null, cInf, incluirBanzos: true, config, zOffsetFt);
-
+                criados = GerarTrelicaCompletaNoEixo(doc, nivel, cInf, config);
                 t.Commit();
             }
 
@@ -175,6 +168,24 @@ namespace SteelBIM.Services
                 AppDialogService.ShowInfo("Treliça", $"Treliça completa criada com sucesso ({criados} membros).", "Modelagem concluída");
             else
                 AppDialogService.ShowWarning("Treliça", "Nenhum membro foi criado. Verifique o perfil do banzo e a geometria.", "Nada gerado");
+        }
+
+        /// <summary>
+        /// v2.8.14: gera uma treliça COMPLETA (banzos + montantes + diagonais) a partir de uma
+        /// curva-base (banzo inferior), SEM pick e SEM abrir transacao (assume a transacao do
+        /// chamador ja' aberta). Reusado pelo GerarPorticoService para materializar a treliça de
+        /// cada portico. O banzo superior e' calculado por altura variavel (H/B, duas aguas), como
+        /// no modo interativo; banzo superior/inferior podem ter perfis distintos (TrelicaConfig).
+        /// </summary>
+        public int GerarTrelicaCompletaNoEixo(Document doc, Level nivel, Curve eixoInferior, TrelicaConfig config)
+        {
+            if (eixoInferior == null || config == null)
+                return 0;
+
+            double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
+            AtivarSimbolos(config);
+            doc.Regenerate();
+            return GerarVao(doc, nivel, null, eixoInferior, incluirBanzos: true, config, zOffsetFt);
         }
 
         // ---- Geracao de um vao (par de banzos), comum aos dois modos ----
@@ -255,7 +266,7 @@ namespace SteelBIM.Services
 
                 FamilySymbol? sym = seg.Tipo switch
                 {
-                    TrussMemberKind.Banzo => config.SymbolBanzo,
+                    TrussMemberKind.Banzo => ResolverBanzo(config, seg.De.Chord),
                     TrussMemberKind.Montante => config.SymbolMontante,
                     TrussMemberKind.Diagonal => config.SymbolDiagonal,
                     _ => null
@@ -346,6 +357,21 @@ namespace SteelBIM.Services
                 config.SymbolDiagonal.Activate();
             if (config.SymbolBanzo != null && !config.SymbolBanzo.IsActive)
                 config.SymbolBanzo.Activate();
+            if (config.SymbolBanzoSuperior != null && !config.SymbolBanzoSuperior.IsActive)
+                config.SymbolBanzoSuperior.Activate();
+            if (config.SymbolBanzoInferior != null && !config.SymbolBanzoInferior.IsActive)
+                config.SymbolBanzoInferior.Activate();
+        }
+
+        /// <summary>
+        /// v2.8.14: perfil do banzo conforme o cordao (superior/inferior), com fallback no
+        /// <see cref="TrelicaConfig.SymbolBanzo"/> quando o especifico nao foi informado.
+        /// </summary>
+        private static FamilySymbol? ResolverBanzo(TrelicaConfig config, TrussChord chord)
+        {
+            if (chord == TrussChord.Superior)
+                return config.SymbolBanzoSuperior ?? config.SymbolBanzo;
+            return config.SymbolBanzoInferior ?? config.SymbolBanzo;
         }
 
         private bool CriarMembro(

@@ -13,6 +13,15 @@ namespace SteelBIM.Models
         /// <summary>Perfil dos banzos — usado apenas no modo "treliça completa".</summary>
         public FamilySymbol? SymbolBanzo { get; set; }
 
+        /// <summary>
+        /// v2.8.14: perfil do banzo SUPERIOR (opcional). Quando nulo, cai em <see cref="SymbolBanzo"/>.
+        /// Permite ao "Gerar Projeto Completo" usar perfis distintos para banzo superior/inferior.
+        /// </summary>
+        public FamilySymbol? SymbolBanzoSuperior { get; set; }
+
+        /// <summary>v2.8.14: perfil do banzo INFERIOR (opcional). Quando nulo, cai em <see cref="SymbolBanzo"/>.</summary>
+        public FamilySymbol? SymbolBanzoInferior { get; set; }
+
         // ---- Liga/desliga membros (filtro mestre sobre o padrao) ----
         public bool LancarMontante { get; set; }
         public bool LancarDiagonal { get; set; }
