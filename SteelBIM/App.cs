@@ -689,6 +689,30 @@ namespace SteelBIM
                 "vista_peca_small.png"
             );
 
+            // v2.8.13 (Onda 2): alinhar/distribuir viewports na prancha (estilo PowerPoint).
+            AddButton(
+                panelVistas,
+                "btnAlinharVistas",
+                "Alinhar\nVistas",
+                assemblyPath,
+                "SteelBIM.Commands.CmdAlinharVistas",
+                "Alinha e distribui as vistas (viewports) selecionadas na prancha — esquerda/direita/topo/base/centro e distribuir, estilo PowerPoint.",
+                "vista_peca_large.png",
+                "vista_peca_small.png"
+            );
+
+            // v2.8.13 (Onda 3): criar prancha + distribuir as vistas selecionadas em grade.
+            AddButton(
+                panelVistas,
+                "btnPrancharVistas",
+                "Pranchar\nVistas",
+                assemblyPath,
+                "SteelBIM.Commands.CmdPrancharVistas",
+                "Cria uma prancha (carimbo escolhido) e distribui automaticamente em grade as vistas selecionadas no Navegador de Projeto.",
+                "vista_peca_large.png",
+                "vista_peca_small.png"
+            );
+
             // --- Cotagem ---
             AddButton(
                 panelCotagem,
