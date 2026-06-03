@@ -95,8 +95,8 @@ namespace SteelBIM.Services.Layout
                     if (!dados.TryGetValue(pos.Id, out var d))
                         continue;
 
-                    double dxFt = ToFt(pos.CxMm - d.CxMm);
-                    double dyFt = ToFt(pos.CyMm - d.CyMm);
+                    double dxFt = ToFt(pos.CentroXMm - d.CxMm);
+                    double dyFt = ToFt(pos.CentroYMm - d.CyMm);
                     XYZ c = d.Vp.GetBoxCenter();
                     d.Vp.SetBoxCenter(new XYZ(c.X + dxFt, c.Y + dyFt, c.Z));
                     colocados++;
