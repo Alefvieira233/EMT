@@ -189,6 +189,30 @@ namespace SteelBIM.Services
             List<double> full = new List<double> { 0.0 };
             full.AddRange(intermed);
             full.Add(1.0);
+
+            // FIX cumeeira: em duas aguas (modo completo, H != B) o PICO esta em t=0.5. Se nenhuma
+            // estacao cair no centro, o banzo superior faz um trecho HORIZONTAL entre as duas
+            // estacoes vizinhas (mesma altura) em vez de subir ate' B. Forca uma estacao no centro
+            // (cumeeira) para o banzo superior formar um pico real + montante no king-post.
+            bool duasAguas = cSup == null && Math.Abs(config.AlturaCentralMm - config.AlturaExtremidadeMm) > 1e-6;
+            if (duasAguas)
+            {
+                bool temCentro = false;
+                foreach (double t in full)
+                {
+                    if (Math.Abs(t - 0.5) < 1e-6)
+                    {
+                        temCentro = true;
+                        break;
+                    }
+                }
+                if (!temCentro)
+                {
+                    full.Add(0.5);
+                    full.Sort();
+                }
+            }
+
             int nEstacoes = full.Count;
 
             XYZ[] ptsSup = new XYZ[nEstacoes];
