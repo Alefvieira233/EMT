@@ -1,11 +1,14 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
+using SteelBIM.Models.Conexoes;
+using SteelBIM.Services.Conexoes;
 using SteelBIM.Utils;
 
 namespace SteelBIM.Services.Portico
@@ -35,6 +38,7 @@ namespace SteelBIM.Services.Portico
                 AppDialogService.ShowError("Gerar Pórtico", "Selecione o perfil do pilar.", "Configuração incompleta");
                 return;
             }
+            FamilySymbol pilarSymbol = config.SymbolPilar;
 
             GerarPorticoEntrada entrada = MapearEntrada(config);
             PorticoLayout layout = PorticoGeometriaCalculator.Calcular(entrada);
@@ -55,6 +59,7 @@ namespace SteelBIM.Services.Portico
             int contravCob = 0;
             int contravPil = 0;
             int linhas = 0;
+            int placas = 0;
 
             using (Transaction t = new Transaction(doc, "Gerar Pórtico Completo"))
             {
@@ -64,7 +69,7 @@ namespace SteelBIM.Services.Portico
                 // ===== PILARES =====
                 foreach (Segmento s in layout.Pilares)
                 {
-                    if (CriarPilar(doc, config.SymbolPilar, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                    if (CriarPilar(doc, pilarSymbol, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
                         pilares++;
                 }
 
@@ -122,6 +127,10 @@ namespace SteelBIM.Services.Portico
                 t.Commit();
             }
 
+            // Placas de base (opcional) — fora da transacao acima; o servico abre a sua propria.
+            if (config.LancarPlacasBase)
+                placas = LancarPlacasBase(doc);
+
             string resumo = $"Pórtico gerado.\nPilares: {pilares}";
             if (config.UsarTrelica)
                 resumo += $"\nTreliças: {trelicas} ({membrosTrelica} membros)";
@@ -132,10 +141,12 @@ namespace SteelBIM.Services.Portico
                 resumo += $"\nContraventamentos: {contravCob + contravPil}";
             if (linhas > 0)
                 resumo += $"\nLinha de corrente: {linhas}";
+            if (config.LancarPlacasBase)
+                resumo += $"\nPlacas de base: {placas}";
 
             Logger.Info(
-                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L}",
-                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas);
+                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L} placas={Pl}",
+                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas, placas);
             AppDialogService.ShowInfo("Gerar Pórtico", resumo, "Concluído");
         }
 
@@ -325,6 +336,32 @@ namespace SteelBIM.Services.Portico
             if (indice < 26)
                 return ((char)('A' + indice)).ToString();
             return "E" + (indice + 1);
+        }
+
+        // ===== Placas de base (opcional) =====
+        private static int LancarPlacasBase(Document doc)
+        {
+            try
+            {
+                IList<FamilySymbol> compativeis = PlacaBaseLancamentoService.CollectCompatibleSymbols(doc);
+                if (compativeis.Count == 0)
+                    return 0;
+
+                FamilySymbol pb = compativeis[0];
+                PlacaBaseConfig pbConfig = new PlacaBaseConfig
+                {
+                    FamilyName = pb.FamilyName,
+                    TypeName = pb.Name,
+                    FamilySymbolId = pb.Id
+                };
+                PlacaBaseLancamentoResultado res = new PlacaBaseLancamentoService().Lancar(doc, pbConfig);
+                return res.PlacasInseridas;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[GerarPortico] falha ao lançar placas de base");
+                return 0;
+            }
         }
     }
 }
