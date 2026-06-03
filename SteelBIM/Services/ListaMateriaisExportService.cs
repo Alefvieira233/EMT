@@ -1515,11 +1515,68 @@ namespace SteelBIM.Services
             ws.Columns().AdjustToContents();
         }
 
+        private static string ObterNomeBaseMaterial(MaterialBaseTipo baseTipo)
+        {
+            return baseTipo switch
+            {
+                MaterialBaseTipo.Metalico => "Aço",
+                MaterialBaseTipo.Concreto => "Concreto",
+                _ => "Outro"
+            };
+        }
+
+        // Aço primeiro, depois Concreto, depois Outro (ordem de exibicao no Resumo).
+        private static int OrdemBaseMaterial(MaterialBaseTipo baseTipo)
+        {
+            return baseTipo switch
+            {
+                MaterialBaseTipo.Metalico => 0,
+                MaterialBaseTipo.Concreto => 1,
+                _ => 2
+            };
+        }
+
         private static void CriarAbaResumo(XLWorkbook workbook, List<ListaMateriaisGrupo> grupos)
         {
             IXLWorksheet ws = workbook.Worksheets.Add("Resumo");
             int linha = 1;
 
+            // Onda 3: bloco no TOPO separando AÇO x CONCRETO (subtotais por base de material).
+            ws.Cell(linha, 1).Value = "Totais por base de material (Aço × Concreto)";
+            ws.Cell(linha, 1).Style.Font.Bold = true;
+            ws.Cell(linha, 1).Style.Font.FontSize = 14;
+            linha += 2;
+
+            string[] headersBase =
+            {
+                "Base",
+                "Quantidade",
+                "Comprimento total (m)",
+                "Area total (m2)",
+                "Volume total (m3)",
+                "Peso total (kg)"
+            };
+
+            for (int i = 0; i < headersBase.Length; i++)
+                ws.Cell(linha, i + 1).Value = headersBase[i];
+
+            EstilizarCabecalho(ws, linha, headersBase.Length);
+
+            int linhaBase = linha + 1;
+            foreach (var grupoBase in grupos
+                         .GroupBy(x => x.MaterialBaseTipo)
+                         .OrderBy(x => OrdemBaseMaterial(x.Key)))
+            {
+                ws.Cell(linhaBase, 1).Value = ObterNomeBaseMaterial(grupoBase.Key);
+                ws.Cell(linhaBase, 2).Value = grupoBase.Sum(x => x.Quantidade);
+                ws.Cell(linhaBase, 3).Value = grupoBase.Sum(x => x.ComprimentoTotalM);
+                ws.Cell(linhaBase, 4).Value = grupoBase.Sum(x => x.AreaTotalM2);
+                ws.Cell(linhaBase, 5).Value = grupoBase.Sum(x => x.VolumeTotalM3);
+                ws.Cell(linhaBase, 6).Value = grupoBase.Sum(x => x.PesoTotalKg);
+                linhaBase++;
+            }
+
+            linha = linhaBase + 2;
             ws.Cell(linha, 1).Value = "Totais por categoria";
             ws.Cell(linha, 1).Style.Font.Bold = true;
             ws.Cell(linha, 1).Style.Font.FontSize = 14;
