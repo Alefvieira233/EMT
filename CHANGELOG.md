@@ -27,6 +27,14 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   e inferior distintos (fallback no `SymbolBanzo`).
 - Criação de eixos (grid A-G × 1-2) e placas de base são opcionais (esta última atrás de
   flag, default off). Build Release 0 warnings, `dotnet format` limpo, CI verde.
+- **Lapidação V2 (2026-06-03, pós-validação no Revit)** — plano em `docs/PLANO-GERAR-PORTICO-V2.md`:
+  (R1) **linha de corrente** agora são sag-rods **subindo cada água no meio do vão** (do meio da
+  terça ao meio da terça da cumeeira), no nível das terças — antes saíam longitudinais;
+  (R2) campos **"Nº de X"** (cobertura e pilares) → distribui K vãos contraventados uniformemente;
+  (R3) campo **"Elevação da terça sobre o banzo (mm)"** (default 150) posiciona a terça acima do
+  banzo superior; (R4) campos de **rotação da seção** por tipo (banzo sup/inf, diagonal, montante)
+  aplicados no lançamento (`SetSectionRotation`), preservando o fluxo interativo da treliça
+  (rotação default 0 ⇒ sem alteração). Testes do núcleo puro atualizados/novos.
 
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
