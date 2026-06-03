@@ -60,7 +60,10 @@ namespace SteelBIM.Services
         private const string CorCabecalhoLdm = "#A5A5A5";
         private const string CorSecaoPrimariaLdm = "#FABF8F";
         private const string CorSecaoSecundariaLdm = "#FFFF99";
-        private const double DensidadePadraoConcretoKgM3 = 25.0;
+        // Massa especifica padrao (kg/m³) usada quando o material do modelo nao tem densidade.
+        // Concreto armado: gamma ~ 25 kN/m³ ≈ 2500 kg/m³ (NBR 6118). (Antes estava 25 kg/m³ —
+        // confusao kN/m³ x kg/m³ — que deixava o peso do concreto ~100x menor.)
+        private const double DensidadePadraoConcretoKgM3 = 2500.0;
         private const double DensidadePadraoAcoKgM3 = 7850.0;
 
         private static readonly BuiltInCategory[] CategoriasPerfisConexao =
@@ -903,9 +906,10 @@ namespace SteelBIM.Services
             if (pesoPorDensidade > 0.0)
                 return (pesoPorDensidade, "densidade/volume");
 
-            double pesoPadrao = ObterPesoPadraoKg(doc, material, categoria, volumeM3);
+            string nomeFamiliaTipo = $"{tipo?.FamilyName} {tipo?.Name}";
+            double pesoPadrao = ObterPesoPadraoKg(doc, material, categoria, volumeM3, nomeFamiliaTipo);
             if (pesoPadrao > 0.0)
-                return (pesoPadrao, ObterOrigemPesoPadrao(doc, material, categoria));
+                return (pesoPadrao, ObterOrigemPesoPadrao(doc, material, categoria, nomeFamiliaTipo));
 
             return (0.0, "sem base");
         }
@@ -1056,7 +1060,7 @@ namespace SteelBIM.Services
                     return 0.0;
 
                 double densidadeKgM3 = UnitUtils.ConvertFromInternalUnits(asset.Density, UnitTypeId.KilogramsPerCubicMeter);
-                return densidadeKgM3 > 0.0 ? densidadeKgM3 * volumeM3 : 0.0;
+                return ListaMateriaisPesoCalc.PesoKg(volumeM3, densidadeKgM3);
             }
             catch
             {
@@ -1068,16 +1072,17 @@ namespace SteelBIM.Services
             Document doc,
             Material? material,
             ListaMateriaisCategoriaLogica categoria,
-            double volumeM3)
+            double volumeM3,
+            string? nomeFamiliaTipo)
         {
             if (volumeM3 <= 0.0)
                 return 0.0;
 
-            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria);
+            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria, nomeFamiliaTipo);
             return materialBaseTipo switch
             {
-                MaterialBaseTipo.Concreto => DensidadePadraoConcretoKgM3 * volumeM3,
-                MaterialBaseTipo.Metalico => DensidadePadraoAcoKgM3 * volumeM3,
+                MaterialBaseTipo.Concreto => ListaMateriaisPesoCalc.PesoKg(volumeM3, DensidadePadraoConcretoKgM3),
+                MaterialBaseTipo.Metalico => ListaMateriaisPesoCalc.PesoKg(volumeM3, DensidadePadraoAcoKgM3),
                 _ => 0.0
             };
         }
@@ -1085,9 +1090,10 @@ namespace SteelBIM.Services
         private static string ObterOrigemPesoPadrao(
             Document doc,
             Material? material,
-            ListaMateriaisCategoriaLogica categoria)
+            ListaMateriaisCategoriaLogica categoria,
+            string? nomeFamiliaTipo)
         {
-            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria);
+            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria, nomeFamiliaTipo);
             return materialBaseTipo switch
             {
                 MaterialBaseTipo.Concreto => $"massa específica padrão ({DensidadePadraoConcretoKgM3:0} kg/m³)",
@@ -1099,23 +1105,24 @@ namespace SteelBIM.Services
         private static MaterialBaseTipo InferirMaterialBaseTipo(
             Document doc,
             Material? material,
-            ListaMateriaisCategoriaLogica categoria)
+            ListaMateriaisCategoriaLogica categoria,
+            string? nomeFamiliaTipo)
         {
             MaterialBaseTipo classificado = ClassificarMaterialBase(doc, material, categoria);
             if (classificado != MaterialBaseTipo.Outro)
                 return classificado;
 
-            string nomeMaterial = NormalizarToken(material?.Name);
-            if (nomeMaterial.Contains("concreto") || nomeMaterial.Contains("concrete"))
-                return MaterialBaseTipo.Concreto;
-
-            if (nomeMaterial.Contains("aco") || nomeMaterial.Contains("aço") || nomeMaterial.Contains("steel"))
-                return MaterialBaseTipo.Metalico;
-
-            if (categoria == ListaMateriaisCategoriaLogica.Fundacoes)
-                return MaterialBaseTipo.Concreto;
-
-            return MaterialBaseTipo.Outro;
+            // Inferencia por TEXTO (pura/testavel): nome do material E da familia/tipo (ex.: pilar
+            // "Secao retangular de concreto" sem material atribuido) + fundacao -> concreto.
+            bool isFundacao = categoria == ListaMateriaisCategoriaLogica.Fundacoes;
+            ListaMateriaisPesoCalc.BaseMaterial baseTexto =
+                ListaMateriaisPesoCalc.InferirBase(material?.Name, nomeFamiliaTipo, isFundacao);
+            return baseTexto switch
+            {
+                ListaMateriaisPesoCalc.BaseMaterial.Concreto => MaterialBaseTipo.Concreto,
+                ListaMateriaisPesoCalc.BaseMaterial.Metalico => MaterialBaseTipo.Metalico,
+                _ => MaterialBaseTipo.Outro
+            };
         }
 
         private static string MontarAssinaturaFabricacao(

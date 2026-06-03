@@ -399,6 +399,9 @@
     <!-- v2.8.11 (A6): escolha pura da marca DSTV -->
     <Compile Include="..\SteelBIM\Services\CncExport\DstvPieceMark.cs"
              Link="LinkedSources\Services\CncExport\DstvPieceMark.cs" />
+    <!-- v2.8.12 (Onda 1): peso/inferencia de base da lista de materiais -->
+    <Compile Include="..\SteelBIM\Services\ListaMateriaisPesoCalc.cs"
+             Link="LinkedSources\Services\ListaMateriaisPesoCalc.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,
