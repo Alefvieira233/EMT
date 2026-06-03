@@ -22,8 +22,11 @@ namespace SteelBIM.Tests.Services.Portico
             AlturaCentralMm = 1600.0,
             LancarTercas = true,
             EspacamentoTercasMm = 1500.0,
+            ElevacaoTercasMm = 150.0,
             ContravCobertura = false,
+            NumeroXCobertura = 2,
             ContravPilares = false,
+            NumeroXPilares = 2,
             LancarLinhaCorrente = false
         };
 
@@ -89,7 +92,7 @@ namespace SteelBIM.Tests.Services.Portico
             var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
             double meia = 15010.0 / 2.0;
             var cumeeira = r.Tercas.Single(s => s.A.YMm == meia);
-            cumeeira.A.ZMm.Should().BeApproximately(4000.0 + 1600.0, 1e-6); // beiral + B
+            cumeeira.A.ZMm.Should().BeApproximately(4000.0 + 1600.0 + 150.0, 1e-6); // beiral + B + elevacao
         }
 
         [Fact]
@@ -123,13 +126,32 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
-        public void Calcular_LinhaCorrente_TresTirantesLongitudinais()
+        public void Calcular_NumeroX_Configuravel()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.NumeroXCobertura = 3;
+            e.ContravPilares = true;
+            e.NumeroXPilares = 1;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.ContravCobertura.Should().HaveCount(12); // 3 vaos x 2 aguas x 2 diagonais
+            r.ContravPilares.Should().HaveCount(4);     // 1 vao x 2 paredes x 2 diagonais
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_SobeAAgua_NoMeioDoVao()
         {
             var e = BaseTrelica();
             e.LancarLinhaCorrente = true;
             var r = PorticoGeometriaCalculator.Calcular(e);
-            r.LinhasCorrente.Should().HaveCount(3);
-            r.LinhasCorrente.Should().OnlyContain(s => s.A.XMm == 0.0 && s.B.XMm == 30000.0);
+            // 2 aguas por vao x (N-1)=6 vaos = 12 sag-rods.
+            r.LinhasCorrente.Should().HaveCount(12);
+            // sobe a agua: X constante (meio do vao) e Y varia (do beiral a cumeeira).
+            r.LinhasCorrente.Should().OnlyContain(s => s.A.XMm == s.B.XMm && s.A.YMm != s.B.YMm);
+            // no meio do primeiro vao (entre x=0 e x=5000 -> 2500).
+            r.LinhasCorrente.Should().Contain(s => s.A.XMm == 2500.0);
+            // uma das aguas vai do beiral (y=0) ate a cumeeira (y=w/2).
+            r.LinhasCorrente.Should().Contain(s => s.A.YMm == 0.0 && s.B.YMm == 15010.0 / 2.0);
         }
 
         [Fact]
@@ -164,7 +186,7 @@ namespace SteelBIM.Tests.Services.Portico
             e.AlturaCentralMm = e.AlturaExtremidadeMm; // 600 == 600 => agua plana
             var r = PorticoGeometriaCalculator.Calcular(e);
             r.Tercas.Should().HaveCount(11);
-            r.Tercas.Should().OnlyContain(s => s.A.ZMm == 4600.0); // beiral + H, sem pico
+            r.Tercas.Should().OnlyContain(s => s.A.ZMm == 4750.0); // beiral + H + elevacao, sem pico
         }
 
         [Fact]

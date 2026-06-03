@@ -28,9 +28,12 @@ namespace SteelBIM.Services.Portico
 
         public bool LancarTercas { get; set; } = true;
         public double EspacamentoTercasMm { get; set; } = 1500.0;
+        public double ElevacaoTercasMm { get; set; } = 150.0;     // sobe a terça acima do banzo superior
 
         public bool ContravCobertura { get; set; }
+        public int NumeroXCobertura { get; set; } = 2;            // nº de vãos com X na cobertura
         public bool ContravPilares { get; set; }
+        public int NumeroXPilares { get; set; } = 2;              // nº de vãos com X nas paredes
         public bool LancarLinhaCorrente { get; set; }
     }
 
@@ -115,29 +118,29 @@ namespace SteelBIM.Services.Portico
             {
                 foreach (double y in PosicoesTercasMeiaAgua(e, w))
                 {
-                    double z = ZTopo(e, hp, w, y);
+                    double z = ZTopo(e, hp, w, y) + e.ElevacaoTercasMm;
                     tercas.Add(new Segmento(new Ponto3D(0.0, y, z), new Ponto3D(comprimento, y, z)));
 
                     double yEspelho = w - y;
                     if (Math.Abs(yEspelho - y) > Eps)
                     {
-                        double zEspelho = ZTopo(e, hp, w, yEspelho);
+                        double zEspelho = ZTopo(e, hp, w, yEspelho) + e.ElevacaoTercasMm;
                         tercas.Add(new Segmento(new Ponto3D(0.0, yEspelho, zEspelho), new Ponto3D(comprimento, yEspelho, zEspelho)));
                     }
                 }
             }
 
-            // vaos de extremidade: {0} e {n-2} (distintos so quando n >= 3).
-            var vaosExtremidade = new List<int> { 0 };
-            if (n - 2 > 0)
-                vaosExtremidade.Add(n - 2);
+            // vaos contraventados: K distribuidos uniformemente (R2), por cobertura e por pilares.
+            int nVaos = n - 1;
+            IReadOnlyList<int> vaosCobertura = DistribuirVaos(nVaos, e.NumeroXCobertura);
+            IReadOnlyList<int> vaosPilares = DistribuirVaos(nVaos, e.NumeroXPilares);
 
-            // ===== CONTRAVENTAMENTO DA COBERTURA (X no plano das aguas, vaos de extremidade) =====
+            // ===== CONTRAVENTAMENTO DA COBERTURA (X no plano das aguas) =====
             if (e.ContravCobertura)
             {
                 double zApoio = ZTopo(e, hp, w, 0.0);
                 double zCume = ZTopo(e, hp, w, w / 2.0);
-                foreach (int vao in vaosExtremidade)
+                foreach (int vao in vaosCobertura)
                 {
                     double xa = xPorticos[vao];
                     double xb = xPorticos[vao + 1];
@@ -155,7 +158,7 @@ namespace SteelBIM.Services.Portico
             // ===== CONTRAVENTAMENTO DOS PILARES (X vertical nas paredes y=0 e y=w) =====
             if (e.ContravPilares)
             {
-                foreach (int vao in vaosExtremidade)
+                foreach (int vao in vaosPilares)
                 {
                     double xa = xPorticos[vao];
                     double xb = xPorticos[vao + 1];
@@ -168,14 +171,24 @@ namespace SteelBIM.Services.Portico
                 }
             }
 
-            // ===== LINHA DE CORRENTE (tirantes longitudinais: cumeeira + meia-agua) =====
+            // ===== LINHA DE CORRENTE (sag-rods subindo a agua, no meio de cada vao) =====
+            // Liga o meio da terça (no meio do vao entre porticos) ate o meio da terça da cumeeira,
+            // por agua. Fica no nivel das terças (ZTopo + elevacao), coplanar com elas.
             if (e.LancarLinhaCorrente)
             {
-                double[] ysLinha = { w / 2.0, w / 4.0, 3.0 * w / 4.0 };
-                foreach (double y in ysLinha)
+                double meia = w / 2.0;
+                double elev = e.ElevacaoTercasMm;
+                for (int b = 0; b < xPorticos.Count - 1; b++)
                 {
-                    double z = ZTopo(e, hp, w, y);
-                    linhasCorrente.Add(new Segmento(new Ponto3D(0.0, y, z), new Ponto3D(comprimento, y, z)));
+                    double xMid = (xPorticos[b] + xPorticos[b + 1]) / 2.0;
+                    // agua 1: beiral (y=0) -> cumeeira (y=w/2).
+                    linhasCorrente.Add(new Segmento(
+                        new Ponto3D(xMid, 0.0, ZTopo(e, hp, w, 0.0) + elev),
+                        new Ponto3D(xMid, meia, ZTopo(e, hp, w, meia) + elev)));
+                    // agua 2: cumeeira -> beiral oposto (y=w).
+                    linhasCorrente.Add(new Segmento(
+                        new Ponto3D(xMid, meia, ZTopo(e, hp, w, meia) + elev),
+                        new Ponto3D(xMid, w, ZTopo(e, hp, w, w) + elev)));
                 }
             }
 
@@ -217,6 +230,33 @@ namespace SteelBIM.Services.Portico
         {
             destino.Add(new Segmento(a1, b1));
             destino.Add(new Segmento(a2, b2));
+        }
+
+        /// <summary>Ate 'quantidade' vaos (0..nVaos-1) distribuidos uniformemente; extremos
+        /// incluidos para quantidade de 2 ou mais. Vazio quando quantidade nao positiva.</summary>
+        private static IReadOnlyList<int> DistribuirVaos(int nVaos, int quantidade)
+        {
+            var ids = new List<int>();
+            if (nVaos <= 0 || quantidade <= 0)
+                return ids;
+            if (quantidade >= nVaos)
+            {
+                for (int i = 0; i < nVaos; i++)
+                    ids.Add(i);
+                return ids;
+            }
+            if (quantidade == 1)
+            {
+                ids.Add(0);
+                return ids;
+            }
+            for (int i = 0; i < quantidade; i++)
+            {
+                int idx = (int)Math.Round((double)i * (nVaos - 1) / (quantidade - 1));
+                if (!ids.Contains(idx))
+                    ids.Add(idx);
+            }
+            return ids;
         }
     }
 }
