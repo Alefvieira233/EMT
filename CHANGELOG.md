@@ -11,6 +11,23 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
 `docs/audits/SUPER-RELATORIO-2026-05-31.md`. Nota global 7,6/10, **sem P0 ativo**.
 
+**Gerar Projeto Completo (Pórtico) — 2026-06-03:**
+- Nova função-estrela: modela um galpão metálico inteiro com **1 clique** (sem nenhum pick).
+  A pessoa abre uma planta/3D, clica em **Projeto Completo** (aba *SteelBIM | Modelagem*,
+  painel *Estrutura Metálica*), preenche a janela (nº de pórticos, espaçamento, vão, beiral,
+  perfis) e a ferramenta cria pilares + treliça (ou viga) + terças + contraventamentos +
+  linha de corrente + eixos numa **única transação**, seguindo o padrão EMT.
+- Núcleo PURO `Services/Portico/PorticoGeometriaCalculator` (mm; X=comprimento, Y=vão,
+  Z=altura) com **15 testes xUnit** — toda a geometria (estações dos pórticos, pilares, eixo
+  da treliça, terças distribuídas nas águas, X de contraventamento nos vãos de extremidade,
+  tirantes longitudinais) é testada sem Revit. Plano em `docs/PLANO-GERAR-PORTICO.md`.
+- `GerarPorticoService` headless materializa tudo reusando o padrão `CriarMembro`; a treliça
+  de cada pórtico reusa o novo `TrelicaService.GerarTrelicaCompletaNoEixo` (entry sem-pick e
+  sem-transação, duas águas H/B + cumeeira/king-post). `TrelicaConfig` ganhou banzo superior
+  e inferior distintos (fallback no `SymbolBanzo`).
+- Criação de eixos (grid A-G × 1-2) e placas de base são opcionais (esta última atrás de
+  flag, default off). Build Release 0 warnings, `dotnet format` limpo, CI verde.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
