@@ -58,7 +58,8 @@ namespace SteelBIM.Tests.Models
             {
                 MarcarVigas = false,
                 MarcarPilares = false,
-                MarcarContraventamentos = false
+                MarcarContraventamentos = false,
+                MarcarFundacoes = false
             };
 
             config.TemCategoriaSelecionada().Should().BeFalse();
