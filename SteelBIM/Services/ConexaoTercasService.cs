@@ -110,10 +110,15 @@ namespace SteelBIM.Services
                     // Cruza a terça com TODAS as vigas selecionadas
                     foreach (var viga in vigaCurves)
                     {
+                        // toleranciaSegmento ~200mm: aceita cruzamentos exatamente na PONTA das
+                        // terças/vigas das extremidades (sem isso, erro de ponto-flutuante / pequeno
+                        // overhang deixava as ultimas terças da ultima viga SEM ligacao).
                         var cross = ConexaoTercasGeometry.IntersectXY(
                             ToTuple(terca.P0), ToTuple(terca.P1),
                             ToTuple(viga.Curve.GetEndPoint(0)),
-                            ToTuple(viga.Curve.GetEndPoint(1)));
+                            ToTuple(viga.Curve.GetEndPoint(1)),
+                            maxVerticalGapFt: 10.0,
+                            toleranciaSegmentoFt: 200.0 * RevitUtils.FT_PER_MM);
                         if (cross == null)
                             continue;
 
