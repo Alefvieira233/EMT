@@ -397,5 +397,27 @@ namespace SteelBIM.Tests.Services
             result.Should().NotBeNull();
             result!.Value.X.Should().BeApproximately(0, 1e-9);
         }
+
+        // v2.8.11: cruzamento na PONTA (terças/vigas das extremidades) — sem tolerancia o
+        // clamp estrito rejeitava (causa do "ultimas terças sem ligacao"); com tolerancia aceita.
+        [Fact]
+        public void IntersectXY_CruzamentoNaPonta_RejeitaSemTol_AceitaComTol()
+        {
+            // terça (0,0)->(100,0); viga vertical em X=101 (1 alem da ponta da terça) -> s=1.01
+            var terP0 = Pt(0, 0);
+            var terP1 = Pt(100, 0);
+            var vigP0 = Pt(101, -50);
+            var vigP1 = Pt(101, 50);
+
+            // clamp estrito (tol default 0): s=1.01 > 1 -> null
+            ConexaoTercasGeometry.IntersectXY(terP0, terP1, vigP0, vigP1).Should().BeNull();
+
+            // com tolerancia 2 (tolS = 2/100 = 0.02 >= 0.01): aceita; ponto fixado na ponta (s->1)
+            var r = ConexaoTercasGeometry.IntersectXY(
+                terP0, terP1, vigP0, vigP1, maxVerticalGapFt: 10.0, toleranciaSegmentoFt: 2.0);
+            r.Should().NotBeNull();
+            r!.Value.X.Should().BeApproximately(100, 1e-9);
+            r.Value.Y.Should().BeApproximately(0, 1e-9);
+        }
     }
 }

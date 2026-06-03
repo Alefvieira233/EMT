@@ -158,7 +158,8 @@ namespace SteelBIM.Services
             (double X, double Y, double Z) tercaP1,
             (double X, double Y, double Z) vigaP0,
             (double X, double Y, double Z) vigaP1,
-            double maxVerticalGapFt = 10.0)
+            double maxVerticalGapFt = 10.0,
+            double toleranciaSegmentoFt = 0.0)
         {
             double d1x = tercaP1.X - tercaP0.X;
             double d1y = tercaP1.Y - tercaP0.Y;
@@ -179,9 +180,21 @@ namespace SteelBIM.Services
             double s = (rhsX * (-d2y) - (-d2x) * rhsY) / det;
             double t = (d1x * rhsY - d1y * rhsX) / det;
 
-            // Clamping em segmentos (nao retas infinitas)
-            if (s < 0 || s > 1 || t < 0 || t > 1)
+            // Clamping em segmentos (nao retas infinitas). toleranciaSegmentoFt (em pes)
+            // vira tolerancia de PARAMETRO em cada segmento — assim cruzamentos exatamente na
+            // PONTA (s/t ~ 0 ou 1, comum nas terças/vigas das extremidades) nao sao rejeitados
+            // por erro de ponto-flutuante nem por um pequeno overhang. Default 0 = clamp estrito.
+            double lenTerca = Math.Sqrt(d1x * d1x + d1y * d1y);
+            double lenViga = Math.Sqrt(d2x * d2x + d2y * d2y);
+            double tolS = lenTerca > 1e-9 ? toleranciaSegmentoFt / lenTerca : 0.0;
+            double tolT = lenViga > 1e-9 ? toleranciaSegmentoFt / lenViga : 0.0;
+            if (s < -tolS || s > 1.0 + tolS || t < -tolT || t > 1.0 + tolT)
                 return null;
+
+            // s/t podem ter passado um pouco do segmento (dentro da tolerancia); fixa em [0,1]
+            // para o ponto cair sobre as pecas reais.
+            s = Math.Max(0.0, Math.Min(1.0, s));
+            t = Math.Max(0.0, Math.Min(1.0, t));
 
             // Ponto na terça em parametro s — preserva Z da terça (interpolando se inclinada)
             double x = tercaP0.X + s * d1x;

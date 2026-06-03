@@ -60,7 +60,10 @@ namespace SteelBIM.Services
         private const string CorCabecalhoLdm = "#A5A5A5";
         private const string CorSecaoPrimariaLdm = "#FABF8F";
         private const string CorSecaoSecundariaLdm = "#FFFF99";
-        private const double DensidadePadraoConcretoKgM3 = 25.0;
+        // Massa especifica padrao (kg/m³) usada quando o material do modelo nao tem densidade.
+        // Concreto armado: gamma ~ 25 kN/m³ ≈ 2500 kg/m³ (NBR 6118). (Antes estava 25 kg/m³ —
+        // confusao kN/m³ x kg/m³ — que deixava o peso do concreto ~100x menor.)
+        private const double DensidadePadraoConcretoKgM3 = 2500.0;
         private const double DensidadePadraoAcoKgM3 = 7850.0;
 
         private static readonly BuiltInCategory[] CategoriasPerfisConexao =
@@ -903,9 +906,10 @@ namespace SteelBIM.Services
             if (pesoPorDensidade > 0.0)
                 return (pesoPorDensidade, "densidade/volume");
 
-            double pesoPadrao = ObterPesoPadraoKg(doc, material, categoria, volumeM3);
+            string nomeFamiliaTipo = $"{tipo?.FamilyName} {tipo?.Name}";
+            double pesoPadrao = ObterPesoPadraoKg(doc, material, categoria, volumeM3, nomeFamiliaTipo);
             if (pesoPadrao > 0.0)
-                return (pesoPadrao, ObterOrigemPesoPadrao(doc, material, categoria));
+                return (pesoPadrao, ObterOrigemPesoPadrao(doc, material, categoria, nomeFamiliaTipo));
 
             return (0.0, "sem base");
         }
@@ -1056,7 +1060,7 @@ namespace SteelBIM.Services
                     return 0.0;
 
                 double densidadeKgM3 = UnitUtils.ConvertFromInternalUnits(asset.Density, UnitTypeId.KilogramsPerCubicMeter);
-                return densidadeKgM3 > 0.0 ? densidadeKgM3 * volumeM3 : 0.0;
+                return ListaMateriaisPesoCalc.PesoKg(volumeM3, densidadeKgM3);
             }
             catch
             {
@@ -1068,16 +1072,17 @@ namespace SteelBIM.Services
             Document doc,
             Material? material,
             ListaMateriaisCategoriaLogica categoria,
-            double volumeM3)
+            double volumeM3,
+            string? nomeFamiliaTipo)
         {
             if (volumeM3 <= 0.0)
                 return 0.0;
 
-            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria);
+            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria, nomeFamiliaTipo);
             return materialBaseTipo switch
             {
-                MaterialBaseTipo.Concreto => DensidadePadraoConcretoKgM3 * volumeM3,
-                MaterialBaseTipo.Metalico => DensidadePadraoAcoKgM3 * volumeM3,
+                MaterialBaseTipo.Concreto => ListaMateriaisPesoCalc.PesoKg(volumeM3, DensidadePadraoConcretoKgM3),
+                MaterialBaseTipo.Metalico => ListaMateriaisPesoCalc.PesoKg(volumeM3, DensidadePadraoAcoKgM3),
                 _ => 0.0
             };
         }
@@ -1085,9 +1090,10 @@ namespace SteelBIM.Services
         private static string ObterOrigemPesoPadrao(
             Document doc,
             Material? material,
-            ListaMateriaisCategoriaLogica categoria)
+            ListaMateriaisCategoriaLogica categoria,
+            string? nomeFamiliaTipo)
         {
-            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria);
+            MaterialBaseTipo materialBaseTipo = InferirMaterialBaseTipo(doc, material, categoria, nomeFamiliaTipo);
             return materialBaseTipo switch
             {
                 MaterialBaseTipo.Concreto => $"massa específica padrão ({DensidadePadraoConcretoKgM3:0} kg/m³)",
@@ -1099,23 +1105,24 @@ namespace SteelBIM.Services
         private static MaterialBaseTipo InferirMaterialBaseTipo(
             Document doc,
             Material? material,
-            ListaMateriaisCategoriaLogica categoria)
+            ListaMateriaisCategoriaLogica categoria,
+            string? nomeFamiliaTipo)
         {
             MaterialBaseTipo classificado = ClassificarMaterialBase(doc, material, categoria);
             if (classificado != MaterialBaseTipo.Outro)
                 return classificado;
 
-            string nomeMaterial = NormalizarToken(material?.Name);
-            if (nomeMaterial.Contains("concreto") || nomeMaterial.Contains("concrete"))
-                return MaterialBaseTipo.Concreto;
-
-            if (nomeMaterial.Contains("aco") || nomeMaterial.Contains("aço") || nomeMaterial.Contains("steel"))
-                return MaterialBaseTipo.Metalico;
-
-            if (categoria == ListaMateriaisCategoriaLogica.Fundacoes)
-                return MaterialBaseTipo.Concreto;
-
-            return MaterialBaseTipo.Outro;
+            // Inferencia por TEXTO (pura/testavel): nome do material E da familia/tipo (ex.: pilar
+            // "Secao retangular de concreto" sem material atribuido) + fundacao -> concreto.
+            bool isFundacao = categoria == ListaMateriaisCategoriaLogica.Fundacoes;
+            ListaMateriaisPesoCalc.BaseMaterial baseTexto =
+                ListaMateriaisPesoCalc.InferirBase(material?.Name, nomeFamiliaTipo, isFundacao);
+            return baseTexto switch
+            {
+                ListaMateriaisPesoCalc.BaseMaterial.Concreto => MaterialBaseTipo.Concreto,
+                ListaMateriaisPesoCalc.BaseMaterial.Metalico => MaterialBaseTipo.Metalico,
+                _ => MaterialBaseTipo.Outro
+            };
         }
 
         private static string MontarAssinaturaFabricacao(
@@ -1508,11 +1515,68 @@ namespace SteelBIM.Services
             ws.Columns().AdjustToContents();
         }
 
+        private static string ObterNomeBaseMaterial(MaterialBaseTipo baseTipo)
+        {
+            return baseTipo switch
+            {
+                MaterialBaseTipo.Metalico => "Aço",
+                MaterialBaseTipo.Concreto => "Concreto",
+                _ => "Outro"
+            };
+        }
+
+        // Aço primeiro, depois Concreto, depois Outro (ordem de exibicao no Resumo).
+        private static int OrdemBaseMaterial(MaterialBaseTipo baseTipo)
+        {
+            return baseTipo switch
+            {
+                MaterialBaseTipo.Metalico => 0,
+                MaterialBaseTipo.Concreto => 1,
+                _ => 2
+            };
+        }
+
         private static void CriarAbaResumo(XLWorkbook workbook, List<ListaMateriaisGrupo> grupos)
         {
             IXLWorksheet ws = workbook.Worksheets.Add("Resumo");
             int linha = 1;
 
+            // Onda 3: bloco no TOPO separando AÇO x CONCRETO (subtotais por base de material).
+            ws.Cell(linha, 1).Value = "Totais por base de material (Aço × Concreto)";
+            ws.Cell(linha, 1).Style.Font.Bold = true;
+            ws.Cell(linha, 1).Style.Font.FontSize = 14;
+            linha += 2;
+
+            string[] headersBase =
+            {
+                "Base",
+                "Quantidade",
+                "Comprimento total (m)",
+                "Area total (m2)",
+                "Volume total (m3)",
+                "Peso total (kg)"
+            };
+
+            for (int i = 0; i < headersBase.Length; i++)
+                ws.Cell(linha, i + 1).Value = headersBase[i];
+
+            EstilizarCabecalho(ws, linha, headersBase.Length);
+
+            int linhaBase = linha + 1;
+            foreach (var grupoBase in grupos
+                         .GroupBy(x => x.MaterialBaseTipo)
+                         .OrderBy(x => OrdemBaseMaterial(x.Key)))
+            {
+                ws.Cell(linhaBase, 1).Value = ObterNomeBaseMaterial(grupoBase.Key);
+                ws.Cell(linhaBase, 2).Value = grupoBase.Sum(x => x.Quantidade);
+                ws.Cell(linhaBase, 3).Value = grupoBase.Sum(x => x.ComprimentoTotalM);
+                ws.Cell(linhaBase, 4).Value = grupoBase.Sum(x => x.AreaTotalM2);
+                ws.Cell(linhaBase, 5).Value = grupoBase.Sum(x => x.VolumeTotalM3);
+                ws.Cell(linhaBase, 6).Value = grupoBase.Sum(x => x.PesoTotalKg);
+                linhaBase++;
+            }
+
+            linha = linhaBase + 2;
             ws.Cell(linha, 1).Value = "Totais por categoria";
             ws.Cell(linha, 1).Style.Font.Bold = true;
             ws.Cell(linha, 1).Style.Font.FontSize = 14;
