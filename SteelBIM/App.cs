@@ -328,6 +328,19 @@ namespace SteelBIM
                 "trelica_small.png"
             );
 
+            // v2.8.14: gerador de galpao completo em 1 clique (pilares + treliça/viga + terças +
+            // contraventamentos + linha de corrente) a partir de uma janela.
+            AddButton(
+                panelEstruturaMetalica,
+                "btnGerarPorticoCompleto",
+                "Projeto\nCompleto",
+                assemblyPath,
+                "SteelBIM.Commands.CmdGerarPorticoCompleto",
+                "Gera um galpão completo (pilares, treliça/viga, terças, contraventamentos e linha de corrente) a partir de uma janela, com 1 clique.",
+                "trelica_large.png",
+                "trelica_small.png"
+            );
+
             // Incorporacao Victor Final (Onda 5): Contraventamento e Placas de Base
             AddButton(
                 panelEstruturaMetalica,
