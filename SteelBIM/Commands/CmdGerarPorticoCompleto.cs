@@ -25,6 +25,7 @@ namespace SteelBIM.Commands
         {
             List<FamilySymbol> colunas = Coletar(doc, BuiltInCategory.OST_StructuralColumns);
             List<FamilySymbol> perfis = Coletar(doc, BuiltInCategory.OST_StructuralFraming);
+            List<FamilySymbol> ligacoes = ColetarConexoes(doc);
 
             if (colunas.Count == 0 || perfis.Count == 0)
             {
@@ -35,7 +36,7 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
             }
 
-            GerarPorticoWindow window = new GerarPorticoWindow(colunas, perfis);
+            GerarPorticoWindow window = new GerarPorticoWindow(colunas, perfis, ligacoes);
             if (window.ShowDialog() != true)
                 return Result.Cancelled;
 
@@ -53,6 +54,19 @@ namespace SteelBIM.Commands
                 .OfClass(typeof(FamilySymbol))
                 .OfCategory(categoria)
                 .Cast<FamilySymbol>()
+                .OrderBy(s => s.FamilyName)
+                .ThenBy(s => s.Name)
+                .ToList();
+        }
+
+        // Familias de conexao de terça: categoria cujo nome contem "onex" (Conexão/Conexión),
+        // mesmo criterio do CmdInserirConexaoTercas.
+        private static List<FamilySymbol> ColetarConexoes(Document doc)
+        {
+            return new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilySymbol))
+                .Cast<FamilySymbol>()
+                .Where(s => (s.Category?.Name ?? string.Empty).Contains("onex"))
                 .OrderBy(s => s.FamilyName)
                 .ThenBy(s => s.Name)
                 .ToList();

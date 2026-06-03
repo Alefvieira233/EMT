@@ -150,6 +150,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -163,6 +165,9 @@
                         </StackPanel>
                         <Label Grid.Row="2" Grid.Column="0" Content="Elevação sobre o banzo (mm):" VerticalAlignment="Center"/>
                         <TextBox x:Name="txtElevTercas" Grid.Row="2" Grid.Column="1" Width="80" HorizontalAlignment="Left" Margin="6 2 0 2" Text="150" ToolTip="Eleva a terça acima do banzo superior (ajuste conforme a altura do perfil)."/>
+                        <CheckBox x:Name="chkLigacaoTerca" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="Inserir ligação de terça (conexão no cruzamento com o banzo)" Margin="0 8 0 4"/>
+                        <Label Grid.Row="4" Grid.Column="0" Content="Perfil da ligação:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbLigacaoTerca" Grid.Row="4" Grid.Column="1" Margin="6 2 0 2"/>
                     </Grid>
                 </GroupBox>
 

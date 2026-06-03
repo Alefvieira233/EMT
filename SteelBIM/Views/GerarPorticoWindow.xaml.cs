@@ -16,7 +16,7 @@ namespace SteelBIM.Views
     /// </summary>
     public partial class GerarPorticoWindow : Window
     {
-        public GerarPorticoWindow(List<FamilySymbol> colunas, List<FamilySymbol> perfis)
+        public GerarPorticoWindow(List<FamilySymbol> colunas, List<FamilySymbol> perfis, List<FamilySymbol> ligacoes)
         {
             InitializeComponent();
             RevitWindowThemeService.Attach(this);
@@ -34,6 +34,7 @@ namespace SteelBIM.Views
             Popular(cmbContravCob, perfis, "BARRA");
             Popular(cmbContravPil, perfis, "BARRA");
             Popular(cmbLinha, perfis, "BARRA");
+            Popular(cmbLigacaoTerca, ligacoes, string.Empty);
 
             rbTrelica.Checked += (_, __) => AtualizarCobertura();
             rbViga.Checked += (_, __) => AtualizarCobertura();
@@ -45,6 +46,8 @@ namespace SteelBIM.Views
             chkContravPil.Unchecked += (_, __) => AtualizarHabilitacao();
             chkLinha.Checked += (_, __) => AtualizarHabilitacao();
             chkLinha.Unchecked += (_, __) => AtualizarHabilitacao();
+            chkLigacaoTerca.Checked += (_, __) => AtualizarHabilitacao();
+            chkLigacaoTerca.Unchecked += (_, __) => AtualizarHabilitacao();
 
             txtNumPorticos.TextChanged += (_, __) => AtualizarResumoGeo();
             txtEspacamento.TextChanged += (_, __) => AtualizarResumoGeo();
@@ -87,6 +90,8 @@ namespace SteelBIM.Views
                 SymbolTerca = Sym(cmbTerca),
                 EspacamentoTercasMm = NumberParsing.ParseDoubleOrDefault(txtEspTercas.Text, 1500.0),
                 ElevacaoTercasMm = NumberParsing.ParseDoubleOrDefault(txtElevTercas.Text, 150.0),
+                InserirLigacaoTerca = chkLigacaoTerca.IsChecked == true,
+                SymbolLigacaoTerca = Sym(cmbLigacaoTerca),
                 ContravCobertura = chkContravCob.IsChecked == true,
                 SymbolContravCobertura = Sym(cmbContravCob),
                 TercasPorXCobertura = ParseInt(txtNumXCobertura.Text, 2),
@@ -143,6 +148,7 @@ namespace SteelBIM.Views
             cmbContravCob.IsEnabled = chkContravCob.IsChecked == true;
             cmbContravPil.IsEnabled = chkContravPil.IsChecked == true;
             cmbLinha.IsEnabled = chkLinha.IsChecked == true;
+            cmbLigacaoTerca.IsEnabled = chkLigacaoTerca.IsChecked == true;
         }
 
         private void AtualizarResumoGeo()

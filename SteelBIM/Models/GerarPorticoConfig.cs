@@ -46,6 +46,10 @@ namespace SteelBIM.Models
         public double EspacamentoTercasMm { get; set; } = 1500.0;
         public double ElevacaoTercasMm { get; set; } = 150.0;   // eleva a terça acima do banzo superior
 
+        // Ligação de terça (opcional) — conexão inserida em cada cruzamento terça × banzo superior.
+        public bool InserirLigacaoTerca { get; set; }
+        public FamilySymbol? SymbolLigacaoTerca { get; set; }
+
         // ===== Contraventamentos =====
         public bool ContravCobertura { get; set; }
         public FamilySymbol? SymbolContravCobertura { get; set; }

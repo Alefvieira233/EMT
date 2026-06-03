@@ -60,6 +60,8 @@ namespace SteelBIM.Services.Portico
             int contravPil = 0;
             int linhas = 0;
             int placas = 0;
+            var tercaIds = new List<ElementId>();
+            var banzoSupIds = new List<ElementId>();
 
             using (Transaction t = new Transaction(doc, "Gerar Pórtico Completo"))
             {
@@ -81,7 +83,7 @@ namespace SteelBIM.Services.Portico
                     foreach (Segmento s in layout.EixosInferioresTrelica)
                     {
                         Line eixo = Line.CreateBound(ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B));
-                        membrosTrelica += trelicaService.GerarTrelicaCompletaNoEixo(doc, nivel, eixo, tc);
+                        membrosTrelica += trelicaService.GerarTrelicaCompletaNoEixo(doc, nivel, eixo, tc, banzoSupIds);
                         trelicas++;
                     }
                 }
@@ -89,7 +91,7 @@ namespace SteelBIM.Services.Portico
                 {
                     foreach (Segmento s in layout.Vigas)
                     {
-                        if (CriarBarra(doc, config.SymbolViga, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                        if (CriarBarra(doc, config.SymbolViga, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)) != null)
                             vigas++;
                     }
                 }
@@ -97,26 +99,30 @@ namespace SteelBIM.Services.Portico
                 // ===== TERÇAS (layout ja' vazio quando desligado) =====
                 foreach (Segmento s in layout.Tercas)
                 {
-                    if (CriarBarra(doc, config.SymbolTerca, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                    FamilyInstance? fiT = CriarBarra(doc, config.SymbolTerca, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B));
+                    if (fiT != null)
+                    {
                         tercas++;
+                        tercaIds.Add(fiT.Id);
+                    }
                 }
 
                 // ===== CONTRAVENTAMENTOS (cobertura + pilares) =====
                 foreach (Segmento s in layout.ContravCobertura)
                 {
-                    if (CriarBarra(doc, config.SymbolContravCobertura, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                    if (CriarBarra(doc, config.SymbolContravCobertura, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)) != null)
                         contravCob++;
                 }
                 foreach (Segmento s in layout.ContravPilares)
                 {
-                    if (CriarBarra(doc, config.SymbolContravPilares, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                    if (CriarBarra(doc, config.SymbolContravPilares, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)) != null)
                         contravPil++;
                 }
 
                 // ===== LINHA DE CORRENTE =====
                 foreach (Segmento s in layout.LinhasCorrente)
                 {
-                    if (CriarBarra(doc, config.SymbolLinhaCorrente, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                    if (CriarBarra(doc, config.SymbolLinhaCorrente, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)) != null)
                         linhas++;
                 }
 
@@ -131,6 +137,14 @@ namespace SteelBIM.Services.Portico
             if (config.LancarPlacasBase)
                 placas = LancarPlacasBase(doc);
 
+            // Ligação de terça (opcional) — fora da transacao; o ConexaoTercasService abre a sua.
+            int ligacoes = 0;
+            if (config.InserirLigacaoTerca && config.SymbolLigacaoTerca != null
+                && tercaIds.Count > 0 && banzoSupIds.Count > 0)
+            {
+                ligacoes = InserirLigacoesTerca(uidoc, doc, config.SymbolLigacaoTerca, tercaIds, banzoSupIds);
+            }
+
             string resumo = $"Pórtico gerado.\nPilares: {pilares}";
             if (config.UsarTrelica)
                 resumo += $"\nTreliças: {trelicas} ({membrosTrelica} membros)";
@@ -143,10 +157,12 @@ namespace SteelBIM.Services.Portico
                 resumo += $"\nLinha de corrente: {linhas}";
             if (config.LancarPlacasBase)
                 resumo += $"\nPlacas de base: {placas}";
+            if (config.InserirLigacaoTerca)
+                resumo += $"\nLigações de terça: {ligacoes} terça(s) processada(s)";
 
             Logger.Info(
-                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L} placas={Pl}",
-                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas, placas);
+                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L} placas={Pl} ligacoes={Lg}",
+                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas, placas, ligacoes);
             AppDialogService.ShowInfo("Gerar Pórtico", resumo, "Concluído");
         }
 
@@ -233,7 +249,7 @@ namespace SteelBIM.Services.Portico
 
             bool ehColuna = symbol.Category?.Id.Value == (long)BuiltInCategory.OST_StructuralColumns;
             if (!ehColuna)
-                return CriarBarra(doc, symbol, nivel, baseP, topo); // perfil nao-coluna: vira viga reta
+                return CriarBarra(doc, symbol, nivel, baseP, topo) != null; // perfil nao-coluna: vira viga reta
 
             try
             {
@@ -255,27 +271,27 @@ namespace SteelBIM.Services.Portico
             }
         }
 
-        private static bool CriarBarra(Document doc, FamilySymbol? symbol, Level nivel, XYZ a, XYZ b)
+        private static FamilyInstance? CriarBarra(Document doc, FamilySymbol? symbol, Level nivel, XYZ a, XYZ b)
         {
             if (symbol == null || a.DistanceTo(b) < RevitUtils.EPS)
-                return false;
+                return null;
 
             try
             {
                 Line line = Line.CreateBound(a, b);
                 FamilyInstance fi = doc.Create.NewFamilyInstance(line, symbol, nivel, StructuralType.Beam);
                 if (fi == null)
-                    return false;
+                    return null;
 
                 RevitUtils.DisallowJoins(fi);
-                return true;
+                return fi;
             }
             catch (Exception ex)
             {
                 // perfil incompativel (ex.: familia point-based escolhida para um membro reto):
                 // pula este membro sem abortar a transacao inteira.
                 Logger.Warn(ex, "[GerarPortico] falha ao criar barra com {Familia}", symbol.FamilyName);
-                return false;
+                return null;
             }
         }
 
@@ -387,6 +403,43 @@ namespace SteelBIM.Services.Portico
             catch (Exception ex)
             {
                 Logger.Warn(ex, "[GerarPortico] falha ao lançar placas de base");
+                return 0;
+            }
+        }
+
+        // ===== Ligação de terça (opcional) — reusa ConexaoTercasService headless =====
+        private static int InserirLigacoesTerca(UIDocument uidoc, Document doc, FamilySymbol symbol,
+            List<ElementId> tercaIds, List<ElementId> banzoSupIds)
+        {
+            try
+            {
+                if (!symbol.IsActive)
+                {
+                    using (Transaction t = new Transaction(doc, "Ativar conexão de terça"))
+                    {
+                        t.Start();
+                        symbol.Activate();
+                        doc.Regenerate();
+                        t.Commit();
+                    }
+                }
+
+                List<Reference> tercasRefs = tercaIds.Select(id => new Reference(doc.GetElement(id))).ToList();
+                List<Reference> vigasRefs = banzoSupIds.Select(id => new Reference(doc.GetElement(id))).ToList();
+                ConexaoTercasConfig cfg = new ConexaoTercasConfig
+                {
+                    SymbolSelecionado = symbol,
+                    ColocarExtremidades = true,
+                    ColocarMeio = false,
+                    Referencia = ReferenciaChapa.Cruzamento,
+                    VigasRefs = vigasRefs
+                };
+                new ConexaoTercasService().Executar(uidoc, doc, cfg, tercasRefs);
+                return tercasRefs.Count;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[GerarPortico] falha ao inserir ligações de terça");
                 return 0;
             }
         }
