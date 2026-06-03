@@ -180,12 +180,12 @@
                         </Grid.ColumnDefinitions>
                         <CheckBox x:Name="chkContravCob" Grid.Row="0" Grid.Column="0" Content="Plano da cobertura" VerticalAlignment="Center" Margin="0 2 0 4"/>
                         <ComboBox x:Name="cmbContravCob" Grid.Row="0" Grid.Column="1" Margin="6 2 0 4"/>
-                        <Label Grid.Row="0" Grid.Column="2" Content="Nº X:" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                        <TextBox x:Name="txtNumXCobertura" Grid.Row="0" Grid.Column="3" Margin="0 2 0 4" Text="2"/>
+                        <Label Grid.Row="0" Grid.Column="2" Content="X a cada (terças):" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumXCobertura" Grid.Row="0" Grid.Column="3" Margin="0 2 0 4" Text="2" ToolTip="1 X de contraventamento a cada N terças (ex.: 2 ou 3)."/>
                         <CheckBox x:Name="chkContravPil" Grid.Row="1" Grid.Column="0" Content="Plano dos pilares (lateral)" VerticalAlignment="Center" Margin="0 2 0 2"/>
                         <ComboBox x:Name="cmbContravPil" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2"/>
-                        <Label Grid.Row="1" Grid.Column="2" Content="Nº X:" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                        <TextBox x:Name="txtNumXPilares" Grid.Row="1" Grid.Column="3" Margin="0 2 0 2" Text="2"/>
+                        <Label Grid.Row="1" Grid.Column="2" Content="Nº de vãos:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumXPilares" Grid.Row="1" Grid.Column="3" Margin="0 2 0 2" Text="2" ToolTip="Nº de vãos (entre pilares) que recebem X vertical."/>
                     </Grid>
                 </GroupBox>
 
@@ -194,9 +194,13 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="230"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="55"/>
                         </Grid.ColumnDefinitions>
                         <CheckBox x:Name="chkLinha" Grid.Column="0" Content="Lançar linha de corrente" VerticalAlignment="Center"/>
                         <ComboBox x:Name="cmbLinha" Grid.Column="1" Margin="6 2 0 2"/>
+                        <Label Grid.Column="2" Content="Nº fileiras:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumLinhasCorrente" Grid.Column="3" Margin="0 2 0 2" Text="3" ToolTip="Nº de fileiras de linha de corrente distribuídas ao longo do galpão."/>
                     </Grid>
                 </GroupBox>
 

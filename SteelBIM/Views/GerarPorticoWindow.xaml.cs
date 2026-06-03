@@ -95,6 +95,7 @@ namespace SteelBIM.Views
                 NumeroXPilares = ParseInt(txtNumXPilares.Text, 2),
                 LancarLinhaCorrente = chkLinha.IsChecked == true,
                 SymbolLinhaCorrente = Sym(cmbLinha),
+                NumeroLinhasCorrente = ParseInt(txtNumLinhasCorrente.Text, 3),
                 CriarEixos = chkEixos.IsChecked == true,
                 LancarPlacasBase = chkPlacas.IsChecked == true
             };
