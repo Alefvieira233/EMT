@@ -51,6 +51,10 @@ namespace SteelBIM.Services.Portico
             int trelicas = 0;
             int membrosTrelica = 0;
             int vigas = 0;
+            int tercas = 0;
+            int contravCob = 0;
+            int contravPil = 0;
+            int linhas = 0;
 
             using (Transaction t = new Transaction(doc, "Gerar Pórtico Completo"))
             {
@@ -85,6 +89,36 @@ namespace SteelBIM.Services.Portico
                     }
                 }
 
+                // ===== TERÇAS (layout ja' vazio quando desligado) =====
+                foreach (Segmento s in layout.Tercas)
+                {
+                    if (CriarBarra(doc, config.SymbolTerca, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                        tercas++;
+                }
+
+                // ===== CONTRAVENTAMENTOS (cobertura + pilares) =====
+                foreach (Segmento s in layout.ContravCobertura)
+                {
+                    if (CriarBarra(doc, config.SymbolContravCobertura, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                        contravCob++;
+                }
+                foreach (Segmento s in layout.ContravPilares)
+                {
+                    if (CriarBarra(doc, config.SymbolContravPilares, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                        contravPil++;
+                }
+
+                // ===== LINHA DE CORRENTE =====
+                foreach (Segmento s in layout.LinhasCorrente)
+                {
+                    if (CriarBarra(doc, config.SymbolLinhaCorrente, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                        linhas++;
+                }
+
+                // ===== EIXOS (grid A-G x 1-2) =====
+                if (config.CriarEixos)
+                    CriarEixos(doc, layout);
+
                 t.Commit();
             }
 
@@ -93,9 +127,15 @@ namespace SteelBIM.Services.Portico
                 resumo += $"\nTreliças: {trelicas} ({membrosTrelica} membros)";
             else
                 resumo += $"\nVigas: {vigas}";
+            resumo += $"\nTerças: {tercas}";
+            if (contravCob > 0 || contravPil > 0)
+                resumo += $"\nContraventamentos: {contravCob + contravPil}";
+            if (linhas > 0)
+                resumo += $"\nLinha de corrente: {linhas}";
 
-            Logger.Info("[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V}",
-                pilares, trelicas, membrosTrelica, vigas);
+            Logger.Info(
+                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L}",
+                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas);
             AppDialogService.ShowInfo("Gerar Pórtico", resumo, "Concluído");
         }
 
@@ -231,6 +271,60 @@ namespace SteelBIM.Services.Portico
             {
                 // familia sem o parametro: ignora.
             }
+        }
+
+        // ===== Eixos (grid) =====
+        private static void CriarEixos(Document doc, PorticoLayout layout)
+        {
+            if (layout.XPorticosMm.Count == 0 || layout.YEixosMm.Count < 2)
+                return;
+
+            double comprimentoFt = layout.XPorticosMm[layout.XPorticosMm.Count - 1] * FtPerMm;
+            double larguraFt = layout.YEixosMm[layout.YEixosMm.Count - 1] * FtPerMm;
+
+            // Letras (A, B, ...) — uma por portico, na direcao do vao (Y).
+            for (int i = 0; i < layout.XPorticosMm.Count; i++)
+            {
+                double xFt = layout.XPorticosMm[i] * FtPerMm;
+                CriarGrid(doc, new XYZ(xFt, 0.0, 0.0), new XYZ(xFt, larguraFt, 0.0), LetraEixo(i));
+            }
+
+            // Numeros (1, 2) — nas duas linhas de apoio (y=0 e y=vao), na direcao do comprimento (X).
+            for (int j = 0; j < layout.YEixosMm.Count; j++)
+            {
+                double yFt = layout.YEixosMm[j] * FtPerMm;
+                CriarGrid(doc, new XYZ(0.0, yFt, 0.0), new XYZ(comprimentoFt, yFt, 0.0), (j + 1).ToString());
+            }
+        }
+
+        private static void CriarGrid(Document doc, XYZ a, XYZ b, string nome)
+        {
+            if (a.DistanceTo(b) < RevitUtils.EPS)
+                return;
+
+            try
+            {
+                Grid grid = Grid.Create(doc, Line.CreateBound(a, b));
+                try
+                {
+                    grid.Name = nome;
+                }
+                catch
+                {
+                    // nome ja' em uso: mantem o gerado pelo Revit.
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[GerarPortico] falha ao criar eixo {Nome}", nome);
+            }
+        }
+
+        private static string LetraEixo(int indice)
+        {
+            if (indice < 26)
+                return ((char)('A' + indice)).ToString();
+            return "E" + (indice + 1);
         }
     }
 }
