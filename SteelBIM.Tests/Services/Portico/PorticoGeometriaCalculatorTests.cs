@@ -72,6 +72,8 @@ namespace SteelBIM.Tests.Services.Portico
         {
             var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
             r.Tercas.Should().NotBeEmpty();
+            // 6 posicoes na meia-agua (j=0..5) + 5 espelhos (a cumeeira nao duplica) = 11.
+            r.Tercas.Should().HaveCount(11);
             r.Tercas.Should().OnlyContain(s => s.A.XMm == 0.0 && s.B.XMm == 30000.0);
             r.Tercas.Should().OnlyContain(s => s.A.YMm == s.B.YMm && s.A.ZMm == s.B.ZMm);
 
@@ -161,6 +163,7 @@ namespace SteelBIM.Tests.Services.Portico
             var e = BaseTrelica();
             e.AlturaCentralMm = e.AlturaExtremidadeMm; // 600 == 600 => agua plana
             var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Tercas.Should().HaveCount(11);
             r.Tercas.Should().OnlyContain(s => s.A.ZMm == 4600.0); // beiral + H, sem pico
         }
 

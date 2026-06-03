@@ -227,15 +227,24 @@ namespace SteelBIM.Services.Portico
             if (!ehColuna)
                 return CriarBarra(doc, symbol, nivel, baseP, topo); // perfil nao-coluna: vira viga reta
 
-            FamilyInstance fi = doc.Create.NewFamilyInstance(baseP, symbol, nivel, StructuralType.Column);
-            if (fi == null)
-                return false;
+            try
+            {
+                FamilyInstance fi = doc.Create.NewFamilyInstance(baseP, symbol, nivel, StructuralType.Column);
+                if (fi == null)
+                    return false;
 
-            SetParamId(fi, BuiltInParameter.FAMILY_BASE_LEVEL_PARAM, nivel.Id);
-            SetParamId(fi, BuiltInParameter.FAMILY_TOP_LEVEL_PARAM, nivel.Id);
-            SetParamDouble(fi, BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM, baseP.Z - nivel.Elevation);
-            SetParamDouble(fi, BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM, topo.Z - nivel.Elevation);
-            return true;
+                SetParamId(fi, BuiltInParameter.FAMILY_BASE_LEVEL_PARAM, nivel.Id);
+                SetParamId(fi, BuiltInParameter.FAMILY_TOP_LEVEL_PARAM, nivel.Id);
+                SetParamDouble(fi, BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM, baseP.Z - nivel.Elevation);
+                SetParamDouble(fi, BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM, topo.Z - nivel.Elevation);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // familia incompativel para coluna: isola o erro sem abortar a geracao inteira.
+                Logger.Warn(ex, "[GerarPortico] falha ao criar pilar com {Familia}", symbol.FamilyName);
+                return false;
+            }
         }
 
         private static bool CriarBarra(Document doc, FamilySymbol? symbol, Level nivel, XYZ a, XYZ b)
@@ -243,13 +252,23 @@ namespace SteelBIM.Services.Portico
             if (symbol == null || a.DistanceTo(b) < RevitUtils.EPS)
                 return false;
 
-            Line line = Line.CreateBound(a, b);
-            FamilyInstance fi = doc.Create.NewFamilyInstance(line, symbol, nivel, StructuralType.Beam);
-            if (fi == null)
-                return false;
+            try
+            {
+                Line line = Line.CreateBound(a, b);
+                FamilyInstance fi = doc.Create.NewFamilyInstance(line, symbol, nivel, StructuralType.Beam);
+                if (fi == null)
+                    return false;
 
-            RevitUtils.DisallowJoins(fi);
-            return true;
+                RevitUtils.DisallowJoins(fi);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // perfil incompativel (ex.: familia point-based escolhida para um membro reto):
+                // pula este membro sem abortar a transacao inteira.
+                Logger.Warn(ex, "[GerarPortico] falha ao criar barra com {Familia}", symbol.FamilyName);
+                return false;
+            }
         }
 
         // ===== Helpers =====
