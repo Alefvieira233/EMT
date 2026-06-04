@@ -410,10 +410,12 @@ namespace SteelBIM.Services.Portico
                 if (l < RevitUtils.EPS || w < RevitUtils.EPS || t < RevitUtils.EPS)
                     return false;
 
-                XYZ p0 = new XYZ(topo.X - l / 2.0, topo.Y - w / 2.0, topo.Z);
-                XYZ p1 = new XYZ(topo.X + l / 2.0, topo.Y - w / 2.0, topo.Z);
-                XYZ p2 = new XYZ(topo.X + l / 2.0, topo.Y + w / 2.0, topo.Z);
-                XYZ p3 = new XYZ(topo.X - l / 2.0, topo.Y + w / 2.0, topo.Z);
+                // chapa assenta NO topo do pilar: base em topo.Z - t, extrusao +t -> topo da chapa = topo do pilar.
+                double zBase = topo.Z - t;
+                XYZ p0 = new XYZ(topo.X - l / 2.0, topo.Y - w / 2.0, zBase);
+                XYZ p1 = new XYZ(topo.X + l / 2.0, topo.Y - w / 2.0, zBase);
+                XYZ p2 = new XYZ(topo.X + l / 2.0, topo.Y + w / 2.0, zBase);
+                XYZ p3 = new XYZ(topo.X - l / 2.0, topo.Y + w / 2.0, zBase);
                 CurveLoop loop = new CurveLoop();
                 loop.Append(Line.CreateBound(p0, p1));
                 loop.Append(Line.CreateBound(p1, p2));

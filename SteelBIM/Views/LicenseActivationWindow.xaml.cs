@@ -159,12 +159,12 @@ namespace SteelBIM.Views
                 {
                     case UpdateCheckOutcome.UpdateAvailable:
                         ExibirInfoUpdate($"Versao nova disponivel: {result.LatestVersion}. Abrir pagina de release?");
-                        if (MessageBox.Show(
-                                this,
+                        if (AppDialogService.ShowConfirmation(
+                                "Atualizacao disponivel",
                                 $"Versao {result.LatestVersion} disponivel. Abrir a pagina de release no navegador?\n\nO download manual eh seguro; o auto-download em background sera implementado em v1.7.x.",
                                 "Atualizacao disponivel",
-                                MessageBoxButton.YesNo,
-                                MessageBoxImage.Information) == MessageBoxResult.Yes
+                                "Abrir release",
+                                "Agora nao")
                             && !string.IsNullOrEmpty(result.ReleaseUrl))
                         {
                             try

@@ -265,6 +265,21 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     linkados nos testes; usar `RevitUtils.EPS` (Revit-bound) quebraria a compilação do projeto de
     testes. Será feito por-arquivo só nos Revit-bound, com validação.
 
+- **Auditoria 2026-06-05 — Onda 3 (decisões do usuário) — v2.8.37:**
+  - **Chapa de topo do pilar** agora **assenta no topo** (extrusão para baixo: topo da chapa = topo
+    do pilar), em vez de crescer para cima invadindo a treliça.
+  - **Janelas WPF** recebem o **Owner do Revit** (best-effort via MainWindowHandle do processo, com
+    try/catch) — corrige "janela aparece atrás do Revit". Aplicado no ponto único
+    `RevitWindowThemeService.Attach` (todas as janelas herdam).
+  - **Lista de materiais:** DirectShape genérico só entra se o **nome contiver "chapa"/"placa"**
+    (evita capturar sólidos auxiliares).
+  - **Licença:** `MessageBox` do aviso de atualização trocado por `AppDialogService.ShowConfirmation`
+    (conformidade com o padrão de diálogos).
+  - **Mantidos por decisão de engenharia (não alterados às cegas):** sinal da inclinação da terça
+    (sem defeito confirmado; o checkbox "Inverter abertura das terças" já permite ajustar) e a área
+    de pintura (mantida como superfície desenvolvida; união booleana seria frágil e não resolveria
+    faces internas) — ambos a validar no Revit.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

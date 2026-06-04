@@ -424,9 +424,16 @@ namespace SteelBIM.Services
                 return ListaMateriaisCategoriaLogica.ChapasConexoes;
 
             // Chapas criadas pela ferramenta como DirectShape (ex.: chapa de topo do pilar) entram
-            // como chapa/acessorio metalico. So' DirectShape — evita poluir com genericos carregaveis.
+            // como chapa/acessorio metalico. So' DirectShape cujo nome indique chapa/placa — evita
+            // capturar solidos genericos que nao sao chapas de aco.
             if (categoria == BuiltInCategory.OST_GenericModel && elemento is DirectShape)
-                return ListaMateriaisCategoriaLogica.ChapasConexoes;
+            {
+                string nomeDs = elemento.Name ?? string.Empty;
+                if (nomeDs.IndexOf("chapa", StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+                    nomeDs.IndexOf("placa", StringComparison.CurrentCultureIgnoreCase) >= 0)
+                    return ListaMateriaisCategoriaLogica.ChapasConexoes;
+                return null;
+            }
 
             return null;
         }
