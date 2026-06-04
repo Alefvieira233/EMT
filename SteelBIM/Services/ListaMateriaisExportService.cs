@@ -1833,6 +1833,16 @@ namespace SteelBIM.Services
             AplicarEstiloLinhaLdm(ws, linha, null, false);
         }
 
+        // Linha de TOTAL de uma secao (negrito, fundo cinza claro) — padrao de lista de material.
+        private static void EscreverLinhaTotalLdm(IXLWorksheet ws, int linha, string rotulo, string unidade, double total)
+        {
+            ws.Cell(linha, 1).Value = string.Empty;
+            ws.Cell(linha, 2).Value = rotulo;
+            ws.Cell(linha, 3).Value = unidade;
+            ws.Cell(linha, 4).Value = total;
+            AplicarEstiloLinhaLdm(ws, linha, "D9D9D9", true);
+        }
+
         private static void AplicarEstiloLinhaLdm(IXLWorksheet ws, int linha, string? corHex, bool negrito)
         {
             IXLRange range = ws.Range(linha, 1, linha, 4);
@@ -1902,6 +1912,7 @@ namespace SteelBIM.Services
                 foreach (ListaBaseLinha item in concretos)
                     EscreverLinhaItemLdm(ws, linha++, $"1.1.{indice++}", item);
 
+                EscreverLinhaTotalLdm(ws, linha++, "TOTAL ESTRUTURA DE CONCRETO", "m³", concretos.Sum(c => c.Quantidade));
                 linha++;
             }
 
@@ -1920,6 +1931,7 @@ namespace SteelBIM.Services
                 foreach (ListaBaseLinha item in metalicos)
                     EscreverLinhaItemLdm(ws, linha++, $"2.1.{indice++}", item);
 
+                EscreverLinhaTotalLdm(ws, linha++, "TOTAL ESTRUTURA METÁLICA", "kg", metalicos.Sum(m => m.Quantidade));
                 linha++;
             }
 

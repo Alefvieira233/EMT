@@ -214,6 +214,12 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   quando não há kg/m). Testes puros novos. (Ondas 2–4 — planilha profissional, fundação/chapas,
   escopo — no plano.)
 
+- **Lista de Materiais — Onda 2 (totais por seção) — 2026-06-04 — v2.8.32:** a Planilha Base ganha
+  **linhas de TOTAL** ao fim de cada seção — **TOTAL ESTRUTURA DE CONCRETO (m³)** e **TOTAL ESTRUTURA
+  METÁLICA (kg)** — em negrito com fundo cinza, no padrão de lista de material de escritório. A seção
+  metálica já lista o peso por perfil/bitola; agora soma o total geral. Adição puramente aditiva
+  (novo helper `EscreverLinhaTotalLdm`), sem mexer nas abas Detalhe/Resumo.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
