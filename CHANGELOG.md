@@ -53,6 +53,15 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   por fundação e reportando "X armadas / Y puladas". Também: **pilar central** opcional (Onda P)
   e **ajuste fino da ligação de terça** (offset Z/lateral + inverter face, Onda O).
 
+- **Contrav. cobertura distribuível + correção da armadura de fundação (2026-06-04) — v2.8.19:**
+  (1) novo campo **"Contrav. cobertura em:"** (Só extremidades / Extremidades + centro / Todos os
+  vãos) — antes o contraventamento de cobertura ficava fixo nas extremidades; agora distribui os
+  vãos via `DistribuirVaos` (2 / 4 / todos). (2) **Armadura de fundação agora SAI** — corrigido bug
+  em que a config ia com `BarTypeName` vazio e o gerador pulava toda a malha; o serviço resolve um
+  `RebarBarType` real do projeto e monta o **padrão de sapata isolada** (malha inferior X+Y por
+  espaçamento 15 cm, cobrimento 5 cm, gancho 10 cm para cima nas pontas). Diagnóstico claro no
+  resumo quando não dá (família não aceita armadura / sem RebarBarType no projeto).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
