@@ -341,35 +341,6 @@ namespace SteelBIM.Services.Trelica
         /// <summary>
         /// Obtem o nome do perfil (tipo) a partir de parametros do elemento.
         /// </summary>
-        private string ObterNomePerfil(FamilyInstance fi)
-        {
-            try
-            {
-                // 1) Tentar parametro shared EMT_Perfil (se existir no projeto)
-                var paramShared = fi.LookupParameter("EMT_Perfil");
-                if (paramShared != null && paramShared.StorageType == StorageType.String)
-                {
-                    string val = paramShared.AsString();
-                    if (!string.IsNullOrWhiteSpace(val))
-                        return val;
-                }
-
-                // 2) Fallback: nome do tipo (FamilySymbol.Name)
-                string typeName = fi.Symbol?.Name ?? "";
-                if (!string.IsNullOrWhiteSpace(typeName))
-                    return typeName;
-
-                // 3) Fallback: nome da familia (via Symbol.Family, FamilyInstance nao expoe .Family diretamente)
-                string familyName = fi.Symbol?.Family?.Name ?? "";
-                if (!string.IsNullOrWhiteSpace(familyName))
-                    return familyName;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "[{Title}] erro obtendo nome do perfil para {BarraId}", Titulo, fi.Id);
-            }
-
-            return "-";
-        }
+        private string ObterNomePerfil(FamilyInstance fi) => PerfilNomeResolver.ObterNomePerfil(fi, Titulo);
     }
 }

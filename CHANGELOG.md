@@ -255,6 +255,16 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   - **Observabilidade:** `catch {}` vazios viram `Logger.Warn` em `ConexaoTercasService` (projeção) e
     `CoroamentoCageService` (diâmetro do estribo).
 
+- **Auditoria 2026-06-05 — Onda 2 (limpezas seguras) — v2.8.36:**
+  - **ConexaoConfigWindow:** acaba a **perda silenciosa de sub-config** — se um bloco (chapa de
+    ponta/cantoneira/gusset) for preenchido parcialmente ou com valor inválido, agora avisa e
+    cancela em vez de gerar a conexão sem a chapa; bloco totalmente vazio continua opcional.
+  - **`ObterNomePerfil` duplicado** (TagearTrelicaService ≡ IdentificarPerfilService) extraído para
+    `PerfilNomeResolver`; ambos delegam (fonte única).
+  - **Item 12 (1e-9 → RevitUtils.EPS) deferido:** a maioria dos literais está em helpers PUROS
+    linkados nos testes; usar `RevitUtils.EPS` (Revit-bound) quebraria a compilação do projeto de
+    testes. Será feito por-arquivo só nos Revit-bound, com validação.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
