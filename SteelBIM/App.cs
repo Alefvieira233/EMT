@@ -923,6 +923,19 @@ namespace SteelBIM
                 "broom_small.png"
             );
 
+            // v2.8.26: quantitativo de pintura calculado pela geometria (perimetro x comprimento),
+            // gravado no parametro EMT_Area_Pintura + tabela. Funciona sem material aplicado.
+            AddButton(
+                panelVerificacao,
+                "btnAreaPintura",
+                "Área de\nPintura",
+                assemblyPath,
+                "SteelBIM.Commands.CmdAreaPintura",
+                "Calcula a área de pintura dos perfis metálicos pela geometria (perímetro × comprimento), grava no parâmetro EMT_Area_Pintura e cria a tabela de quantitativo. Funciona mesmo sem material aplicado.",
+                "table_large.png",
+                "table_small.png"
+            );
+
             // --- Licença ---
             AddStackedButtons(
                 panelLicenca,

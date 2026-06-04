@@ -144,6 +144,17 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   H/B (treliça) ou da cumeeira (viga). `CriarBarra` ganhou parâmetro opcional de rotação (default 0,
   demais membros inalterados). Testes puros do ângulo (águas opostas simétricas, banzos paralelos 0).
 
+- **Quantitativo de Área de Pintura (novo comando) — 2026-06-04 — v2.8.26:** novo botão
+  **"Área de Pintura"** (aba *SteelBIM | Detalhamento*, painel *Verificação*) que calcula a área de
+  pintura dos perfis metálicos (vigas + pilares) **pela geometria** (soma das faces do sólido,
+  descontando as faces de topo das barras + 5% para parafusos/folgas) — **funciona mesmo sem
+  material aplicado**, resolvendo a causa-raiz do "Material:Área = 0". Grava num parâmetro de
+  projeto **`EMT_Area_Pintura`** (tipo Área, instância, criado automaticamente nas categorias
+  estruturais) e cria/atualiza a **tabela** de quantitativo (ViewSchedule por categoria). A área
+  total aparece no resumo do comando. Núcleo de cálculo puro (`PinturaFormula`) com testes xUnit
+  (classificação de face de topo, desconto de topos + percentual, clamps). Reúsa
+  `EngineerGeometry.GetAllSolidsFine` e o padrão de criação de parâmetro de `PlanoMontagemService`.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
