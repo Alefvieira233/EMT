@@ -115,7 +115,14 @@ jobs:
           $stage = "artifacts/SteelBIM-plugin"
           New-Item -ItemType Directory -Force -Path "$stage/SteelBIM" | Out-Null
           Copy-Item "$bin/*" "$stage/SteelBIM/" -Recurse -Force
-          Copy-Item "SteelBIM.addin" "$stage/" -Force
+          # O .addin do repo e um TEMPLATE com <Assembly>%AppData%\...\SteelBIM.dll</Assembly>.
+          # O Revit NAO expande %AppData% no <Assembly> (trata como pasta literal -> "nao existe").
+          # Para o pacote "baixar e arrastar", reescrevemos para um caminho RELATIVO, que o Revit
+          # resolve em relacao a propria pasta do .addin (Addins\2025\) -> Addins\2025\SteelBIM\SteelBIM.dll.
+          $addinDst = "$stage/SteelBIM.addin"
+          (Get-Content "SteelBIM.addin" -Raw) `
+            -replace '<Assembly>.*?</Assembly>', '<Assembly>SteelBIM\SteelBIM.dll</Assembly>' `
+            | Set-Content -Encoding UTF8 $addinDst
           @"
           SteelBIM - instalacao manual (sem compilar)
 
@@ -123,7 +130,7 @@ jobs:
           2) Abra o Explorer e cole na barra de endereco:
                %AppData%\Autodesk\Revit\Addins\2025
              (crie a pasta '2025' se nao existir).
-          3) Copie para dentro dela os DOIS itens deste pacote:
+          3) Copie para dentro dela os DOIS itens deste pacote, lado a lado:
                - o arquivo  SteelBIM.addin
                - a pasta     SteelBIM\  (contem SteelBIM.dll e dependencias)
              O resultado deve ficar exatamente:
@@ -131,8 +138,8 @@ jobs:
                ...\Addins\2025\SteelBIM\SteelBIM.dll
           4) Abra o Revit 2025 e confirme a versao em SteelBIM > Sobre.
 
-          Observacao: o caminho %AppData% e expandido pelo proprio Revit;
-          nao precisa editar o SteelBIM.addin.
+          Observacao: este SteelBIM.addin usa caminho RELATIVO (SteelBIM\SteelBIM.dll),
+          entao o .addin e a pasta SteelBIM\ precisam ficar JUNTOS na mesma pasta (Addins\2025).
           "@ | Set-Content -Encoding UTF8 "$stage/LEIA-ME-INSTALACAO.txt"
 
       - name: Upload plugin artifact (baixavel)
