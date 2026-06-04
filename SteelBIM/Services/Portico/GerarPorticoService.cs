@@ -163,8 +163,28 @@ namespace SteelBIM.Services.Portico
                 t.Commit();
             }
 
+            // Fundações (opcional) — sapata sob cada pilar; reusa PfFoundationPlacementService.
+            // Lançadas ANTES das placas de base: a placa só assenta onde há concreto/apoio abaixo.
+            int fundacoes = 0;
+            List<ElementId> fundacoesCriadas = new List<ElementId>();
+            if (config.LancarFundacoes && config.SymbolFundacao != null && pilarIds.Count > 0)
+            {
+                fundacoesCriadas = LancarFundacoes(uidoc, doc, config.SymbolFundacao, pilarIds);
+                fundacoes = fundacoesCriadas.Count;
+            }
+
+            // Armadura de fundação (opt-in, best-effort) — depende de a familia aceitar armadura.
+            int fundArmadas = 0;
+            int fundPuladas = 0;
+            string fundMotivo = string.Empty;
+            if (config.LancarArmaduraFundacao && fundacoesCriadas.Count > 0)
+            {
+                (fundArmadas, fundPuladas, fundMotivo) = ArmarFundacoes(uidoc, doc, fundacoesCriadas);
+            }
+
             // Placas de base (opcional) — fora da transacao acima; o servico abre a sua propria.
-            // Restringe aos pilares recem-criados (nao mexe em pilares antigos do modelo).
+            // Restringe aos pilares recem-criados; so' assenta onde ha concreto/fundacao abaixo
+            // (por isso vem DEPOIS das fundacoes).
             if (config.LancarPlacasBase)
                 placas = LancarPlacasBase(doc, pilarIds);
 
@@ -190,24 +210,6 @@ namespace SteelBIM.Services.Portico
                     Logger.Info("[GerarPortico] ligacao de terca pulada: {Motivo}", ligacaoMotivo);
             }
 
-            // Fundações (opcional) — sapata sob cada pilar; reusa PfFoundationPlacementService.
-            int fundacoes = 0;
-            List<ElementId> fundacoesCriadas = new List<ElementId>();
-            if (config.LancarFundacoes && config.SymbolFundacao != null && pilarIds.Count > 0)
-            {
-                fundacoesCriadas = LancarFundacoes(uidoc, doc, config.SymbolFundacao, pilarIds);
-                fundacoes = fundacoesCriadas.Count;
-            }
-
-            // Armadura de fundação (opt-in, best-effort) — depende de a familia aceitar armadura.
-            int fundArmadas = 0;
-            int fundPuladas = 0;
-            string fundMotivo = string.Empty;
-            if (config.LancarArmaduraFundacao && fundacoesCriadas.Count > 0)
-            {
-                (fundArmadas, fundPuladas, fundMotivo) = ArmarFundacoes(uidoc, doc, fundacoesCriadas);
-            }
-
             string resumo = $"Pórtico gerado.\nPilares: {pilares}";
             if (config.UsarTrelica)
                 resumo += $"\nTreliças: {trelicas} ({membrosTrelica} membros)";
@@ -216,10 +218,14 @@ namespace SteelBIM.Services.Portico
             resumo += $"\nTerças: {tercas}";
             if (contravCob > 0 || contravPil > 0)
                 resumo += $"\nContraventamentos: {contravCob + contravPil}";
-            if (linhas > 0)
-                resumo += $"\nLinha de corrente: {linhas}";
+            if (config.LancarLinhaCorrente)
+                resumo += $"\nLinha de corrente: {linhas} barra(s) em {config.NumeroLinhasCorrente} fileira(s)";
             if (config.LancarPlacasBase)
+            {
                 resumo += $"\nPlacas de base: {placas}";
+                if (placas == 0)
+                    resumo += " — nenhum pilar tem apoio de concreto abaixo (ligue \"Lançar fundações\")";
+            }
             if (config.InserirLigacaoTerca)
             {
                 resumo += $"\nLigações de terça: {ligacoes} terça(s) processada(s)";

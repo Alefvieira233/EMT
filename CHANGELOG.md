@@ -175,6 +175,16 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     processo/infra. `LicenseSecretProvider` mantém `Console` de propósito (linkado no EmtKeyGen, sem
     Logger no contexto — trocar quebraria o build).
 
+- **Ajustes V5 — Onda 1 (placa de base + honestidade) — 2026-06-04 — v2.8.28:** plano em
+  `docs/PLANO-AJUSTES-PORTICO-V5.md`.
+  - **Placa de base agora SAI:** a causa de "não funcionou" era de ordem — as placas eram lançadas
+    **antes** das fundações, e a placa só assenta onde há concreto/apoio abaixo do pilar. Reordenado:
+    **fundações → armadura → placas de base**. Mensagem honesta no resumo quando 0 placas
+    ("nenhum pilar tem apoio de concreto abaixo — ligue 'Lançar fundações'").
+  - **Linha de corrente:** confirmado que o núcleo puro já gera N fileiras corretamente (testado:
+    N=2 → L/3 e 2L/3) e o serviço cria 1 barra por segmento — o "2 vira 1" relatado era versão
+    instalada antiga. Resumo agora é honesto: "Linha de corrente: X barra(s) em N fileira(s)".
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
