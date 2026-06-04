@@ -155,6 +155,26 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   (classificação de face de topo, desconto de topos + percentual, clamps). Reúsa
   `EngineerGeometry.GetAllSolidsFine` e o padrão de criação de parâmetro de `PlanoMontagemService`.
 
+- **Auditoria completa + hardening cirúrgico (5 revisores) — 2026-06-04 — v2.8.27:** auditoria
+  file-a-file do plugin inteiro (transações/Revit API, comandos/UI, lógica pura/testes, padrões/
+  dead-code, segurança/build). **Zero P0.** Relatório em `docs/AUDITORIA-2026-06-04.md`. Aplicado só
+  o que **soma e é zero-regressão**:
+  - **Transações (P1, bug real):** `doc.Regenerate()` após `FamilySymbol.Activate()` antes de
+    `NewFamilyInstance`/`ViewSheet.Create` em `ConexaoGeneratorService`, `PrancharVistasService`,
+    `AutoVistaService`, `DiagramaMontagemService` (corrige falha intermitente na 1ª vez que a
+    família/title block é usada na sessão). Guard `DistanceTo < EPS` em `TravamentoService` (evita
+    rollback do lote por linha degenerada).
+  - **Lógica pura extraída + testes:** `GuardaCorpoCalculo` (segmentos, alturas de travessa) e
+    `EscadaCalculo` (degraus, Blondel 63–65 cm, inclinação) — serviços delegam (1:1). +30 testes
+    novos (incl. edge cases de `OrdenacaoNatural`, `EtapaMontagemParser` overflow, `NumberParsing`,
+    `CotarPecaFabricacaoConfig`).
+  - **Limpeza:** removido `Infrastructure/Constants.cs` (126 linhas, 0 referências); `catch {}` vazio
+    de `PfEstacaRebarWindow` ganhou `Logger.Warn`.
+  - **Deixado de fora (documentado):** Owner das janelas WPF, `MessageBox`→`AppDialogService` na
+    licença, `#nullable enable` em lote, `gitleaks` bloqueante — exigem validação no Revit ou são
+    processo/infra. `LicenseSecretProvider` mantém `Console` de propósito (linkado no EmtKeyGen, sem
+    Logger no contexto — trocar quebraria o build).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
