@@ -220,6 +220,15 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   metálica já lista o peso por perfil/bitola; agora soma o total geral. Adição puramente aditiva
   (novo helper `EscreverLinhaTotalLdm`), sem mexer nas abas Detalhe/Resumo.
 
+- **Lista de Materiais — Onda 3 (fundação em m³ + chapas DirectShape) — 2026-06-04 — v2.8.33:**
+  - **Fundação saía em kg** (ex.: "200.000 kg") porque a unidade priorizava peso sobre volume —
+    agora a unidade segue a base do material: **concreto → m³**, aço → kg (`ObterUnidadeFundacaoBase`
+    / `ObterQuantidadeFundacaoBase` usam `MaterialBaseTipo`).
+  - **Chapas criadas pela ferramenta** (DirectShape, ex.: a chapa de topo do pilar) passam a entrar
+    na lista como chapa/acessório metálico (seção "CHAPAS E ACESSÓRIOS"), sob a flag "Incluir
+    chapas/conexões". Inclusão **precisa**: só `OST_GenericModel` que sejam `DirectShape` — evita
+    poluir a lista com modelos genéricos carregáveis.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

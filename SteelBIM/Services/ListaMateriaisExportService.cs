@@ -379,6 +379,7 @@ namespace SteelBIM.Services
             {
                 categorias.AddRange(CategoriasPerfisConexao);
                 categorias.AddRange(CategoriasConexoesDetalhadas);
+                categorias.Add(BuiltInCategory.OST_GenericModel); // chapas via DirectShape (ex.: chapa de topo do pilar)
             }
 
             return categorias
@@ -420,6 +421,11 @@ namespace SteelBIM.Services
                 return ListaMateriaisCategoriaLogica.PerfisConexao;
 
             if (CategoriasConexoesDetalhadas.Contains(categoria))
+                return ListaMateriaisCategoriaLogica.ChapasConexoes;
+
+            // Chapas criadas pela ferramenta como DirectShape (ex.: chapa de topo do pilar) entram
+            // como chapa/acessorio metalico. So' DirectShape — evita poluir com genericos carregaveis.
+            if (categoria == BuiltInCategory.OST_GenericModel && elemento is DirectShape)
                 return ListaMateriaisCategoriaLogica.ChapasConexoes;
 
             return null;
@@ -2058,17 +2064,26 @@ namespace SteelBIM.Services
         private static string ObterUnidadeFundacaoBase(
             IGrouping<dynamic, ListaMateriaisGrupo> grupo)
         {
-            return grupo.Sum(x => x.PesoTotalKg) > 0.0 ? "kg" : "m³";
+            // Unidade pela base do material: concreto em m³ (nao em kg!), aço em kg.
+            MaterialBaseTipo tipo = grupo.First().MaterialBaseTipo;
+            if (tipo == MaterialBaseTipo.Concreto)
+                return "m³";
+            if (tipo == MaterialBaseTipo.Metalico)
+                return "kg";
+            return grupo.Sum(x => x.VolumeTotalM3) > 0.0 ? "m³" : "kg";
         }
 
         private static double ObterQuantidadeFundacaoBase(
             IGrouping<dynamic, ListaMateriaisGrupo> grupo)
         {
-            double pesoTotal = grupo.Sum(x => x.PesoTotalKg);
-            if (pesoTotal > 0.0)
-                return pesoTotal;
+            MaterialBaseTipo tipo = grupo.First().MaterialBaseTipo;
+            if (tipo == MaterialBaseTipo.Concreto)
+                return grupo.Sum(x => x.VolumeTotalM3);
+            if (tipo == MaterialBaseTipo.Metalico)
+                return grupo.Sum(x => x.PesoTotalKg);
 
-            return grupo.Sum(x => x.VolumeTotalM3);
+            double volume = grupo.Sum(x => x.VolumeTotalM3);
+            return volume > 0.0 ? volume : grupo.Sum(x => x.PesoTotalKg);
         }
 
         private static bool EhCategoriaFundacao(string categoria)
