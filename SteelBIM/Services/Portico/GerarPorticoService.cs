@@ -166,9 +166,10 @@ namespace SteelBIM.Services.Portico
             // Armadura de fundação (opt-in, best-effort) — depende de a familia aceitar armadura.
             int fundArmadas = 0;
             int fundPuladas = 0;
+            string fundMotivo = string.Empty;
             if (config.LancarArmaduraFundacao && fundacoesCriadas.Count > 0)
             {
-                (fundArmadas, fundPuladas) = ArmarFundacoes(uidoc, doc, fundacoesCriadas);
+                (fundArmadas, fundPuladas, fundMotivo) = ArmarFundacoes(uidoc, doc, fundacoesCriadas);
             }
 
             string resumo = $"Pórtico gerado.\nPilares: {pilares}";
@@ -188,7 +189,11 @@ namespace SteelBIM.Services.Portico
             if (config.LancarFundacoes)
                 resumo += $"\nFundações: {fundacoes}";
             if (config.LancarArmaduraFundacao)
-                resumo += $"\nArmadura de fundação: {fundArmadas} armada(s), {fundPuladas} pulada(s) (família não suporta)";
+            {
+                resumo += $"\nArmadura de fundação: {fundArmadas} armada(s), {fundPuladas} pulada(s)";
+                if (!string.IsNullOrEmpty(fundMotivo))
+                    resumo += $" — {fundMotivo}";
+            }
 
             Logger.Info(
                 "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L} placas={Pl} ligacoes={Lg} fund={F} fundArm={FA}",
@@ -227,6 +232,7 @@ namespace SteelBIM.Services.Portico
             ElevacaoTercasMm = c.ElevacaoTercasMm,
             ContravCobertura = c.ContravCobertura,
             TercasPorXCobertura = c.TercasPorXCobertura,
+            DistribuicaoContravCobertura = c.DistribuicaoContravCobertura,
             ContravPilares = c.ContravPilares,
             NumeroXPilares = c.NumeroXPilares,
             LancarLinhaCorrente = c.LancarLinhaCorrente,
@@ -515,26 +521,59 @@ namespace SteelBIM.Services.Portico
         }
 
         // ===== Armadura de fundação (opt-in, best-effort) — reusa BlocoFundacaoRebarOrchestrator =====
-        private static (int armadas, int puladas) ArmarFundacoes(UIDocument uidoc, Document doc, List<ElementId> fundacaoIds)
+        private static (int armadas, int puladas, string motivo) ArmarFundacoes(UIDocument uidoc, Document doc, List<ElementId> fundacaoIds)
         {
             try
             {
+                // precisa de pelo menos um tipo de vergalhao (RebarBarType) no projeto.
+                RebarBarType? barType = new FilteredElementCollector(doc)
+                    .OfClass(typeof(RebarBarType))
+                    .Cast<RebarBarType>()
+                    .OrderBy(b => b.Name)
+                    .FirstOrDefault();
+                if (barType == null)
+                    return (0, fundacaoIds.Count, "nenhum tipo de vergalhão (RebarBarType) carregado no projeto");
+
                 List<Element> hosts = fundacaoIds.Select(doc.GetElement).OfType<Element>().ToList();
                 List<Element> armaveis = hosts.Where(BlockGeometryService.CanHostRebar).ToList();
                 int puladas = hosts.Count - armaveis.Count;
                 if (armaveis.Count == 0)
-                    return (0, puladas);
+                    return (0, puladas, "a família da fundação não aceita armadura (use sapata de concreto estrutural)");
 
-                BlocoFundacaoRebarConfig cfg = new BlocoFundacaoRebarConfig(); // armadura inferior X+Y (default)
+                BlocoFundacaoRebarConfig cfg = MontarArmaduraSapata(barType.Name);
                 Result r = new BlocoFundacaoRebarOrchestrator().Execute(uidoc, armaveis, cfg, mostrarResumo: false);
                 int armadas = r == Result.Succeeded ? armaveis.Count : 0;
-                return (armadas, puladas);
+                string motivo = puladas > 0 ? "algumas famílias não aceitam armadura" : string.Empty;
+                return (armadas, puladas, motivo);
             }
             catch (Exception ex)
             {
                 Logger.Warn(ex, "[GerarPortico] falha ao armar fundações");
-                return (0, fundacaoIds.Count);
+                return (0, fundacaoIds.Count, "erro ao gerar armadura");
             }
+        }
+
+        /// <summary>Padrao de armadura de sapata isolada: malha inferior X+Y por espacamento,
+        /// cobrimento 5 cm, com gancho de 10 cm para cima nas pontas das barras.</summary>
+        private static BlocoFundacaoRebarConfig MontarArmaduraSapata(string barTypeName)
+        {
+            BlocoFundacaoRebarConfig cfg = new BlocoFundacaoRebarConfig();
+            cfg.LancarArmaduraInferior = true;
+            foreach (BlocoBarraDirecaoConfig dir in new[] { cfg.ArmaduraInferior.BarsX, cfg.ArmaduraInferior.BarsY })
+            {
+                dir.Ativo = true;
+                dir.BarTypeName = barTypeName;
+                dir.CobrimentoCm = 5.0;
+                dir.ModoQuantidade = BlocoModoQuantidade.PorEspacamento;
+                dir.EspacamentoCm = 15.0;
+                dir.Dobra.HaDobraInicial = true;
+                dir.Dobra.HaDobraFinal = true;
+                dir.Dobra.ComprimentoDobraInicialCm = 10.0;
+                dir.Dobra.ComprimentoDobraFinalCm = 10.0;
+                dir.Dobra.DobraInicialParaCima = true;
+                dir.Dobra.DobraFinalParaCima = true;
+            }
+            return cfg;
         }
     }
 }

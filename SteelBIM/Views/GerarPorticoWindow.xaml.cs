@@ -24,6 +24,11 @@ namespace SteelBIM.Views
             cmbPadrao.ItemsSource = Enum.GetValues(typeof(TrussPattern));
             cmbPadrao.SelectedItem = TrussPattern.Warren;
 
+            cmbDistribContravCob.Items.Add("Só extremidades");
+            cmbDistribContravCob.Items.Add("Extremidades + centro");
+            cmbDistribContravCob.Items.Add("Todos os vãos");
+            cmbDistribContravCob.SelectedIndex = 0;
+
             Popular(cmbPilar, colunas, "2U300");
             Popular(cmbBanzoSup, perfis, "U150");
             Popular(cmbBanzoInf, perfis, "U150");
@@ -102,6 +107,12 @@ namespace SteelBIM.Views
                 ContravCobertura = chkContravCob.IsChecked == true,
                 SymbolContravCobertura = Sym(cmbContravCob),
                 TercasPorXCobertura = ParseInt(txtNumXCobertura.Text, 2),
+                DistribuicaoContravCobertura = cmbDistribContravCob.SelectedIndex switch
+                {
+                    1 => DistribuicaoContravCobertura.ExtremidadesECentro,
+                    2 => DistribuicaoContravCobertura.Todos,
+                    _ => DistribuicaoContravCobertura.Extremidades
+                },
                 ContravPilares = chkContravPil.IsChecked == true,
                 SymbolContravPilares = Sym(cmbContravPil),
                 NumeroXPilares = ParseInt(txtNumXPilares.Text, 2),
@@ -156,6 +167,7 @@ namespace SteelBIM.Views
         {
             cmbTerca.IsEnabled = chkTercas.IsChecked == true;
             cmbContravCob.IsEnabled = chkContravCob.IsChecked == true;
+            cmbDistribContravCob.IsEnabled = chkContravCob.IsChecked == true;
             cmbContravPil.IsEnabled = chkContravPil.IsChecked == true;
             cmbLinha.IsEnabled = chkLinha.IsChecked == true;
             cmbLigacaoTerca.IsEnabled = chkLigacaoTerca.IsChecked == true;

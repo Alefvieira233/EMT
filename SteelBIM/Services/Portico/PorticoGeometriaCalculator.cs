@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using SteelBIM.Models;
 
 namespace SteelBIM.Services.Portico
 {
@@ -33,6 +34,7 @@ namespace SteelBIM.Services.Portico
 
         public bool ContravCobertura { get; set; }
         public int TercasPorXCobertura { get; set; } = 2;         // 1 X de cobertura a cada N terças
+        public DistribuicaoContravCobertura DistribuicaoContravCobertura { get; set; } = DistribuicaoContravCobertura.Extremidades;
         public bool ContravPilares { get; set; }
         public int NumeroXPilares { get; set; } = 2;              // nº de vãos com X vertical (paredes)
         public bool LancarLinhaCorrente { get; set; }
@@ -142,7 +144,7 @@ namespace SteelBIM.Services.Portico
             if (e.ContravCobertura && e.TercasPorXCobertura > 0 && e.EspacamentoTercasMm > Eps)
             {
                 IReadOnlyList<double> purlinsMeia = PosicoesTercasMeiaAgua(e, w);
-                foreach (int vao in VaosExtremidade(n))
+                foreach (int vao in VaosContravCobertura(n, e.DistribuicaoContravCobertura))
                 {
                     double xa = xPorticos[vao];
                     double xb = xPorticos[vao + 1];
@@ -228,13 +230,15 @@ namespace SteelBIM.Services.Portico
             destino.Add(new Segmento(a2, b2));
         }
 
-        /// <summary>Vaos de extremidade do galpao: {0} e {n-2} (distintos so quando n &gt;= 3).</summary>
-        private static IReadOnlyList<int> VaosExtremidade(int n)
+        /// <summary>Vaos da cobertura que recebem contraventamento, conforme a distribuicao escolhida.</summary>
+        private static IReadOnlyList<int> VaosContravCobertura(int n, DistribuicaoContravCobertura modo)
         {
-            var v = new List<int> { 0 };
-            if (n - 2 > 0)
-                v.Add(n - 2);
-            return v;
+            int nVaos = n - 1;
+            if (modo == DistribuicaoContravCobertura.Todos)
+                return DistribuirVaos(nVaos, nVaos);
+            if (modo == DistribuicaoContravCobertura.ExtremidadesECentro)
+                return DistribuirVaos(nVaos, 4);
+            return DistribuirVaos(nVaos, 2); // Extremidades
         }
 
         /// <summary>Coloca um X de contraventamento de cobertura a cada 'passo' terças, ancorado nas

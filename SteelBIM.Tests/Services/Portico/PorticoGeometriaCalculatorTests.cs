@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using FluentAssertions;
+using SteelBIM.Models;
 using SteelBIM.Services.Portico;
 using Xunit;
 
@@ -149,6 +150,28 @@ namespace SteelBIM.Tests.Services.Portico
             var r = PorticoGeometriaCalculator.Calcular(e);
             // 6 posicoes -> passo 3 -> 2 X por agua; 2 vaos x 2 aguas x 2 X x 2 diag = 16.
             r.ContravCobertura.Should().HaveCount(16);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_ExtremidadesECentro_GeraMaisVaos()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.DistribuicaoContravCobertura = DistribuicaoContravCobertura.ExtremidadesECentro;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 4 vaos x 2 aguas x 3 X x 2 diag = 48 (vs 24 das extremidades).
+            r.ContravCobertura.Should().HaveCount(48);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_Todos_ContraventaTodosOsVaos()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.DistribuicaoContravCobertura = DistribuicaoContravCobertura.Todos;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 6 vaos x 2 aguas x 3 X x 2 diag = 72.
+            r.ContravCobertura.Should().HaveCount(72);
         }
 
         [Fact]

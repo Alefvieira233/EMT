@@ -58,6 +58,7 @@ namespace SteelBIM.Models
         public bool ContravCobertura { get; set; }
         public FamilySymbol? SymbolContravCobertura { get; set; }
         public int TercasPorXCobertura { get; set; } = 2;       // 1 X de cobertura a cada N terças
+        public DistribuicaoContravCobertura DistribuicaoContravCobertura { get; set; } = DistribuicaoContravCobertura.Extremidades;
         public bool ContravPilares { get; set; }
         public FamilySymbol? SymbolContravPilares { get; set; }
         public int NumeroXPilares { get; set; } = 2;            // nº de vãos com X vertical (paredes)
