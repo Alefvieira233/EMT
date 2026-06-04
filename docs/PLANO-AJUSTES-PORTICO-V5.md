@@ -97,6 +97,35 @@ modeladas**, não há concreto embaixo → **0 placas** (comportamento atual, si
 
 ---
 
+## Item 5 — Ponto de referência (clique) para posicionar o pórtico — NOVO
+**Pedido:** hoje "Gerar Pórtico" cria a estrutura na origem (ponto "aleatório"). O usuário quer uma
+**etapa de clique**: clicar um ponto de referência (ponto livre, linha, eixo, objeto — qualquer
+coisa). Se clicar em vazio, funciona (usa o ponto). Se clicar perto de uma referência, **snap** e usa
+esse ponto. O pórtico passa a ser inserido **a partir do ponto do usuário**.
+
+**Spec (aditivo, baixo risco):**
+1. `CmdGerarPorticoCompleto.ExecuteCore`: após a janela retornar OK, pedir o ponto:
+   ```
+   XYZ origem = XYZ.Zero;
+   try { origem = uidoc.Selection.PickPoint("Clique o ponto de referência do pórtico (ESC = origem)"); }
+   catch (OperationCanceledException) { origem = XYZ.Zero; } // ESC -> comportamento atual (origem)
+   ```
+   `PickPoint` já faz snap em referências (linhas/eixos/grids/objetos) e também aceita ponto livre.
+2. `GerarPorticoService.Executar(uidoc, config, XYZ? origem = null)` — novo parâmetro **opcional**
+   (default Zero = comportamento atual, zero regressão). **FATO DO CÓDIGO:** `ParaXYZ` é
+   `private static XYZ ParaXYZ(Level, Ponto3D)` (linha 382), chamado **7x** dentro de `Executar`
+   (linhas 95,110,121,132,143,148,155). Threading recomendado: guardar `XYZ _origem` em campo de
+   instância no início de `Executar` e tornar `ParaXYZ` método de instância que soma `_origem.X/.Y`
+   (em pés). Usar só **X/Y** do ponto; Z continua relativo ao nível.
+3. **ATENÇÃO:** `CriarEixos(Document, PorticoLayout)` (linha 414) **NÃO** passa por `ParaXYZ` — monta
+   a grid a partir de `layout.XPorticosMm`/`YEixosMm` com conversão própria. Para os eixos
+   acompanharem o deslocamento, passar `_origem` também a `CriarEixos` e somar lá. (Demais elementos
+   — pilares, treliça, terças, contrav, linha de corrente — já passam por `ParaXYZ`, então herdam o
+   offset automaticamente.)
+4. Sem mudança de janela. Mensagem/uso: o pick acontece depois de configurar, antes de gerar.
+
+**Aceite:** clicar num ponto/linha/eixo posiciona o galpão ali; ESC mantém na origem; nada quebra.
+
 ## Ordem de execução sugerida (próxima sessão, com contexto cheio)
 1. **Item 2** (diagnóstico linha de corrente — barato, alto valor) + **Item 4** (placa de base —
    provável fix de ordem/mensagem). Commit 1.
