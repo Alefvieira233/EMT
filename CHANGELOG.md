@@ -229,6 +229,15 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     chapas/conexões". Inclusão **precisa**: só `OST_GenericModel` que sejam `DirectShape` — evita
     poluir a lista com modelos genéricos carregáveis.
 
+- **Lista de Materiais — Onda 4 (romaneio por perfil + escopo) — 2026-06-04 — v2.8.34:** fecha o
+  plano da Lista de Materiais.
+  - **Cada perfil metálico** na Planilha Base agora mostra, no padrão romaneio:
+    **Qtd · Comprimento total (m) · Peso linear (kg/m)** na descrição, além do **Peso total (kg)** na
+    coluna de quantidade (ex.: "U150x65x4,76 (aço) — 24 un · 360,0 m · 11,2 kg/m"). Chapas/acessórios
+    também mostram a quantidade.
+  - **Escopo padrão = Modelo inteiro** (antes "Vista ativa") — evita perder silenciosamente
+    elementos fora da vista ativa ao exportar.
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

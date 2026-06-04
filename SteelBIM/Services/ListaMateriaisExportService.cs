@@ -1991,10 +1991,17 @@ namespace SteelBIM.Services
                 .GroupBy(x => new { x.Material, x.TipoPerfil })
                 .OrderBy(x => x.Key.TipoPerfil, StringComparer.CurrentCultureIgnoreCase)
                 .ThenBy(x => x.Key.Material, StringComparer.CurrentCultureIgnoreCase)
-                .Select(x => new ListaBaseLinha(
-                    MontarDescricaoMetalicaBase(x.Key.TipoPerfil, x.Key.Material),
-                    "kg",
-                    x.Sum(y => y.PesoTotalKg)))
+                .Select(x =>
+                {
+                    int qtd = x.Sum(y => y.Quantidade);
+                    double comp = x.Sum(y => y.ComprimentoTotalM);
+                    double peso = x.Sum(y => y.PesoTotalKg);
+                    double kgPorM = comp > 0.0 ? peso / comp : 0.0;
+                    return new ListaBaseLinha(
+                        MontarDescricaoMetalicaRomaneio(x.Key.TipoPerfil, x.Key.Material, qtd, comp, kgPorM),
+                        "kg",
+                        peso);
+                })
                 .ToList();
 
             linhas.AddRange(
@@ -2006,7 +2013,7 @@ namespace SteelBIM.Services
                     .GroupBy(x => x.Material)
                     .OrderBy(x => x.Key, StringComparer.CurrentCultureIgnoreCase)
                     .Select(x => new ListaBaseLinha(
-                        $"CHAPAS E ACESSÓRIOS ({x.Key})",
+                        $"CHAPAS E ACESSÓRIOS ({x.Key}) — {x.Sum(y => y.Quantidade)} un",
                         "kg",
                         x.Sum(y => y.PesoTotalKg))));
 
@@ -2105,6 +2112,13 @@ namespace SteelBIM.Services
             return tipo.IndexOf(mat, StringComparison.CurrentCultureIgnoreCase) >= 0
                 ? tipo
                 : $"{tipo} {mat}";
+        }
+
+        // Linha de perfil no padrao romaneio: perfil/bitola + qtd + comprimento total + peso linear.
+        private static string MontarDescricaoMetalicaRomaneio(string tipoPerfil, string material, int qtd, double comprimentoM, double kgPorM)
+        {
+            string baseDesc = MontarDescricaoMetalicaBase(tipoPerfil, material);
+            return $"{baseDesc} — {qtd} un · {comprimentoM:0.0} m · {kgPorM:0.0} kg/m";
         }
 
         private static string ObterNomeSecaoPlanilha(ListaMateriaisSecaoPlanilha secaoPlanilha)
