@@ -408,8 +408,8 @@
     <Compile Include="..\SteelBIM\Services\Layout\OrdenacaoNatural.cs"
              Link="LinkedSources\Services\Layout\OrdenacaoNatural.cs" />
     <!-- v2.8.14: nucleo puro do gerador de portico (Gerar Projeto Completo) -->
-    <Compile Include="..\SteelBIM\Models\DistribuicaoContravCobertura.cs"
-             Link="LinkedSources\Models\DistribuicaoContravCobertura.cs" />
+    <Compile Include="..\SteelBIM\Models\DistribuicaoContrav.cs"
+             Link="LinkedSources\Models\DistribuicaoContrav.cs" />
     <Compile Include="..\SteelBIM\Services\Portico\PorticoGeometriaCalculator.cs"
              Link="LinkedSources\Services\Portico\PorticoGeometriaCalculator.cs" />
   </ItemGroup>

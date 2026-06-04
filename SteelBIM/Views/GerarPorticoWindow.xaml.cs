@@ -29,6 +29,11 @@ namespace SteelBIM.Views
             cmbDistribContravCob.Items.Add("Todos os vãos");
             cmbDistribContravCob.SelectedIndex = 0;
 
+            cmbDistribContravPil.Items.Add("Só extremidades");
+            cmbDistribContravPil.Items.Add("Extremidades + centro");
+            cmbDistribContravPil.Items.Add("Todos os vãos");
+            cmbDistribContravPil.SelectedIndex = 0;
+
             Popular(cmbPilar, colunas, "2U300");
             Popular(cmbBanzoSup, perfis, "U150");
             Popular(cmbBanzoInf, perfis, "U150");
@@ -107,15 +112,10 @@ namespace SteelBIM.Views
                 ContravCobertura = chkContravCob.IsChecked == true,
                 SymbolContravCobertura = Sym(cmbContravCob),
                 TercasPorXCobertura = ParseInt(txtNumXCobertura.Text, 2),
-                DistribuicaoContravCobertura = cmbDistribContravCob.SelectedIndex switch
-                {
-                    1 => DistribuicaoContravCobertura.ExtremidadesECentro,
-                    2 => DistribuicaoContravCobertura.Todos,
-                    _ => DistribuicaoContravCobertura.Extremidades
-                },
+                DistribuicaoContravCobertura = DistribFromCombo(cmbDistribContravCob),
                 ContravPilares = chkContravPil.IsChecked == true,
                 SymbolContravPilares = Sym(cmbContravPil),
-                NumeroXPilares = ParseInt(txtNumXPilares.Text, 2),
+                DistribuicaoContravPilares = DistribFromCombo(cmbDistribContravPil),
                 LancarLinhaCorrente = chkLinha.IsChecked == true,
                 SymbolLinhaCorrente = Sym(cmbLinha),
                 NumeroLinhasCorrente = ParseInt(txtNumLinhasCorrente.Text, 3),
@@ -186,8 +186,6 @@ namespace SteelBIM.Views
             }
             if (chkContravCob.IsChecked == true && ParseInt(txtNumXCobertura.Text, 0) < 1)
                 erros.Add("X de cobertura a cada N terças (≥ 1)");
-            if (chkContravPil.IsChecked == true && ParseInt(txtNumXPilares.Text, 0) < 1)
-                erros.Add("nº de vãos com X nos pilares (≥ 1)");
             if (chkLinha.IsChecked == true && ParseInt(txtNumLinhasCorrente.Text, 0) < 1)
                 erros.Add("nº de fileiras de linha de corrente (≥ 1)");
             if (erros.Count > 0)
@@ -237,7 +235,7 @@ namespace SteelBIM.Views
             cmbDistribContravCob.IsEnabled = chkContravCob.IsChecked == true;
             txtNumXCobertura.IsEnabled = chkContravCob.IsChecked == true;
             cmbContravPil.IsEnabled = chkContravPil.IsChecked == true;
-            txtNumXPilares.IsEnabled = chkContravPil.IsChecked == true;
+            cmbDistribContravPil.IsEnabled = chkContravPil.IsChecked == true;
             cmbLinha.IsEnabled = chkLinha.IsChecked == true;
             txtNumLinhasCorrente.IsEnabled = chkLinha.IsChecked == true;
             cmbLigacaoTerca.IsEnabled = chkLigacaoTerca.IsChecked == true;
@@ -284,6 +282,13 @@ namespace SteelBIM.Views
 
         private static FamilySymbol? Sym(ComboBox combo) =>
             (combo.SelectedItem as SymbolItem)?.Symbol;
+
+        private static DistribuicaoContrav DistribFromCombo(ComboBox combo) => combo.SelectedIndex switch
+        {
+            1 => DistribuicaoContrav.ExtremidadesECentro,
+            2 => DistribuicaoContrav.Todos,
+            _ => DistribuicaoContrav.Extremidades
+        };
 
         private static int ParseInt(string texto, int padrao)
         {

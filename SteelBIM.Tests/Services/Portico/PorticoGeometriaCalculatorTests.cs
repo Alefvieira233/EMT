@@ -27,7 +27,7 @@ namespace SteelBIM.Tests.Services.Portico
             ContravCobertura = false,
             TercasPorXCobertura = 2,
             ContravPilares = false,
-            NumeroXPilares = 2,
+            DistribuicaoContravPilares = DistribuicaoContrav.Extremidades,
             LancarLinhaCorrente = false,
             NumeroLinhasCorrente = 3
         };
@@ -157,7 +157,7 @@ namespace SteelBIM.Tests.Services.Portico
         {
             var e = BaseTrelica();
             e.ContravCobertura = true;
-            e.DistribuicaoContravCobertura = DistribuicaoContravCobertura.ExtremidadesECentro;
+            e.DistribuicaoContravCobertura = DistribuicaoContrav.ExtremidadesECentro;
             var r = PorticoGeometriaCalculator.Calcular(e);
             // 4 vaos x 2 aguas x 3 X x 2 diag = 48 (vs 24 das extremidades).
             r.ContravCobertura.Should().HaveCount(48);
@@ -168,7 +168,7 @@ namespace SteelBIM.Tests.Services.Portico
         {
             var e = BaseTrelica();
             e.ContravCobertura = true;
-            e.DistribuicaoContravCobertura = DistribuicaoContravCobertura.Todos;
+            e.DistribuicaoContravCobertura = DistribuicaoContrav.Todos;
             var r = PorticoGeometriaCalculator.Calcular(e);
             // 6 vaos x 2 aguas x 3 X x 2 diag = 72.
             r.ContravCobertura.Should().HaveCount(72);
@@ -212,13 +212,26 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
-        public void Calcular_NumeroXPilares_Configuravel()
+        public void Calcular_ContravPilares_Distribuicao_Configuravel()
         {
-            var e = BaseTrelica();
-            e.ContravPilares = true;
-            e.NumeroXPilares = 1;
-            var r = PorticoGeometriaCalculator.Calcular(e);
-            r.ContravPilares.Should().HaveCount(4); // 1 vao x 2 paredes x 2 diagonais
+            // mesmo padrão da cobertura: a distribuição escolhe quais vãos recebem o X vertical.
+            var ext = BaseTrelica();
+            ext.ContravPilares = true;
+            ext.DistribuicaoContravPilares = DistribuicaoContrav.Extremidades; // 2 vaos
+            PorticoGeometriaCalculator.Calcular(ext).ContravPilares
+                .Should().HaveCount(8); // 2 vaos x 2 paredes x 2 diagonais
+
+            var centro = BaseTrelica();
+            centro.ContravPilares = true;
+            centro.DistribuicaoContravPilares = DistribuicaoContrav.ExtremidadesECentro; // 4 vaos
+            PorticoGeometriaCalculator.Calcular(centro).ContravPilares
+                .Should().HaveCount(16); // 4 vaos x 2 x 2
+
+            var todos = BaseTrelica();
+            todos.ContravPilares = true;
+            todos.DistribuicaoContravPilares = DistribuicaoContrav.Todos; // 6 vaos (n=7)
+            PorticoGeometriaCalculator.Calcular(todos).ContravPilares
+                .Should().HaveCount(24); // 6 vaos x 2 x 2
         }
 
         [Fact]
@@ -353,13 +366,13 @@ namespace SteelBIM.Tests.Services.Portico
             var ec = BaseTrelica();
             ec.NumeroPorticos = 3; // nVaos=2 < 4 => ExtremidadesECentro colapsa para todos
             ec.ContravCobertura = true;
-            ec.DistribuicaoContravCobertura = DistribuicaoContravCobertura.ExtremidadesECentro;
+            ec.DistribuicaoContravCobertura = DistribuicaoContrav.ExtremidadesECentro;
             var rEc = PorticoGeometriaCalculator.Calcular(ec);
 
             var todos = BaseTrelica();
             todos.NumeroPorticos = 3;
             todos.ContravCobertura = true;
-            todos.DistribuicaoContravCobertura = DistribuicaoContravCobertura.Todos;
+            todos.DistribuicaoContravCobertura = DistribuicaoContrav.Todos;
             var rTodos = PorticoGeometriaCalculator.Calcular(todos);
 
             rEc.ContravCobertura.Count.Should().Be(rTodos.ContravCobertura.Count);
@@ -370,14 +383,11 @@ namespace SteelBIM.Tests.Services.Portico
         {
             var e = BaseTrelica();
             e.ContravCobertura = true;
-            e.TercasPorXCobertura = 0;
-            e.ContravPilares = true;
-            e.NumeroXPilares = 0;
+            e.TercasPorXCobertura = 0;   // sem passo de X de cobertura
             e.LancarLinhaCorrente = true;
-            e.NumeroLinhasCorrente = 0;
+            e.NumeroLinhasCorrente = 0;  // sem fileiras de linha de corrente
             var r = PorticoGeometriaCalculator.Calcular(e);
             r.ContravCobertura.Should().BeEmpty();
-            r.ContravPilares.Should().BeEmpty();
             r.LinhasCorrente.Should().BeEmpty();
         }
     }

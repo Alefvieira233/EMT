@@ -34,9 +34,9 @@ namespace SteelBIM.Services.Portico
 
         public bool ContravCobertura { get; set; }
         public int TercasPorXCobertura { get; set; } = 2;         // 1 X de cobertura a cada N terças
-        public DistribuicaoContravCobertura DistribuicaoContravCobertura { get; set; } = DistribuicaoContravCobertura.Extremidades;
+        public DistribuicaoContrav DistribuicaoContravCobertura { get; set; } = DistribuicaoContrav.Extremidades;
         public bool ContravPilares { get; set; }
-        public int NumeroXPilares { get; set; } = 2;              // nº de vãos com X vertical (paredes)
+        public DistribuicaoContrav DistribuicaoContravPilares { get; set; } = DistribuicaoContrav.Extremidades; // mesmo padrão da cobertura
         public bool LancarLinhaCorrente { get; set; }
         public int NumeroLinhasCorrente { get; set; } = 3;        // nº de fileiras de linha de corrente
     }
@@ -147,15 +147,15 @@ namespace SteelBIM.Services.Portico
                 }
             }
 
-            // vaos contraventados dos pilares: K distribuidos uniformemente.
+            // vaos contraventados dos pilares: pela distribuicao escolhida (mesmo padrao da cobertura).
             int nVaos = n - 1;
-            IReadOnlyList<int> vaosPilares = DistribuirVaos(nVaos, e.NumeroXPilares);
+            IReadOnlyList<int> vaosPilares = VaosContraventados(n, e.DistribuicaoContravPilares);
 
             // ===== CONTRAVENTAMENTO DA COBERTURA (1 X a cada N terças, vaos de extremidade) =====
             if (e.ContravCobertura && e.TercasPorXCobertura > 0 && e.EspacamentoTercasMm > Eps)
             {
                 IReadOnlyList<double> purlinsMeia = PosicoesTercasMeiaAgua(e, w);
-                foreach (int vao in VaosContravCobertura(n, e.DistribuicaoContravCobertura))
+                foreach (int vao in VaosContraventados(n, e.DistribuicaoContravCobertura))
                 {
                     double xa = xPorticos[vao];
                     double xb = xPorticos[vao + 1];
@@ -250,13 +250,13 @@ namespace SteelBIM.Services.Portico
         private const int VaosExtremidades = 2;       // so as duas pontas
         private const int VaosExtremidadesECentro = 4; // pontas + 2 quadrantes centrais
 
-        /// <summary>Vaos da cobertura que recebem contraventamento, conforme a distribuicao escolhida.</summary>
-        private static IReadOnlyList<int> VaosContravCobertura(int n, DistribuicaoContravCobertura modo)
+        /// <summary>Vaos (cobertura ou pilares) que recebem contraventamento, conforme a distribuicao escolhida.</summary>
+        private static IReadOnlyList<int> VaosContraventados(int n, DistribuicaoContrav modo)
         {
             int nVaos = n - 1;
-            if (modo == DistribuicaoContravCobertura.Todos)
+            if (modo == DistribuicaoContrav.Todos)
                 return DistribuirVaos(nVaos, nVaos);
-            if (modo == DistribuicaoContravCobertura.ExtremidadesECentro)
+            if (modo == DistribuicaoContrav.ExtremidadesECentro)
                 return DistribuirVaos(nVaos, VaosExtremidadesECentro);
             return DistribuirVaos(nVaos, VaosExtremidades);
         }

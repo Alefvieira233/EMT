@@ -2,9 +2,10 @@
 namespace SteelBIM.Models
 {
     /// <summary>
-    /// v2.8.19: onde colocar o contraventamento de cobertura ao longo do comprimento do galpao.
+    /// v2.8.19: onde colocar o contraventamento ao longo do comprimento do galpao. Usado tanto
+    /// pelo contraventamento do plano da cobertura quanto pelo dos pilares (paredes) — mesmo padrao.
     /// </summary>
-    public enum DistribuicaoContravCobertura
+    public enum DistribuicaoContrav
     {
         /// <summary>Apenas os dois vaos de extremidade.</summary>
         Extremidades = 0,

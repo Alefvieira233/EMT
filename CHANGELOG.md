@@ -116,6 +116,14 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     alturas negativas, elevação negativa clampada, coplanaridade linha-corrente×terça no beiral,
     `ExtremidadesECentro` em galpão curto, quantidades 0).
 
+- **Contraventamento de pilares com distribuição (simétrico à cobertura) — 2026-06-04 — v2.8.23:**
+  o contraventamento dos pilares passa a ter o mesmo seletor de **distribuição** da cobertura
+  (Só extremidades / Extremidades + centro / Todos os vãos), no lugar do antigo "nº de vãos com X"
+  — são o mesmo eixo (quais vãos recebem o X), então foram unificados como na cobertura. Enum
+  `DistribuicaoContravCobertura` generalizado para `DistribuicaoContrav` (serve cobertura e pilares);
+  novo campo `DistribuicaoContravPilares`; janela ganha o combo "Distribuição (pilares)". Testes do
+  núcleo puro atualizados (distribuição de pilares Extremidades/Centro/Todos = 8/16/24 X em N=7).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

@@ -271,7 +271,7 @@ namespace SteelBIM.Services.Portico
             TercasPorXCobertura = c.TercasPorXCobertura,
             DistribuicaoContravCobertura = c.DistribuicaoContravCobertura,
             ContravPilares = c.ContravPilares,
-            NumeroXPilares = c.NumeroXPilares,
+            DistribuicaoContravPilares = c.DistribuicaoContravPilares,
             LancarLinhaCorrente = c.LancarLinhaCorrente,
             NumeroLinhasCorrente = c.NumeroLinhasCorrente
         };
