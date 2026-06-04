@@ -7,8 +7,12 @@ using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
+using SteelBIM.Models.Bloco;
 using SteelBIM.Models.Conexoes;
+using SteelBIM.Models.PF;
+using SteelBIM.Services.Bloco;
 using SteelBIM.Services.Conexoes;
+using SteelBIM.Services.PF;
 using SteelBIM.Utils;
 
 namespace SteelBIM.Services.Portico
@@ -60,6 +64,7 @@ namespace SteelBIM.Services.Portico
             int contravPil = 0;
             int linhas = 0;
             int placas = 0;
+            var pilarIds = new List<ElementId>();
             var tercaIds = new List<ElementId>();
             var banzoSupIds = new List<ElementId>();
 
@@ -71,8 +76,12 @@ namespace SteelBIM.Services.Portico
                 // ===== PILARES =====
                 foreach (Segmento s in layout.Pilares)
                 {
-                    if (CriarPilar(doc, pilarSymbol, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B)))
+                    FamilyInstance? fp = CriarPilar(doc, pilarSymbol, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B));
+                    if (fp != null)
+                    {
                         pilares++;
+                        pilarIds.Add(fp.Id);
+                    }
                 }
 
                 // ===== COBERTURA: treliça OU viga =====
@@ -145,6 +154,23 @@ namespace SteelBIM.Services.Portico
                 ligacoes = InserirLigacoesTerca(uidoc, doc, config, tercaIds, banzoSupIds);
             }
 
+            // Fundações (opcional) — sapata sob cada pilar; reusa PfFoundationPlacementService.
+            int fundacoes = 0;
+            List<ElementId> fundacoesCriadas = new List<ElementId>();
+            if (config.LancarFundacoes && config.SymbolFundacao != null && pilarIds.Count > 0)
+            {
+                fundacoesCriadas = LancarFundacoes(uidoc, doc, config.SymbolFundacao, pilarIds);
+                fundacoes = fundacoesCriadas.Count;
+            }
+
+            // Armadura de fundação (opt-in, best-effort) — depende de a familia aceitar armadura.
+            int fundArmadas = 0;
+            int fundPuladas = 0;
+            if (config.LancarArmaduraFundacao && fundacoesCriadas.Count > 0)
+            {
+                (fundArmadas, fundPuladas) = ArmarFundacoes(uidoc, doc, fundacoesCriadas);
+            }
+
             string resumo = $"Pórtico gerado.\nPilares: {pilares}";
             if (config.UsarTrelica)
                 resumo += $"\nTreliças: {trelicas} ({membrosTrelica} membros)";
@@ -159,10 +185,14 @@ namespace SteelBIM.Services.Portico
                 resumo += $"\nPlacas de base: {placas}";
             if (config.InserirLigacaoTerca)
                 resumo += $"\nLigações de terça: {ligacoes} terça(s) processada(s)";
+            if (config.LancarFundacoes)
+                resumo += $"\nFundações: {fundacoes}";
+            if (config.LancarArmaduraFundacao)
+                resumo += $"\nArmadura de fundação: {fundArmadas} armada(s), {fundPuladas} pulada(s) (família não suporta)";
 
             Logger.Info(
-                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L} placas={Pl} ligacoes={Lg}",
-                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas, placas, ligacoes);
+                "[GerarPortico] pilares={P} trelicas={T} membros={M} vigas={V} tercas={Te} contrav={C} linhas={L} placas={Pl} ligacoes={Lg} fund={F} fundArm={FA}",
+                pilares, trelicas, membrosTrelica, vigas, tercas, contravCob + contravPil, linhas, placas, ligacoes, fundacoes, fundArmadas);
             AppDialogService.ShowInfo("Gerar Pórtico", resumo, "Concluído");
         }
 
@@ -243,32 +273,32 @@ namespace SteelBIM.Services.Portico
         }
 
         // ===== Criacao de membros =====
-        private static bool CriarPilar(Document doc, FamilySymbol symbol, Level nivel, XYZ baseP, XYZ topo)
+        private static FamilyInstance? CriarPilar(Document doc, FamilySymbol symbol, Level nivel, XYZ baseP, XYZ topo)
         {
             if (baseP.DistanceTo(topo) < RevitUtils.EPS)
-                return false;
+                return null;
 
             bool ehColuna = symbol.Category?.Id.Value == (long)BuiltInCategory.OST_StructuralColumns;
             if (!ehColuna)
-                return CriarBarra(doc, symbol, nivel, baseP, topo) != null; // perfil nao-coluna: vira viga reta
+                return CriarBarra(doc, symbol, nivel, baseP, topo); // perfil nao-coluna: vira viga reta
 
             try
             {
                 FamilyInstance fi = doc.Create.NewFamilyInstance(baseP, symbol, nivel, StructuralType.Column);
                 if (fi == null)
-                    return false;
+                    return null;
 
                 SetParamId(fi, BuiltInParameter.FAMILY_BASE_LEVEL_PARAM, nivel.Id);
                 SetParamId(fi, BuiltInParameter.FAMILY_TOP_LEVEL_PARAM, nivel.Id);
                 SetParamDouble(fi, BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM, baseP.Z - nivel.Elevation);
                 SetParamDouble(fi, BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM, topo.Z - nivel.Elevation);
-                return true;
+                return fi;
             }
             catch (Exception ex)
             {
                 // familia incompativel para coluna: isola o erro sem abortar a geracao inteira.
                 Logger.Warn(ex, "[GerarPortico] falha ao criar pilar com {Familia}", symbol.FamilyName);
-                return false;
+                return null;
             }
         }
 
@@ -449,6 +479,61 @@ namespace SteelBIM.Services.Portico
             {
                 Logger.Warn(ex, "[GerarPortico] falha ao inserir ligações de terça");
                 return 0;
+            }
+        }
+
+        // ===== Fundações (opcional) — reusa PfFoundationPlacementService headless =====
+        private static List<ElementId> LancarFundacoes(UIDocument uidoc, Document doc, FamilySymbol symbol, List<ElementId> pilarIds)
+        {
+            try
+            {
+                var antes = new HashSet<ElementId>(ColetarFundacoes(doc));
+                uidoc.Selection.SetElementIds(pilarIds);
+                PfFoundationPlacementConfig fcfg = new PfFoundationPlacementConfig
+                {
+                    SymbolId = symbol.Id,
+                    Escopo = PfFoundationPlacementScope.SelecaoAtual,
+                    OrientarPeloPilar = true,
+                    IgnorarSeJaExisteFundacao = true
+                };
+                new PfFoundationPlacementService().Execute(uidoc, fcfg);
+                return ColetarFundacoes(doc).Where(id => !antes.Contains(id)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[GerarPortico] falha ao lançar fundações");
+                return new List<ElementId>();
+            }
+        }
+
+        private static ICollection<ElementId> ColetarFundacoes(Document doc)
+        {
+            return new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_StructuralFoundation)
+                .WhereElementIsNotElementType()
+                .ToElementIds();
+        }
+
+        // ===== Armadura de fundação (opt-in, best-effort) — reusa BlocoFundacaoRebarOrchestrator =====
+        private static (int armadas, int puladas) ArmarFundacoes(UIDocument uidoc, Document doc, List<ElementId> fundacaoIds)
+        {
+            try
+            {
+                List<Element> hosts = fundacaoIds.Select(doc.GetElement).OfType<Element>().ToList();
+                List<Element> armaveis = hosts.Where(BlockGeometryService.CanHostRebar).ToList();
+                int puladas = hosts.Count - armaveis.Count;
+                if (armaveis.Count == 0)
+                    return (0, puladas);
+
+                BlocoFundacaoRebarConfig cfg = new BlocoFundacaoRebarConfig(); // armadura inferior X+Y (default)
+                Result r = new BlocoFundacaoRebarOrchestrator().Execute(uidoc, armaveis, cfg, mostrarResumo: false);
+                int armadas = r == Result.Succeeded ? armaveis.Count : 0;
+                return (armadas, puladas);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[GerarPortico] falha ao armar fundações");
+                return (0, fundacaoIds.Count);
             }
         }
     }

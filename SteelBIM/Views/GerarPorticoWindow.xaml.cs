@@ -16,7 +16,7 @@ namespace SteelBIM.Views
     /// </summary>
     public partial class GerarPorticoWindow : Window
     {
-        public GerarPorticoWindow(List<FamilySymbol> colunas, List<FamilySymbol> perfis, List<FamilySymbol> ligacoes)
+        public GerarPorticoWindow(List<FamilySymbol> colunas, List<FamilySymbol> perfis, List<FamilySymbol> ligacoes, List<FamilySymbol> fundacoes)
         {
             InitializeComponent();
             RevitWindowThemeService.Attach(this);
@@ -35,6 +35,7 @@ namespace SteelBIM.Views
             Popular(cmbContravPil, perfis, "BARRA");
             Popular(cmbLinha, perfis, "BARRA");
             Popular(cmbLigacaoTerca, ligacoes, string.Empty);
+            Popular(cmbFundacao, fundacoes, string.Empty);
 
             rbTrelica.Checked += (_, __) => AtualizarCobertura();
             rbViga.Checked += (_, __) => AtualizarCobertura();
@@ -48,6 +49,8 @@ namespace SteelBIM.Views
             chkLinha.Unchecked += (_, __) => AtualizarHabilitacao();
             chkLigacaoTerca.Checked += (_, __) => AtualizarHabilitacao();
             chkLigacaoTerca.Unchecked += (_, __) => AtualizarHabilitacao();
+            chkFundacoes.Checked += (_, __) => AtualizarHabilitacao();
+            chkFundacoes.Unchecked += (_, __) => AtualizarHabilitacao();
 
             txtNumPorticos.TextChanged += (_, __) => AtualizarResumoGeo();
             txtEspacamento.TextChanged += (_, __) => AtualizarResumoGeo();
@@ -106,7 +109,10 @@ namespace SteelBIM.Views
                 SymbolLinhaCorrente = Sym(cmbLinha),
                 NumeroLinhasCorrente = ParseInt(txtNumLinhasCorrente.Text, 3),
                 CriarEixos = chkEixos.IsChecked == true,
-                LancarPlacasBase = chkPlacas.IsChecked == true
+                LancarPlacasBase = chkPlacas.IsChecked == true,
+                LancarFundacoes = chkFundacoes.IsChecked == true,
+                SymbolFundacao = Sym(cmbFundacao),
+                LancarArmaduraFundacao = chkArmaduraFundacao.IsChecked == true
             };
         }
 
@@ -153,6 +159,8 @@ namespace SteelBIM.Views
             cmbContravPil.IsEnabled = chkContravPil.IsChecked == true;
             cmbLinha.IsEnabled = chkLinha.IsChecked == true;
             cmbLigacaoTerca.IsEnabled = chkLigacaoTerca.IsChecked == true;
+            cmbFundacao.IsEnabled = chkFundacoes.IsChecked == true;
+            chkArmaduraFundacao.IsEnabled = chkFundacoes.IsChecked == true;
         }
 
         private void AtualizarResumoGeo()

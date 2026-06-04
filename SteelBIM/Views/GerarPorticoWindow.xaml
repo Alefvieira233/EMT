@@ -222,6 +222,24 @@
                     </Grid>
                 </GroupBox>
 
+                <GroupBox Header="Fundações" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="chkFundacoes" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Content="Lançar fundações (sapata sob cada pilar)" Margin="0 0 0 4"/>
+                        <Label Grid.Row="1" Grid.Column="0" Content="Família da fundação:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbFundacao" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2"/>
+                        <CheckBox x:Name="chkArmaduraFundacao" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Armar fundações (requer família que aceite armadura)" Margin="0 4 0 2"/>
+                    </Grid>
+                </GroupBox>
+
                 <GroupBox Header="Extras" Padding="10" Margin="0 0 0 0">
                     <StackPanel>
                         <CheckBox x:Name="chkEixos" Content="Criar eixos (grid A-G × 1-2)" IsChecked="True" Margin="0 2 0 4"/>

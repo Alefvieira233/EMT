@@ -5,6 +5,7 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using SteelBIM.Models;
+using SteelBIM.Services.PF;
 using SteelBIM.Services.Portico;
 using SteelBIM.Utils;
 using SteelBIM.Views;
@@ -26,6 +27,7 @@ namespace SteelBIM.Commands
             List<FamilySymbol> colunas = Coletar(doc, BuiltInCategory.OST_StructuralColumns);
             List<FamilySymbol> perfis = Coletar(doc, BuiltInCategory.OST_StructuralFraming);
             List<FamilySymbol> ligacoes = ColetarConexoes(doc);
+            List<FamilySymbol> fundacoes = PfFoundationPlacementService.CollectFoundationSymbols(doc).ToList();
 
             if (colunas.Count == 0 || perfis.Count == 0)
             {
@@ -36,7 +38,7 @@ namespace SteelBIM.Commands
                 return Result.Cancelled;
             }
 
-            GerarPorticoWindow window = new GerarPorticoWindow(colunas, perfis, ligacoes);
+            GerarPorticoWindow window = new GerarPorticoWindow(colunas, perfis, ligacoes, fundacoes);
             if (window.ShowDialog() != true)
                 return Result.Cancelled;
 

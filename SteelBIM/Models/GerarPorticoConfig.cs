@@ -67,6 +67,11 @@ namespace SteelBIM.Models
         public FamilySymbol? SymbolLinhaCorrente { get; set; }
         public int NumeroLinhasCorrente { get; set; } = 3;      // nº de fileiras de linha de corrente
 
+        // ===== Fundações =====
+        public bool LancarFundacoes { get; set; }
+        public FamilySymbol? SymbolFundacao { get; set; }
+        public bool LancarArmaduraFundacao { get; set; }        // opt-in, best-effort (requer família rebar-host)
+
         // ===== Extras =====
         public bool CriarEixos { get; set; } = true;
         public bool LancarPlacasBase { get; set; }
