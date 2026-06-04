@@ -84,6 +84,7 @@ namespace SteelBIM.Services.Portico
             int contravPil = 0;
             int linhas = 0;
             int placas = 0;
+            int chapas = 0;
             var pilarIds = new List<ElementId>();
             var tercaIds = new List<ElementId>();
             var banzoSupIds = new List<ElementId>();
@@ -93,7 +94,7 @@ namespace SteelBIM.Services.Portico
                 t.Start();
                 AtivarSimbolos(doc, config);
 
-                // ===== PILARES =====
+                // ===== PILARES (+ chapa no topo opcional: pilar -> chapa -> treliça) =====
                 foreach (Segmento s in layout.Pilares)
                 {
                     FamilyInstance? fp = CriarPilar(doc, pilarSymbol, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B));
@@ -101,6 +102,8 @@ namespace SteelBIM.Services.Portico
                     {
                         pilares++;
                         pilarIds.Add(fp.Id);
+                        if (config.InserirChapaTopoPilar && CriarChapaTopoPilar(doc, ParaXYZ(nivel, s.B), config))
+                            chapas++;
                     }
                 }
 
@@ -220,6 +223,8 @@ namespace SteelBIM.Services.Portico
             else
                 resumo += $"\nVigas: {vigas}";
             resumo += $"\nTerças: {tercas}";
+            if (config.InserirChapaTopoPilar)
+                resumo += $"\nChapas no topo do pilar: {chapas}";
             if (contravCob > 0 || contravPil > 0)
                 resumo += $"\nContraventamentos: {contravCob + contravPil}";
             if (config.LancarLinhaCorrente)
@@ -392,6 +397,43 @@ namespace SteelBIM.Services.Portico
         // ===== Helpers =====
         private XYZ ParaXYZ(Level nivel, Ponto3D p) =>
             new XYZ(_origem.X + p.XMm * FtPerMm, _origem.Y + p.YMm * FtPerMm, nivel.Elevation + p.ZMm * FtPerMm);
+
+        // ===== Chapa no topo do pilar (ligacao pilar -> treliça) — chapa generica via DirectShape =====
+        // Opcao B do plano V5: cria a chapa pelas dimensoes (sem exigir familia carregada).
+        private static bool CriarChapaTopoPilar(Document doc, XYZ topo, GerarPorticoConfig config)
+        {
+            try
+            {
+                double l = config.ChapaTopoComprimentoMm * FtPerMm;
+                double w = config.ChapaTopoLarguraMm * FtPerMm;
+                double t = config.ChapaTopoEspessuraMm * FtPerMm;
+                if (l < RevitUtils.EPS || w < RevitUtils.EPS || t < RevitUtils.EPS)
+                    return false;
+
+                XYZ p0 = new XYZ(topo.X - l / 2.0, topo.Y - w / 2.0, topo.Z);
+                XYZ p1 = new XYZ(topo.X + l / 2.0, topo.Y - w / 2.0, topo.Z);
+                XYZ p2 = new XYZ(topo.X + l / 2.0, topo.Y + w / 2.0, topo.Z);
+                XYZ p3 = new XYZ(topo.X - l / 2.0, topo.Y + w / 2.0, topo.Z);
+                CurveLoop loop = new CurveLoop();
+                loop.Append(Line.CreateBound(p0, p1));
+                loop.Append(Line.CreateBound(p1, p2));
+                loop.Append(Line.CreateBound(p2, p3));
+                loop.Append(Line.CreateBound(p3, p0));
+
+                Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
+                    new List<CurveLoop> { loop }, XYZ.BasisZ, t);
+
+                DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
+                ds.SetShape(new List<GeometryObject> { solid });
+                ds.Name = "Chapa topo do pilar";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[GerarPortico] falha ao criar chapa de topo do pilar");
+                return false;
+            }
+        }
 
         private static void SetParamId(FamilyInstance fi, BuiltInParameter bip, ElementId valor)
         {

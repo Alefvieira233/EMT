@@ -75,6 +75,12 @@ namespace SteelBIM.Models
         public FamilySymbol? SymbolFundacao { get; set; }
         public bool LancarArmaduraFundacao { get; set; }        // opt-in, best-effort (requer família rebar-host)
 
+        // ===== Ligação pilar ↔ treliça (chapa no topo do pilar) =====
+        public bool InserirChapaTopoPilar { get; set; }
+        public double ChapaTopoEspessuraMm { get; set; } = 9.5;
+        public double ChapaTopoLarguraMm { get; set; } = 200.0;
+        public double ChapaTopoComprimentoMm { get; set; } = 200.0;
+
         // ===== Extras =====
         public bool CriarEixos { get; set; } = true;
         public bool LancarPlacasBase { get; set; }

@@ -187,6 +187,21 @@
                     </Grid>
                 </GroupBox>
 
+                <GroupBox Header="Ligação pilar ↔ treliça" Padding="10" Margin="0 0 0 10">
+                    <StackPanel>
+                        <CheckBox x:Name="chkChapaTopo" Content="Inserir chapa no topo do pilar (pilar → chapa → treliça)" Margin="0 0 0 6"
+                                  ToolTip="Cria uma chapa no topo de cada pilar, pelas dimensões abaixo (não precisa de família carregada)."/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Espessura (mm):" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                            <TextBox x:Name="txtChapaEsp" Width="60" Text="9.5" Margin="0 0 12 0"/>
+                            <TextBlock Text="Largura (mm):" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                            <TextBox x:Name="txtChapaLarg" Width="60" Text="200" Margin="0 0 12 0"/>
+                            <TextBlock Text="Comprimento (mm):" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                            <TextBox x:Name="txtChapaComp" Width="60" Text="200"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
                 <GroupBox Header="Contraventamentos" Padding="10" Margin="0 0 0 10">
                     <Grid>
                         <Grid.RowDefinitions>

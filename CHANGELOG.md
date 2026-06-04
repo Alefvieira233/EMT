@@ -195,6 +195,15 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     dele; **ESC = origem do projeto** (comportamento anterior, zero regressão). O offset X/Y é somado
     em `ParaXYZ` e em `CriarEixos` (Z continua relativo ao nível).
 
+- **Ajustes V5 — Onda 3 (chapa no topo do pilar) — 2026-06-04 — v2.8.30:** nova seção
+  **"Ligação pilar ↔ treliça"** na janela do pórtico: checkbox "Inserir chapa no topo do pilar
+  (pilar → chapa → treliça)" + dimensões editáveis (espessura/largura/comprimento, defaults
+  9,5 / 200 / 200 mm). Cria uma **chapa genérica** no topo de cada pilar via DirectShape
+  (opção B do plano — **não exige família carregada**, "só marcar e funciona"). Best-effort
+  (try/catch, contagem honesta no resumo "Chapas no topo do pilar: N"), dentro da transação
+  principal. (Opção A — família de chapa carregável escolhida pelo usuário — fica documentada no
+  `docs/PLANO-AJUSTES-PORTICO-V5.md` como evolução futura.)
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
