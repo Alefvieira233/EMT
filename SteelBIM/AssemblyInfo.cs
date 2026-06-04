@@ -14,9 +14,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 
 // Versao — manter sincronizado com CHANGELOG.md e o badge do README.
-[assembly: AssemblyVersion("2.8.24.0")]
-[assembly: AssemblyFileVersion("2.8.24.0")]
-[assembly: AssemblyInformationalVersion("2.8.24")]
+[assembly: AssemblyVersion("2.8.25.0")]
+[assembly: AssemblyFileVersion("2.8.25.0")]
+[assembly: AssemblyInformationalVersion("2.8.25")]
 
 // ComVisible(false) para evitar expor todos os tipos via COM acidentalmente.
 [assembly: ComVisible(false)]

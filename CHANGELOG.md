@@ -137,6 +137,13 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   - Testes do núcleo puro atualizados/novos (linha de corrente nos terços; `PaineisTrelica` par;
     terças com espaçamento uniforme alinhado aos montantes).
 
+- **Terças acompanham a inclinação da água (automático) — 2026-06-04 — v2.8.25:** cada terça
+  passa a ser lançada já com a rotação da seção igual à inclinação da água (banzo superior),
+  calculada pela geometria (`InclinacaoTercaRad`: β = atan2(rise, meia-largura); água 1 +β, água 2
+  −β, cumeeira/água plana 0). **Sem pedir ângulo ao usuário** — é derivado do vão e das alturas
+  H/B (treliça) ou da cumeeira (viga). `CriarBarra` ganhou parâmetro opcional de rotação (default 0,
+  demais membros inalterados). Testes puros do ângulo (águas opostas simétricas, banzos paralelos 0).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

@@ -436,5 +436,29 @@ namespace SteelBIM.Tests.Services.Portico
             // espacamento de terça em planta na faixa usual (1.5–1.9 m).
             passo.Should().BeInRange(1500.0, 1900.0);
         }
+
+        [Fact]
+        public void InclinacaoTercaRad_AcompanhaAInclinacaoDaAgua()
+        {
+            var e = BaseTrelica(); // H=600, B=1600, w=15010 -> rise=1000, meia=7505
+            double meia = 15010.0 / 2.0;
+            double beta = System.Math.Atan2(1000.0, meia);
+
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, 0.0).Should().BeApproximately(beta, 1e-9);     // agua 1
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, meia).Should().Be(0.0);                        // cumeeira
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, 15010.0).Should().BeApproximately(-beta, 1e-9); // agua 2
+            // aguas opostas: sinais simetricos.
+            double yBaixo = 3000.0;
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, yBaixo)
+                .Should().BeApproximately(-PorticoGeometriaCalculator.InclinacaoTercaRad(e, 15010.0 - yBaixo), 1e-9);
+        }
+
+        [Fact]
+        public void InclinacaoTercaRad_BanzosParalelos_Zero()
+        {
+            var e = BaseTrelica();
+            e.AlturaCentralMm = e.AlturaExtremidadeMm; // agua plana => terça horizontal
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, 2000.0).Should().Be(0.0);
+        }
     }
 }

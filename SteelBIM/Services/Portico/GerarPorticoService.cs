@@ -124,9 +124,12 @@ namespace SteelBIM.Services.Portico
                 }
 
                 // ===== TERÇAS (layout ja' vazio quando desligado) =====
+                // Cada terça assenta na inclinacao da agua (automatico, sem dado do usuario):
+                // a rotacao da secao vem da geometria via InclinacaoTercaRad.
                 foreach (Segmento s in layout.Tercas)
                 {
-                    FamilyInstance? fiT = CriarBarra(doc, config.SymbolTerca, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B));
+                    double rotTerca = PorticoGeometriaCalculator.InclinacaoTercaRad(entrada, s.A.YMm);
+                    FamilyInstance? fiT = CriarBarra(doc, config.SymbolTerca, nivel, ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B), rotTerca);
                     if (fiT != null)
                     {
                         tercas++;
@@ -349,7 +352,7 @@ namespace SteelBIM.Services.Portico
             }
         }
 
-        private static FamilyInstance? CriarBarra(Document doc, FamilySymbol? symbol, Level nivel, XYZ a, XYZ b)
+        private static FamilyInstance? CriarBarra(Document doc, FamilySymbol? symbol, Level nivel, XYZ a, XYZ b, double rotacaoRad = 0.0)
         {
             if (symbol == null || a.DistanceTo(b) < RevitUtils.EPS)
                 return null;
@@ -362,6 +365,8 @@ namespace SteelBIM.Services.Portico
                     return null;
 
                 RevitUtils.DisallowJoins(fi);
+                if (Math.Abs(rotacaoRad) > RevitUtils.EPS)
+                    RevitUtils.SetSectionRotation(fi, rotacaoRad);
                 return fi;
             }
             catch (Exception ex)

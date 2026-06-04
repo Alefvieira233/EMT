@@ -236,6 +236,26 @@ namespace SteelBIM.Services.Portico
             return p;
         }
 
+        /// <summary>
+        /// Rotacao da secao (rad) para a terça assentar na INCLINACAO da agua (banzo superior),
+        /// automaticamente: beta = atan2(rise, meia-largura). Agua 1 (y &lt; meia) recebe +beta;
+        /// agua 2 (y &gt; meia) recebe -beta; cumeeira (y == meia) e agua plana => 0.
+        /// rise = (B - H) na treliça; AlturaCumeeira na viga. Nao exige dado do usuario.
+        /// </summary>
+        public static double InclinacaoTercaRad(GerarPorticoEntrada e, double y)
+        {
+            double meia = e.VaoGalpaoMm / 2.0;
+            if (meia <= Eps)
+                return 0.0;
+            double rise = e.UsarTrelica ? e.AlturaCentralMm - e.AlturaExtremidadeMm : e.AlturaCumeeiraMm;
+            if (rise <= Eps)
+                return 0.0; // agua plana => terça na horizontal
+            if (Math.Abs(y - meia) < Eps)
+                return 0.0; // terça da cumeeira assenta no pico
+            double beta = Math.Atan2(rise, meia);
+            return y < meia ? beta : -beta;
+        }
+
         /// <summary>Posicoes Y das tercas na meia-agua (0..w/2). Em treliça, coincidem com os
         /// montantes (divisao uniforme P par); em viga, distribuem pela inclinacao real da agua.</summary>
         private static IReadOnlyList<double> PosicoesTercasMeiaAgua(GerarPorticoEntrada e, double w)
