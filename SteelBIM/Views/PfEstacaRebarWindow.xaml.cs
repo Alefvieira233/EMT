@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
+using SteelBIM.Infrastructure;
 using SteelBIM.Models.PF;
 using SteelBIM.Services.PF;
 using SteelBIM.Utils;
@@ -61,7 +62,10 @@ namespace SteelBIM.Views
                 double lengthCm = 0.0;
                 try
                 { lengthCm = PfRebarService.GetColumnLengthCm(samplePile); }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "[PfEstacaRebar] falha ao detectar comprimento da estaca");
+                }
 
                 string hostInfo = PfElementService.GetHostPreview(sampleElement);
                 if (lengthCm > 0)

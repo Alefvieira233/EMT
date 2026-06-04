@@ -48,5 +48,22 @@ namespace SteelBIM.Tests.Services.Layout
         {
             OrdenacaoNatural.Comparar("V-007", "V-7").Should().Be(0);
         }
+
+        [Fact]
+        public void NullEVazio_TratadosComoVazio()
+        {
+            OrdenacaoNatural.Comparar(null, null).Should().Be(0);
+            OrdenacaoNatural.Comparar("", "").Should().Be(0);
+            OrdenacaoNatural.Comparar(null, "A").Should().BeLessThan(0);    // vazio vem antes
+            OrdenacaoNatural.Comparar("A", null).Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        public void FronteiraLetraVsDigito()
+        {
+            // "A1": apos 'A', vem digito '1' (49); "AB": apos 'A', vem letra 'B' (66) -> '1' < 'B'.
+            OrdenacaoNatural.Comparar("A1", "AB").Should().BeLessThan(0);
+            OrdenacaoNatural.Comparar("AB", "A1").Should().BeGreaterThan(0);
+        }
     }
 }
