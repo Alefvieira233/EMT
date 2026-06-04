@@ -27,9 +27,12 @@ namespace SteelBIM.Services
         /// <summary>
         /// Infere a base do material por texto: nome do MATERIAL e/ou da FAMILIA/TIPO contendo
         /// "concreto"/"concrete" -> Concreto; "aco"/"aço"/"steel" -> Metalico; senao, se for
-        /// fundacao -> Concreto; senao Outro. Concreto tem prioridade sobre aco.
+        /// fundacao -> Concreto; senao, se for um PERFIL ESTRUTURAL (viga/terca/contrav/pilar
+        /// metalico sem material atribuido) -> Metalico (aço por padrao); senao Outro.
+        /// Concreto tem prioridade sobre aco. <paramref name="isPerfilEstrutural"/> default false
+        /// preserva o comportamento dos chamadores existentes.
         /// </summary>
-        public static BaseMaterial InferirBase(string? nomeMaterial, string? nomeFamiliaTipo, bool isFundacao)
+        public static BaseMaterial InferirBase(string? nomeMaterial, string? nomeFamiliaTipo, bool isFundacao, bool isPerfilEstrutural = false)
         {
             if (ContemConcreto(nomeMaterial) || ContemConcreto(nomeFamiliaTipo))
                 return BaseMaterial.Concreto;
@@ -37,6 +40,8 @@ namespace SteelBIM.Services
                 return BaseMaterial.Metalico;
             if (isFundacao)
                 return BaseMaterial.Concreto;
+            if (isPerfilEstrutural)
+                return BaseMaterial.Metalico; // viga/terca/contrav/perfil sem material -> aço por padrao
             return BaseMaterial.Outro;
         }
 

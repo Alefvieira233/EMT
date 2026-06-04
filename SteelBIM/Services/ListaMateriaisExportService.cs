@@ -1114,9 +1114,16 @@ namespace SteelBIM.Services
 
             // Inferencia por TEXTO (pura/testavel): nome do material E da familia/tipo (ex.: pilar
             // "Secao retangular de concreto" sem material atribuido) + fundacao -> concreto.
+            // Perfis estruturais (viga/terca/contrav/pilar metalico/perfil de conexao) sem material
+            // sao tratados como AÇO por padrao — senao terças e contraventamentos somem da lista.
             bool isFundacao = categoria == ListaMateriaisCategoriaLogica.Fundacoes;
+            bool isPerfilEstrutural =
+                categoria == ListaMateriaisCategoriaLogica.Vigas ||
+                categoria == ListaMateriaisCategoriaLogica.Pilares ||
+                categoria == ListaMateriaisCategoriaLogica.Contraventamentos ||
+                categoria == ListaMateriaisCategoriaLogica.PerfisConexao;
             ListaMateriaisPesoCalc.BaseMaterial baseTexto =
-                ListaMateriaisPesoCalc.InferirBase(material?.Name, nomeFamiliaTipo, isFundacao);
+                ListaMateriaisPesoCalc.InferirBase(material?.Name, nomeFamiliaTipo, isFundacao, isPerfilEstrutural);
             return baseTexto switch
             {
                 ListaMateriaisPesoCalc.BaseMaterial.Concreto => MaterialBaseTipo.Concreto,

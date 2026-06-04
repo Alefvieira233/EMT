@@ -204,6 +204,16 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   principal. (Opção A — família de chapa carregável escolhida pelo usuário — fica documentada no
   `docs/PLANO-AJUSTES-PORTICO-V5.md` como evolução futura.)
 
+- **Lista de Materiais — Onda 1 (terças e contraventamento voltam à lista) — 2026-06-04 — v2.8.31:**
+  plano em `docs/PLANO-LISTA-MATERIAIS-PRO.md`. Causa de "faltou terças e contraventamento": a seção
+  metálica da planilha só incluía perfis com material classificado como metálico e peso > 0 — perfis
+  **sem material atribuído** (nome "U150x65" não contém "aço") caíam em "Outro" com peso 0 e
+  **sumiam**. Corrigido: `ListaMateriaisPesoCalc.InferirBase` ganhou `isPerfilEstrutural` (default
+  false, retrocompatível) e `InferirMaterialBaseTipo` trata viga/terça/contrav/pilar metálico/perfil
+  de conexão **sem material como aço por padrão** → entram na lista com peso (densidade padrão 7850
+  quando não há kg/m). Testes puros novos. (Ondas 2–4 — planilha profissional, fundação/chapas,
+  escopo — no plano.)
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
