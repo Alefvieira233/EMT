@@ -1362,6 +1362,9 @@ namespace SteelBIM.Services
                 CriarAbaDetalhe(workbook, "Conexões", conexoes);
             }
 
+            if (config.ExportarPerfisLineares)
+                CriarAbaRomaneioMetalico(workbook, grupos);
+
             if (config.ExportarResumo)
                 CriarAbaResumo(workbook, grupos);
 
@@ -1535,6 +1538,116 @@ namespace SteelBIM.Services
 
             FormatarColunasNumericas(ws, 2, ultimaLinha, linhaTotais);
             ws.Columns().AdjustToContents();
+        }
+
+        // Romaneio metalico em colunas dedicadas (padrao de escritorio): um perfil por linha com
+        // Qtd, comprimento total, peso linear e peso total + acessorios + total geral de aco.
+        // Aba ADITIVA — nao altera Planilha Base/Detalhe/Resumo.
+        private static void CriarAbaRomaneioMetalico(XLWorkbook workbook, List<ListaMateriaisGrupo> grupos)
+        {
+            List<IGrouping<RomaneioChaveLdm, ListaMateriaisGrupo>> perfis = grupos
+                .Where(x => x.MaterialBaseTipo == MaterialBaseTipo.Metalico &&
+                            (x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.ElementosEstruturais ||
+                             x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.PerfisConexao) &&
+                            x.PesoTotalKg > 0.0)
+                .GroupBy(x => new RomaneioChaveLdm(x.TipoPerfil, x.Material))
+                .OrderBy(x => x.Key.TipoPerfil, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(x => x.Key.Material, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            List<IGrouping<string, ListaMateriaisGrupo>> acessorios = grupos
+                .Where(x => x.MaterialBaseTipo == MaterialBaseTipo.Metalico &&
+                            x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.Conexoes &&
+                            x.PesoTotalKg > 0.0)
+                .GroupBy(x => x.Material)
+                .OrderBy(x => x.Key, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            if (perfis.Count == 0 && acessorios.Count == 0)
+                return; // sem aco -> nao cria a aba
+
+            IXLWorksheet ws = workbook.Worksheets.Add("Romaneio Metálico");
+
+            string[] headers =
+            {
+                "Item",
+                "Perfil / Bitola",
+                "Material",
+                "Qtd",
+                "Comp. total (m)",
+                "Peso linear (kg/m)",
+                "Peso total (kg)"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+                ws.Cell(1, i + 1).Value = headers[i];
+
+            EstilizarCabecalho(ws, 1, headers.Length);
+
+            int linha = 2;
+            int item = 1;
+            foreach (IGrouping<RomaneioChaveLdm, ListaMateriaisGrupo> g in perfis)
+            {
+                int qtd = g.Sum(y => y.Quantidade);
+                double comp = g.Sum(y => y.ComprimentoTotalM);
+                double peso = g.Sum(y => y.PesoTotalKg);
+                double kgPorM = comp > 0.0 ? peso / comp : 0.0;
+
+                ws.Cell(linha, 1).Value = item++;
+                ws.Cell(linha, 2).Value = string.IsNullOrWhiteSpace(g.Key.TipoPerfil) ? "-" : g.Key.TipoPerfil;
+                ws.Cell(linha, 3).Value = g.Key.Material;
+                ws.Cell(linha, 4).Value = qtd;
+                ws.Cell(linha, 5).Value = comp;
+                ws.Cell(linha, 6).Value = kgPorM;
+                ws.Cell(linha, 7).Value = peso;
+                linha++;
+            }
+
+            // Parafusos / chapas / acessorios: sem comprimento e sem peso linear (so qtd + peso).
+            foreach (IGrouping<string, ListaMateriaisGrupo> g in acessorios)
+            {
+                ws.Cell(linha, 1).Value = item++;
+                ws.Cell(linha, 2).Value = "Chapas e acessórios";
+                ws.Cell(linha, 3).Value = g.Key;
+                ws.Cell(linha, 4).Value = g.Sum(y => y.Quantidade);
+                ws.Cell(linha, 7).Value = g.Sum(y => y.PesoTotalKg);
+                linha++;
+            }
+
+            int ultimaLinha = linha - 1;
+            ws.Range(1, 1, ultimaLinha, headers.Length).SetAutoFilter();
+            ws.SheetView.FreezeRows(1);
+
+            int linhaTotal = linha;
+            ws.Cell(linhaTotal, 2).Value = "TOTAL AÇO";
+            ws.Cell(linhaTotal, 4).FormulaA1 = $"SUM(D2:D{ultimaLinha})";
+            ws.Cell(linhaTotal, 5).FormulaA1 = $"SUM(E2:E{ultimaLinha})";
+            ws.Cell(linhaTotal, 7).FormulaA1 = $"SUM(G2:G{ultimaLinha})";
+            ws.Range(linhaTotal, 1, linhaTotal, headers.Length).Style.Font.Bold = true;
+
+            ws.Column(4).Style.NumberFormat.Format = "#,##0";
+            ws.Range(2, 5, linhaTotal, 7).Style.NumberFormat.Format = "#,##0.00";
+            ws.Range(1, 1, linhaTotal, headers.Length).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            ws.Columns().AdjustToContents();
+        }
+
+        private sealed class RomaneioChaveLdm
+        {
+            public RomaneioChaveLdm(string tipoPerfil, string material)
+            {
+                TipoPerfil = tipoPerfil;
+                Material = material;
+            }
+
+            public string TipoPerfil { get; }
+            public string Material { get; }
+
+            public override bool Equals(object? obj) =>
+                obj is RomaneioChaveLdm o &&
+                string.Equals(TipoPerfil, o.TipoPerfil, StringComparison.Ordinal) &&
+                string.Equals(Material, o.Material, StringComparison.Ordinal);
+
+            public override int GetHashCode() => System.HashCode.Combine(TipoPerfil, Material);
         }
 
         private static string ObterNomeBaseMaterial(MaterialBaseTipo baseTipo)

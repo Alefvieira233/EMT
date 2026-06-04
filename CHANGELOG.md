@@ -280,6 +280,15 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     de pintura (mantida como superfície desenvolvida; união booleana seria frágil e não resolveria
     faces internas) — ambos a validar no Revit.
 
+- **Auditoria 2026-06-05 — Onda 4 (romaneio "padrão de escritório") — v2.8.38:**
+  - Nova aba **"Romaneio Metálico"** na exportação (quando "Perfis lineares" está marcado): **colunas
+    dedicadas** — Item · Perfil/Bitola · Material · Qtd · Comp. total (m) · Peso linear (kg/m) · Peso
+    total (kg) — um perfil por linha, seção de **chapas/acessórios** (qtd + peso) e linha **TOTAL
+    AÇO**. Abordagem **aditiva**: não altera a Planilha Base, o Detalhe, o Resumo nem o template
+    `ModeloLDM.xlsx` (zero risco de regressão).
+  - Pendente (follow-up menor): subdividir parafusos por **bitola/comprimento** e romaneio por
+    **marca** de fabricação (os dados de marca já existem na aba Detalhe).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
