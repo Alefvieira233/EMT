@@ -87,6 +87,14 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   popup) — o caminho interativo "Armaduras Bloco" continua intacto. Fases 2 (arranque do pilar)
   e 3 (viga baldrame ancorada) virão após validação no Revit.
 
+- **CI publica o plugin compilado como artefato baixável — 2026-06-04:** o job
+  `Build SteelBIM (Release)` agora empacota o `SteelBIM.dll` já compilado + dependências +
+  `SteelBIM.addin` (no layout `Addins\2025\`) e o sobe como artefato **`SteelBIM-plugin-<sha>`**
+  (retenção 14 dias) com um `LEIA-ME-INSTALACAO.txt`. Permite **instalar sem compilar nem rodar
+  o `INSTALAR.bat`**: baixar o zip do run verde, extrair em `%AppData%\Autodesk\Revit\Addins\2025\`
+  e abrir o Revit. O `.dll` é compilado contra os stubs Nice3point (reference-only,
+  `ExcludeAssets=runtime` — não carregam; em runtime o Revit usa a `RevitAPI.dll` real, ADR-005).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
