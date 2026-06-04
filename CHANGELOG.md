@@ -124,6 +124,19 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   novo campo `DistribuicaoContravPilares`; janela ganha o combo "Distribuição (pilares)". Testes do
   núcleo puro atualizados (distribuição de pilares Extremidades/Centro/Todos = 8/16/24 X em N=7).
 
+- **Ajustes finos: linha de corrente + terças nos montantes — 2026-06-04 — v2.8.24:**
+  - **Linha de corrente** agora significa "**N linhas no comprimento**": divide o comprimento do
+    galpão em (N+1) partes e lança N linhas nos pontos interiores (2 → terços L/3 e 2L/3, 3 →
+    quartos), cada uma subindo a água do beiral à cumeeira. Antes o número selecionava *vãos*
+    (1 por vão), então com poucos pórticos "2 virava 1". Agora **N = N linhas** sempre.
+  - **Terças sobre os montantes:** em treliça, as terças passam a cair exatamente sobre os
+    montantes. O nº de painéis da treliça é derivado do **espaçamento-alvo das terças** (helper puro
+    `PaineisTrelica`, sempre par → nó na cumeeira, sem painel curto) e usado para montantes **e**
+    terças — distribuição uniforme em planta na faixa usual 1,5–1,9 m. O campo "Divisões da treliça"
+    passa a ser usado só quando as terças estão desligadas (tooltips atualizados).
+  - Testes do núcleo puro atualizados/novos (linha de corrente nos terços; `PaineisTrelica` par;
+    terças com espaçamento uniforme alinhado aos montantes).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

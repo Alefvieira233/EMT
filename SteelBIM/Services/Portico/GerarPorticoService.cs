@@ -282,7 +282,11 @@ namespace SteelBIM.Services.Portico
             Padrao = c.PadraoTrelica,
             AlturaExtremidadeMm = c.AlturaExtremidadeMm,
             AlturaCentralMm = c.AlturaCentralMm,
-            Quantidade = Math.Max(1, c.DivisoesTrelica),
+            // Com terças ligadas, os montantes seguem o espaçamento das terças (P painéis par =>
+            // terça sobre cada montante, nó na cumeeira). Sem terças, usa as divisões da janela.
+            Quantidade = c.LancarTercas
+                ? Math.Max(1, PorticoGeometriaCalculator.PaineisTrelica(c.VaoGalpaoMm, c.EspacamentoTercasMm) - 1)
+                : Math.Max(1, c.DivisoesTrelica),
             ModoEspacamento = TrussSpacingMode.Uniforme,
             LancarMontante = true,
             LancarDiagonal = true,

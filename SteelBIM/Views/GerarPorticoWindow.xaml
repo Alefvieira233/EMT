@@ -102,7 +102,7 @@
                             <Label Grid.Row="0" Grid.Column="0" Content="Tipo de treliça:" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cmbPadrao" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
                             <Label Grid.Row="0" Grid.Column="2" Content="Divisões:" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                            <TextBox x:Name="txtDivisoes" Grid.Row="0" Grid.Column="3" Margin="0 2 0 2" Text="8"/>
+                            <TextBox x:Name="txtDivisoes" Grid.Row="0" Grid.Column="3" Margin="0 2 0 2" Text="8" ToolTip="Nº de painéis da treliça. Com terças ligadas, é derivado do espaçamento das terças (montantes alinhados às terças); usado só quando as terças estão desligadas."/>
 
                             <Label Grid.Row="1" Grid.Column="0" Content="Altura extremidade H (mm):" VerticalAlignment="Center"/>
                             <TextBox x:Name="txtH" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2" Text="600" ToolTip="H = altura da treliça no apoio (beiral), em mm. B &gt; H gera duas águas."/>
@@ -168,7 +168,7 @@
                         <Label Grid.Row="1" Grid.Column="0" Content="Perfil / espaç. (mm):" VerticalAlignment="Center"/>
                         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
                             <ComboBox x:Name="cmbTerca" Width="290" Margin="6 2 8 2"/>
-                            <TextBox x:Name="txtEspTercas" Width="80" Margin="0 2 0 2" Text="1500"/>
+                            <TextBox x:Name="txtEspTercas" Width="80" Margin="0 2 0 2" Text="1500" ToolTip="Espaçamento-alvo das terças (mm). Em treliça, as terças caem sobre os montantes: o nº de painéis é ajustado p/ ficar próximo deste valor (faixa usual 1500–1900)."/>
                         </StackPanel>
                         <Label Grid.Row="2" Grid.Column="0" Content="Elevação sobre o banzo (mm):" VerticalAlignment="Center"/>
                         <TextBox x:Name="txtElevTercas" Grid.Row="2" Grid.Column="1" Width="80" HorizontalAlignment="Left" Margin="6 2 0 2" Text="150" ToolTip="Eleva a terça acima do banzo superior (ajuste conforme a altura do perfil)."/>
@@ -223,8 +223,8 @@
                         </Grid.ColumnDefinitions>
                         <CheckBox x:Name="chkLinha" Grid.Column="0" Content="Lançar linha de corrente" VerticalAlignment="Center"/>
                         <ComboBox x:Name="cmbLinha" Grid.Column="1" Margin="6 2 0 2"/>
-                        <Label Grid.Column="2" Content="Nº fileiras:" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                        <TextBox x:Name="txtNumLinhasCorrente" Grid.Column="3" Margin="0 2 0 2" Text="3" ToolTip="Nº de fileiras de linha de corrente distribuídas ao longo do galpão."/>
+                        <Label Grid.Column="2" Content="Nº de linhas:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumLinhasCorrente" Grid.Column="3" Margin="0 2 0 2" Text="2" ToolTip="Nº de linhas de corrente ao longo do comprimento do galpão: divide o comprimento em (N+1) partes e põe N linhas nos pontos interiores (2 → nos terços, L/3 e 2L/3). Cada linha sobe a água do beiral à cumeeira."/>
                     </Grid>
                 </GroupBox>
 

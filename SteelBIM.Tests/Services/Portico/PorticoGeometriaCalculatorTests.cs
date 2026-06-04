@@ -235,19 +235,31 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
-        public void Calcular_LinhaCorrente_SobeAAgua_NoMeioDoVao()
+        public void Calcular_LinhaCorrente_DivideOComprimento_NPontosInteriores()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true; // NumeroLinhasCorrente = 3 (default)
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 3 linhas -> divide o comprimento (30000) em 4 -> 7500/15000/22500; x2 aguas = 6.
+            r.LinhasCorrente.Should().HaveCount(6);
+            r.LinhasCorrente.Should().OnlyContain(s => s.A.XMm == s.B.XMm && s.A.YMm != s.B.YMm);
+            r.LinhasCorrente.Select(s => s.A.XMm).Distinct()
+                .Should().BeEquivalentTo(new[] { 7500.0, 15000.0, 22500.0 });
+            // uma das aguas vai do beiral (y=0) ate a cumeeira (y=w/2).
+            r.LinhasCorrente.Should().Contain(s => s.A.YMm == 0.0 && s.B.YMm == 15010.0 / 2.0);
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_Duas_NosTercosDoComprimento()
         {
             var e = BaseTrelica();
             e.LancarLinhaCorrente = true;
+            e.NumeroLinhasCorrente = 2; // exemplo do engenheiro: 2 correntes nos tercos
             var r = PorticoGeometriaCalculator.Calcular(e);
-            // NumeroLinhasCorrente=3 (default) -> 3 fileiras x 2 aguas = 6 sag-rods.
-            r.LinhasCorrente.Should().HaveCount(6);
-            // sobe a agua: X constante (meio do vao) e Y varia (do beiral a cumeeira).
-            r.LinhasCorrente.Should().OnlyContain(s => s.A.XMm == s.B.XMm && s.A.YMm != s.B.YMm);
-            // no meio do primeiro vao (entre x=0 e x=5000 -> 2500).
-            r.LinhasCorrente.Should().Contain(s => s.A.XMm == 2500.0);
-            // uma das aguas vai do beiral (y=0) ate a cumeeira (y=w/2).
-            r.LinhasCorrente.Should().Contain(s => s.A.YMm == 0.0 && s.B.YMm == 15010.0 / 2.0);
+            // divide 30000 em 3 -> 10000 e 20000; x2 aguas = 4 segmentos. "2 = 2".
+            r.LinhasCorrente.Should().HaveCount(4);
+            r.LinhasCorrente.Select(s => s.A.XMm).Distinct()
+                .Should().BeEquivalentTo(new[] { 10000.0, 20000.0 });
         }
 
         [Fact]
@@ -385,10 +397,44 @@ namespace SteelBIM.Tests.Services.Portico
             e.ContravCobertura = true;
             e.TercasPorXCobertura = 0;   // sem passo de X de cobertura
             e.LancarLinhaCorrente = true;
-            e.NumeroLinhasCorrente = 0;  // sem fileiras de linha de corrente
+            e.NumeroLinhasCorrente = 0;  // sem linhas de corrente
             var r = PorticoGeometriaCalculator.Calcular(e);
             r.ContravCobertura.Should().BeEmpty();
             r.LinhasCorrente.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(15010.0, 1500.0, 10)] // 15010/1500 ~ 10 (par) -> esp 1501 mm
+        [InlineData(15010.0, 1800.0, 8)]  // 15010/1800 ~ 8.3 -> 8 (par) -> esp 1876 mm
+        [InlineData(15010.0, 1700.0, 10)] // 8.8 -> 9 (impar) -> sobe p/ 10 (par)
+        [InlineData(12000.0, 100000.0, 2)] // alvo absurdo -> minimo 2
+        public void PaineisTrelica_SempreParEProximoDoAlvo(double vao, double alvo, int esperado)
+        {
+            int p = PorticoGeometriaCalculator.PaineisTrelica(vao, alvo);
+            p.Should().Be(esperado);
+            (p % 2).Should().Be(0); // sempre par -> no' na cumeeira
+        }
+
+        [Fact]
+        public void Calcular_Tercas_AlinhadasComMontantes_EspacamentoUniformeEmPlanta()
+        {
+            var e = BaseTrelica(); // treliça, vao 15010, espacamento alvo 1500 -> P=10
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            // Y das terças na meia-agua (uma terça por X=0), ordenados.
+            var ys = r.Tercas
+                .Where(s => s.A.YMm <= meia + 1e-6)
+                .Select(s => s.A.YMm)
+                .Distinct()
+                .OrderBy(v => v)
+                .ToList();
+            // P=10 -> 6 niveis na meia-agua (0, w/10, ..., w/2) = montantes; espacamento uniforme.
+            ys.Should().HaveCount(6);
+            double passo = 15010.0 / 10.0;
+            for (int i = 0; i < ys.Count; i++)
+                ys[i].Should().BeApproximately(i * passo, 1e-6);
+            // espacamento de terça em planta na faixa usual (1.5–1.9 m).
+            passo.Should().BeInRange(1500.0, 1900.0);
         }
     }
 }

@@ -180,24 +180,26 @@ namespace SteelBIM.Services.Portico
                 }
             }
 
-            // ===== LINHA DE CORRENTE (sag-rods subindo a agua; N fileiras distribuidas) =====
-            // Liga o meio da terça (no meio do vao) ate o meio da terça da cumeeira, por agua.
-            // Fica no nivel das terças (ZTopo + elevacao), coplanar com elas.
+            // ===== LINHA DE CORRENTE (sag-rods subindo a agua) =====
+            // Divide o COMPRIMENTO da terça (galpao inteiro) em (N+1) partes e poe N linhas nos
+            // pontos interiores: 2 -> tercos (L/3, 2L/3), 3 -> quartos, etc. Cada linha sobe a agua
+            // do beiral a cumeeira, no nivel das terças (ZTopo + elevacao). "N = N linhas".
             if (e.LancarLinhaCorrente && e.NumeroLinhasCorrente > 0)
             {
                 double meia = w / 2.0;
                 double elev = elevTercas;
-                foreach (int vao in DistribuirVaos(nVaos, e.NumeroLinhasCorrente))
+                int nLinhas = e.NumeroLinhasCorrente;
+                for (int k = 1; k <= nLinhas; k++)
                 {
-                    double xMid = (xPorticos[vao] + xPorticos[vao + 1]) / 2.0;
+                    double xPos = comprimento * k / (nLinhas + 1);
                     // agua 1: beiral (y=0) -> cumeeira (y=w/2).
                     linhasCorrente.Add(new Segmento(
-                        new Ponto3D(xMid, 0.0, ZTopo(e, hp, w, 0.0) + elev),
-                        new Ponto3D(xMid, meia, ZTopo(e, hp, w, meia) + elev)));
+                        new Ponto3D(xPos, 0.0, ZTopo(e, hp, w, 0.0) + elev),
+                        new Ponto3D(xPos, meia, ZTopo(e, hp, w, meia) + elev)));
                     // agua 2: cumeeira -> beiral oposto (y=w).
                     linhasCorrente.Add(new Segmento(
-                        new Ponto3D(xMid, meia, ZTopo(e, hp, w, meia) + elev),
-                        new Ponto3D(xMid, w, ZTopo(e, hp, w, w) + elev)));
+                        new Ponto3D(xPos, meia, ZTopo(e, hp, w, meia) + elev),
+                        new Ponto3D(xPos, w, ZTopo(e, hp, w, w) + elev)));
                 }
             }
 
@@ -216,15 +218,49 @@ namespace SteelBIM.Services.Portico
             return hp + e.AlturaCumeeiraMm * frac;
         }
 
-        /// <summary>Posicoes Y das tercas na meia-agua (0..w/2), por comprimento de inclinacao.</summary>
+        /// <summary>
+        /// Nº TOTAL de paineis (vaos) da treliça ao longo do vao para que o espacamento das tercas
+        /// (em planta) fique proximo do alvo (mm). P sempre PAR, garantindo um no' exatamente na
+        /// cumeeira (sem painel curto). Usado tanto para os montantes quanto para as tercas, de modo
+        /// que cada terça caia exatamente sobre um montante. Minimo 2.
+        /// </summary>
+        public static int PaineisTrelica(double vaoMm, double espacamentoAlvoMm)
+        {
+            if (vaoMm <= Eps || espacamentoAlvoMm <= Eps)
+                return 2;
+            int p = (int)Math.Round(vaoMm / espacamentoAlvoMm);
+            if (p < 2)
+                p = 2;
+            if (p % 2 != 0)   // par => no' natural na cumeeira (montante de king-post), sem painel curto
+                p++;
+            return p;
+        }
+
+        /// <summary>Posicoes Y das tercas na meia-agua (0..w/2). Em treliça, coincidem com os
+        /// montantes (divisao uniforme P par); em viga, distribuem pela inclinacao real da agua.</summary>
         private static IReadOnlyList<double> PosicoesTercasMeiaAgua(GerarPorticoEntrada e, double w)
         {
-            // auto-defensivo: sem espacamento valido nao ha como distribuir (evita (int)NaN/Inf).
-            if (e.EspacamentoTercasMm <= Eps || w <= Eps)
+            if (w <= Eps)
                 return new List<double>();
 
             double meia = w / 2.0;
-            double rise = e.UsarTrelica ? e.AlturaCentralMm - e.AlturaExtremidadeMm : e.AlturaCumeeiraMm;
+
+            // Treliça: terças sobre os montantes. P paineis no vao (par), terças em i*w/P na meia-agua.
+            if (e.UsarTrelica)
+            {
+                int p = PaineisTrelica(w, e.EspacamentoTercasMm);
+                int meioP = p / 2;
+                var ysT = new List<double>(meioP + 1);
+                for (int i = 0; i <= meioP; i++)
+                    ysT.Add(i * w / p);
+                return ysT;
+            }
+
+            // Viga: sem montantes, distribui pela inclinacao real (auto-defensivo se espacamento invalido).
+            if (e.EspacamentoTercasMm <= Eps)
+                return new List<double>();
+
+            double rise = e.AlturaCumeeiraMm;
             double comprimentoAgua = Math.Sqrt(meia * meia + rise * rise);
             int passos = (int)Math.Round(comprimentoAgua / e.EspacamentoTercasMm);
             if (passos < 1)
