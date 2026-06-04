@@ -1116,6 +1116,7 @@ namespace SteelBIM.Services.DiagramaMontagem
                     return ElementId.InvalidElementId;
 
                 qualquer.Activate();
+                doc.Regenerate(); // title block recem-ativado precisa regenerar antes de ViewSheet.Create
                 titleBlock = qualquer;
             }
 

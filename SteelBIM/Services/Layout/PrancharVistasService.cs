@@ -37,7 +37,10 @@ namespace SteelBIM.Services.Layout
             {
                 t.Start();
                 if (!tb.IsActive)
+                {
                     tb.Activate();
+                    doc.Regenerate(); // title block recem-ativado precisa regenerar antes de ViewSheet.Create
+                }
 
                 ViewSheet sheet = ViewSheet.Create(doc, tb.Id);
                 if (!string.IsNullOrWhiteSpace(config.NumeroFolha))

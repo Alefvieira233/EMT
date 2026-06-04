@@ -88,13 +88,16 @@ namespace SteelBIM.Services
 
                         if (!skipTirante && config.SymbolTirante != null)
                         {
-                            Line line = CriarLinhaComSentido(ptA, ptB, config.InverterSentido);
-                            FamilyInstance fi = doc.Create.NewFamilyInstance(line, config.SymbolTirante, nivel, StructuralType.Beam);
-                            if (fi != null)
+                            Line? line = CriarLinhaComSentido(ptA, ptB, config.InverterSentido);
+                            if (line != null)
                             {
-                                RevitUtils.SetZJustification(fi, config.ZJustificationValue);
-                                RevitUtils.SetYZOffsets(fi, 0.0, zOffsetFt);
-                                RevitUtils.DisallowJoins(fi);
+                                FamilyInstance fi = doc.Create.NewFamilyInstance(line, config.SymbolTirante, nivel, StructuralType.Beam);
+                                if (fi != null)
+                                {
+                                    RevitUtils.SetZJustification(fi, config.ZJustificationValue);
+                                    RevitUtils.SetYZOffsets(fi, 0.0, zOffsetFt);
+                                    RevitUtils.DisallowJoins(fi);
+                                }
                             }
                         }
                     }
@@ -136,8 +139,12 @@ namespace SteelBIM.Services
             AppDialogService.ShowInfo("Travamentos", "Travamentos criados com sucesso.", "Modelagem concluída");
         }
 
-        private Line CriarLinhaComSentido(XYZ inicio, XYZ fim, bool inverterSentido)
+        private Line? CriarLinhaComSentido(XYZ inicio, XYZ fim, bool inverterSentido)
         {
+            // guard: pontos coincidentes lançariam em Line.CreateBound e fariam rollback do lote
+            // inteiro de travamentos. Retorna null e o caller pula (igual aos guards de Tercas/Trelica).
+            if (inicio.DistanceTo(fim) < RevitUtils.EPS)
+                return null;
             return inverterSentido
                 ? Line.CreateBound(fim, inicio)
                 : Line.CreateBound(inicio, fim);
