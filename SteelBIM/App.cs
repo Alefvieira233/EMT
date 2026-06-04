@@ -541,6 +541,20 @@ namespace SteelBIM
                 "armadura_grid_small.png"
             );
 
+            // v2.8.21 (Fase 1): comando dedicado que monta a GAIOLA FECHADA do bloco de coroamento
+            // (malha de fundo acima das estacas + estribos perimetrais + malha de topo/pele opcionais),
+            // resolvendo o detalhamento fragmentado ("U soltos").
+            AddButton(
+                panelPfArmaduras,
+                "btnArmaduraCoroamento",
+                "Gaiola\nCoroamento",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdArmaduraCoroamento",
+                "Monta a gaiola fechada do bloco de coroamento: malha de fundo acima das estacas, estribos perimetrais que fecham fundo->topo, malha de topo e pele laterais opcionais.",
+                "armadura_grid_large.png",
+                "armadura_grid_small.png"
+            );
+
             AddButton(
                 panelPfArmaduras,
                 "btnPfInserirAcosEstaca",
