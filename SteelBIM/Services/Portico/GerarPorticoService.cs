@@ -92,8 +92,10 @@ namespace SteelBIM.Services.Portico
                     foreach (Segmento s in layout.EixosInferioresTrelica)
                     {
                         Line eixo = Line.CreateBound(ParaXYZ(nivel, s.A), ParaXYZ(nivel, s.B));
-                        membrosTrelica += trelicaService.GerarTrelicaCompletaNoEixo(doc, nivel, eixo, tc, banzoSupIds);
-                        trelicas++;
+                        int m = trelicaService.GerarTrelicaCompletaNoEixo(doc, nivel, eixo, tc, banzoSupIds);
+                        membrosTrelica += m;
+                        if (m > 0)
+                            trelicas++;
                     }
                 }
                 else
@@ -465,8 +467,8 @@ namespace SteelBIM.Services.Portico
                     }
                 }
 
-                List<Reference> tercasRefs = tercaIds.Select(id => new Reference(doc.GetElement(id))).ToList();
-                List<Reference> vigasRefs = banzoSupIds.Select(id => new Reference(doc.GetElement(id))).ToList();
+                List<Reference> tercasRefs = tercaIds.Select(doc.GetElement).OfType<Element>().Select(el => new Reference(el)).ToList();
+                List<Reference> vigasRefs = banzoSupIds.Select(doc.GetElement).OfType<Element>().Select(el => new Reference(el)).ToList();
                 ConexaoTercasConfig cfg = new ConexaoTercasConfig
                 {
                     SymbolSelecionado = symbol,
@@ -491,6 +493,7 @@ namespace SteelBIM.Services.Portico
         // ===== Fundações (opcional) — reusa PfFoundationPlacementService headless =====
         private static List<ElementId> LancarFundacoes(UIDocument uidoc, Document doc, FamilySymbol symbol, List<ElementId> pilarIds)
         {
+            ICollection<ElementId> selAntes = uidoc.Selection.GetElementIds();
             try
             {
                 var antes = new HashSet<ElementId>(ColetarFundacoes(doc));
@@ -509,6 +512,11 @@ namespace SteelBIM.Services.Portico
             {
                 Logger.Warn(ex, "[GerarPortico] falha ao lançar fundações");
                 return new List<ElementId>();
+            }
+            finally
+            {
+                // nao deixa a selecao do usuario bagunçada com os pilares.
+                uidoc.Selection.SetElementIds(selAntes);
             }
         }
 
@@ -541,10 +549,17 @@ namespace SteelBIM.Services.Portico
                     return (0, puladas, "a família da fundação não aceita armadura (use sapata de concreto estrutural)");
 
                 BlocoFundacaoRebarConfig cfg = MontarArmaduraSapata(barType.Name);
-                Result r = new BlocoFundacaoRebarOrchestrator().Execute(uidoc, armaveis, cfg, mostrarResumo: false);
-                int armadas = r == Result.Succeeded ? armaveis.Count : 0;
-                string motivo = puladas > 0 ? "algumas famílias não aceitam armadura" : string.Empty;
-                return (armadas, puladas, motivo);
+                var run = new BlocoFundacaoRebarOrchestrator().Execute(uidoc, armaveis, cfg, mostrarResumo: false);
+                int armadas = run.hostsOk; // conta so as que realmente geraram barra
+                int totalPuladas = fundacaoIds.Count - armadas;
+                string motivo;
+                if (totalPuladas == 0)
+                    motivo = string.Empty;
+                else if (puladas > 0)
+                    motivo = "fundação(ões) sem armadura: família não aceita armadura (use sapata de concreto estrutural)";
+                else
+                    motivo = "sem barras geradas (verifique dimensões/cobrimento da sapata)";
+                return (armadas, totalPuladas, motivo);
             }
             catch (Exception ex)
             {

@@ -99,7 +99,11 @@ namespace SteelBIM.Services.Portico
                 pilares.Add(new Segmento(new Ponto3D(x, 0.0, 0.0), new Ponto3D(x, 0.0, hp)));
                 pilares.Add(new Segmento(new Ponto3D(x, w, 0.0), new Ponto3D(x, w, hp)));
                 if (e.PilarCentral)
-                    pilares.Add(new Segmento(new Ponto3D(x, w / 2.0, 0.0), new Ponto3D(x, w / 2.0, hp)));
+                {
+                    // modo treliça: apoia o banzo inferior (z=hp). modo viga: alcança o ápice (cumeeira).
+                    double topoCentral = e.UsarTrelica ? hp : hp + e.AlturaCumeeiraMm;
+                    pilares.Add(new Segmento(new Ponto3D(x, w / 2.0, 0.0), new Ponto3D(x, w / 2.0, topoCentral)));
+                }
             }
 
             // ===== COBERTURA =====

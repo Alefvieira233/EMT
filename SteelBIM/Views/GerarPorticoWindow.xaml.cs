@@ -141,15 +141,37 @@ namespace SteelBIM.Views
             }
             if (rbTrelica.IsChecked == true)
             {
-                if (cmbBanzoSup.SelectedItem == null || cmbBanzoInf.SelectedItem == null)
+                if (cmbBanzoSup.SelectedItem == null || cmbBanzoInf.SelectedItem == null
+                    || cmbDiagonal.SelectedItem == null || cmbMontante.SelectedItem == null)
                 {
-                    AppDialogService.ShowWarning("Gerar Pórtico", "Selecione os perfis dos banzos superior e inferior.", "Dados incompletos");
+                    AppDialogService.ShowWarning("Gerar Pórtico", "Selecione os perfis da treliça (banzo superior, banzo inferior, diagonal e montante).", "Dados incompletos");
                     return;
                 }
             }
             else if (cmbViga.SelectedItem == null)
             {
                 AppDialogService.ShowWarning("Gerar Pórtico", "Selecione o perfil da viga.", "Dados incompletos");
+                return;
+            }
+
+            // seções marcadas porém sem família selecionada (combo vazio): avisa antes de gerar.
+            var faltando = new List<string>();
+            if (chkContravCob.IsChecked == true && cmbContravCob.SelectedItem == null)
+                faltando.Add("contraventamento da cobertura");
+            if (chkContravPil.IsChecked == true && cmbContravPil.SelectedItem == null)
+                faltando.Add("contraventamento dos pilares");
+            if (chkLinha.IsChecked == true && cmbLinha.SelectedItem == null)
+                faltando.Add("linha de corrente");
+            if (chkLigacaoTerca.IsChecked == true && cmbLigacaoTerca.SelectedItem == null)
+                faltando.Add("ligação de terça");
+            if (chkFundacoes.IsChecked == true && cmbFundacao.SelectedItem == null)
+                faltando.Add("fundações");
+            if (faltando.Count > 0 && !AppDialogService.ShowConfirmation(
+                "Gerar Pórtico",
+                "Estas seções estão marcadas mas sem família selecionada (não serão geradas):\n- "
+                    + string.Join("\n- ", faltando) + "\n\nGerar mesmo assim?",
+                "Seções sem família"))
+            {
                 return;
             }
 
@@ -166,11 +188,19 @@ namespace SteelBIM.Views
         private void AtualizarHabilitacao()
         {
             cmbTerca.IsEnabled = chkTercas.IsChecked == true;
+            txtEspTercas.IsEnabled = chkTercas.IsChecked == true;
+            txtElevTercas.IsEnabled = chkTercas.IsChecked == true;
             cmbContravCob.IsEnabled = chkContravCob.IsChecked == true;
             cmbDistribContravCob.IsEnabled = chkContravCob.IsChecked == true;
+            txtNumXCobertura.IsEnabled = chkContravCob.IsChecked == true;
             cmbContravPil.IsEnabled = chkContravPil.IsChecked == true;
+            txtNumXPilares.IsEnabled = chkContravPil.IsChecked == true;
             cmbLinha.IsEnabled = chkLinha.IsChecked == true;
+            txtNumLinhasCorrente.IsEnabled = chkLinha.IsChecked == true;
             cmbLigacaoTerca.IsEnabled = chkLigacaoTerca.IsChecked == true;
+            txtLigOffsetZ.IsEnabled = chkLigacaoTerca.IsChecked == true;
+            txtLigOffsetX.IsEnabled = chkLigacaoTerca.IsChecked == true;
+            chkLigInverterFace.IsEnabled = chkLigacaoTerca.IsChecked == true;
             cmbFundacao.IsEnabled = chkFundacoes.IsChecked == true;
             chkArmaduraFundacao.IsEnabled = chkFundacoes.IsChecked == true;
         }

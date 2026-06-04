@@ -12,7 +12,7 @@ namespace SteelBIM.Services.Bloco
 {
     internal sealed class BlocoFundacaoRebarOrchestrator
     {
-        public Result Execute(UIDocument uidoc, IReadOnlyList<Element> hosts, BlocoFundacaoRebarConfig config, bool mostrarResumo = true)
+        public (Result result, int hostsOk, int totalCriados) Execute(UIDocument uidoc, IReadOnlyList<Element> hosts, BlocoFundacaoRebarConfig config, bool mostrarResumo = true)
         {
             Document doc = uidoc.Document;
             int hostsOk = 0;
@@ -92,7 +92,7 @@ namespace SteelBIM.Services.Bloco
                 AppDialogService.ShowInfo("Bloco Fundacao - Armaduras", resumo, "Processamento concluido");
             }
 
-            return hostsOk > 0 ? Result.Succeeded : Result.Failed;
+            return (hostsOk > 0 ? Result.Succeeded : Result.Failed, hostsOk, totalCriados);
         }
     }
 }

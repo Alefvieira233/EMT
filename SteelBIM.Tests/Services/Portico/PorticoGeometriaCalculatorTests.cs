@@ -175,6 +175,43 @@ namespace SteelBIM.Tests.Services.Portico
         }
 
         [Fact]
+        public void Calcular_PilarCentral_ModoViga_AlcancaACumeeira()
+        {
+            var e = BaseTrelica();
+            e.PilarCentral = true;
+            e.UsarTrelica = false;
+            e.AlturaCumeeiraMm = 1500.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            // pilar central (y=w/2) vai do piso ao ápice da viga (beiral + cumeeira = 5500).
+            r.Pilares.Should().Contain(p => p.A.YMm == meia && p.A.ZMm == 0.0 && p.B.ZMm == 5500.0);
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_NoNivelDasTercas()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            // na cumeeira, a linha de corrente fica em ZTopo + elevacao = 4000+1600+150 = 5750.
+            r.LinhasCorrente.Should().Contain(s =>
+                (s.A.YMm == meia && s.A.ZMm == 5750.0) || (s.B.YMm == meia && s.B.ZMm == 5750.0));
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_NoPlanoDoBanzo_TercasElevadas()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // contrav de cobertura no plano do banzo: no apoio (y=0) z = beiral + H = 4600 (sem elevacao).
+            r.ContravCobertura.Should().Contain(s => s.A.ZMm == 4600.0 || s.B.ZMm == 4600.0);
+            // a terça no mesmo apoio fica 150 mm acima (sobre o banzo): 4750.
+            r.Tercas.Should().Contain(t => t.A.YMm == 0.0 && t.A.ZMm == 4750.0);
+        }
+
+        [Fact]
         public void Calcular_NumeroXPilares_Configuravel()
         {
             var e = BaseTrelica();
