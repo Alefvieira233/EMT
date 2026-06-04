@@ -280,5 +280,105 @@ namespace SteelBIM.Tests.Services.Portico
             var r = PorticoGeometriaCalculator.Calcular(e);
             r.Tercas.Should().BeEmpty();
         }
+
+        [Fact]
+        public void Calcular_EspacamentoTerca_MaiorQueAgua_ClampaEmDoisNiveis()
+        {
+            var e = BaseTrelica();
+            e.EspacamentoTercasMm = 100000.0; // muito maior que o comprimento da agua
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // passos clampa em 1 -> meia-agua {0, w/2} -> beiral(0) + cumeeira(w/2) + espelho(w) = 3
+            r.Tercas.Should().HaveCount(3);
+            double meia = 15010.0 / 2.0;
+            r.Tercas.Select(s => s.A.YMm).Should().BeEquivalentTo(new[] { 0.0, meia, 15010.0 });
+        }
+
+        [Fact]
+        public void Calcular_AlturaPilarZero_RetornaVazio()
+        {
+            var e = BaseTrelica();
+            e.AlturaPilarMm = 0.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.XPorticosMm.Should().BeEmpty();
+            r.Pilares.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_EspacamentoPorticoOuVaoInvalido_RetornaVazio()
+        {
+            var semEsp = BaseTrelica();
+            semEsp.EspacamentoPorticosMm = 0.0;
+            PorticoGeometriaCalculator.Calcular(semEsp).XPorticosMm.Should().BeEmpty();
+
+            var semVao = BaseTrelica();
+            semVao.VaoGalpaoMm = 0.0;
+            PorticoGeometriaCalculator.Calcular(semVao).XPorticosMm.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_AlturaCoberturaNegativa_RetornaVazio()
+        {
+            var e = BaseTrelica();
+            e.AlturaCentralMm = -100.0; // agua invertida
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.XPorticosMm.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_ElevacaoTercaNegativa_ClampaEmZero()
+        {
+            var e = BaseTrelica();
+            e.ElevacaoTercasMm = -500.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            var cumeeira = r.Tercas.Single(s => s.A.YMm == meia);
+            cumeeira.A.ZMm.Should().BeApproximately(4000.0 + 1600.0, 1e-6); // elevacao tratada como 0
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_CoplanarComTercaNoBeiral()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            var lcBeiral = r.LinhasCorrente.First(s => s.A.YMm == 0.0);
+            var tercaBeiral = r.Tercas.First(s => s.A.YMm == 0.0);
+            // a linha de corrente arranca no mesmo Z da terça do beiral (coplanares).
+            lcBeiral.A.ZMm.Should().BeApproximately(tercaBeiral.A.ZMm, 1e-6);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_ExtremidadesECentro_GalpaoCurto_CobreTodosOsVaos()
+        {
+            var ec = BaseTrelica();
+            ec.NumeroPorticos = 3; // nVaos=2 < 4 => ExtremidadesECentro colapsa para todos
+            ec.ContravCobertura = true;
+            ec.DistribuicaoContravCobertura = DistribuicaoContravCobertura.ExtremidadesECentro;
+            var rEc = PorticoGeometriaCalculator.Calcular(ec);
+
+            var todos = BaseTrelica();
+            todos.NumeroPorticos = 3;
+            todos.ContravCobertura = true;
+            todos.DistribuicaoContravCobertura = DistribuicaoContravCobertura.Todos;
+            var rTodos = PorticoGeometriaCalculator.Calcular(todos);
+
+            rEc.ContravCobertura.Count.Should().Be(rTodos.ContravCobertura.Count);
+        }
+
+        [Fact]
+        public void Calcular_QuantidadesZero_NaoGeramContravNemLinha()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.TercasPorXCobertura = 0;
+            e.ContravPilares = true;
+            e.NumeroXPilares = 0;
+            e.LancarLinhaCorrente = true;
+            e.NumeroLinhasCorrente = 0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.ContravCobertura.Should().BeEmpty();
+            r.ContravPilares.Should().BeEmpty();
+            r.LinhasCorrente.Should().BeEmpty();
+        }
     }
 }

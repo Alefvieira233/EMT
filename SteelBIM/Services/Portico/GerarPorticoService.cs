@@ -44,6 +44,22 @@ namespace SteelBIM.Services.Portico
             }
             FamilySymbol pilarSymbol = config.SymbolPilar;
 
+            // Em modo treliça, sem nenhum perfil de banzo a cobertura sairia "vazia" (0 membros)
+            // silenciosamente — avisa cedo, como ja' se faz com o pilar.
+            if (config.UsarTrelica && config.SymbolBanzoSuperior == null && config.SymbolBanzoInferior == null)
+            {
+                AppDialogService.ShowError("Gerar Pórtico",
+                    "Selecione ao menos um perfil de banzo (superior ou inferior) para a treliça.",
+                    "Configuração incompleta");
+                return;
+            }
+            if (!config.UsarTrelica && config.SymbolViga == null)
+            {
+                AppDialogService.ShowError("Gerar Pórtico",
+                    "Selecione o perfil da viga de cobertura.", "Configuração incompleta");
+                return;
+            }
+
             GerarPorticoEntrada entrada = MapearEntrada(config);
             PorticoLayout layout = PorticoGeometriaCalculator.Calcular(entrada);
             if (layout.XPorticosMm.Count == 0)
@@ -145,15 +161,30 @@ namespace SteelBIM.Services.Portico
             }
 
             // Placas de base (opcional) — fora da transacao acima; o servico abre a sua propria.
+            // Restringe aos pilares recem-criados (nao mexe em pilares antigos do modelo).
             if (config.LancarPlacasBase)
-                placas = LancarPlacasBase(doc);
+                placas = LancarPlacasBase(doc, pilarIds);
 
             // Ligação de terça (opcional) — fora da transacao; o ConexaoTercasService abre a sua.
+            // So' faz sentido em cobertura por treliça (precisa do banzo superior); em modo viga
+            // nao ha banzo, entao o passo e' pulado e o motivo e' reportado/logado.
             int ligacoes = 0;
-            if (config.InserirLigacaoTerca && config.SymbolLigacaoTerca != null
-                && tercaIds.Count > 0 && banzoSupIds.Count > 0)
+            string ligacaoMotivo = string.Empty;
+            if (config.InserirLigacaoTerca)
             {
-                ligacoes = InserirLigacoesTerca(uidoc, doc, config, tercaIds, banzoSupIds);
+                if (config.SymbolLigacaoTerca == null)
+                    ligacaoMotivo = "selecione a família de ligação";
+                else if (!config.UsarTrelica)
+                    ligacaoMotivo = "requer cobertura em treliça (banzo superior)";
+                else if (tercaIds.Count == 0)
+                    ligacaoMotivo = "nenhuma terça lançada";
+                else if (banzoSupIds.Count == 0)
+                    ligacaoMotivo = "banzo superior não identificado";
+                else
+                    ligacoes = InserirLigacoesTerca(uidoc, doc, config, tercaIds, banzoSupIds);
+
+                if (!string.IsNullOrEmpty(ligacaoMotivo))
+                    Logger.Info("[GerarPortico] ligacao de terca pulada: {Motivo}", ligacaoMotivo);
             }
 
             // Fundações (opcional) — sapata sob cada pilar; reusa PfFoundationPlacementService.
@@ -187,7 +218,11 @@ namespace SteelBIM.Services.Portico
             if (config.LancarPlacasBase)
                 resumo += $"\nPlacas de base: {placas}";
             if (config.InserirLigacaoTerca)
+            {
                 resumo += $"\nLigações de terça: {ligacoes} terça(s) processada(s)";
+                if (!string.IsNullOrEmpty(ligacaoMotivo))
+                    resumo += $" — pulada ({ligacaoMotivo})";
+            }
             if (config.LancarFundacoes)
                 resumo += $"\nFundações: {fundacoes}";
             if (config.LancarArmaduraFundacao)
@@ -421,7 +456,7 @@ namespace SteelBIM.Services.Portico
         }
 
         // ===== Placas de base (opcional) =====
-        private static int LancarPlacasBase(Document doc)
+        private static int LancarPlacasBase(Document doc, ICollection<ElementId> pilarIds)
         {
             try
             {
@@ -436,7 +471,8 @@ namespace SteelBIM.Services.Portico
                     TypeName = pb.Name,
                     FamilySymbolId = pb.Id
                 };
-                PlacaBaseLancamentoResultado res = new PlacaBaseLancamentoService().Lancar(doc, pbConfig);
+                PlacaBaseLancamentoResultado res =
+                    new PlacaBaseLancamentoService().Lancar(doc, pbConfig, pilarIds);
                 return res.PlacasInseridas;
             }
             catch (Exception ex)
@@ -552,13 +588,16 @@ namespace SteelBIM.Services.Portico
                 var run = new BlocoFundacaoRebarOrchestrator().Execute(uidoc, armaveis, cfg, mostrarResumo: false);
                 int armadas = run.hostsOk; // conta so as que realmente geraram barra
                 int totalPuladas = fundacaoIds.Count - armadas;
-                string motivo;
-                if (totalPuladas == 0)
-                    motivo = string.Empty;
-                else if (puladas > 0)
-                    motivo = "fundação(ões) sem armadura: família não aceita armadura (use sapata de concreto estrutural)";
-                else
-                    motivo = "sem barras geradas (verifique dimensões/cobrimento da sapata)";
+
+                // duas causas distintas para uma fundacao ficar sem armadura — reportar separadas:
+                int semSuporte = puladas;                       // familia nao aceita armadura
+                int semBarra = armaveis.Count - armadas;        // aceita, mas nao gerou barra
+                var motivos = new List<string>();
+                if (semSuporte > 0)
+                    motivos.Add($"{semSuporte} sem suporte a armadura (use sapata de concreto estrutural)");
+                if (semBarra > 0)
+                    motivos.Add($"{semBarra} sem barras geradas (verifique dimensões/cobrimento da sapata)");
+                string motivo = string.Join("; ", motivos);
                 return (armadas, totalPuladas, motivo);
             }
             catch (Exception ex)

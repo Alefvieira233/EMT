@@ -80,12 +80,19 @@ namespace SteelBIM.Services.Portico
             double w = e.VaoGalpaoMm;
             double hp = e.AlturaPilarMm;
 
-            // guarda: precisa de pelo menos 2 porticos e dimensoes positivas.
-            if (n < 2 || s <= Eps || w <= Eps)
+            // guarda: precisa de pelo menos 2 porticos, dimensoes positivas (espacamento, vao e
+            // altura de pilar) e alturas de cobertura nao-negativas. Entradas degeneradas gerariam
+            // pilares de altura zero ou agua invertida — melhor devolver layout vazio.
+            bool alturasCoberturaInvalidas =
+                e.AlturaExtremidadeMm < 0.0 || e.AlturaCentralMm < 0.0 || e.AlturaCumeeiraMm < 0.0;
+            if (n < 2 || s <= Eps || w <= Eps || hp <= Eps || alturasCoberturaInvalidas)
             {
                 return new PorticoLayout(pilares, eixosTrelica, vigas, tercas,
                     contravCobertura, contravPilares, linhasCorrente, xPorticos, yEixos);
             }
+
+            // elevacao da terca e um offset cosmetico; valor negativo afundaria a terca no banzo.
+            double elevTercas = e.ElevacaoTercasMm < 0.0 ? 0.0 : e.ElevacaoTercasMm;
 
             double comprimento = (n - 1) * s;
             for (int i = 0; i < n; i++)
@@ -128,13 +135,13 @@ namespace SteelBIM.Services.Portico
             {
                 foreach (double y in PosicoesTercasMeiaAgua(e, w))
                 {
-                    double z = ZTopo(e, hp, w, y) + e.ElevacaoTercasMm;
+                    double z = ZTopo(e, hp, w, y) + elevTercas;
                     tercas.Add(new Segmento(new Ponto3D(0.0, y, z), new Ponto3D(comprimento, y, z)));
 
                     double yEspelho = w - y;
                     if (Math.Abs(yEspelho - y) > Eps)
                     {
-                        double zEspelho = ZTopo(e, hp, w, yEspelho) + e.ElevacaoTercasMm;
+                        double zEspelho = ZTopo(e, hp, w, yEspelho) + elevTercas;
                         tercas.Add(new Segmento(new Ponto3D(0.0, yEspelho, zEspelho), new Ponto3D(comprimento, yEspelho, zEspelho)));
                     }
                 }
@@ -179,7 +186,7 @@ namespace SteelBIM.Services.Portico
             if (e.LancarLinhaCorrente && e.NumeroLinhasCorrente > 0)
             {
                 double meia = w / 2.0;
-                double elev = e.ElevacaoTercasMm;
+                double elev = elevTercas;
                 foreach (int vao in DistribuirVaos(nVaos, e.NumeroLinhasCorrente))
                 {
                     double xMid = (xPorticos[vao] + xPorticos[vao + 1]) / 2.0;
@@ -212,6 +219,10 @@ namespace SteelBIM.Services.Portico
         /// <summary>Posicoes Y das tercas na meia-agua (0..w/2), por comprimento de inclinacao.</summary>
         private static IReadOnlyList<double> PosicoesTercasMeiaAgua(GerarPorticoEntrada e, double w)
         {
+            // auto-defensivo: sem espacamento valido nao ha como distribuir (evita (int)NaN/Inf).
+            if (e.EspacamentoTercasMm <= Eps || w <= Eps)
+                return new List<double>();
+
             double meia = w / 2.0;
             double rise = e.UsarTrelica ? e.AlturaCentralMm - e.AlturaExtremidadeMm : e.AlturaCumeeiraMm;
             double comprimentoAgua = Math.Sqrt(meia * meia + rise * rise);
@@ -234,6 +245,11 @@ namespace SteelBIM.Services.Portico
             destino.Add(new Segmento(a2, b2));
         }
 
+        // Nº de vaos contraventados por modo. Em galpoes curtos (nVaos < o alvo) DistribuirVaos
+        // colapsa para menos vaos sem erro (ex.: nVaos=2 + ExtremidadesECentro => [0,1]).
+        private const int VaosExtremidades = 2;       // so as duas pontas
+        private const int VaosExtremidadesECentro = 4; // pontas + 2 quadrantes centrais
+
         /// <summary>Vaos da cobertura que recebem contraventamento, conforme a distribuicao escolhida.</summary>
         private static IReadOnlyList<int> VaosContravCobertura(int n, DistribuicaoContravCobertura modo)
         {
@@ -241,8 +257,8 @@ namespace SteelBIM.Services.Portico
             if (modo == DistribuicaoContravCobertura.Todos)
                 return DistribuirVaos(nVaos, nVaos);
             if (modo == DistribuicaoContravCobertura.ExtremidadesECentro)
-                return DistribuirVaos(nVaos, 4);
-            return DistribuirVaos(nVaos, 2); // Extremidades
+                return DistribuirVaos(nVaos, VaosExtremidadesECentro);
+            return DistribuirVaos(nVaos, VaosExtremidades);
         }
 
         /// <summary>Coloca um X de contraventamento de cobertura a cada 'passo' terças, ancorado nas

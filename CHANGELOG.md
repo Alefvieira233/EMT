@@ -95,6 +95,27 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   e abrir o Revit. O `.dll` é compilado contra os stubs Nice3point (reference-only,
   `ExcludeAssets=runtime` — não carregam; em runtime o Revit usa a `RevitAPI.dll` real, ADR-005).
 
+- **Auditoria 10/10 do "Gerar Projeto Completo (Pórtico)" — 2026-06-04 — v2.8.22:** auditoria
+  file-a-file em 4 frentes (núcleo puro, orquestrador Revit, janela WPF, serviços reusados). Notas
+  iniciais 8.5/8.5/8.5/9, **zero P0**, caminho interativo da treliça confirmado sem regressão.
+  Correções aplicadas:
+  - **Núcleo puro:** guarda de entrada agora rejeita `AlturaPilarMm<=0` e alturas de cobertura
+    negativas (modelo degenerado); `PosicoesTercasMeiaAgua` ficou auto-defensiva contra espaçamento
+    de terça ≤ 0 (evita `(int)NaN`); `ElevacaoTercasMm` negativa é clampada a 0; constantes mágicas
+    `2`/`4` de `VaosContravCobertura` extraídas e nomeadas.
+  - **Orquestrador:** valida cedo a falta de perfil de banzo (treliça) / viga antes de gerar
+    "0 membros" silenciosos; mensagem da armadura de fundação separa as duas causas (família sem
+    suporte vs. sem barras geradas); ligação de terça pulada em modo viga/sem terça agora explica o
+    motivo no resumo e no log; **placas de base restritas aos pilares recém-criados** (não mexem em
+    pilares antigos do modelo — novo parâmetro opcional em `PlacaBaseLancamentoService.Lancar`, fluxo
+    interativo inalterado).
+  - **Janela:** validação numérica de faixa (espaçamentos, vão, alturas, divisões, quantidades)
+    com aviso em vez de fallback silencioso, incluindo `B≥H`; botões com `IsDefault`/`IsCancel`
+    (Enter gera, ESC cancela); tooltips em H/B e nas rotações inferior/diagonal/montante.
+  - **Testes:** +9 casos de borda no núcleo puro (espaçamento de terça > água, `s/w/hp` inválidos,
+    alturas negativas, elevação negativa clampada, coplanaridade linha-corrente×terça no beiral,
+    `ExtremidadesECentro` em galpão curto, quantidades 0).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

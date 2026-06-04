@@ -19,8 +19,8 @@
     <DockPanel Margin="12">
         <Border DockPanel.Dock="Bottom" Margin="0 12 0 0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="btnCancel" Content="Cancelar" Width="90" Margin="0 0 8 0" Style="{StaticResource SecondaryActionButton}"/>
-                <Button x:Name="btnOk" Content="Gerar Pórtico Completo" Width="200" Style="{StaticResource PrimaryActionButton}"/>
+                <Button x:Name="btnCancel" Content="Cancelar" Width="90" Margin="0 0 8 0" IsCancel="True" Style="{StaticResource SecondaryActionButton}"/>
+                <Button x:Name="btnOk" Content="Gerar Pórtico Completo" Width="200" IsDefault="True" Style="{StaticResource PrimaryActionButton}"/>
             </StackPanel>
         </Border>
 
@@ -105,9 +105,9 @@
                             <TextBox x:Name="txtDivisoes" Grid.Row="0" Grid.Column="3" Margin="0 2 0 2" Text="8"/>
 
                             <Label Grid.Row="1" Grid.Column="0" Content="Altura extremidade H (mm):" VerticalAlignment="Center"/>
-                            <TextBox x:Name="txtH" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2" Text="600"/>
+                            <TextBox x:Name="txtH" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2" Text="600" ToolTip="H = altura da treliça no apoio (beiral), em mm. B &gt; H gera duas águas."/>
                             <Label Grid.Row="1" Grid.Column="2" Content="Central B:" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                            <TextBox x:Name="txtB" Grid.Row="1" Grid.Column="3" Margin="0 2 0 2" Text="1600"/>
+                            <TextBox x:Name="txtB" Grid.Row="1" Grid.Column="3" Margin="0 2 0 2" Text="1600" ToolTip="B = altura da treliça na cumeeira, em mm. Deve ser ≥ H."/>
 
                             <Label Grid.Row="2" Grid.Column="0" Content="Perfil banzo superior:" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cmbBanzoSup" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
@@ -124,12 +124,12 @@
                             <Label Grid.Row="6" Grid.Column="0" Content="Rotação banzo sup (°):" VerticalAlignment="Center"/>
                             <TextBox x:Name="txtRotBanzoSup" Grid.Row="6" Grid.Column="1" Margin="6 2 0 2" Text="0" ToolTip="Ex.: 270 para o perfil U ficar na posição correta."/>
                             <Label Grid.Row="6" Grid.Column="2" Content="inf (°):" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                            <TextBox x:Name="txtRotBanzoInf" Grid.Row="6" Grid.Column="3" Margin="0 2 0 2" Text="0"/>
+                            <TextBox x:Name="txtRotBanzoInf" Grid.Row="6" Grid.Column="3" Margin="0 2 0 2" Text="0" ToolTip="Rotação da seção do banzo inferior (graus). 0 = sem rotação."/>
 
                             <Label Grid.Row="7" Grid.Column="0" Content="Rotação diagonal (°):" VerticalAlignment="Center"/>
-                            <TextBox x:Name="txtRotDiagonal" Grid.Row="7" Grid.Column="1" Margin="6 2 0 2" Text="0"/>
+                            <TextBox x:Name="txtRotDiagonal" Grid.Row="7" Grid.Column="1" Margin="6 2 0 2" Text="0" ToolTip="Rotação da seção das diagonais (graus). 0 = sem rotação."/>
                             <Label Grid.Row="7" Grid.Column="2" Content="mont (°):" VerticalAlignment="Center" Margin="8 0 6 0"/>
-                            <TextBox x:Name="txtRotMontante" Grid.Row="7" Grid.Column="3" Margin="0 2 0 2" Text="0"/>
+                            <TextBox x:Name="txtRotMontante" Grid.Row="7" Grid.Column="3" Margin="0 2 0 2" Text="0" ToolTip="Rotação da seção dos montantes (graus). 0 = sem rotação."/>
                         </Grid>
 
                         <Grid x:Name="painelViga" Margin="0 6 0 0">

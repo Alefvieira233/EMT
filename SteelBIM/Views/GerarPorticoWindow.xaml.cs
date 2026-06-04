@@ -154,6 +154,49 @@ namespace SteelBIM.Views
                 return;
             }
 
+            // validação numérica de faixa: evita que texto inválido caia em fallback silencioso
+            // (ex.: B="xyz" geraria treliça com 1600 mm sem o usuário perceber).
+            var erros = new List<string>();
+            void ReqPos(string texto, string nome)
+            {
+                if (!TryNum(texto, out double v) || v <= 0.0)
+                    erros.Add(nome);
+            }
+            ReqPos(txtEspacamento.Text, "espaçamento entre pórticos (> 0)");
+            ReqPos(txtVao.Text, "vão do galpão (> 0)");
+            ReqPos(txtAlturaPilar.Text, "altura do pilar (> 0)");
+            if (chkTercas.IsChecked == true)
+                ReqPos(txtEspTercas.Text, "espaçamento das terças (> 0)");
+            if (rbTrelica.IsChecked == true)
+            {
+                bool okB = TryNum(txtB.Text, out double bb) && bb > 0.0;
+                bool okH = TryNum(txtH.Text, out double hh) && hh >= 0.0;
+                if (!okB)
+                    erros.Add("altura na cumeeira / B (> 0)");
+                if (!okH)
+                    erros.Add("altura no apoio / H (≥ 0)");
+                if (okB && okH && bb < hh)
+                    erros.Add("altura na cumeeira (B) deve ser ≥ altura no apoio (H)");
+                if (ParseInt(txtDivisoes.Text, 0) < 1)
+                    erros.Add("divisões da treliça (≥ 1)");
+            }
+            else
+            {
+                ReqPos(txtCumeeira.Text, "altura da cumeeira da viga (> 0)");
+            }
+            if (chkContravCob.IsChecked == true && ParseInt(txtNumXCobertura.Text, 0) < 1)
+                erros.Add("X de cobertura a cada N terças (≥ 1)");
+            if (chkContravPil.IsChecked == true && ParseInt(txtNumXPilares.Text, 0) < 1)
+                erros.Add("nº de vãos com X nos pilares (≥ 1)");
+            if (chkLinha.IsChecked == true && ParseInt(txtNumLinhasCorrente.Text, 0) < 1)
+                erros.Add("nº de fileiras de linha de corrente (≥ 1)");
+            if (erros.Count > 0)
+            {
+                AppDialogService.ShowWarning("Gerar Pórtico",
+                    "Corrija os campos numéricos:\n- " + string.Join("\n- ", erros), "Dados inválidos");
+                return;
+            }
+
             // seções marcadas porém sem família selecionada (combo vazio): avisa antes de gerar.
             var faltando = new List<string>();
             if (chkContravCob.IsChecked == true && cmbContravCob.SelectedItem == null)
@@ -245,6 +288,13 @@ namespace SteelBIM.Views
         private static int ParseInt(string texto, int padrao)
         {
             return int.TryParse(texto?.Trim(), out int v) && v > 0 ? v : padrao;
+        }
+
+        private static bool TryNum(string texto, out double valor)
+        {
+            string n = (texto ?? string.Empty).Trim().Replace(',', '.');
+            return double.TryParse(n, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out valor);
         }
     }
 }
