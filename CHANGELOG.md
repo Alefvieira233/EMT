@@ -44,6 +44,15 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   galpão, insere a conexão em cada cruzamento terça × banzo superior reusando o
   `ConexaoTercasService` headless (atrás de flag, em try/catch).
 
+- **Fundações + Armaduras (2026-06-04) — v2.8.18** — plano em `docs/PLANO-GERAR-PORTICO-V4.md`:
+  a janela ganha a seção **Fundações** — checkbox "Lançar fundações (sapata sob cada pilar)" +
+  família de fundação (reusa `PfFoundationPlacementService` headless, que posiciona uma sapata sob
+  cada pilar) e checkbox **"Armar fundações"** (opt-in, best-effort): após criar as sapatas, arma
+  as que aceitam armadura reusando `BlocoFundacaoRebarOrchestrator` (overload silencioso novo,
+  sem popup/seleção — caminho interativo "Armaduras Bloco" preservado), checando `CanHostRebar`
+  por fundação e reportando "X armadas / Y puladas". Também: **pilar central** opcional (Onda P)
+  e **ajuste fino da ligação de terça** (offset Z/lateral + inverter face, Onda O).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
