@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
@@ -187,9 +186,7 @@ namespace SteelBIM.Services
                 return bases;
             }
 
-            int segmentos = espacamentoMaximo > RevitUtils.EPS
-                ? Math.Max(1, (int)Math.Ceiling(comprimento / espacamentoMaximo))
-                : 1;
+            int segmentos = GuardaCorpoCalculo.SegmentosPorEspacamento(comprimento, espacamentoMaximo, RevitUtils.EPS);
             XYZ direcao = RevitUtils.SafeNormalize(fim - inicio);
 
             for (int i = 0; i <= segmentos; i++)
@@ -203,16 +200,7 @@ namespace SteelBIM.Services
 
         private List<double> CalcularAlturasTravessas(double alturaTotal, int quantidadeTravessas)
         {
-            List<double> alturas = new List<double>();
-            if (alturaTotal <= RevitUtils.EPS || quantidadeTravessas <= 0)
-                return alturas;
-
-            double passo = alturaTotal / (quantidadeTravessas + 1);
-
-            for (int i = 1; i <= quantidadeTravessas; i++)
-                alturas.Add(passo * i);
-
-            return alturas;
+            return GuardaCorpoCalculo.AlturasTravessas(alturaTotal, quantidadeTravessas, RevitUtils.EPS);
         }
     }
 }

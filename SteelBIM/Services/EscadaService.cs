@@ -190,7 +190,7 @@ namespace SteelBIM.Services
             if (config.CriarDegraus && config.TipoDegrau == EscadaTipoDegrau.Chapa && config.EspessuraChapaDegrauCm <= 0.0)
                 return StairValidationResult.Invalid("A espessura da chapa do degrau deve ser maior que zero.");
 
-            double inclinacaoGraus = Math.Atan2(totalRise, totalRunH) * (180.0 / Math.PI);
+            double inclinacaoGraus = EscadaCalculo.InclinacaoGraus(totalRise, totalRunH);
             if (inclinacaoGraus > 60.0)
                 return StairValidationResult.Invalid("A inclinação calculada excede 60 graus. Verifique os pontos informados.");
 
@@ -208,8 +208,8 @@ namespace SteelBIM.Services
                         "Ajuste a altura do espelho ou os pontos da escada.");
                 }
 
-                double blondelCm = (2.0 * stepData.RiserHeightFt + stepData.RunPerStepFt) / RevitUtils.FT_PER_CM;
-                if (blondelCm < 63.0 || blondelCm > 65.0)
+                double blondelCm = EscadaCalculo.BlondelCm(stepData.RiserHeightFt, stepData.RunPerStepFt, RevitUtils.FT_PER_CM);
+                if (!EscadaCalculo.BlondelDentroDaFaixa(blondelCm))
                 {
                     return StairValidationResult.ValidWithWarning(
                         "A combinação entre espelho e pisada não atende Blondel.\n" +
@@ -229,9 +229,7 @@ namespace SteelBIM.Services
             double larguraFt = config.LarguraCm * RevitUtils.FT_PER_CM;
             double pisadaPerfilFt = config.PisadaCm * RevitUtils.FT_PER_CM;
 
-            int nDegraus = config.QuantidadeDegraus > 0
-                ? config.QuantidadeDegraus
-                : Math.Max(1, (int)Math.Round(totalRise / espelhoDesejadoFt));
+            int nDegraus = EscadaCalculo.ContarDegraus(config.QuantidadeDegraus, totalRise, espelhoDesejadoFt);
             double espelhoFt = totalRise / nDegraus;
             double pisoFt = totalRun / nDegraus;
 

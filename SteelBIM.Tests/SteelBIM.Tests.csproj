@@ -415,6 +415,11 @@
     <!-- v2.8.26: logica pura do quantitativo de pintura -->
     <Compile Include="..\SteelBIM\Services\Pintura\PinturaFormula.cs"
              Link="LinkedSources\Services\Pintura\PinturaFormula.cs" />
+    <!-- Auditoria 2026-06-04: logica pura extraida de GuardaCorpo/Escada -->
+    <Compile Include="..\SteelBIM\Services\GuardaCorpoCalculo.cs"
+             Link="LinkedSources\Services\GuardaCorpoCalculo.cs" />
+    <Compile Include="..\SteelBIM\Services\EscadaCalculo.cs"
+             Link="LinkedSources\Services\EscadaCalculo.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,
