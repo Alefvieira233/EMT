@@ -76,6 +76,16 @@ namespace SteelBIM.Tests.Services
         }
 
         [Fact]
+        public void InferirBase_PilarSemPista_NaoViraAco()
+        {
+            // Regressao corrigida: pilar de concreto sem material e sem "concreto" no nome
+            // NAO deve virar aco. Pilares nao sao tratados como perfil estrutural (isPerfilEstrutural
+            // = false), entao "P1 40x40" sem pista permanece Outro (nao entra como aco na lista).
+            ListaMateriaisPesoCalc.InferirBase(null, "P1 40x40", isFundacao: false, isPerfilEstrutural: false)
+                .Should().Be(ListaMateriaisPesoCalc.BaseMaterial.Outro);
+        }
+
+        [Fact]
         public void InferirBase_PerfilEstrutural_NaoSobrepoeConcretoNemFundacao()
         {
             // concreto continua tendo prioridade mesmo marcando perfil estrutural

@@ -163,6 +163,11 @@ namespace SteelBIM.Services.Pintura
             {
                 doc.Application.SharedParametersFilename = sharedFile;
                 DefinitionFile defFile = doc.Application.OpenSharedParameterFile();
+                if (defFile == null)
+                {
+                    Logger.Warn("[AreaPintura] nao foi possivel abrir o shared parameter file temporario");
+                    return false;
+                }
 
                 DefinitionGroup group = defFile.Groups.Create("SteelBIM");
                 ExternalDefinitionCreationOptions opts = new ExternalDefinitionCreationOptions(ParamArea, SpecTypeId.Area)
@@ -187,8 +192,8 @@ namespace SteelBIM.Services.Pintura
             }
             finally
             {
-                if (!string.IsNullOrEmpty(previousSharedFile))
-                    doc.Application.SharedParametersFilename = previousSharedFile;
+                // restaura SEMPRE (mesmo string vazia) — senao fica apontando para o temp ja apagado.
+                doc.Application.SharedParametersFilename = previousSharedFile ?? string.Empty;
                 try
                 {
                     System.IO.File.Delete(sharedFile);

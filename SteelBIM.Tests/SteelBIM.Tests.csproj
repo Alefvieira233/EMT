@@ -402,6 +402,8 @@
     <!-- v2.8.12 (Onda 1): peso/inferencia de base da lista de materiais -->
     <Compile Include="..\SteelBIM\Services\ListaMateriaisPesoCalc.cs"
              Link="LinkedSources\Services\ListaMateriaisPesoCalc.cs" />
+    <Compile Include="..\SteelBIM\Services\ListaMateriaisRomaneioFormatter.cs"
+             Link="LinkedSources\Services\ListaMateriaisRomaneioFormatter.cs" />
     <!-- v2.8.13: nucleo puro do layout de vistas na prancha -->
     <Compile Include="..\SteelBIM\Services\Layout\LayoutVistasCalculator.cs"
              Link="LinkedSources\Services\Layout\LayoutVistasCalculator.cs" />

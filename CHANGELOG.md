@@ -238,6 +238,23 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   - **Escopo padrão = Modelo inteiro** (antes "Vista ativa") — evita perder silenciosamente
     elementos fora da vista ativa ao exportar.
 
+- **Auditoria 2026-06-05 — Onda 1 (correções seguras) — v2.8.35:** plano em
+  `docs/AUDITORIA-2026-06-05.md`.
+  - **Regressão corrigida:** pilar de concreto sem material não vira mais aço na lista (removido
+    `Pilares` do default-aço; viga/terça/contrav/perfil de conexão seguem como aço). Teste novo.
+  - **CotasService:** `FailureHandlingHelper.SwallowWarnings` nas 3 transações de cota (evita diálogo
+    modal abortar a cotagem em lote).
+  - **AreaPinturaService:** restaura `SharedParametersFilename` sempre (mesmo vazio) + null-check no
+    `OpenSharedParameterFile` (evita estado global pendurado / NRE silenciosa).
+  - **Lista de materiais:** linha **TOTAL por subseção de fundação**; romaneio por perfil extraído
+    para helper puro `ListaMateriaisRomaneioFormatter` (cultura pt-BR explícita, omite "kg/m" quando
+    comprimento 0) + testes.
+  - **Pórtico:** `LetraEixo` agora é base-26 real (A..Z, AA, AB… — antes duplicava acima de 26
+    pórticos); guarda `DirectShape.IsValidCategoryId` antes de criar a chapa; variável morta `nVaos`
+    removida.
+  - **Observabilidade:** `catch {}` vazios viram `Logger.Warn` em `ConexaoTercasService` (projeção) e
+    `CoroamentoCageService` (diâmetro do estribo).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

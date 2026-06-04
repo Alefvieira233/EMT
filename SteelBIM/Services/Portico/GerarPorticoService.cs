@@ -423,7 +423,10 @@ namespace SteelBIM.Services.Portico
                 Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
                     new List<CurveLoop> { loop }, XYZ.BasisZ, t);
 
-                DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
+                ElementId catId = new ElementId(BuiltInCategory.OST_GenericModel);
+                if (!DirectShape.IsValidCategoryId(catId, doc))
+                    return false;
+                DirectShape ds = DirectShape.CreateElement(doc, catId);
                 ds.SetShape(new List<GeometryObject> { solid });
                 ds.Name = "Chapa topo do pilar";
                 return true;
@@ -515,9 +518,15 @@ namespace SteelBIM.Services.Portico
 
         private static string LetraEixo(int indice)
         {
-            if (indice < 26)
-                return ((char)('A' + indice)).ToString();
-            return "E" + (indice + 1);
+            // base-26 bijetiva: A..Z, AA, AB, ... (evita o antigo "E"+(i+1) colidir com a letra E).
+            string s = string.Empty;
+            int n = indice;
+            do
+            {
+                s = (char)('A' + (n % 26)) + s;
+                n = n / 26 - 1;
+            } while (n >= 0);
+            return s;
         }
 
         // ===== Placas de base (opcional) =====

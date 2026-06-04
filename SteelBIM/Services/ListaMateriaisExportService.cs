@@ -1123,9 +1123,11 @@ namespace SteelBIM.Services
             // Perfis estruturais (viga/terca/contrav/pilar metalico/perfil de conexao) sem material
             // sao tratados como AÇO por padrao — senao terças e contraventamentos somem da lista.
             bool isFundacao = categoria == ListaMateriaisCategoriaLogica.Fundacoes;
+            // Pilares NAO entram aqui: pilar pode ser de concreto. Sem material e sem "concreto" no
+            // nome, um pilar de concreto seria classificado como aco por engano. Viga/terca/contrav/
+            // perfil de conexao sao sempre aco no dominio deste plugin.
             bool isPerfilEstrutural =
                 categoria == ListaMateriaisCategoriaLogica.Vigas ||
-                categoria == ListaMateriaisCategoriaLogica.Pilares ||
                 categoria == ListaMateriaisCategoriaLogica.Contraventamentos ||
                 categoria == ListaMateriaisCategoriaLogica.PerfisConexao;
             ListaMateriaisPesoCalc.BaseMaterial baseTexto =
@@ -1956,6 +1958,9 @@ namespace SteelBIM.Services
                     foreach (ListaBaseLinha item in subsecao.Itens)
                         EscreverLinhaItemLdm(ws, linha++, $"{codigoSubsecao}.{indiceItem++}", item);
 
+                    if (subsecao.Itens.Count > 0)
+                        EscreverLinhaTotalLdm(ws, linha++, $"TOTAL {subsecao.Titulo}", subsecao.Itens[0].Unidade, subsecao.Itens.Sum(i => i.Quantidade));
+
                     linha++;
                 }
             }
@@ -2118,7 +2123,7 @@ namespace SteelBIM.Services
         private static string MontarDescricaoMetalicaRomaneio(string tipoPerfil, string material, int qtd, double comprimentoM, double kgPorM)
         {
             string baseDesc = MontarDescricaoMetalicaBase(tipoPerfil, material);
-            return $"{baseDesc} — {qtd} un · {comprimentoM:0.0} m · {kgPorM:0.0} kg/m";
+            return $"{baseDesc} — {ListaMateriaisRomaneioFormatter.Sufixo(qtd, comprimentoM, kgPorM)}";
         }
 
         private static string ObterNomeSecaoPlanilha(ListaMateriaisSecaoPlanilha secaoPlanilha)

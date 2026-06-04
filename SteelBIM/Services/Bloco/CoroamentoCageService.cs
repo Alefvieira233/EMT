@@ -1,8 +1,10 @@
 ﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using SteelBIM.Infrastructure;
 using SteelBIM.Models.Bloco;
 
 namespace SteelBIM.Services.Bloco
@@ -92,8 +94,9 @@ namespace SteelBIM.Services.Bloco
                 RebarBarType bt = RebarCreationService.GetBarType(doc, barTypeName);
                 return UnitUtils.ConvertFromInternalUnits(bt.BarModelDiameter, UnitTypeId.Centimeters);
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warn(ex, "[Coroamento] falha ao ler diametro do estribo '{Bar}' (cobrimento efetivo sem +Ø)", barTypeName);
                 return 0.0;
             }
         }

@@ -149,7 +149,6 @@ namespace SteelBIM.Services.Portico
             }
 
             // vaos contraventados dos pilares: pela distribuicao escolhida (mesmo padrao da cobertura).
-            int nVaos = n - 1;
             IReadOnlyList<int> vaosPilares = VaosContraventados(n, e.DistribuicaoContravPilares);
 
             // ===== CONTRAVENTAMENTO DA COBERTURA (1 X a cada N terças, vaos de extremidade) =====
