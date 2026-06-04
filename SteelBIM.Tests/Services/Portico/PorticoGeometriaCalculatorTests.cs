@@ -460,5 +460,21 @@ namespace SteelBIM.Tests.Services.Portico
             e.AlturaCentralMm = e.AlturaExtremidadeMm; // agua plana => terça horizontal
             PorticoGeometriaCalculator.InclinacaoTercaRad(e, 2000.0).Should().Be(0.0);
         }
+
+        [Fact]
+        public void InclinacaoTercaRad_InverterAbertura_TrocaSinalMantemMagnitude()
+        {
+            var e = BaseTrelica();
+            double[] ys = { 0.0, 3000.0, 6000.0, 9000.0, 12000.0, 15010.0 };
+            foreach (double y in ys)
+            {
+                double normal = PorticoGeometriaCalculator.InclinacaoTercaRad(e, y);
+                var inv = BaseTrelica();
+                inv.InverterAberturaTerca = true;
+                double invertido = PorticoGeometriaCalculator.InclinacaoTercaRad(inv, y);
+                invertido.Should().BeApproximately(-normal, 1e-9);                              // sinal trocado
+                System.Math.Abs(invertido).Should().BeApproximately(System.Math.Abs(normal), 1e-9); // magnitude igual
+            }
+        }
     }
 }

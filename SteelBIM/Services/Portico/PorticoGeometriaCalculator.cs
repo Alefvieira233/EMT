@@ -31,6 +31,7 @@ namespace SteelBIM.Services.Portico
         public bool LancarTercas { get; set; } = true;
         public double EspacamentoTercasMm { get; set; } = 1500.0;
         public double ElevacaoTercasMm { get; set; } = 150.0;     // sobe a terça acima do banzo superior
+        public bool InverterAberturaTerca { get; set; }           // inverte o lado da abertura do perfil U da terça
 
         public bool ContravCobertura { get; set; }
         public int TercasPorXCobertura { get; set; } = 2;         // 1 X de cobertura a cada N terças
@@ -253,7 +254,8 @@ namespace SteelBIM.Services.Portico
             if (Math.Abs(y - meia) < Eps)
                 return 0.0; // terça da cumeeira assenta no pico
             double beta = Math.Atan2(rise, meia);
-            return y < meia ? beta : -beta;
+            double ang = y < meia ? beta : -beta;       // agua 1 +beta, agua 2 -beta
+            return e.InverterAberturaTerca ? -ang : ang; // inverte o lado da abertura, se pedido
         }
 
         /// <summary>Posicoes Y das tercas na meia-agua (0..w/2). Em treliça, coincidem com os

@@ -171,7 +171,10 @@
                             <TextBox x:Name="txtEspTercas" Width="80" Margin="0 2 0 2" Text="1500" ToolTip="Espaçamento-alvo das terças (mm). Em treliça, as terças caem sobre os montantes: o nº de painéis é ajustado p/ ficar próximo deste valor (faixa usual 1500–1900)."/>
                         </StackPanel>
                         <Label Grid.Row="2" Grid.Column="0" Content="Elevação sobre o banzo (mm):" VerticalAlignment="Center"/>
-                        <TextBox x:Name="txtElevTercas" Grid.Row="2" Grid.Column="1" Width="80" HorizontalAlignment="Left" Margin="6 2 0 2" Text="150" ToolTip="Eleva a terça acima do banzo superior (ajuste conforme a altura do perfil)."/>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                            <TextBox x:Name="txtElevTercas" Width="80" Margin="6 2 12 2" Text="150" ToolTip="Eleva a terça acima do banzo superior (ajuste conforme a altura do perfil)."/>
+                            <CheckBox x:Name="chkInverterTerca" Content="Inverter abertura das terças" VerticalAlignment="Center" ToolTip="Inverte o lado da abertura do perfil U da terça (acompanhar a subida ou a descida da água)."/>
+                        </StackPanel>
                         <CheckBox x:Name="chkLigacaoTerca" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="Inserir ligação de terça (conexão no cruzamento com o banzo)" Margin="0 8 0 4"/>
                         <Label Grid.Row="4" Grid.Column="0" Content="Perfil da ligação:" VerticalAlignment="Center"/>
                         <ComboBox x:Name="cmbLigacaoTerca" Grid.Row="4" Grid.Column="1" Margin="6 2 0 2"/>

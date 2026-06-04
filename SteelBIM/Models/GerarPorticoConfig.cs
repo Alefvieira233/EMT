@@ -46,6 +46,7 @@ namespace SteelBIM.Models
         public FamilySymbol? SymbolTerca { get; set; }
         public double EspacamentoTercasMm { get; set; } = 1500.0;
         public double ElevacaoTercasMm { get; set; } = 150.0;   // eleva a terça acima do banzo superior
+        public bool InverterAberturaTerca { get; set; }         // inverte o lado da abertura do perfil U da terça
 
         // Ligação de terça (opcional) — conexão inserida em cada cruzamento terça × banzo superior.
         public bool InserirLigacaoTerca { get; set; }

@@ -46,7 +46,20 @@ namespace SteelBIM.Commands
             if (config == null)
                 return Result.Cancelled;
 
-            new GerarPorticoService().Executar(uidoc, config);
+            // Ponto de referência (opcional): o usuário clica onde o pórtico será inserido.
+            // O PickPoint já faz snap em linhas/eixos/objetos; clicar em vazio também vale.
+            // ESC = origem do projeto (comportamento anterior, zero regressão).
+            XYZ origem = XYZ.Zero;
+            try
+            {
+                origem = uidoc.Selection.PickPoint("Clique o ponto de referência do pórtico (ESC = origem do projeto).");
+            }
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
+            {
+                origem = XYZ.Zero;
+            }
+
+            new GerarPorticoService().Executar(uidoc, config, origem);
             return Result.Succeeded;
         }
 

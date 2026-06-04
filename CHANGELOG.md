@@ -185,6 +185,16 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
     N=2 → L/3 e 2L/3) e o serviço cria 1 barra por segmento — o "2 vira 1" relatado era versão
     instalada antiga. Resumo agora é honesto: "Linha de corrente: X barra(s) em N fileira(s)".
 
+- **Ajustes V5 — Onda 2 (terça inverter abertura + ponto de referência) — 2026-06-04 — v2.8.29:**
+  - **Inverter abertura das terças:** novo checkbox "Inverter abertura das terças" (seção Terças).
+    A terça já assenta na inclinação da água automaticamente; o checkbox troca o lado da abertura do
+    perfil U (acompanhar a subida ou a descida da água). `InclinacaoTercaRad` nega o sinal mantendo a
+    magnitude; testes puros cobrem os dois sentidos.
+  - **Ponto de referência (clique) para posicionar o pórtico:** ao gerar, o usuário clica um ponto
+    (com snap em linhas/eixos/objetos; clicar em vazio também vale) e o galpão é inserido a partir
+    dele; **ESC = origem do projeto** (comportamento anterior, zero regressão). O offset X/Y é somado
+    em `ParaXYZ` e em `CriarEixos` (Z continua relativo ao nível).
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

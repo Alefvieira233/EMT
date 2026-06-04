@@ -104,6 +104,7 @@ namespace SteelBIM.Views
                 SymbolTerca = Sym(cmbTerca),
                 EspacamentoTercasMm = NumberParsing.ParseDoubleOrDefault(txtEspTercas.Text, 1500.0),
                 ElevacaoTercasMm = NumberParsing.ParseDoubleOrDefault(txtElevTercas.Text, 150.0),
+                InverterAberturaTerca = chkInverterTerca.IsChecked == true,
                 InserirLigacaoTerca = chkLigacaoTerca.IsChecked == true,
                 SymbolLigacaoTerca = Sym(cmbLigacaoTerca),
                 LigacaoOffsetZmm = NumberParsing.ParseDoubleOrDefault(txtLigOffsetZ.Text, 0.0),

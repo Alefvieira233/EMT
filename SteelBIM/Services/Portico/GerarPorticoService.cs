@@ -27,8 +27,12 @@ namespace SteelBIM.Services.Portico
     {
         private static readonly double FtPerMm = RevitUtils.FT_PER_MM;
 
-        public void Executar(UIDocument uidoc, GerarPorticoConfig config)
+        // Deslocamento (origem) escolhido pelo usuario via clique; somado em X/Y a cada ponto.
+        private XYZ _origem = XYZ.Zero;
+
+        public void Executar(UIDocument uidoc, GerarPorticoConfig config, XYZ? origem = null)
         {
+            _origem = origem ?? XYZ.Zero;
             Document doc = uidoc.Document;
 
             Level? nivel = ResolverNivel(doc);
@@ -276,6 +280,7 @@ namespace SteelBIM.Services.Portico
             LancarTercas = c.LancarTercas,
             EspacamentoTercasMm = c.EspacamentoTercasMm,
             ElevacaoTercasMm = c.ElevacaoTercasMm,
+            InverterAberturaTerca = c.InverterAberturaTerca,
             ContravCobertura = c.ContravCobertura,
             TercasPorXCobertura = c.TercasPorXCobertura,
             DistribuicaoContravCobertura = c.DistribuicaoContravCobertura,
@@ -385,8 +390,8 @@ namespace SteelBIM.Services.Portico
         }
 
         // ===== Helpers =====
-        private static XYZ ParaXYZ(Level nivel, Ponto3D p) =>
-            new XYZ(p.XMm * FtPerMm, p.YMm * FtPerMm, nivel.Elevation + p.ZMm * FtPerMm);
+        private XYZ ParaXYZ(Level nivel, Ponto3D p) =>
+            new XYZ(_origem.X + p.XMm * FtPerMm, _origem.Y + p.YMm * FtPerMm, nivel.Elevation + p.ZMm * FtPerMm);
 
         private static void SetParamId(FamilyInstance fi, BuiltInParameter bip, ElementId valor)
         {
@@ -417,11 +422,14 @@ namespace SteelBIM.Services.Portico
         }
 
         // ===== Eixos (grid) =====
-        private static void CriarEixos(Document doc, PorticoLayout layout)
+        private void CriarEixos(Document doc, PorticoLayout layout)
         {
             if (layout.XPorticosMm.Count == 0 || layout.YEixosMm.Count < 2)
                 return;
 
+            // CriarEixos monta a grid direto (nao passa por ParaXYZ) — soma o offset da origem aqui.
+            double ox = _origem.X;
+            double oy = _origem.Y;
             double comprimentoFt = layout.XPorticosMm[layout.XPorticosMm.Count - 1] * FtPerMm;
             double larguraFt = layout.YEixosMm[layout.YEixosMm.Count - 1] * FtPerMm;
 
@@ -429,14 +437,14 @@ namespace SteelBIM.Services.Portico
             for (int i = 0; i < layout.XPorticosMm.Count; i++)
             {
                 double xFt = layout.XPorticosMm[i] * FtPerMm;
-                CriarGrid(doc, new XYZ(xFt, 0.0, 0.0), new XYZ(xFt, larguraFt, 0.0), LetraEixo(i));
+                CriarGrid(doc, new XYZ(ox + xFt, oy, 0.0), new XYZ(ox + xFt, oy + larguraFt, 0.0), LetraEixo(i));
             }
 
             // Numeros (1, 2) — nas duas linhas de apoio (y=0 e y=vao), na direcao do comprimento (X).
             for (int j = 0; j < layout.YEixosMm.Count; j++)
             {
                 double yFt = layout.YEixosMm[j] * FtPerMm;
-                CriarGrid(doc, new XYZ(0.0, yFt, 0.0), new XYZ(comprimentoFt, yFt, 0.0), (j + 1).ToString());
+                CriarGrid(doc, new XYZ(ox, oy + yFt, 0.0), new XYZ(ox + comprimentoFt, oy + yFt, 0.0), (j + 1).ToString());
             }
         }
 
