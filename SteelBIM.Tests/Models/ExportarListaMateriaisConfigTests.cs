@@ -7,11 +7,13 @@ namespace SteelBIM.Tests.Models
     public class ExportarListaMateriaisConfigTests
     {
         [Fact]
-        public void Constructor_Default_EscopoIsVistaAtiva()
+        public void Constructor_Default_EscopoIsModeloInteiro()
         {
+            // v2.8.34: default mudou de VistaAtiva para ModeloInteiro (evita perder elementos
+            // fora da vista ativa ao exportar a lista de materiais).
             var config = new ExportarListaMateriaisConfig();
 
-            config.Escopo.Should().Be(ListaMateriaisEscopo.VistaAtiva);
+            config.Escopo.Should().Be(ListaMateriaisEscopo.ModeloInteiro);
         }
 
         [Fact]

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using SteelBIM.Infrastructure;
 using SteelBIM.Models;
 using SteelBIM.Utils;
 using IUIDecisionService = SteelBIM.Core.IUIDecisionService;
@@ -80,8 +81,17 @@ namespace SteelBIM.Services
                 FamilyInstance? longarinaEsquerda = CriarViga(doc, geometry.LeftStringerStart, geometry.LeftStringerEnd, config.SymbolLongarina, config.NivelReferencia, config);
                 FamilyInstance? longarinaDireita = CriarViga(doc, geometry.RightStringerStart, geometry.RightStringerEnd, config.SymbolLongarina, config.NivelReferencia, config);
 
-                ConfigurarOrientacaoLongarina(longarinaEsquerda, false);
-                ConfigurarOrientacaoLongarina(longarinaDireita, true);
+                // Boca do perfil U para FORA (pedido do Victor): esquerda=180°, direita=0°.
+                // Antes era (0°,180°), que por serem espelhadas deixava as duas bocas para DENTRO.
+                ConfigurarOrientacaoLongarina(longarinaEsquerda, true);
+                ConfigurarOrientacaoLongarina(longarinaDireita, false);
+
+                // Alinha a face INTERNA de cada longarina ao fim do degrau, deslocando-a para FORA por
+                // meia espessura do perfil -> nao "come" a largura util (a viga sai centrada no eixo).
+                // Direcao sempre para fora: nunca piora; se nao conseguir medir, mantem o atual.
+                doc.Regenerate();
+                AlinharLongarinaForaDaLargura(doc, longarinaEsquerda, geometry.LeftDirection);
+                AlinharLongarinaForaDaLargura(doc, longarinaDireita, geometry.LeftDirection.Negate());
 
                 if (longarinaEsquerda != null)
                 {
@@ -190,7 +200,7 @@ namespace SteelBIM.Services
             if (config.CriarDegraus && config.TipoDegrau == EscadaTipoDegrau.Chapa && config.EspessuraChapaDegrauCm <= 0.0)
                 return StairValidationResult.Invalid("A espessura da chapa do degrau deve ser maior que zero.");
 
-            double inclinacaoGraus = Math.Atan2(totalRise, totalRunH) * (180.0 / Math.PI);
+            double inclinacaoGraus = EscadaCalculo.InclinacaoGraus(totalRise, totalRunH);
             if (inclinacaoGraus > 60.0)
                 return StairValidationResult.Invalid("A inclinação calculada excede 60 graus. Verifique os pontos informados.");
 
@@ -208,8 +218,8 @@ namespace SteelBIM.Services
                         "Ajuste a altura do espelho ou os pontos da escada.");
                 }
 
-                double blondelCm = (2.0 * stepData.RiserHeightFt + stepData.RunPerStepFt) / RevitUtils.FT_PER_CM;
-                if (blondelCm < 63.0 || blondelCm > 65.0)
+                double blondelCm = EscadaCalculo.BlondelCm(stepData.RiserHeightFt, stepData.RunPerStepFt, RevitUtils.FT_PER_CM);
+                if (!EscadaCalculo.BlondelDentroDaFaixa(blondelCm))
                 {
                     return StairValidationResult.ValidWithWarning(
                         "A combinação entre espelho e pisada não atende Blondel.\n" +
@@ -229,9 +239,7 @@ namespace SteelBIM.Services
             double larguraFt = config.LarguraCm * RevitUtils.FT_PER_CM;
             double pisadaPerfilFt = config.PisadaCm * RevitUtils.FT_PER_CM;
 
-            int nDegraus = config.QuantidadeDegraus > 0
-                ? config.QuantidadeDegraus
-                : Math.Max(1, (int)Math.Round(totalRise / espelhoDesejadoFt));
+            int nDegraus = EscadaCalculo.ContarDegraus(config.QuantidadeDegraus, totalRise, espelhoDesejadoFt);
             double espelhoFt = totalRise / nDegraus;
             double pisoFt = totalRun / nDegraus;
 
@@ -413,6 +421,72 @@ namespace SteelBIM.Services
             RevitUtils.SetZJustification(instancia, 2);
             RevitUtils.SetYZOffsets(instancia, 0.0, 0.0);
             RevitUtils.SetSectionRotation(instancia, -Math.PI / 2.0);
+        }
+
+        /// <summary>
+        /// Desloca a longarina para FORA (na direcao informada, perpendicular ao eixo da escada) por
+        /// metade da espessura transversal do perfil, de modo que a face interna do perfil encoste no
+        /// fim do degrau (largura util preservada). Como o perfil sai centrado no eixo, meia espessura
+        /// alinha a face interna ao eixo original. So executa se conseguir medir a espessura.
+        /// </summary>
+        private void AlinharLongarinaForaDaLargura(Document doc, FamilyInstance? instancia, XYZ outwardDir)
+        {
+            if (instancia == null)
+                return;
+
+            double espessuraFt = MedirEspessuraTransversalFt(instancia, outwardDir);
+            if (espessuraFt <= RevitUtils.EPS)
+                return;
+
+            ElementTransformUtils.MoveElement(
+                doc,
+                instancia.Id,
+                RevitUtils.SafeNormalize(outwardDir).Multiply(espessuraFt / 2.0));
+        }
+
+        /// <summary>
+        /// Espessura do perfil na direcao transversal (perpendicular ao eixo da viga). Projeta os
+        /// vertices dos solidos reais da instancia em <paramref name="dir"/> e retorna max-min. Como o
+        /// eixo da viga e' perpendicular a 'dir', so' a secao transversal contribui -> mede a espessura
+        /// real, independentemente de familia/parametro/rotacao. Retorna 0 se nao houver geometria.
+        /// </summary>
+        private static double MedirEspessuraTransversalFt(FamilyInstance instancia, XYZ dir)
+        {
+            XYZ d = RevitUtils.SafeNormalize(dir);
+            if (d.IsZeroLength())
+                return 0.0;
+
+            double min = double.MaxValue;
+            double max = double.MinValue;
+
+            try
+            {
+                foreach (Solid solido in instancia.GetAllSolidsFine(true, out _))
+                {
+                    foreach (Edge aresta in solido.Edges)
+                    {
+                        Curve? curva = aresta.AsCurve();
+                        if (curva == null)
+                            continue;
+
+                        foreach (XYZ p in new[] { curva.GetEndPoint(0), curva.GetEndPoint(1) })
+                        {
+                            double proj = p.DotProduct(d);
+                            if (proj < min)
+                                min = proj;
+                            if (proj > max)
+                                max = proj;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "[Escada] falha ao medir espessura do perfil da longarina");
+                return 0.0;
+            }
+
+            return max >= min ? max - min : 0.0;
         }
 
         private static string ObterDescricaoDegrau(EscadaConfig config)

@@ -78,6 +78,16 @@ namespace SteelBIM.Tests.Utils
             }
         }
 
+        [Theory]
+        [InlineData("1,000", 1.0)]    // virgula = decimal (pt-BR); Float nao permite milhar -> 1.0
+        [InlineData("1.000", 1.0)]    // ponto = decimal (Invariant) -> 1.0
+        [InlineData("1000", 1000.0)]  // sem separador
+        public void TryParseDouble_separador_nao_e_agrupamento_de_milhar(string input, double expected)
+        {
+            NumberParsing.TryParseDouble(input, out double value).Should().BeTrue();
+            value.Should().Be(expected);
+        }
+
         [Fact]
         public void Culture_does_not_affect_parsing_de_DE()
         {

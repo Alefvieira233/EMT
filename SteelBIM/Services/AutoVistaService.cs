@@ -867,7 +867,10 @@ namespace SteelBIM.Services
             try
             {
                 if (!titleBlock.IsActive)
+                {
                     titleBlock.Activate();
+                    doc.Regenerate(); // title block recem-ativado precisa regenerar antes de ViewSheet.Create
+                }
 
                 ViewSheet sheet = ViewSheet.Create(doc, titleBlock.Id);
                 sheet.Name = nomePeca;

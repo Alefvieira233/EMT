@@ -402,11 +402,28 @@
     <!-- v2.8.12 (Onda 1): peso/inferencia de base da lista de materiais -->
     <Compile Include="..\SteelBIM\Services\ListaMateriaisPesoCalc.cs"
              Link="LinkedSources\Services\ListaMateriaisPesoCalc.cs" />
+    <Compile Include="..\SteelBIM\Services\ListaMateriaisRomaneioFormatter.cs"
+             Link="LinkedSources\Services\ListaMateriaisRomaneioFormatter.cs" />
     <!-- v2.8.13: nucleo puro do layout de vistas na prancha -->
     <Compile Include="..\SteelBIM\Services\Layout\LayoutVistasCalculator.cs"
              Link="LinkedSources\Services\Layout\LayoutVistasCalculator.cs" />
     <Compile Include="..\SteelBIM\Services\Layout\OrdenacaoNatural.cs"
              Link="LinkedSources\Services\Layout\OrdenacaoNatural.cs" />
+    <!-- v2.8.14: nucleo puro do gerador de portico (Gerar Projeto Completo) -->
+    <Compile Include="..\SteelBIM\Models\DistribuicaoContrav.cs"
+             Link="LinkedSources\Models\DistribuicaoContrav.cs" />
+    <Compile Include="..\SteelBIM\Services\Portico\PorticoGeometriaCalculator.cs"
+             Link="LinkedSources\Services\Portico\PorticoGeometriaCalculator.cs" />
+    <!-- v2.8.26: logica pura do quantitativo de pintura -->
+    <Compile Include="..\SteelBIM\Services\Pintura\PinturaFormula.cs"
+             Link="LinkedSources\Services\Pintura\PinturaFormula.cs" />
+    <!-- Auditoria 2026-06-04: logica pura extraida de GuardaCorpo/Escada -->
+    <Compile Include="..\SteelBIM\Services\GuardaCorpoCalculo.cs"
+             Link="LinkedSources\Services\GuardaCorpoCalculo.cs" />
+    <Compile Include="..\SteelBIM\Services\EscadaCalculo.cs"
+             Link="LinkedSources\Services\EscadaCalculo.cs" />
+    <Compile Include="..\SteelBIM\Models\CotarPecaFabricacaoConfig.cs"
+             Link="LinkedSources\Models\CotarPecaFabricacaoConfig.cs" />
   </ItemGroup>
 
   <!-- Testes que dependem de services Revit-bound (TagearTrelicaService, IdentificarPerfilService,

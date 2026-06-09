@@ -8,6 +8,7 @@ using Autodesk.Revit.UI.Selection;
 using SteelBIM.Core;
 using SteelBIM.Infrastructure;
 using SteelBIM.Models;
+using SteelBIM.Utils;
 using SteelBIM.Views;
 
 namespace SteelBIM.Services
@@ -238,6 +239,7 @@ namespace SteelBIM.Services
                 using (Transaction t = new Transaction(doc, "Criar Cota Alinhada"))
                 {
                     t.Start();
+                    FailureHandlingHelper.SwallowWarnings(t); // evita modal de warning abortar a cotagem
 
                     // Workaround para cota invisível: recriar com as References da cota provisória.
                     Dimension dimProvisoria = doc.Create.NewDimension(view, linhaFinal, refArray);
@@ -668,6 +670,7 @@ namespace SteelBIM.Services
                 using (Transaction t = new Transaction(doc, titulo))
                 {
                     t.Start();
+                    FailureHandlingHelper.SwallowWarnings(t); // evita modal de warning abortar a cotagem
 
                     Dimension dimProvisoria = doc.Create.NewDimension(view, linhaFinal, refArray);
                     ReferenceArray refsValidadas = dimProvisoria.References;
@@ -721,6 +724,7 @@ namespace SteelBIM.Services
                 using (Transaction t = new Transaction(doc, $"{titulo} - Eixos Auxiliares"))
                 {
                     t.Start();
+                    FailureHandlingHelper.SwallowWarnings(t); // evita modal de warning abortar a cotagem
 
                     foreach ((Element Elemento, XYZ Centro) item in centros)
                     {

@@ -13,6 +13,15 @@ namespace SteelBIM.Models
         /// <summary>Perfil dos banzos — usado apenas no modo "treliça completa".</summary>
         public FamilySymbol? SymbolBanzo { get; set; }
 
+        /// <summary>
+        /// v2.8.14: perfil do banzo SUPERIOR (opcional). Quando nulo, cai em <see cref="SymbolBanzo"/>.
+        /// Permite ao "Gerar Projeto Completo" usar perfis distintos para banzo superior/inferior.
+        /// </summary>
+        public FamilySymbol? SymbolBanzoSuperior { get; set; }
+
+        /// <summary>v2.8.14: perfil do banzo INFERIOR (opcional). Quando nulo, cai em <see cref="SymbolBanzo"/>.</summary>
+        public FamilySymbol? SymbolBanzoInferior { get; set; }
+
         // ---- Liga/desliga membros (filtro mestre sobre o padrao) ----
         public bool LancarMontante { get; set; }
         public bool LancarDiagonal { get; set; }
@@ -59,5 +68,18 @@ namespace SteelBIM.Models
         public int ZJustificationValue { get; set; }
         public double ZOffsetMm { get; set; }
         public bool InverterSentido { get; set; }
+
+        // ---- Rotacao da secao por tipo de membro (graus); default 0 = sem rotacao ----
+        /// <summary>v2.8.14: rotacao da secao do banzo SUPERIOR (graus). 0 = sem rotacao.</summary>
+        public double RotacaoBanzoSuperiorGraus { get; set; }
+
+        /// <summary>v2.8.14: rotacao da secao do banzo INFERIOR (graus). 0 = sem rotacao.</summary>
+        public double RotacaoBanzoInferiorGraus { get; set; }
+
+        /// <summary>v2.8.14: rotacao da secao das DIAGONAIS (graus). 0 = sem rotacao.</summary>
+        public double RotacaoDiagonalGraus { get; set; }
+
+        /// <summary>v2.8.14: rotacao da secao dos MONTANTES (graus). 0 = sem rotacao.</summary>
+        public double RotacaoMontanteGraus { get; set; }
     }
 }

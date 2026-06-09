@@ -1,0 +1,158 @@
+<Window x:Class="SteelBIM.Views.ArmaduraCoroamentoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Armadura de Fundação — Coroamento (Gaiola Fechada)"
+        Width="560"
+        Height="640"
+        MinWidth="480" MinHeight="520" MaxHeight="760"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel LastChildFill="True">
+
+        <!-- Footer fixo: botoes sempre visiveis -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="LightGray"
+                BorderThickness="0,1,0,0"
+                Padding="8">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel"
+                        Content="Cancelar"
+                        Width="90" Height="28"
+                        Margin="0,0,8,0"
+                        IsCancel="True"
+                        TabIndex="98"/>
+                <Button x:Name="btnOk"
+                        Content="Lançar"
+                        Width="90" Height="28"
+                        IsDefault="True"
+                        TabIndex="99"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Cabecalho fixo -->
+        <Border DockPanel.Dock="Top"
+                BorderThickness="0,0,0,1"
+                BorderBrush="LightGray"
+                Padding="10,6">
+            <StackPanel>
+                <TextBlock x:Name="txtElementInfo" FontSize="11" Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Text="Selecione um bloco de coroamento para usar a geometria real."/>
+                <TextBlock FontSize="10" Foreground="Gray" Margin="0,4,0,0" TextWrapping="Wrap"
+                           Text="Monta a gaiola fechada: malha de fundo (acima das estacas) + estribos perimetrais que fecham fundo→topo + malha de topo e pele opcionais."/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
+
+                <!-- ===== Cobrimento e desconto da estaca ===== -->
+                <GroupBox Header="Cobrimento e estaca" Margin="0,0,0,8">
+                    <Grid Margin="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <Label Content="Cobrimento do bloco (cm):" Padding="0,2,0,0"/>
+                            <TextBox x:Name="txtCobrimento" Text="5"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <Label Content="Topo da estaca embutido (cm):" Padding="0,2,0,0"/>
+                            <TextBox x:Name="txtTopoEstaca" Text="5"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ===== Gaiola ===== -->
+                <GroupBox Header="Fechamento da gaiola" Margin="0,0,0,8">
+                    <StackPanel Margin="6">
+                        <CheckBox x:Name="chkFecharGaiola" Content="Fechar gaiola (estribos perimetrais + ganchos para cima na malha de fundo)"
+                                  IsChecked="True" FontWeight="SemiBold"/>
+                        <Label Content="Gancho da malha de fundo (cm):" Padding="0,4,0,0"/>
+                        <TextBox x:Name="txtGanchoMalha" Text="10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- ===== Malha de fundo ===== -->
+                <GroupBox Header="Malha de fundo (tração) — obrigatória" Margin="0,0,0,8">
+                    <Grid Margin="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <Label Content="Vergalhão:" Padding="0,2,0,0"/>
+                            <ComboBox x:Name="cmbMalhaFundo"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <Label Content="Espaçamento (cm):" Padding="0,2,0,0"/>
+                            <TextBox x:Name="txtMalhaFundoEsp" Text="15"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ===== Estribos perimetrais ===== -->
+                <GroupBox Header="Estribos perimetrais (fecham a gaiola)" Margin="0,0,0,8">
+                    <Grid Margin="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <Label Content="Vergalhão:" Padding="0,2,0,0"/>
+                            <ComboBox x:Name="cmbEstribo"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <Label Content="Espaçamento (cm):" Padding="0,2,0,0"/>
+                            <TextBox x:Name="txtEstriboEsp" Text="20"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ===== Malha de topo ===== -->
+                <GroupBox Header="Malha de topo (opcional)" Margin="0,0,0,8">
+                    <StackPanel Margin="6">
+                        <CheckBox x:Name="chkMalhaTopo" Content="Lançar malha de topo" IsChecked="True" Margin="0,0,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                <Label Content="Vergalhão:" Padding="0,2,0,0"/>
+                                <ComboBox x:Name="cmbMalhaTopo"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <Label Content="Espaçamento (cm):" Padding="0,2,0,0"/>
+                                <TextBox x:Name="txtMalhaTopoEsp" Text="20"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- ===== Pele lateral ===== -->
+                <GroupBox Header="Pele lateral (opcional)" Margin="0,0,0,8">
+                    <StackPanel Margin="6">
+                        <CheckBox x:Name="chkPeleLateral" Content="Lançar pele lateral" Margin="0,0,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                <Label Content="Vergalhão:" Padding="0,2,0,0"/>
+                                <ComboBox x:Name="cmbPele"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <Label Content="Espaçamento (cm):" Padding="0,2,0,0"/>
+                                <TextBox x:Name="txtPeleEsp" Text="20"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

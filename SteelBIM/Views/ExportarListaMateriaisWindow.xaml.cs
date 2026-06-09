@@ -49,7 +49,7 @@ namespace SteelBIM.Views
         {
             _atualizando = true;
 
-            rbVistaAtiva.IsChecked = true;
+            rbModeloInteiro.IsChecked = true; // default: modelo inteiro (evita perder elementos fora da vista)
             chkVigas.IsChecked = true;
             chkPilares.IsChecked = true;
             chkFundacoes.IsChecked = true;

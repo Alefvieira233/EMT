@@ -1,0 +1,480 @@
+﻿using System.Linq;
+using FluentAssertions;
+using SteelBIM.Models;
+using SteelBIM.Services.Portico;
+using Xunit;
+
+namespace SteelBIM.Tests.Services.Portico
+{
+    /// <summary>
+    /// Matriz de testes do nucleo puro do gerador de portico (galpao). Numeros do template EMT:
+    /// 7 porticos x 5000 mm, vao 15010 mm, beiral 4000 mm, treliça H=600 / B=1600.
+    /// </summary>
+    public class PorticoGeometriaCalculatorTests
+    {
+        private static GerarPorticoEntrada BaseTrelica() => new GerarPorticoEntrada
+        {
+            NumeroPorticos = 7,
+            EspacamentoPorticosMm = 5000.0,
+            VaoGalpaoMm = 15010.0,
+            AlturaPilarMm = 4000.0,
+            UsarTrelica = true,
+            AlturaExtremidadeMm = 600.0,
+            AlturaCentralMm = 1600.0,
+            LancarTercas = true,
+            EspacamentoTercasMm = 1500.0,
+            ElevacaoTercasMm = 150.0,
+            ContravCobertura = false,
+            TercasPorXCobertura = 2,
+            ContravPilares = false,
+            DistribuicaoContravPilares = DistribuicaoContrav.Extremidades,
+            LancarLinhaCorrente = false,
+            NumeroLinhasCorrente = 3
+        };
+
+        [Fact]
+        public void Calcular_EstacoesDosPorticos()
+        {
+            var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
+            r.XPorticosMm.Should().Equal(new[] { 0.0, 5000.0, 10000.0, 15000.0, 20000.0, 25000.0, 30000.0 });
+            r.YEixosMm.Should().Equal(new[] { 0.0, 15010.0 });
+        }
+
+        [Fact]
+        public void Calcular_DoisPilaresPorPortico_DaBaseAoBeiral()
+        {
+            var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
+            r.Pilares.Should().HaveCount(14); // 7 porticos x 2
+            r.Pilares.Should().OnlyContain(p => p.A.ZMm == 0.0 && p.B.ZMm == 4000.0);
+            r.Pilares.Should().Contain(p => p.A.YMm == 0.0);
+            r.Pilares.Should().Contain(p => p.A.YMm == 15010.0);
+        }
+
+        [Fact]
+        public void Calcular_PilarCentral_AdicionaColunaNoMeioDoVao()
+        {
+            var e = BaseTrelica();
+            e.PilarCentral = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Pilares.Should().HaveCount(21); // 7 porticos x 3 (y=0, y=w, y=w/2)
+            r.Pilares.Should().Contain(p => p.A.YMm == 15010.0 / 2.0 && p.A.ZMm == 0.0 && p.B.ZMm == 4000.0);
+        }
+
+        [Fact]
+        public void Calcular_Trelica_EixoInferiorPorPortico_NoBeiral()
+        {
+            var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
+            r.EixosInferioresTrelica.Should().HaveCount(7);
+            r.EixosInferioresTrelica.Should().OnlyContain(s => s.A.ZMm == 4000.0 && s.B.ZMm == 4000.0);
+            r.EixosInferioresTrelica.Should().OnlyContain(s => s.A.YMm == 0.0 && s.B.YMm == 15010.0);
+            r.Vigas.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_Viga_DuasAguasPorPortico_ComApiceNaCumeeira()
+        {
+            var e = BaseTrelica();
+            e.UsarTrelica = false;
+            e.AlturaCumeeiraMm = 1500.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Vigas.Should().HaveCount(14); // 7 porticos x 2 aguas
+            r.EixosInferioresTrelica.Should().BeEmpty();
+            r.Vigas.Should().Contain(s => s.B.YMm == 15010.0 / 2.0 && s.B.ZMm == 5500.0);
+        }
+
+        [Fact]
+        public void Calcular_Tercas_SimetricasEmTornoDaCumeeira_Longitudinais()
+        {
+            var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
+            r.Tercas.Should().NotBeEmpty();
+            // 6 posicoes na meia-agua (j=0..5) + 5 espelhos (a cumeeira nao duplica) = 11.
+            r.Tercas.Should().HaveCount(11);
+            r.Tercas.Should().OnlyContain(s => s.A.XMm == 0.0 && s.B.XMm == 30000.0);
+            r.Tercas.Should().OnlyContain(s => s.A.YMm == s.B.YMm && s.A.ZMm == s.B.ZMm);
+
+            double meia = 15010.0 / 2.0;
+            r.Tercas.Count(s => s.A.YMm == meia).Should().Be(1); // cumeeira aparece uma vez
+            foreach (var s in r.Tercas.Where(t => t.A.YMm < meia))
+                r.Tercas.Should().Contain(o => o.A.YMm == 15010.0 - s.A.YMm); // espelho
+        }
+
+        [Fact]
+        public void Calcular_Tercas_NaCumeeira_AtingemAlturaCentral()
+        {
+            var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
+            double meia = 15010.0 / 2.0;
+            var cumeeira = r.Tercas.Single(s => s.A.YMm == meia);
+            cumeeira.A.ZMm.Should().BeApproximately(4000.0 + 1600.0 + 150.0, 1e-6); // beiral + B + elevacao
+        }
+
+        [Fact]
+        public void Calcular_ContravEListasDesligadas_Vazias()
+        {
+            var r = PorticoGeometriaCalculator.Calcular(BaseTrelica());
+            r.ContravCobertura.Should().BeEmpty();
+            r.ContravPilares.Should().BeEmpty();
+            r.LinhasCorrente.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_XACadaNTercas_NosVaosDeExtremidade()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true; // TercasPorXCobertura = 2 (default)
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 6 posicoes de terça na meia-agua -> passo 2 -> 3 X por agua;
+            // 2 vaos de extremidade x 2 aguas x 3 X x 2 diagonais = 24.
+            r.ContravCobertura.Should().HaveCount(24);
+            r.ContravCobertura.Should().OnlyContain(s =>
+                s.A.XMm == 0.0 || s.A.XMm == 5000.0 || s.A.XMm == 25000.0 || s.A.XMm == 30000.0);
+            // nao e' mais 1 X gigante: varios Y distintos subindo a agua.
+            r.ContravCobertura.Select(s => s.A.YMm).Distinct().Count().Should().BeGreaterThan(2);
+        }
+
+        [Fact]
+        public void Calcular_ContravPilares_XVerticalNasParedes()
+        {
+            var e = BaseTrelica();
+            e.ContravPilares = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.ContravPilares.Should().HaveCount(8); // 2 vaos x 2 paredes x 2 diagonais
+            r.ContravPilares.Should().OnlyContain(s => s.A.ZMm == 0.0);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_PassoMaior_GeraMenosXs()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.TercasPorXCobertura = 3; // 1 X a cada 3 terças -> menos X
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 6 posicoes -> passo 3 -> 2 X por agua; 2 vaos x 2 aguas x 2 X x 2 diag = 16.
+            r.ContravCobertura.Should().HaveCount(16);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_ExtremidadesECentro_GeraMaisVaos()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.DistribuicaoContravCobertura = DistribuicaoContrav.ExtremidadesECentro;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 4 vaos x 2 aguas x 3 X x 2 diag = 48 (vs 24 das extremidades).
+            r.ContravCobertura.Should().HaveCount(48);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_Todos_ContraventaTodosOsVaos()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.DistribuicaoContravCobertura = DistribuicaoContrav.Todos;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 6 vaos x 2 aguas x 3 X x 2 diag = 72.
+            r.ContravCobertura.Should().HaveCount(72);
+        }
+
+        [Fact]
+        public void Calcular_PilarCentral_ModoViga_AlcancaACumeeira()
+        {
+            var e = BaseTrelica();
+            e.PilarCentral = true;
+            e.UsarTrelica = false;
+            e.AlturaCumeeiraMm = 1500.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            // pilar central (y=w/2) vai do piso ao ápice da viga (beiral + cumeeira = 5500).
+            r.Pilares.Should().Contain(p => p.A.YMm == meia && p.A.ZMm == 0.0 && p.B.ZMm == 5500.0);
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_NoNivelDasTercas()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            // na cumeeira, a linha de corrente fica em ZTopo + elevacao = 4000+1600+150 = 5750.
+            r.LinhasCorrente.Should().Contain(s =>
+                (s.A.YMm == meia && s.A.ZMm == 5750.0) || (s.B.YMm == meia && s.B.ZMm == 5750.0));
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_NoPlanoDoBanzo_TercasElevadas()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // contrav de cobertura no plano do banzo: no apoio (y=0) z = beiral + H = 4600 (sem elevacao).
+            r.ContravCobertura.Should().Contain(s => s.A.ZMm == 4600.0 || s.B.ZMm == 4600.0);
+            // a terça no mesmo apoio fica 150 mm acima (sobre o banzo): 4750.
+            r.Tercas.Should().Contain(t => t.A.YMm == 0.0 && t.A.ZMm == 4750.0);
+        }
+
+        [Fact]
+        public void Calcular_ContravPilares_Distribuicao_Configuravel()
+        {
+            // mesmo padrão da cobertura: a distribuição escolhe quais vãos recebem o X vertical.
+            var ext = BaseTrelica();
+            ext.ContravPilares = true;
+            ext.DistribuicaoContravPilares = DistribuicaoContrav.Extremidades; // 2 vaos
+            PorticoGeometriaCalculator.Calcular(ext).ContravPilares
+                .Should().HaveCount(8); // 2 vaos x 2 paredes x 2 diagonais
+
+            var centro = BaseTrelica();
+            centro.ContravPilares = true;
+            centro.DistribuicaoContravPilares = DistribuicaoContrav.ExtremidadesECentro; // 4 vaos
+            PorticoGeometriaCalculator.Calcular(centro).ContravPilares
+                .Should().HaveCount(16); // 4 vaos x 2 x 2
+
+            var todos = BaseTrelica();
+            todos.ContravPilares = true;
+            todos.DistribuicaoContravPilares = DistribuicaoContrav.Todos; // 6 vaos (n=7)
+            PorticoGeometriaCalculator.Calcular(todos).ContravPilares
+                .Should().HaveCount(24); // 6 vaos x 2 x 2
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_DivideOComprimento_NPontosInteriores()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true; // NumeroLinhasCorrente = 3 (default)
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // 3 linhas -> divide o comprimento (30000) em 4 -> 7500/15000/22500; x2 aguas = 6.
+            r.LinhasCorrente.Should().HaveCount(6);
+            r.LinhasCorrente.Should().OnlyContain(s => s.A.XMm == s.B.XMm && s.A.YMm != s.B.YMm);
+            r.LinhasCorrente.Select(s => s.A.XMm).Distinct()
+                .Should().BeEquivalentTo(new[] { 7500.0, 15000.0, 22500.0 });
+            // uma das aguas vai do beiral (y=0) ate a cumeeira (y=w/2).
+            r.LinhasCorrente.Should().Contain(s => s.A.YMm == 0.0 && s.B.YMm == 15010.0 / 2.0);
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_Duas_NosTercosDoComprimento()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true;
+            e.NumeroLinhasCorrente = 2; // exemplo do engenheiro: 2 correntes nos tercos
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // divide 30000 em 3 -> 10000 e 20000; x2 aguas = 4 segmentos. "2 = 2".
+            r.LinhasCorrente.Should().HaveCount(4);
+            r.LinhasCorrente.Select(s => s.A.XMm).Distinct()
+                .Should().BeEquivalentTo(new[] { 10000.0, 20000.0 });
+        }
+
+        [Fact]
+        public void Calcular_DoisPorticos_UmVaoUnico()
+        {
+            var e = BaseTrelica();
+            e.NumeroPorticos = 2;
+            e.ContravCobertura = true;
+            e.ContravPilares = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.XPorticosMm.Should().Equal(new[] { 0.0, 5000.0 });
+            r.Pilares.Should().HaveCount(4);
+            r.ContravCobertura.Should().HaveCount(12); // 1 vao x 2 aguas x 3 X x 2
+            r.ContravPilares.Should().HaveCount(4);    // 1 vao x 2 paredes x 2
+        }
+
+        [Fact]
+        public void Calcular_MenosDeDoisPorticos_RetornaVazio()
+        {
+            var e = BaseTrelica();
+            e.NumeroPorticos = 1;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Pilares.Should().BeEmpty();
+            r.EixosInferioresTrelica.Should().BeEmpty();
+            r.XPorticosMm.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_BanzosParalelos_QuandoBIgualH()
+        {
+            var e = BaseTrelica();
+            e.AlturaCentralMm = e.AlturaExtremidadeMm; // 600 == 600 => agua plana
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Tercas.Should().HaveCount(11);
+            r.Tercas.Should().OnlyContain(s => s.A.ZMm == 4750.0); // beiral + H + elevacao, sem pico
+        }
+
+        [Fact]
+        public void Calcular_TercasDesligadas_ListaVazia()
+        {
+            var e = BaseTrelica();
+            e.LancarTercas = false;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.Tercas.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_EspacamentoTerca_MaiorQueAgua_ClampaEmDoisNiveis()
+        {
+            var e = BaseTrelica();
+            e.EspacamentoTercasMm = 100000.0; // muito maior que o comprimento da agua
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            // passos clampa em 1 -> meia-agua {0, w/2} -> beiral(0) + cumeeira(w/2) + espelho(w) = 3
+            r.Tercas.Should().HaveCount(3);
+            double meia = 15010.0 / 2.0;
+            r.Tercas.Select(s => s.A.YMm).Should().BeEquivalentTo(new[] { 0.0, meia, 15010.0 });
+        }
+
+        [Fact]
+        public void Calcular_AlturaPilarZero_RetornaVazio()
+        {
+            var e = BaseTrelica();
+            e.AlturaPilarMm = 0.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.XPorticosMm.Should().BeEmpty();
+            r.Pilares.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_EspacamentoPorticoOuVaoInvalido_RetornaVazio()
+        {
+            var semEsp = BaseTrelica();
+            semEsp.EspacamentoPorticosMm = 0.0;
+            PorticoGeometriaCalculator.Calcular(semEsp).XPorticosMm.Should().BeEmpty();
+
+            var semVao = BaseTrelica();
+            semVao.VaoGalpaoMm = 0.0;
+            PorticoGeometriaCalculator.Calcular(semVao).XPorticosMm.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_AlturaCoberturaNegativa_RetornaVazio()
+        {
+            var e = BaseTrelica();
+            e.AlturaCentralMm = -100.0; // agua invertida
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.XPorticosMm.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Calcular_ElevacaoTercaNegativa_ClampaEmZero()
+        {
+            var e = BaseTrelica();
+            e.ElevacaoTercasMm = -500.0;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            var cumeeira = r.Tercas.Single(s => s.A.YMm == meia);
+            cumeeira.A.ZMm.Should().BeApproximately(4000.0 + 1600.0, 1e-6); // elevacao tratada como 0
+        }
+
+        [Fact]
+        public void Calcular_LinhaCorrente_CoplanarComTercaNoBeiral()
+        {
+            var e = BaseTrelica();
+            e.LancarLinhaCorrente = true;
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            var lcBeiral = r.LinhasCorrente.First(s => s.A.YMm == 0.0);
+            var tercaBeiral = r.Tercas.First(s => s.A.YMm == 0.0);
+            // a linha de corrente arranca no mesmo Z da terça do beiral (coplanares).
+            lcBeiral.A.ZMm.Should().BeApproximately(tercaBeiral.A.ZMm, 1e-6);
+        }
+
+        [Fact]
+        public void Calcular_ContravCobertura_ExtremidadesECentro_GalpaoCurto_CobreTodosOsVaos()
+        {
+            var ec = BaseTrelica();
+            ec.NumeroPorticos = 3; // nVaos=2 < 4 => ExtremidadesECentro colapsa para todos
+            ec.ContravCobertura = true;
+            ec.DistribuicaoContravCobertura = DistribuicaoContrav.ExtremidadesECentro;
+            var rEc = PorticoGeometriaCalculator.Calcular(ec);
+
+            var todos = BaseTrelica();
+            todos.NumeroPorticos = 3;
+            todos.ContravCobertura = true;
+            todos.DistribuicaoContravCobertura = DistribuicaoContrav.Todos;
+            var rTodos = PorticoGeometriaCalculator.Calcular(todos);
+
+            rEc.ContravCobertura.Count.Should().Be(rTodos.ContravCobertura.Count);
+        }
+
+        [Fact]
+        public void Calcular_QuantidadesZero_NaoGeramContravNemLinha()
+        {
+            var e = BaseTrelica();
+            e.ContravCobertura = true;
+            e.TercasPorXCobertura = 0;   // sem passo de X de cobertura
+            e.LancarLinhaCorrente = true;
+            e.NumeroLinhasCorrente = 0;  // sem linhas de corrente
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            r.ContravCobertura.Should().BeEmpty();
+            r.LinhasCorrente.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(15010.0, 1500.0, 10)] // 15010/1500 ~ 10 (par) -> esp 1501 mm
+        [InlineData(15010.0, 1800.0, 8)]  // 15010/1800 ~ 8.3 -> 8 (par) -> esp 1876 mm
+        [InlineData(15010.0, 1700.0, 10)] // 8.8 -> 9 (impar) -> sobe p/ 10 (par)
+        [InlineData(12000.0, 100000.0, 2)] // alvo absurdo -> minimo 2
+        public void PaineisTrelica_SempreParEProximoDoAlvo(double vao, double alvo, int esperado)
+        {
+            int p = PorticoGeometriaCalculator.PaineisTrelica(vao, alvo);
+            p.Should().Be(esperado);
+            (p % 2).Should().Be(0); // sempre par -> no' na cumeeira
+        }
+
+        [Fact]
+        public void Calcular_Tercas_AlinhadasComMontantes_EspacamentoUniformeEmPlanta()
+        {
+            var e = BaseTrelica(); // treliça, vao 15010, espacamento alvo 1500 -> P=10
+            var r = PorticoGeometriaCalculator.Calcular(e);
+            double meia = 15010.0 / 2.0;
+            // Y das terças na meia-agua (uma terça por X=0), ordenados.
+            var ys = r.Tercas
+                .Where(s => s.A.YMm <= meia + 1e-6)
+                .Select(s => s.A.YMm)
+                .Distinct()
+                .OrderBy(v => v)
+                .ToList();
+            // P=10 -> 6 niveis na meia-agua (0, w/10, ..., w/2) = montantes; espacamento uniforme.
+            ys.Should().HaveCount(6);
+            double passo = 15010.0 / 10.0;
+            for (int i = 0; i < ys.Count; i++)
+                ys[i].Should().BeApproximately(i * passo, 1e-6);
+            // espacamento de terça em planta na faixa usual (1.5–1.9 m).
+            passo.Should().BeInRange(1500.0, 1900.0);
+        }
+
+        [Fact]
+        public void InclinacaoTercaRad_AcompanhaAInclinacaoDaAgua()
+        {
+            var e = BaseTrelica(); // H=600, B=1600, w=15010 -> rise=1000, meia=7505
+            double meia = 15010.0 / 2.0;
+            double beta = System.Math.Atan2(1000.0, meia);
+
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, 0.0).Should().BeApproximately(beta, 1e-9);     // agua 1
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, meia).Should().Be(0.0);                        // cumeeira
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, 15010.0).Should().BeApproximately(-beta, 1e-9); // agua 2
+            // aguas opostas: sinais simetricos.
+            double yBaixo = 3000.0;
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, yBaixo)
+                .Should().BeApproximately(-PorticoGeometriaCalculator.InclinacaoTercaRad(e, 15010.0 - yBaixo), 1e-9);
+        }
+
+        [Fact]
+        public void InclinacaoTercaRad_BanzosParalelos_Zero()
+        {
+            var e = BaseTrelica();
+            e.AlturaCentralMm = e.AlturaExtremidadeMm; // agua plana => terça horizontal
+            PorticoGeometriaCalculator.InclinacaoTercaRad(e, 2000.0).Should().Be(0.0);
+        }
+
+        [Fact]
+        public void InclinacaoTercaRad_InverterAbertura_TrocaSinalMantemMagnitude()
+        {
+            var e = BaseTrelica();
+            double[] ys = { 0.0, 3000.0, 6000.0, 9000.0, 12000.0, 15010.0 };
+            foreach (double y in ys)
+            {
+                double normal = PorticoGeometriaCalculator.InclinacaoTercaRad(e, y);
+                var inv = BaseTrelica();
+                inv.InverterAberturaTerca = true;
+                double invertido = PorticoGeometriaCalculator.InclinacaoTercaRad(inv, y);
+                invertido.Should().BeApproximately(-normal, 1e-9);                              // sinal trocado
+                System.Math.Abs(invertido).Should().BeApproximately(System.Math.Abs(normal), 1e-9); // magnitude igual
+            }
+        }
+    }
+}

@@ -65,5 +65,35 @@ namespace SteelBIM.Tests.Services
             ListaMateriaisPesoCalc.InferirBase("Genérico", "Familia X", false)
                 .Should().Be(ListaMateriaisPesoCalc.BaseMaterial.Outro);
         }
+
+        [Fact]
+        public void InferirBase_PerfilEstruturalSemMaterial_AssumeAco()
+        {
+            // terça/contrav "U150x65" sem material e sem "aço" no nome: antes virava Outro (peso 0)
+            // e SUMIA da lista. Agora, como perfil estrutural, assume aço por padrao.
+            ListaMateriaisPesoCalc.InferirBase(null, "U150x65x4,76", isFundacao: false, isPerfilEstrutural: true)
+                .Should().Be(ListaMateriaisPesoCalc.BaseMaterial.Metalico);
+        }
+
+        [Fact]
+        public void InferirBase_PilarSemPista_NaoViraAco()
+        {
+            // Regressao corrigida: pilar de concreto sem material e sem "concreto" no nome
+            // NAO deve virar aco. Pilares nao sao tratados como perfil estrutural (isPerfilEstrutural
+            // = false), entao "P1 40x40" sem pista permanece Outro (nao entra como aco na lista).
+            ListaMateriaisPesoCalc.InferirBase(null, "P1 40x40", isFundacao: false, isPerfilEstrutural: false)
+                .Should().Be(ListaMateriaisPesoCalc.BaseMaterial.Outro);
+        }
+
+        [Fact]
+        public void InferirBase_PerfilEstrutural_NaoSobrepoeConcretoNemFundacao()
+        {
+            // concreto continua tendo prioridade mesmo marcando perfil estrutural
+            ListaMateriaisPesoCalc.InferirBase("Concreto", "Pilar", isFundacao: false, isPerfilEstrutural: true)
+                .Should().Be(ListaMateriaisPesoCalc.BaseMaterial.Concreto);
+            // fundacao tambem (concreto antes do fallback de perfil)
+            ListaMateriaisPesoCalc.InferirBase(null, "Sapata", isFundacao: true, isPerfilEstrutural: true)
+                .Should().Be(ListaMateriaisPesoCalc.BaseMaterial.Concreto);
+        }
     }
 }

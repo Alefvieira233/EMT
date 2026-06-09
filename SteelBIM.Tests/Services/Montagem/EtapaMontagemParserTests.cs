@@ -79,5 +79,13 @@ namespace SteelBIM.Tests.Services.Montagem
             ok.Should().BeFalse();
             etapa.Should().Be(0);
         }
+
+        [Theory]
+        [InlineData("Etapa:99999999999999999")] // estoura int -> TryParse falha -> 0
+        [InlineData("Etapa:2147483648")]        // int.MaxValue + 1
+        public void Parse_Overflow_ReturnsZero(string input)
+        {
+            EtapaMontagemParser.Parse(input).Should().Be(0);
+        }
     }
 }

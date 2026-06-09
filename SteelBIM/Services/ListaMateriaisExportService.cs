@@ -379,6 +379,7 @@ namespace SteelBIM.Services
             {
                 categorias.AddRange(CategoriasPerfisConexao);
                 categorias.AddRange(CategoriasConexoesDetalhadas);
+                categorias.Add(BuiltInCategory.OST_GenericModel); // chapas via DirectShape (ex.: chapa de topo do pilar)
             }
 
             return categorias
@@ -421,6 +422,18 @@ namespace SteelBIM.Services
 
             if (CategoriasConexoesDetalhadas.Contains(categoria))
                 return ListaMateriaisCategoriaLogica.ChapasConexoes;
+
+            // Chapas criadas pela ferramenta como DirectShape (ex.: chapa de topo do pilar) entram
+            // como chapa/acessorio metalico. So' DirectShape cujo nome indique chapa/placa — evita
+            // capturar solidos genericos que nao sao chapas de aco.
+            if (categoria == BuiltInCategory.OST_GenericModel && elemento is DirectShape)
+            {
+                string nomeDs = elemento.Name ?? string.Empty;
+                if (nomeDs.IndexOf("chapa", StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+                    nomeDs.IndexOf("placa", StringComparison.CurrentCultureIgnoreCase) >= 0)
+                    return ListaMateriaisCategoriaLogica.ChapasConexoes;
+                return null;
+            }
 
             return null;
         }
@@ -1114,9 +1127,18 @@ namespace SteelBIM.Services
 
             // Inferencia por TEXTO (pura/testavel): nome do material E da familia/tipo (ex.: pilar
             // "Secao retangular de concreto" sem material atribuido) + fundacao -> concreto.
+            // Perfis estruturais (viga/terca/contrav/pilar metalico/perfil de conexao) sem material
+            // sao tratados como AÇO por padrao — senao terças e contraventamentos somem da lista.
             bool isFundacao = categoria == ListaMateriaisCategoriaLogica.Fundacoes;
+            // Pilares NAO entram aqui: pilar pode ser de concreto. Sem material e sem "concreto" no
+            // nome, um pilar de concreto seria classificado como aco por engano. Viga/terca/contrav/
+            // perfil de conexao sao sempre aco no dominio deste plugin.
+            bool isPerfilEstrutural =
+                categoria == ListaMateriaisCategoriaLogica.Vigas ||
+                categoria == ListaMateriaisCategoriaLogica.Contraventamentos ||
+                categoria == ListaMateriaisCategoriaLogica.PerfisConexao;
             ListaMateriaisPesoCalc.BaseMaterial baseTexto =
-                ListaMateriaisPesoCalc.InferirBase(material?.Name, nomeFamiliaTipo, isFundacao);
+                ListaMateriaisPesoCalc.InferirBase(material?.Name, nomeFamiliaTipo, isFundacao, isPerfilEstrutural);
             return baseTexto switch
             {
                 ListaMateriaisPesoCalc.BaseMaterial.Concreto => MaterialBaseTipo.Concreto,
@@ -1340,6 +1362,9 @@ namespace SteelBIM.Services
                 CriarAbaDetalhe(workbook, "Conexões", conexoes);
             }
 
+            if (config.ExportarPerfisLineares)
+                CriarAbaRomaneioMetalico(workbook, grupos);
+
             if (config.ExportarResumo)
                 CriarAbaResumo(workbook, grupos);
 
@@ -1513,6 +1538,116 @@ namespace SteelBIM.Services
 
             FormatarColunasNumericas(ws, 2, ultimaLinha, linhaTotais);
             ws.Columns().AdjustToContents();
+        }
+
+        // Romaneio metalico em colunas dedicadas (padrao de escritorio): um perfil por linha com
+        // Qtd, comprimento total, peso linear e peso total + acessorios + total geral de aco.
+        // Aba ADITIVA — nao altera Planilha Base/Detalhe/Resumo.
+        private static void CriarAbaRomaneioMetalico(XLWorkbook workbook, List<ListaMateriaisGrupo> grupos)
+        {
+            List<IGrouping<RomaneioChaveLdm, ListaMateriaisGrupo>> perfis = grupos
+                .Where(x => x.MaterialBaseTipo == MaterialBaseTipo.Metalico &&
+                            (x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.ElementosEstruturais ||
+                             x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.PerfisConexao) &&
+                            x.PesoTotalKg > 0.0)
+                .GroupBy(x => new RomaneioChaveLdm(x.TipoPerfil, x.Material))
+                .OrderBy(x => x.Key.TipoPerfil, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(x => x.Key.Material, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            List<IGrouping<string, ListaMateriaisGrupo>> acessorios = grupos
+                .Where(x => x.MaterialBaseTipo == MaterialBaseTipo.Metalico &&
+                            x.SecaoPlanilha == ListaMateriaisSecaoPlanilha.Conexoes &&
+                            x.PesoTotalKg > 0.0)
+                .GroupBy(x => x.Material)
+                .OrderBy(x => x.Key, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            if (perfis.Count == 0 && acessorios.Count == 0)
+                return; // sem aco -> nao cria a aba
+
+            IXLWorksheet ws = workbook.Worksheets.Add("Romaneio Metálico");
+
+            string[] headers =
+            {
+                "Item",
+                "Perfil / Bitola",
+                "Material",
+                "Qtd",
+                "Comp. total (m)",
+                "Peso linear (kg/m)",
+                "Peso total (kg)"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+                ws.Cell(1, i + 1).Value = headers[i];
+
+            EstilizarCabecalho(ws, 1, headers.Length);
+
+            int linha = 2;
+            int item = 1;
+            foreach (IGrouping<RomaneioChaveLdm, ListaMateriaisGrupo> g in perfis)
+            {
+                int qtd = g.Sum(y => y.Quantidade);
+                double comp = g.Sum(y => y.ComprimentoTotalM);
+                double peso = g.Sum(y => y.PesoTotalKg);
+                double kgPorM = comp > 0.0 ? peso / comp : 0.0;
+
+                ws.Cell(linha, 1).Value = item++;
+                ws.Cell(linha, 2).Value = string.IsNullOrWhiteSpace(g.Key.TipoPerfil) ? "-" : g.Key.TipoPerfil;
+                ws.Cell(linha, 3).Value = g.Key.Material;
+                ws.Cell(linha, 4).Value = qtd;
+                ws.Cell(linha, 5).Value = comp;
+                ws.Cell(linha, 6).Value = kgPorM;
+                ws.Cell(linha, 7).Value = peso;
+                linha++;
+            }
+
+            // Parafusos / chapas / acessorios: sem comprimento e sem peso linear (so qtd + peso).
+            foreach (IGrouping<string, ListaMateriaisGrupo> g in acessorios)
+            {
+                ws.Cell(linha, 1).Value = item++;
+                ws.Cell(linha, 2).Value = "Chapas e acessórios";
+                ws.Cell(linha, 3).Value = g.Key;
+                ws.Cell(linha, 4).Value = g.Sum(y => y.Quantidade);
+                ws.Cell(linha, 7).Value = g.Sum(y => y.PesoTotalKg);
+                linha++;
+            }
+
+            int ultimaLinha = linha - 1;
+            ws.Range(1, 1, ultimaLinha, headers.Length).SetAutoFilter();
+            ws.SheetView.FreezeRows(1);
+
+            int linhaTotal = linha;
+            ws.Cell(linhaTotal, 2).Value = "TOTAL AÇO";
+            ws.Cell(linhaTotal, 4).FormulaA1 = $"SUM(D2:D{ultimaLinha})";
+            ws.Cell(linhaTotal, 5).FormulaA1 = $"SUM(E2:E{ultimaLinha})";
+            ws.Cell(linhaTotal, 7).FormulaA1 = $"SUM(G2:G{ultimaLinha})";
+            ws.Range(linhaTotal, 1, linhaTotal, headers.Length).Style.Font.Bold = true;
+
+            ws.Column(4).Style.NumberFormat.Format = "#,##0";
+            ws.Range(2, 5, linhaTotal, 7).Style.NumberFormat.Format = "#,##0.00";
+            ws.Range(1, 1, linhaTotal, headers.Length).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            ws.Columns().AdjustToContents();
+        }
+
+        private sealed class RomaneioChaveLdm
+        {
+            public RomaneioChaveLdm(string tipoPerfil, string material)
+            {
+                TipoPerfil = tipoPerfil;
+                Material = material;
+            }
+
+            public string TipoPerfil { get; }
+            public string Material { get; }
+
+            public override bool Equals(object? obj) =>
+                obj is RomaneioChaveLdm o &&
+                string.Equals(TipoPerfil, o.TipoPerfil, StringComparison.Ordinal) &&
+                string.Equals(Material, o.Material, StringComparison.Ordinal);
+
+            public override int GetHashCode() => System.HashCode.Combine(TipoPerfil, Material);
         }
 
         private static string ObterNomeBaseMaterial(MaterialBaseTipo baseTipo)
@@ -1826,6 +1961,16 @@ namespace SteelBIM.Services
             AplicarEstiloLinhaLdm(ws, linha, null, false);
         }
 
+        // Linha de TOTAL de uma secao (negrito, fundo cinza claro) — padrao de lista de material.
+        private static void EscreverLinhaTotalLdm(IXLWorksheet ws, int linha, string rotulo, string unidade, double total)
+        {
+            ws.Cell(linha, 1).Value = string.Empty;
+            ws.Cell(linha, 2).Value = rotulo;
+            ws.Cell(linha, 3).Value = unidade;
+            ws.Cell(linha, 4).Value = total;
+            AplicarEstiloLinhaLdm(ws, linha, "D9D9D9", true);
+        }
+
         private static void AplicarEstiloLinhaLdm(IXLWorksheet ws, int linha, string? corHex, bool negrito)
         {
             IXLRange range = ws.Range(linha, 1, linha, 4);
@@ -1895,6 +2040,7 @@ namespace SteelBIM.Services
                 foreach (ListaBaseLinha item in concretos)
                     EscreverLinhaItemLdm(ws, linha++, $"1.1.{indice++}", item);
 
+                EscreverLinhaTotalLdm(ws, linha++, "TOTAL ESTRUTURA DE CONCRETO", "m³", concretos.Sum(c => c.Quantidade));
                 linha++;
             }
 
@@ -1913,6 +2059,7 @@ namespace SteelBIM.Services
                 foreach (ListaBaseLinha item in metalicos)
                     EscreverLinhaItemLdm(ws, linha++, $"2.1.{indice++}", item);
 
+                EscreverLinhaTotalLdm(ws, linha++, "TOTAL ESTRUTURA METÁLICA", "kg", metalicos.Sum(m => m.Quantidade));
                 linha++;
             }
 
@@ -1930,6 +2077,9 @@ namespace SteelBIM.Services
                     int indiceItem = 1;
                     foreach (ListaBaseLinha item in subsecao.Itens)
                         EscreverLinhaItemLdm(ws, linha++, $"{codigoSubsecao}.{indiceItem++}", item);
+
+                    if (subsecao.Itens.Count > 0)
+                        EscreverLinhaTotalLdm(ws, linha++, $"TOTAL {subsecao.Titulo}", subsecao.Itens[0].Unidade, subsecao.Itens.Sum(i => i.Quantidade));
 
                     linha++;
                 }
@@ -1966,10 +2116,17 @@ namespace SteelBIM.Services
                 .GroupBy(x => new { x.Material, x.TipoPerfil })
                 .OrderBy(x => x.Key.TipoPerfil, StringComparer.CurrentCultureIgnoreCase)
                 .ThenBy(x => x.Key.Material, StringComparer.CurrentCultureIgnoreCase)
-                .Select(x => new ListaBaseLinha(
-                    MontarDescricaoMetalicaBase(x.Key.TipoPerfil, x.Key.Material),
-                    "kg",
-                    x.Sum(y => y.PesoTotalKg)))
+                .Select(x =>
+                {
+                    int qtd = x.Sum(y => y.Quantidade);
+                    double comp = x.Sum(y => y.ComprimentoTotalM);
+                    double peso = x.Sum(y => y.PesoTotalKg);
+                    double kgPorM = comp > 0.0 ? peso / comp : 0.0;
+                    return new ListaBaseLinha(
+                        MontarDescricaoMetalicaRomaneio(x.Key.TipoPerfil, x.Key.Material, qtd, comp, kgPorM),
+                        "kg",
+                        peso);
+                })
                 .ToList();
 
             linhas.AddRange(
@@ -1981,7 +2138,7 @@ namespace SteelBIM.Services
                     .GroupBy(x => x.Material)
                     .OrderBy(x => x.Key, StringComparer.CurrentCultureIgnoreCase)
                     .Select(x => new ListaBaseLinha(
-                        $"CHAPAS E ACESSÓRIOS ({x.Key})",
+                        $"CHAPAS E ACESSÓRIOS ({x.Key}) — {x.Sum(y => y.Quantidade)} un",
                         "kg",
                         x.Sum(y => y.PesoTotalKg))));
 
@@ -2039,17 +2196,26 @@ namespace SteelBIM.Services
         private static string ObterUnidadeFundacaoBase(
             IGrouping<dynamic, ListaMateriaisGrupo> grupo)
         {
-            return grupo.Sum(x => x.PesoTotalKg) > 0.0 ? "kg" : "m³";
+            // Unidade pela base do material: concreto em m³ (nao em kg!), aço em kg.
+            MaterialBaseTipo tipo = grupo.First().MaterialBaseTipo;
+            if (tipo == MaterialBaseTipo.Concreto)
+                return "m³";
+            if (tipo == MaterialBaseTipo.Metalico)
+                return "kg";
+            return grupo.Sum(x => x.VolumeTotalM3) > 0.0 ? "m³" : "kg";
         }
 
         private static double ObterQuantidadeFundacaoBase(
             IGrouping<dynamic, ListaMateriaisGrupo> grupo)
         {
-            double pesoTotal = grupo.Sum(x => x.PesoTotalKg);
-            if (pesoTotal > 0.0)
-                return pesoTotal;
+            MaterialBaseTipo tipo = grupo.First().MaterialBaseTipo;
+            if (tipo == MaterialBaseTipo.Concreto)
+                return grupo.Sum(x => x.VolumeTotalM3);
+            if (tipo == MaterialBaseTipo.Metalico)
+                return grupo.Sum(x => x.PesoTotalKg);
 
-            return grupo.Sum(x => x.VolumeTotalM3);
+            double volume = grupo.Sum(x => x.VolumeTotalM3);
+            return volume > 0.0 ? volume : grupo.Sum(x => x.PesoTotalKg);
         }
 
         private static bool EhCategoriaFundacao(string categoria)
@@ -2071,6 +2237,13 @@ namespace SteelBIM.Services
             return tipo.IndexOf(mat, StringComparison.CurrentCultureIgnoreCase) >= 0
                 ? tipo
                 : $"{tipo} {mat}";
+        }
+
+        // Linha de perfil no padrao romaneio: perfil/bitola + qtd + comprimento total + peso linear.
+        private static string MontarDescricaoMetalicaRomaneio(string tipoPerfil, string material, int qtd, double comprimentoM, double kgPorM)
+        {
+            string baseDesc = MontarDescricaoMetalicaBase(tipoPerfil, material);
+            return $"{baseDesc} — {ListaMateriaisRomaneioFormatter.Sufixo(qtd, comprimentoM, kgPorM)}";
         }
 
         private static string ObterNomeSecaoPlanilha(ListaMateriaisSecaoPlanilha secaoPlanilha)

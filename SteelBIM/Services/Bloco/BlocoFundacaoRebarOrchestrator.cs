@@ -12,7 +12,7 @@ namespace SteelBIM.Services.Bloco
 {
     internal sealed class BlocoFundacaoRebarOrchestrator
     {
-        public Result Execute(UIDocument uidoc, IReadOnlyList<Element> hosts, BlocoFundacaoRebarConfig config)
+        public (Result result, int hostsOk, int totalCriados) Execute(UIDocument uidoc, IReadOnlyList<Element> hosts, BlocoFundacaoRebarConfig config, bool mostrarResumo = true)
         {
             Document doc = uidoc.Document;
             int hostsOk = 0;
@@ -77,18 +77,22 @@ namespace SteelBIM.Services.Bloco
                 tx.Commit();
             }
 
-            uidoc.Selection.SetElementIds(hosts.Select(h => h.Id).ToList());
+            if (mostrarResumo)
+            {
+                uidoc.Selection.SetElementIds(hosts.Select(h => h.Id).ToList());
 
-            string resumo =
-                $"Blocos processados: {hosts.Count}\n" +
-                $"Blocos com sucesso: {hostsOk}\n" +
-                $"Armaduras criadas: {totalCriados}";
+                string resumo =
+                    $"Blocos processados: {hosts.Count}\n" +
+                    $"Blocos com sucesso: {hostsOk}\n" +
+                    $"Armaduras criadas: {totalCriados}";
 
-            if (avisos.Count > 0)
-                resumo += "\n\nOcorrencias:\n- " + string.Join("\n- ", avisos.Take(10));
+                if (avisos.Count > 0)
+                    resumo += "\n\nOcorrencias:\n- " + string.Join("\n- ", avisos.Take(10));
 
-            AppDialogService.ShowInfo("Bloco Fundacao - Armaduras", resumo, "Processamento concluido");
-            return hostsOk > 0 ? Result.Succeeded : Result.Failed;
+                AppDialogService.ShowInfo("Bloco Fundacao - Armaduras", resumo, "Processamento concluido");
+            }
+
+            return (hostsOk > 0 ? Result.Succeeded : Result.Failed, hostsOk, totalCriados);
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
+using SteelBIM.Infrastructure;
 
 namespace SteelBIM.Utils
 {
@@ -58,6 +59,30 @@ namespace SteelBIM.Utils
             Windows.Add(new WeakReference<Window>(window));
             ApplyTheme(window, _currentTheme);
             AttachEscapeHandler(window);
+            DefinirOwnerRevit(window);
+        }
+
+        /// <summary>
+        /// Define a janela principal do Revit como Owner (best-effort) — evita a janela WPF aparecer
+        /// ATRAS do Revit / nao bloquear corretamente. Usa o MainWindowHandle do processo (sem
+        /// dependencia de AdWindows). Falha em silencio: parentear nunca deve impedir a janela de abrir.
+        /// </summary>
+        private static void DefinirOwnerRevit(Window window)
+        {
+            try
+            {
+                System.Windows.Interop.WindowInteropHelper helper = new System.Windows.Interop.WindowInteropHelper(window);
+                if (helper.Owner == IntPtr.Zero)
+                {
+                    IntPtr main = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+                    if (main != IntPtr.Zero)
+                        helper.Owner = main;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("[Theme] nao foi possivel definir Owner da janela: {Msg}", ex.Message);
+            }
         }
 
         /// <summary>

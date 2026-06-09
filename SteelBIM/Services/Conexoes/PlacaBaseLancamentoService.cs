@@ -25,7 +25,14 @@ namespace SteelBIM.Services.Conexoes
                 .ToList();
         }
 
-        public PlacaBaseLancamentoResultado Lancar(Document doc, PlacaBaseConfig config)
+        /// <summary>
+        /// Lança placas de base nos pilares de aço apoiados em concreto. Quando
+        /// <paramref name="restringirAosPilares"/> é informado (não-nulo), considera apenas esses
+        /// pilares — usado pelo "Gerar Pórtico" para não colocar placas em pilares antigos do modelo.
+        /// Default null = todos os pilares (comportamento do fluxo interativo, inalterado).
+        /// </summary>
+        public PlacaBaseLancamentoResultado Lancar(Document doc, PlacaBaseConfig config,
+            ICollection<ElementId>? restringirAosPilares = null)
         {
             if (doc == null)
                 throw new ArgumentNullException(nameof(doc));
@@ -40,6 +47,11 @@ namespace SteelBIM.Services.Conexoes
                 throw new InvalidOperationException("O tipo selecionado precisa ser uma família face-based/work plane-based.");
 
             IList<FamilyInstance> pilaresMetalicos = CollectSteelColumns(doc);
+            if (restringirAosPilares != null)
+            {
+                var permitidos = new HashSet<ElementId>(restringirAosPilares);
+                pilaresMetalicos = pilaresMetalicos.Where(p => permitidos.Contains(p.Id)).ToList();
+            }
             IList<Element> apoiosConcreto = CollectConcreteSupports(doc);
 
             var resultado = new PlacaBaseLancamentoResultado

@@ -117,8 +117,6 @@ namespace SteelBIM.Services
                 return;
             }
 
-            double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
-
             Reference rBase;
             try
             {
@@ -161,13 +159,8 @@ namespace SteelBIM.Services
             using (Transaction t = new Transaction(doc, "Criar Treliça completa"))
             {
                 t.Start();
-                AtivarSimbolos(config);
-                doc.Regenerate();
-
                 Level nivel = RevitUtils.GetElementLevel(doc, elBase);
-                // cSup = null -> banzo superior calculado por altura variavel (H/B, duas aguas).
-                criados = GerarVao(doc, nivel, null, cInf, incluirBanzos: true, config, zOffsetFt);
-
+                criados = GerarTrelicaCompletaNoEixo(doc, nivel, cInf, config);
                 t.Commit();
             }
 
@@ -177,11 +170,30 @@ namespace SteelBIM.Services
                 AppDialogService.ShowWarning("Treliça", "Nenhum membro foi criado. Verifique o perfil do banzo e a geometria.", "Nada gerado");
         }
 
+        /// <summary>
+        /// v2.8.14: gera uma treliça COMPLETA (banzos + montantes + diagonais) a partir de uma
+        /// curva-base (banzo inferior), SEM pick e SEM abrir transacao (assume a transacao do
+        /// chamador ja' aberta). Reusado pelo GerarPorticoService para materializar a treliça de
+        /// cada portico. O banzo superior e' calculado por altura variavel (H/B, duas aguas), como
+        /// no modo interativo; banzo superior/inferior podem ter perfis distintos (TrelicaConfig).
+        /// </summary>
+        public int GerarTrelicaCompletaNoEixo(Document doc, Level nivel, Curve eixoInferior, TrelicaConfig config,
+            ICollection<ElementId>? banzosSuperiores = null)
+        {
+            if (eixoInferior == null || config == null)
+                return 0;
+
+            double zOffsetFt = config.ZOffsetMm * RevitUtils.FT_PER_MM;
+            AtivarSimbolos(config);
+            doc.Regenerate();
+            return GerarVao(doc, nivel, null, eixoInferior, incluirBanzos: true, config, zOffsetFt, banzosSuperiores);
+        }
+
         // ---- Geracao de um vao (par de banzos), comum aos dois modos ----
         // cSup != null  -> modo "entre banzos" (curva real selecionada).
         // cSup == null   -> modo "treliça completa": o banzo superior e' calculado a partir do
         //                   inferior + altura variavel (H nas extremidades, B no centro).
-        private int GerarVao(Document doc, Level nivel, Curve? cSup, Curve cInf, bool incluirBanzos, TrelicaConfig config, double zOffsetFt)
+        private int GerarVao(Document doc, Level nivel, Curve? cSup, Curve cInf, bool incluirBanzos, TrelicaConfig config, double zOffsetFt, ICollection<ElementId>? banzosSuperiores = null)
         {
             double lenFt = cInf.Length;
             List<double> intermed = CalcularParametros(config, lenFt);
@@ -255,13 +267,15 @@ namespace SteelBIM.Services
 
                 FamilySymbol? sym = seg.Tipo switch
                 {
-                    TrussMemberKind.Banzo => config.SymbolBanzo,
+                    TrussMemberKind.Banzo => ResolverBanzo(config, seg.De.Chord),
                     TrussMemberKind.Montante => config.SymbolMontante,
                     TrussMemberKind.Diagonal => config.SymbolDiagonal,
                     _ => null
                 };
                 if (sym == null)
                     continue;
+
+                double rotacaoRad = RotacaoDoSegmento(config, seg);
 
                 if (seg.Tipo == TrussMemberKind.Banzo)
                 {
@@ -273,20 +287,30 @@ namespace SteelBIM.Services
                     {
                         for (int k = seg.De.Estacao; k < seg.Para.Estacao; k++)
                         {
-                            if (CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt))
+                            FamilyInstance? fiB = CriarMembro(doc, nivel, sym, arr[k], arr[k + 1], config.ZJustificationValue, zOffsetFt, rotacaoRad);
+                            if (fiB != null)
+                            {
                                 criados++;
+                                banzosSuperiores?.Add(fiB.Id);
+                            }
                         }
                     }
-                    else if (CriarMembro(doc, nivel, sym, arr[seg.De.Estacao], arr[seg.Para.Estacao], config.ZJustificationValue, zOffsetFt))
+                    else
                     {
-                        criados++;
+                        FamilyInstance? fiB = CriarMembro(doc, nivel, sym, arr[seg.De.Estacao], arr[seg.Para.Estacao], config.ZJustificationValue, zOffsetFt, rotacaoRad);
+                        if (fiB != null)
+                        {
+                            criados++;
+                            if (superior)
+                                banzosSuperiores?.Add(fiB.Id);
+                        }
                     }
                     continue;
                 }
 
                 XYZ p1 = PontoDe(seg.De, ptsSup, ptsInf);
                 XYZ p2 = PontoDe(seg.Para, ptsSup, ptsInf);
-                if (CriarMembro(doc, nivel, sym, p1, p2, config.ZJustificationValue, zOffsetFt))
+                if (CriarMembro(doc, nivel, sym, p1, p2, config.ZJustificationValue, zOffsetFt, rotacaoRad) != null)
                     criados++;
             }
 
@@ -346,29 +370,62 @@ namespace SteelBIM.Services
                 config.SymbolDiagonal.Activate();
             if (config.SymbolBanzo != null && !config.SymbolBanzo.IsActive)
                 config.SymbolBanzo.Activate();
+            if (config.SymbolBanzoSuperior != null && !config.SymbolBanzoSuperior.IsActive)
+                config.SymbolBanzoSuperior.Activate();
+            if (config.SymbolBanzoInferior != null && !config.SymbolBanzoInferior.IsActive)
+                config.SymbolBanzoInferior.Activate();
         }
 
-        private bool CriarMembro(
+        /// <summary>
+        /// v2.8.14: perfil do banzo conforme o cordao (superior/inferior), com fallback no
+        /// <see cref="TrelicaConfig.SymbolBanzo"/> quando o especifico nao foi informado.
+        /// </summary>
+        private static FamilySymbol? ResolverBanzo(TrelicaConfig config, TrussChord chord)
+        {
+            if (chord == TrussChord.Superior)
+                return config.SymbolBanzoSuperior ?? config.SymbolBanzo;
+            return config.SymbolBanzoInferior ?? config.SymbolBanzo;
+        }
+
+        /// <summary>v2.8.14: rotacao da secao (rad) conforme o tipo/cordao do segmento. Default 0.</summary>
+        private static double RotacaoDoSegmento(TrelicaConfig config, TrussSegment seg)
+        {
+            double graus;
+            if (seg.Tipo == TrussMemberKind.Banzo)
+                graus = seg.De.Chord == TrussChord.Superior ? config.RotacaoBanzoSuperiorGraus : config.RotacaoBanzoInferiorGraus;
+            else if (seg.Tipo == TrussMemberKind.Montante)
+                graus = config.RotacaoMontanteGraus;
+            else if (seg.Tipo == TrussMemberKind.Diagonal)
+                graus = config.RotacaoDiagonalGraus;
+            else
+                graus = 0.0;
+            return graus * Math.PI / 180.0;
+        }
+
+        private FamilyInstance? CriarMembro(
             Document doc,
             Level nivel,
             FamilySymbol symbol,
             XYZ inicio,
             XYZ fim,
             int zJustificationValue,
-            double zOffsetFt)
+            double zOffsetFt,
+            double rotacaoRad)
         {
             if (inicio == null || fim == null || inicio.DistanceTo(fim) < RevitUtils.EPS)
-                return false;
+                return null;
 
             Line line = Line.CreateBound(inicio, fim);
             FamilyInstance fi = doc.Create.NewFamilyInstance(line, symbol, nivel, StructuralType.Beam);
             if (fi == null)
-                return false;
+                return null;
 
             RevitUtils.SetZJustification(fi, zJustificationValue);
             RevitUtils.SetYZOffsets(fi, 0.0, zOffsetFt);
+            if (Math.Abs(rotacaoRad) > RevitUtils.EPS)
+                RevitUtils.SetSectionRotation(fi, rotacaoRad);
             RevitUtils.DisallowJoins(fi);
-            return true;
+            return fi;
         }
     }
 }

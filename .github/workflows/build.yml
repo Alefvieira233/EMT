@@ -100,6 +100,56 @@ jobs:
         working-directory: SteelBIM
         run: dotnet build SteelBIM.csproj --configuration Release --no-restore
 
+      # v2.8.22: empacota o plugin JA COMPILADO no layout que o Revit espera, pra
+      # baixar e instalar sem rodar INSTALAR.bat nem compilar. O .dll sai do CI
+      # contra os stubs Nice3point (ExcludeAssets=runtime / PrivateAssets=all -> nao
+      # vao no output e nunca carregam; em runtime o Revit usa a RevitAPI.dll real -
+      # ver ADR-005). PNGs sao EmbeddedResource; deps reais (Sentry...) entram via
+      # CopyLocalLockFileAssemblies.
+      - name: Empacotar plugin (pronto para instalar)
+        working-directory: SteelBIM
+        shell: pwsh
+        run: |
+          $bin = "bin/Release/net8.0-windows"
+          if (-not (Test-Path "$bin/SteelBIM.dll")) { throw "SteelBIM.dll nao encontrado em $bin" }
+          $stage = "artifacts/SteelBIM-plugin"
+          New-Item -ItemType Directory -Force -Path "$stage/SteelBIM" | Out-Null
+          Copy-Item "$bin/*" "$stage/SteelBIM/" -Recurse -Force
+          # O .addin do repo e um TEMPLATE com <Assembly>%AppData%\...\SteelBIM.dll</Assembly>.
+          # O Revit NAO expande %AppData% no <Assembly> (trata como pasta literal -> "nao existe").
+          # Para o pacote "baixar e arrastar", reescrevemos para um caminho RELATIVO, que o Revit
+          # resolve em relacao a propria pasta do .addin (Addins\2025\) -> Addins\2025\SteelBIM\SteelBIM.dll.
+          $addinDst = "$stage/SteelBIM.addin"
+          (Get-Content "SteelBIM.addin" -Raw) `
+            -replace '<Assembly>.*?</Assembly>', '<Assembly>SteelBIM\SteelBIM.dll</Assembly>' `
+            | Set-Content -Encoding UTF8 $addinDst
+          @"
+          SteelBIM - instalacao manual (sem compilar)
+
+          1) Feche o Revit 2025.
+          2) Abra o Explorer e cole na barra de endereco:
+               %AppData%\Autodesk\Revit\Addins\2025
+             (crie a pasta '2025' se nao existir).
+          3) Copie para dentro dela os DOIS itens deste pacote, lado a lado:
+               - o arquivo  SteelBIM.addin
+               - a pasta     SteelBIM\  (contem SteelBIM.dll e dependencias)
+             O resultado deve ficar exatamente:
+               ...\Addins\2025\SteelBIM.addin
+               ...\Addins\2025\SteelBIM\SteelBIM.dll
+          4) Abra o Revit 2025 e confirme a versao em SteelBIM > Sobre.
+
+          Observacao: este SteelBIM.addin usa caminho RELATIVO (SteelBIM\SteelBIM.dll),
+          entao o .addin e a pasta SteelBIM\ precisam ficar JUNTOS na mesma pasta (Addins\2025).
+          "@ | Set-Content -Encoding UTF8 "$stage/LEIA-ME-INSTALACAO.txt"
+
+      - name: Upload plugin artifact (baixavel)
+        uses: actions/upload-artifact@v6
+        with:
+          name: SteelBIM-plugin-${{ github.sha }}
+          path: SteelBIM/artifacts/SteelBIM-plugin/
+          retention-days: 14
+          if-no-files-found: error
+
   build-tests:
     name: Build & Test SteelBIM.Tests
     runs-on: windows-latest

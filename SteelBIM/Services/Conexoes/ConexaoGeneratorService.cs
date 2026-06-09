@@ -82,7 +82,10 @@ namespace SteelBIM.Services.Conexoes
                     }
 
                     if (!symbol.IsActive)
+                    {
                         symbol.Activate();
+                        doc.Regenerate(); // simbolo recem-ativado precisa regenerar antes de NewFamilyInstance
+                    }
 
                     // Colocar a família no ponto de conexão.
                     // CRITICO: nao usar doc.ActiveView.SketchPlane — a maioria das vistas nao tem SketchPlane

@@ -328,6 +328,19 @@ namespace SteelBIM
                 "trelica_small.png"
             );
 
+            // v2.8.14: gerador de galpao completo em 1 clique (pilares + treliça/viga + terças +
+            // contraventamentos + linha de corrente) a partir de uma janela.
+            AddButton(
+                panelEstruturaMetalica,
+                "btnGerarPorticoCompleto",
+                "Projeto\nCompleto",
+                assemblyPath,
+                "SteelBIM.Commands.CmdGerarPorticoCompleto",
+                "Gera um galpão completo (pilares, treliça/viga, terças, contraventamentos e linha de corrente) a partir de uma janela, com 1 clique.",
+                "trelica_large.png",
+                "trelica_small.png"
+            );
+
             // Incorporacao Victor Final (Onda 5): Contraventamento e Placas de Base
             AddButton(
                 panelEstruturaMetalica,
@@ -524,6 +537,20 @@ namespace SteelBIM
                 assemblyPath,
                 "SteelBIM.Commands.PF.CmdBlocoFundacaoArmaduras",
                 "Editor manual completo de armaduras para blocos de fundacao: inferior, superior, lateral, estribos verticais/horizontais e faixa transversal.",
+                "armadura_grid_large.png",
+                "armadura_grid_small.png"
+            );
+
+            // v2.8.21 (Fase 1): comando dedicado que monta a GAIOLA FECHADA do bloco de coroamento
+            // (malha de fundo acima das estacas + estribos perimetrais + malha de topo/pele opcionais),
+            // resolvendo o detalhamento fragmentado ("U soltos").
+            AddButton(
+                panelPfArmaduras,
+                "btnArmaduraCoroamento",
+                "Gaiola\nCoroamento",
+                assemblyPath,
+                "SteelBIM.Commands.PF.CmdArmaduraCoroamento",
+                "Monta a gaiola fechada do bloco de coroamento: malha de fundo acima das estacas, estribos perimetrais que fecham fundo->topo, malha de topo e pele laterais opcionais.",
                 "armadura_grid_large.png",
                 "armadura_grid_small.png"
             );
@@ -894,6 +921,19 @@ namespace SteelBIM
                 "Roda múltiplas regras de validação no modelo (peças sem marca, sem material, perfis sobrepostos, etc.) e gera relatório consolidado.",
                 "broom_large.png",
                 "broom_small.png"
+            );
+
+            // v2.8.26: quantitativo de pintura calculado pela geometria (perimetro x comprimento),
+            // gravado no parametro EMT_Area_Pintura + tabela. Funciona sem material aplicado.
+            AddButton(
+                panelVerificacao,
+                "btnAreaPintura",
+                "Área de\nPintura",
+                assemblyPath,
+                "SteelBIM.Commands.CmdAreaPintura",
+                "Calcula a área de pintura dos perfis metálicos pela geometria (perímetro × comprimento), grava no parâmetro EMT_Area_Pintura e cria a tabela de quantitativo. Funciona mesmo sem material aplicado.",
+                "table_large.png",
+                "table_small.png"
             );
 
             // --- Licença ---

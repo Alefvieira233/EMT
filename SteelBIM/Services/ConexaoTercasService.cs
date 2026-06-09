@@ -248,7 +248,8 @@ namespace SteelBIM.Services
                 IntersectionResult? proj = null;
                 try
                 { proj = v.Curve.Project(ponto); }
-                catch { }
+                catch (Exception ex)
+                { Logger.Warn(ex, "[ConexaoTercas] falha ao projetar ponto na viga"); }
                 double d = proj?.Distance ?? double.MaxValue;
                 if (d < minDist)
                 {

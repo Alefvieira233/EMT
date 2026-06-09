@@ -11,6 +11,294 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
 `docs/audits/SUPER-RELATORIO-2026-05-31.md`. Nota global 7,6/10, **sem P0 ativo**.
 
+**Gerar Projeto Completo (Pórtico) — 2026-06-03:**
+- Nova função-estrela: modela um galpão metálico inteiro com **1 clique** (sem nenhum pick).
+  A pessoa abre uma planta/3D, clica em **Projeto Completo** (aba *SteelBIM | Modelagem*,
+  painel *Estrutura Metálica*), preenche a janela (nº de pórticos, espaçamento, vão, beiral,
+  perfis) e a ferramenta cria pilares + treliça (ou viga) + terças + contraventamentos +
+  linha de corrente + eixos numa **única transação**, seguindo o padrão EMT.
+- Núcleo PURO `Services/Portico/PorticoGeometriaCalculator` (mm; X=comprimento, Y=vão,
+  Z=altura) com **15 testes xUnit** — toda a geometria (estações dos pórticos, pilares, eixo
+  da treliça, terças distribuídas nas águas, X de contraventamento nos vãos de extremidade,
+  tirantes longitudinais) é testada sem Revit. Plano em `docs/PLANO-GERAR-PORTICO.md`.
+- `GerarPorticoService` headless materializa tudo reusando o padrão `CriarMembro`; a treliça
+  de cada pórtico reusa o novo `TrelicaService.GerarTrelicaCompletaNoEixo` (entry sem-pick e
+  sem-transação, duas águas H/B + cumeeira/king-post). `TrelicaConfig` ganhou banzo superior
+  e inferior distintos (fallback no `SymbolBanzo`).
+- Criação de eixos (grid A-G × 1-2) e placas de base são opcionais (esta última atrás de
+  flag, default off). Build Release 0 warnings, `dotnet format` limpo, CI verde.
+- **Lapidação V2 (2026-06-03, pós-validação no Revit)** — plano em `docs/PLANO-GERAR-PORTICO-V2.md`:
+  (R1) **linha de corrente** agora são sag-rods **subindo cada água no meio do vão** (do meio da
+  terça ao meio da terça da cumeeira), no nível das terças — antes saíam longitudinais;
+  (R2) campos **"Nº de X"** (cobertura e pilares) → distribui K vãos contraventados uniformemente;
+  (R3) campo **"Elevação da terça sobre o banzo (mm)"** (default 150) posiciona a terça acima do
+  banzo superior; (R4) campos de **rotação da seção** por tipo (banzo sup/inf, diagonal, montante)
+  aplicados no lançamento (`SetSectionRotation`), preservando o fluxo interativo da treliça
+  (rotação default 0 ⇒ sem alteração). Testes do núcleo puro atualizados/novos.
+- **Lapidação V3 (2026-06-03) — v2.8.15** — plano em `docs/PLANO-GERAR-PORTICO-V3.md`:
+  (C1) **contraventamento de cobertura** deixa de ser 1 X gigante e passa a **1 X a cada N
+  terças** (ancorado nas posições de terça, ladrilhando cada água nos vãos de extremidade) —
+  campo "X a cada (terças)", default 2; pilares seguem com nº de vãos com X vertical;
+  (C2) campo **"Nº fileiras"** de linha de corrente (default 3, distribuídas nos vãos);
+  (C3) opção **"Inserir ligação de terça"** (combo de família "onex") que, após gerar o
+  galpão, insere a conexão em cada cruzamento terça × banzo superior reusando o
+  `ConexaoTercasService` headless (atrás de flag, em try/catch).
+
+- **Fundações + Armaduras (2026-06-04) — v2.8.18** — plano em `docs/PLANO-GERAR-PORTICO-V4.md`:
+  a janela ganha a seção **Fundações** — checkbox "Lançar fundações (sapata sob cada pilar)" +
+  família de fundação (reusa `PfFoundationPlacementService` headless, que posiciona uma sapata sob
+  cada pilar) e checkbox **"Armar fundações"** (opt-in, best-effort): após criar as sapatas, arma
+  as que aceitam armadura reusando `BlocoFundacaoRebarOrchestrator` (overload silencioso novo,
+  sem popup/seleção — caminho interativo "Armaduras Bloco" preservado), checando `CanHostRebar`
+  por fundação e reportando "X armadas / Y puladas". Também: **pilar central** opcional (Onda P)
+  e **ajuste fino da ligação de terça** (offset Z/lateral + inverter face, Onda O).
+
+- **Contrav. cobertura distribuível + correção da armadura de fundação (2026-06-04) — v2.8.19:**
+  (1) novo campo **"Contrav. cobertura em:"** (Só extremidades / Extremidades + centro / Todos os
+  vãos) — antes o contraventamento de cobertura ficava fixo nas extremidades; agora distribui os
+  vãos via `DistribuirVaos` (2 / 4 / todos). (2) **Armadura de fundação agora SAI** — corrigido bug
+  em que a config ia com `BarTypeName` vazio e o gerador pulava toda a malha; o serviço resolve um
+  `RebarBarType` real do projeto e monta o **padrão de sapata isolada** (malha inferior X+Y por
+  espaçamento 15 cm, cobrimento 5 cm, gancho 10 cm para cima nas pontas). Diagnóstico claro no
+  resumo quando não dá (família não aceita armadura / sem RebarBarType no projeto).
+
+- **Auditoria full (4 auditores) + correções (2026-06-04) — v2.8.20:** auditoria arquivo-a-arquivo
+  da função "Gerar Projeto Completo" (núcleo puro, serviço Revit, serviços reusados, UI, testes).
+  Veredito: transações corretas, wiring 100% íntegro, zero regressão nos caminhos interativos.
+  Corrigidos: **pilar central em modo viga** (agora alcança a cumeeira, antes parava no beiral);
+  **contagem honesta de armadura** (o orquestrador passa a devolver hostsOk/totalCriados — antes
+  contava sapata sem barras como armada); **restaura a seleção do usuário** após lançar fundações;
+  treliça **valida diagonal/montante** e avisa seções marcadas sem família; **habilitação** dos
+  campos auxiliares segue os checkboxes; treliça só conta quando gera membros; refs de ligação
+  null-safe. Testes novos prendem o Z (linha de corrente, contrav no plano do banzo, terça
+  elevada) e pilar central em viga. Mantida por decisão de engenharia: contrav de cobertura no
+  plano do banzo (terças 150 mm acima).
+
+- **Armadura de Fundação — Coroamento / Gaiola Fechada (Fase 1) — 2026-06-04 — v2.8.21:**
+  plano em `docs/PLANO-ARMADURA-FUNDACAO.md`. Novo comando dedicado **"Gaiola Coroamento"**
+  (aba *SteelBIM | Modelagem*, painel *PF Armaduras*) que troca o detalhamento fragmentado
+  ("U soltos") por uma **gaiola fechada contínua** do bloco de coroamento. A janela coleta os
+  vergalhões da **malha de fundo** (tração, obrigatória), **estribos perimetrais** (fecham
+  fundo→topo), **malha de topo** e **pele lateral** (opcionais) + cobrimento do bloco, desconto
+  do topo da estaca e gancho da malha. O serviço `CoroamentoCageService` aplica **cobrimento
+  efetivo** nas longitudinais (cobrimento do bloco + Ø do estribo), posiciona a malha de fundo
+  **acima das estacas embutidas** (`OffsetZ = TopoEstacaEmbutidoCm`) com **gancho para cima** nas
+  pontas, e orquestra os serviços de armadura de bloco existentes (overload silencioso, sem
+  popup) — o caminho interativo "Armaduras Bloco" continua intacto. Fases 2 (arranque do pilar)
+  e 3 (viga baldrame ancorada) virão após validação no Revit.
+
+- **CI publica o plugin compilado como artefato baixável — 2026-06-04:** o job
+  `Build SteelBIM (Release)` agora empacota o `SteelBIM.dll` já compilado + dependências +
+  `SteelBIM.addin` (no layout `Addins\2025\`) e o sobe como artefato **`SteelBIM-plugin-<sha>`**
+  (retenção 14 dias) com um `LEIA-ME-INSTALACAO.txt`. Permite **instalar sem compilar nem rodar
+  o `INSTALAR.bat`**: baixar o zip do run verde, extrair em `%AppData%\Autodesk\Revit\Addins\2025\`
+  e abrir o Revit. O `.dll` é compilado contra os stubs Nice3point (reference-only,
+  `ExcludeAssets=runtime` — não carregam; em runtime o Revit usa a `RevitAPI.dll` real, ADR-005).
+
+- **Auditoria 10/10 do "Gerar Projeto Completo (Pórtico)" — 2026-06-04 — v2.8.22:** auditoria
+  file-a-file em 4 frentes (núcleo puro, orquestrador Revit, janela WPF, serviços reusados). Notas
+  iniciais 8.5/8.5/8.5/9, **zero P0**, caminho interativo da treliça confirmado sem regressão.
+  Correções aplicadas:
+  - **Núcleo puro:** guarda de entrada agora rejeita `AlturaPilarMm<=0` e alturas de cobertura
+    negativas (modelo degenerado); `PosicoesTercasMeiaAgua` ficou auto-defensiva contra espaçamento
+    de terça ≤ 0 (evita `(int)NaN`); `ElevacaoTercasMm` negativa é clampada a 0; constantes mágicas
+    `2`/`4` de `VaosContravCobertura` extraídas e nomeadas.
+  - **Orquestrador:** valida cedo a falta de perfil de banzo (treliça) / viga antes de gerar
+    "0 membros" silenciosos; mensagem da armadura de fundação separa as duas causas (família sem
+    suporte vs. sem barras geradas); ligação de terça pulada em modo viga/sem terça agora explica o
+    motivo no resumo e no log; **placas de base restritas aos pilares recém-criados** (não mexem em
+    pilares antigos do modelo — novo parâmetro opcional em `PlacaBaseLancamentoService.Lancar`, fluxo
+    interativo inalterado).
+  - **Janela:** validação numérica de faixa (espaçamentos, vão, alturas, divisões, quantidades)
+    com aviso em vez de fallback silencioso, incluindo `B≥H`; botões com `IsDefault`/`IsCancel`
+    (Enter gera, ESC cancela); tooltips em H/B e nas rotações inferior/diagonal/montante.
+  - **Testes:** +9 casos de borda no núcleo puro (espaçamento de terça > água, `s/w/hp` inválidos,
+    alturas negativas, elevação negativa clampada, coplanaridade linha-corrente×terça no beiral,
+    `ExtremidadesECentro` em galpão curto, quantidades 0).
+
+- **Contraventamento de pilares com distribuição (simétrico à cobertura) — 2026-06-04 — v2.8.23:**
+  o contraventamento dos pilares passa a ter o mesmo seletor de **distribuição** da cobertura
+  (Só extremidades / Extremidades + centro / Todos os vãos), no lugar do antigo "nº de vãos com X"
+  — são o mesmo eixo (quais vãos recebem o X), então foram unificados como na cobertura. Enum
+  `DistribuicaoContravCobertura` generalizado para `DistribuicaoContrav` (serve cobertura e pilares);
+  novo campo `DistribuicaoContravPilares`; janela ganha o combo "Distribuição (pilares)". Testes do
+  núcleo puro atualizados (distribuição de pilares Extremidades/Centro/Todos = 8/16/24 X em N=7).
+
+- **Ajustes finos: linha de corrente + terças nos montantes — 2026-06-04 — v2.8.24:**
+  - **Linha de corrente** agora significa "**N linhas no comprimento**": divide o comprimento do
+    galpão em (N+1) partes e lança N linhas nos pontos interiores (2 → terços L/3 e 2L/3, 3 →
+    quartos), cada uma subindo a água do beiral à cumeeira. Antes o número selecionava *vãos*
+    (1 por vão), então com poucos pórticos "2 virava 1". Agora **N = N linhas** sempre.
+  - **Terças sobre os montantes:** em treliça, as terças passam a cair exatamente sobre os
+    montantes. O nº de painéis da treliça é derivado do **espaçamento-alvo das terças** (helper puro
+    `PaineisTrelica`, sempre par → nó na cumeeira, sem painel curto) e usado para montantes **e**
+    terças — distribuição uniforme em planta na faixa usual 1,5–1,9 m. O campo "Divisões da treliça"
+    passa a ser usado só quando as terças estão desligadas (tooltips atualizados).
+  - Testes do núcleo puro atualizados/novos (linha de corrente nos terços; `PaineisTrelica` par;
+    terças com espaçamento uniforme alinhado aos montantes).
+
+- **Terças acompanham a inclinação da água (automático) — 2026-06-04 — v2.8.25:** cada terça
+  passa a ser lançada já com a rotação da seção igual à inclinação da água (banzo superior),
+  calculada pela geometria (`InclinacaoTercaRad`: β = atan2(rise, meia-largura); água 1 +β, água 2
+  −β, cumeeira/água plana 0). **Sem pedir ângulo ao usuário** — é derivado do vão e das alturas
+  H/B (treliça) ou da cumeeira (viga). `CriarBarra` ganhou parâmetro opcional de rotação (default 0,
+  demais membros inalterados). Testes puros do ângulo (águas opostas simétricas, banzos paralelos 0).
+
+- **Quantitativo de Área de Pintura (novo comando) — 2026-06-04 — v2.8.26:** novo botão
+  **"Área de Pintura"** (aba *SteelBIM | Detalhamento*, painel *Verificação*) que calcula a área de
+  pintura dos perfis metálicos (vigas + pilares) **pela geometria** (soma das faces do sólido,
+  descontando as faces de topo das barras + 5% para parafusos/folgas) — **funciona mesmo sem
+  material aplicado**, resolvendo a causa-raiz do "Material:Área = 0". Grava num parâmetro de
+  projeto **`EMT_Area_Pintura`** (tipo Área, instância, criado automaticamente nas categorias
+  estruturais) e cria/atualiza a **tabela** de quantitativo (ViewSchedule por categoria). A área
+  total aparece no resumo do comando. Núcleo de cálculo puro (`PinturaFormula`) com testes xUnit
+  (classificação de face de topo, desconto de topos + percentual, clamps). Reúsa
+  `EngineerGeometry.GetAllSolidsFine` e o padrão de criação de parâmetro de `PlanoMontagemService`.
+
+- **Auditoria completa + hardening cirúrgico (5 revisores) — 2026-06-04 — v2.8.27:** auditoria
+  file-a-file do plugin inteiro (transações/Revit API, comandos/UI, lógica pura/testes, padrões/
+  dead-code, segurança/build). **Zero P0.** Relatório em `docs/AUDITORIA-2026-06-04.md`. Aplicado só
+  o que **soma e é zero-regressão**:
+  - **Transações (P1, bug real):** `doc.Regenerate()` após `FamilySymbol.Activate()` antes de
+    `NewFamilyInstance`/`ViewSheet.Create` em `ConexaoGeneratorService`, `PrancharVistasService`,
+    `AutoVistaService`, `DiagramaMontagemService` (corrige falha intermitente na 1ª vez que a
+    família/title block é usada na sessão). Guard `DistanceTo < EPS` em `TravamentoService` (evita
+    rollback do lote por linha degenerada).
+  - **Lógica pura extraída + testes:** `GuardaCorpoCalculo` (segmentos, alturas de travessa) e
+    `EscadaCalculo` (degraus, Blondel 63–65 cm, inclinação) — serviços delegam (1:1). +30 testes
+    novos (incl. edge cases de `OrdenacaoNatural`, `EtapaMontagemParser` overflow, `NumberParsing`,
+    `CotarPecaFabricacaoConfig`).
+  - **Limpeza:** removido `Infrastructure/Constants.cs` (126 linhas, 0 referências); `catch {}` vazio
+    de `PfEstacaRebarWindow` ganhou `Logger.Warn`.
+  - **Deixado de fora (documentado):** Owner das janelas WPF, `MessageBox`→`AppDialogService` na
+    licença, `#nullable enable` em lote, `gitleaks` bloqueante — exigem validação no Revit ou são
+    processo/infra. `LicenseSecretProvider` mantém `Console` de propósito (linkado no EmtKeyGen, sem
+    Logger no contexto — trocar quebraria o build).
+
+- **Ajustes V5 — Onda 1 (placa de base + honestidade) — 2026-06-04 — v2.8.28:** plano em
+  `docs/PLANO-AJUSTES-PORTICO-V5.md`.
+  - **Placa de base agora SAI:** a causa de "não funcionou" era de ordem — as placas eram lançadas
+    **antes** das fundações, e a placa só assenta onde há concreto/apoio abaixo do pilar. Reordenado:
+    **fundações → armadura → placas de base**. Mensagem honesta no resumo quando 0 placas
+    ("nenhum pilar tem apoio de concreto abaixo — ligue 'Lançar fundações'").
+  - **Linha de corrente:** confirmado que o núcleo puro já gera N fileiras corretamente (testado:
+    N=2 → L/3 e 2L/3) e o serviço cria 1 barra por segmento — o "2 vira 1" relatado era versão
+    instalada antiga. Resumo agora é honesto: "Linha de corrente: X barra(s) em N fileira(s)".
+
+- **Ajustes V5 — Onda 2 (terça inverter abertura + ponto de referência) — 2026-06-04 — v2.8.29:**
+  - **Inverter abertura das terças:** novo checkbox "Inverter abertura das terças" (seção Terças).
+    A terça já assenta na inclinação da água automaticamente; o checkbox troca o lado da abertura do
+    perfil U (acompanhar a subida ou a descida da água). `InclinacaoTercaRad` nega o sinal mantendo a
+    magnitude; testes puros cobrem os dois sentidos.
+  - **Ponto de referência (clique) para posicionar o pórtico:** ao gerar, o usuário clica um ponto
+    (com snap em linhas/eixos/objetos; clicar em vazio também vale) e o galpão é inserido a partir
+    dele; **ESC = origem do projeto** (comportamento anterior, zero regressão). O offset X/Y é somado
+    em `ParaXYZ` e em `CriarEixos` (Z continua relativo ao nível).
+
+- **Ajustes V5 — Onda 3 (chapa no topo do pilar) — 2026-06-04 — v2.8.30:** nova seção
+  **"Ligação pilar ↔ treliça"** na janela do pórtico: checkbox "Inserir chapa no topo do pilar
+  (pilar → chapa → treliça)" + dimensões editáveis (espessura/largura/comprimento, defaults
+  9,5 / 200 / 200 mm). Cria uma **chapa genérica** no topo de cada pilar via DirectShape
+  (opção B do plano — **não exige família carregada**, "só marcar e funciona"). Best-effort
+  (try/catch, contagem honesta no resumo "Chapas no topo do pilar: N"), dentro da transação
+  principal. (Opção A — família de chapa carregável escolhida pelo usuário — fica documentada no
+  `docs/PLANO-AJUSTES-PORTICO-V5.md` como evolução futura.)
+
+- **Lista de Materiais — Onda 1 (terças e contraventamento voltam à lista) — 2026-06-04 — v2.8.31:**
+  plano em `docs/PLANO-LISTA-MATERIAIS-PRO.md`. Causa de "faltou terças e contraventamento": a seção
+  metálica da planilha só incluía perfis com material classificado como metálico e peso > 0 — perfis
+  **sem material atribuído** (nome "U150x65" não contém "aço") caíam em "Outro" com peso 0 e
+  **sumiam**. Corrigido: `ListaMateriaisPesoCalc.InferirBase` ganhou `isPerfilEstrutural` (default
+  false, retrocompatível) e `InferirMaterialBaseTipo` trata viga/terça/contrav/pilar metálico/perfil
+  de conexão **sem material como aço por padrão** → entram na lista com peso (densidade padrão 7850
+  quando não há kg/m). Testes puros novos. (Ondas 2–4 — planilha profissional, fundação/chapas,
+  escopo — no plano.)
+
+- **Lista de Materiais — Onda 2 (totais por seção) — 2026-06-04 — v2.8.32:** a Planilha Base ganha
+  **linhas de TOTAL** ao fim de cada seção — **TOTAL ESTRUTURA DE CONCRETO (m³)** e **TOTAL ESTRUTURA
+  METÁLICA (kg)** — em negrito com fundo cinza, no padrão de lista de material de escritório. A seção
+  metálica já lista o peso por perfil/bitola; agora soma o total geral. Adição puramente aditiva
+  (novo helper `EscreverLinhaTotalLdm`), sem mexer nas abas Detalhe/Resumo.
+
+- **Lista de Materiais — Onda 3 (fundação em m³ + chapas DirectShape) — 2026-06-04 — v2.8.33:**
+  - **Fundação saía em kg** (ex.: "200.000 kg") porque a unidade priorizava peso sobre volume —
+    agora a unidade segue a base do material: **concreto → m³**, aço → kg (`ObterUnidadeFundacaoBase`
+    / `ObterQuantidadeFundacaoBase` usam `MaterialBaseTipo`).
+  - **Chapas criadas pela ferramenta** (DirectShape, ex.: a chapa de topo do pilar) passam a entrar
+    na lista como chapa/acessório metálico (seção "CHAPAS E ACESSÓRIOS"), sob a flag "Incluir
+    chapas/conexões". Inclusão **precisa**: só `OST_GenericModel` que sejam `DirectShape` — evita
+    poluir a lista com modelos genéricos carregáveis.
+
+- **Lista de Materiais — Onda 4 (romaneio por perfil + escopo) — 2026-06-04 — v2.8.34:** fecha o
+  plano da Lista de Materiais.
+  - **Cada perfil metálico** na Planilha Base agora mostra, no padrão romaneio:
+    **Qtd · Comprimento total (m) · Peso linear (kg/m)** na descrição, além do **Peso total (kg)** na
+    coluna de quantidade (ex.: "U150x65x4,76 (aço) — 24 un · 360,0 m · 11,2 kg/m"). Chapas/acessórios
+    também mostram a quantidade.
+  - **Escopo padrão = Modelo inteiro** (antes "Vista ativa") — evita perder silenciosamente
+    elementos fora da vista ativa ao exportar.
+
+- **Auditoria 2026-06-05 — Onda 1 (correções seguras) — v2.8.35:** plano em
+  `docs/AUDITORIA-2026-06-05.md`.
+  - **Regressão corrigida:** pilar de concreto sem material não vira mais aço na lista (removido
+    `Pilares` do default-aço; viga/terça/contrav/perfil de conexão seguem como aço). Teste novo.
+  - **CotasService:** `FailureHandlingHelper.SwallowWarnings` nas 3 transações de cota (evita diálogo
+    modal abortar a cotagem em lote).
+  - **AreaPinturaService:** restaura `SharedParametersFilename` sempre (mesmo vazio) + null-check no
+    `OpenSharedParameterFile` (evita estado global pendurado / NRE silenciosa).
+  - **Lista de materiais:** linha **TOTAL por subseção de fundação**; romaneio por perfil extraído
+    para helper puro `ListaMateriaisRomaneioFormatter` (cultura pt-BR explícita, omite "kg/m" quando
+    comprimento 0) + testes.
+  - **Pórtico:** `LetraEixo` agora é base-26 real (A..Z, AA, AB… — antes duplicava acima de 26
+    pórticos); guarda `DirectShape.IsValidCategoryId` antes de criar a chapa; variável morta `nVaos`
+    removida.
+  - **Observabilidade:** `catch {}` vazios viram `Logger.Warn` em `ConexaoTercasService` (projeção) e
+    `CoroamentoCageService` (diâmetro do estribo).
+
+- **Auditoria 2026-06-05 — Onda 2 (limpezas seguras) — v2.8.36:**
+  - **ConexaoConfigWindow:** acaba a **perda silenciosa de sub-config** — se um bloco (chapa de
+    ponta/cantoneira/gusset) for preenchido parcialmente ou com valor inválido, agora avisa e
+    cancela em vez de gerar a conexão sem a chapa; bloco totalmente vazio continua opcional.
+  - **`ObterNomePerfil` duplicado** (TagearTrelicaService ≡ IdentificarPerfilService) extraído para
+    `PerfilNomeResolver`; ambos delegam (fonte única).
+  - **Item 12 (1e-9 → RevitUtils.EPS) deferido:** a maioria dos literais está em helpers PUROS
+    linkados nos testes; usar `RevitUtils.EPS` (Revit-bound) quebraria a compilação do projeto de
+    testes. Será feito por-arquivo só nos Revit-bound, com validação.
+
+- **Auditoria 2026-06-05 — Onda 3 (decisões do usuário) — v2.8.37:**
+  - **Chapa de topo do pilar** agora **assenta no topo** (extrusão para baixo: topo da chapa = topo
+    do pilar), em vez de crescer para cima invadindo a treliça.
+  - **Janelas WPF** recebem o **Owner do Revit** (best-effort via MainWindowHandle do processo, com
+    try/catch) — corrige "janela aparece atrás do Revit". Aplicado no ponto único
+    `RevitWindowThemeService.Attach` (todas as janelas herdam).
+  - **Lista de materiais:** DirectShape genérico só entra se o **nome contiver "chapa"/"placa"**
+    (evita capturar sólidos auxiliares).
+  - **Licença:** `MessageBox` do aviso de atualização trocado por `AppDialogService.ShowConfirmation`
+    (conformidade com o padrão de diálogos).
+  - **Mantidos por decisão de engenharia (não alterados às cegas):** sinal da inclinação da terça
+    (sem defeito confirmado; o checkbox "Inverter abertura das terças" já permite ajustar) e a área
+    de pintura (mantida como superfície desenvolvida; união booleana seria frágil e não resolveria
+    faces internas) — ambos a validar no Revit.
+
+- **Auditoria 2026-06-05 — Onda 4 (romaneio "padrão de escritório") — v2.8.38:**
+  - Nova aba **"Romaneio Metálico"** na exportação (quando "Perfis lineares" está marcado): **colunas
+    dedicadas** — Item · Perfil/Bitola · Material · Qtd · Comp. total (m) · Peso linear (kg/m) · Peso
+    total (kg) — um perfil por linha, seção de **chapas/acessórios** (qtd + peso) e linha **TOTAL
+    AÇO**. Abordagem **aditiva**: não altera a Planilha Base, o Detalhe, o Resumo nem o template
+    `ModeloLDM.xlsx` (zero risco de regressão).
+  - Pendente (follow-up menor): subdividir parafusos por **bitola/comprimento** e romaneio por
+    **marca** de fabricação (os dados de marca já existem na aba Detalhe).
+
+- **Escada — orientação das longarinas (pedido do Victor) — v2.8.39:**
+  - As **vigas laterais (perfil U)** saíam com a **boca para dentro** (longarinas espelhadas com
+    rotação 0°/180°), invadindo a largura útil. Agora saem com a **boca para fora** (180°/0°).
+  - As longarinas saíam **centradas** no eixo (±largura/2 = fim do degrau), comendo meia espessura do
+    perfil de cada lado. Agora cada longarina é **deslocada para fora por meia espessura do perfil**,
+    encostando a **face interna no fim do degrau** → a largura livre passa a ser a largura
+    configurada. A espessura é medida pela geometria real (projeção dos sólidos na direção
+    transversal), sem depender de parâmetro/família; o deslocamento é sempre para fora (nunca piora)
+    e, se a medição falhar, mantém o comportamento anterior. **Validar no Revit.**
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).

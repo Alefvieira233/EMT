@@ -36,7 +36,7 @@ namespace SteelBIM.Commands.PF
                 return Result.Cancelled;
 
             BlocoFundacaoRebarConfig config = window.BuildConfig();
-            return new BlocoFundacaoRebarOrchestrator().Execute(uidoc, hosts, config);
+            return new BlocoFundacaoRebarOrchestrator().Execute(uidoc, hosts, config).result;
         }
     }
 }

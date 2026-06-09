@@ -12,7 +12,7 @@ namespace SteelBIM.Models
 
     public sealed class ExportarListaMateriaisConfig
     {
-        public ListaMateriaisEscopo Escopo { get; set; } = ListaMateriaisEscopo.VistaAtiva;
+        public ListaMateriaisEscopo Escopo { get; set; } = ListaMateriaisEscopo.ModeloInteiro;
         public bool IncluirVigas { get; set; } = true;
         public bool IncluirPilares { get; set; } = true;
         public bool IncluirFundacoes { get; set; } = true;

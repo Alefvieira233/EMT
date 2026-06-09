@@ -54,12 +54,19 @@ namespace SteelBIM.Views
                     GerarFurosDstv = chkGerarFurosDstv.IsChecked == true
                 };
 
-                // Chapa de Ponta
-                if (NumberParsing.TryParseDouble(txtCPEspessura.Text, out double espCP) &&
-                    NumberParsing.TryParseDouble(txtCPLargura.Text, out double largCP) &&
-                    NumberParsing.TryParseDouble(txtCPAltura.Text, out double altCP) &&
-                    int.TryParse(txtCPNumParafusos.Text, out int numCP))
+                // Chapa de Ponta — bloco vazio = opcional (pulado); preenchido parcial/invalido = erro.
+                if (AlgumPreenchido(txtCPEspessura.Text, txtCPLargura.Text, txtCPAltura.Text, txtCPNumParafusos.Text))
                 {
+                    if (!(NumberParsing.TryParseDouble(txtCPEspessura.Text, out double espCP) &&
+                          NumberParsing.TryParseDouble(txtCPLargura.Text, out double largCP) &&
+                          NumberParsing.TryParseDouble(txtCPAltura.Text, out double altCP) &&
+                          int.TryParse(txtCPNumParafusos.Text, out int numCP)))
+                    {
+                        AppDialogService.ShowWarning("Configuração de Conexão",
+                            "Chapa de ponta: preencha espessura, largura, altura e nº de parafusos com números válidos.",
+                            "Dados inválidos");
+                        return null;
+                    }
                     config.ChapaPonta = new ConfiguracaoChapaPonta
                     {
                         EspessuraMm = espCP,
@@ -70,11 +77,18 @@ namespace SteelBIM.Views
                 }
 
                 // Dupla Cantoneira
-                if (NumberParsing.TryParseDouble(txtDCEspessura.Text, out double espDC) &&
-                    NumberParsing.TryParseDouble(txtDCLargura.Text, out double largDC) &&
-                    NumberParsing.TryParseDouble(txtDCAltura.Text, out double altDC) &&
-                    int.TryParse(txtDCNumParafusos.Text, out int numDC))
+                if (AlgumPreenchido(txtDCEspessura.Text, txtDCLargura.Text, txtDCAltura.Text, txtDCNumParafusos.Text))
                 {
+                    if (!(NumberParsing.TryParseDouble(txtDCEspessura.Text, out double espDC) &&
+                          NumberParsing.TryParseDouble(txtDCLargura.Text, out double largDC) &&
+                          NumberParsing.TryParseDouble(txtDCAltura.Text, out double altDC) &&
+                          int.TryParse(txtDCNumParafusos.Text, out int numDC)))
+                    {
+                        AppDialogService.ShowWarning("Configuração de Conexão",
+                            "Dupla cantoneira: preencha espessura, largura, altura e nº de parafusos com números válidos.",
+                            "Dados inválidos");
+                        return null;
+                    }
                     config.Cantoneira = new ConfiguracaoCantoneira
                     {
                         EspessuraMm = espDC,
@@ -85,11 +99,18 @@ namespace SteelBIM.Views
                 }
 
                 // Chapa Gusset
-                if (NumberParsing.TryParseDouble(txtGSEspessura.Text, out double espGS) &&
-                    NumberParsing.TryParseDouble(txtGSLargura.Text, out double largGS) &&
-                    NumberParsing.TryParseDouble(txtGSAltura.Text, out double altGS) &&
-                    NumberParsing.TryParseDouble(txtGSAngulo.Text, out double angGS))
+                if (AlgumPreenchido(txtGSEspessura.Text, txtGSLargura.Text, txtGSAltura.Text, txtGSAngulo.Text))
                 {
+                    if (!(NumberParsing.TryParseDouble(txtGSEspessura.Text, out double espGS) &&
+                          NumberParsing.TryParseDouble(txtGSLargura.Text, out double largGS) &&
+                          NumberParsing.TryParseDouble(txtGSAltura.Text, out double altGS) &&
+                          NumberParsing.TryParseDouble(txtGSAngulo.Text, out double angGS)))
+                    {
+                        AppDialogService.ShowWarning("Configuração de Conexão",
+                            "Chapa gusset: preencha espessura, largura, altura e ângulo com números válidos.",
+                            "Dados inválidos");
+                        return null;
+                    }
                     config.Gusset = new ConfiguracaoGusset
                     {
                         EspessuraMm = espGS,
@@ -111,6 +132,18 @@ namespace SteelBIM.Views
                     "Erro de validação");
                 return null;
             }
+        }
+
+        // True se ao menos um campo do bloco foi preenchido (para distinguir "bloco opcional vazio"
+        // de "bloco preenchido com valor invalido" — este ultimo vira erro, nao silencio).
+        private static bool AlgumPreenchido(params string?[] campos)
+        {
+            foreach (string? c in campos)
+            {
+                if (!string.IsNullOrWhiteSpace(c))
+                    return true;
+            }
+            return false;
         }
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)

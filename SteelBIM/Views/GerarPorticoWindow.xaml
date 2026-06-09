@@ -1,0 +1,277 @@
+<Window x:Class="SteelBIM.Views.GerarPorticoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Gerar Projeto Completo (Pórtico)"
+        Width="600"
+        Height="780"
+        MinWidth="560" MinHeight="600" MaxHeight="950"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SteelBIM;component/Views/Themes/AppTheme.Base.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel Margin="12">
+        <Border DockPanel.Dock="Bottom" Margin="0 12 0 0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnCancel" Content="Cancelar" Width="90" Margin="0 0 8 0" IsCancel="True" Style="{StaticResource SecondaryActionButton}"/>
+                <Button x:Name="btnOk" Content="Gerar Pórtico Completo" Width="200" IsDefault="True" Style="{StaticResource PrimaryActionButton}"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0 0 6 0">
+
+                <GroupBox Header="Geometria do galpão" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0" Content="Nº de pórticos:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtNumPorticos" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2" Text="7"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Espaçamento entre pórticos (mm):" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtEspacamento" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2" Text="5000"/>
+
+                        <Label Grid.Row="2" Grid.Column="0" Content="Vão do galpão / largura (mm):" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtVao" Grid.Row="2" Grid.Column="1" Margin="6 2 0 2" Text="15010"/>
+
+                        <Label Grid.Row="3" Grid.Column="0" Content="Altura do pilar / beiral (mm):" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtAlturaPilar" Grid.Row="3" Grid.Column="1" Margin="6 2 0 2" Text="4000"/>
+
+                        <TextBlock x:Name="lblResumoGeo" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 8 0 0" FontStyle="Italic" Text=""/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Pilares" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Row="0" Grid.Column="0" Content="Perfil do pilar:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbPilar" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
+                        <CheckBox x:Name="chkPilarCentral" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Pilar central (no meio do vão, em cada pórtico)" Margin="0 6 0 2"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Cobertura" Padding="10" Margin="0 0 0 10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
+                            <RadioButton x:Name="rbTrelica" Content="Treliça" IsChecked="True" Margin="0 0 16 0"/>
+                            <RadioButton x:Name="rbViga" Content="Viga metálica"/>
+                        </StackPanel>
+
+                        <Grid x:Name="painelTrelica" Margin="0 4 0 0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Label Grid.Row="0" Grid.Column="0" Content="Tipo de treliça:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbPadrao" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
+                            <Label Grid.Row="0" Grid.Column="2" Content="Divisões:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                            <TextBox x:Name="txtDivisoes" Grid.Row="0" Grid.Column="3" Margin="0 2 0 2" Text="8" ToolTip="Nº de painéis da treliça. Com terças ligadas, é derivado do espaçamento das terças (montantes alinhados às terças); usado só quando as terças estão desligadas."/>
+
+                            <Label Grid.Row="1" Grid.Column="0" Content="Altura extremidade H (mm):" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtH" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2" Text="600" ToolTip="H = altura da treliça no apoio (beiral), em mm. B &gt; H gera duas águas."/>
+                            <Label Grid.Row="1" Grid.Column="2" Content="Central B:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                            <TextBox x:Name="txtB" Grid.Row="1" Grid.Column="3" Margin="0 2 0 2" Text="1600" ToolTip="B = altura da treliça na cumeeira, em mm. Deve ser ≥ H."/>
+
+                            <Label Grid.Row="2" Grid.Column="0" Content="Perfil banzo superior:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbBanzoSup" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
+
+                            <Label Grid.Row="3" Grid.Column="0" Content="Perfil banzo inferior:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbBanzoInf" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
+
+                            <Label Grid.Row="4" Grid.Column="0" Content="Perfil diagonal:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbDiagonal" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
+
+                            <Label Grid.Row="5" Grid.Column="0" Content="Perfil montante:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbMontante" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
+
+                            <Label Grid.Row="6" Grid.Column="0" Content="Rotação banzo sup (°):" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtRotBanzoSup" Grid.Row="6" Grid.Column="1" Margin="6 2 0 2" Text="0" ToolTip="Ex.: 270 para o perfil U ficar na posição correta."/>
+                            <Label Grid.Row="6" Grid.Column="2" Content="inf (°):" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                            <TextBox x:Name="txtRotBanzoInf" Grid.Row="6" Grid.Column="3" Margin="0 2 0 2" Text="0" ToolTip="Rotação da seção do banzo inferior (graus). 0 = sem rotação."/>
+
+                            <Label Grid.Row="7" Grid.Column="0" Content="Rotação diagonal (°):" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtRotDiagonal" Grid.Row="7" Grid.Column="1" Margin="6 2 0 2" Text="0" ToolTip="Rotação da seção das diagonais (graus). 0 = sem rotação."/>
+                            <Label Grid.Row="7" Grid.Column="2" Content="mont (°):" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                            <TextBox x:Name="txtRotMontante" Grid.Row="7" Grid.Column="3" Margin="0 2 0 2" Text="0" ToolTip="Rotação da seção dos montantes (graus). 0 = sem rotação."/>
+                        </Grid>
+
+                        <Grid x:Name="painelViga" Margin="0 6 0 0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Row="0" Grid.Column="0" Content="Perfil da viga:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbViga" Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
+                            <Label Grid.Row="1" Grid.Column="0" Content="Altura da cumeeira (mm):" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtCumeeira" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2" Width="120" HorizontalAlignment="Left" Text="1500"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Terças" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="chkTercas" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Content="Lançar terças" IsChecked="True" Margin="0 0 0 6"/>
+                        <Label Grid.Row="1" Grid.Column="0" Content="Perfil / espaç. (mm):" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+                            <ComboBox x:Name="cmbTerca" Width="290" Margin="6 2 8 2"/>
+                            <TextBox x:Name="txtEspTercas" Width="80" Margin="0 2 0 2" Text="1500" ToolTip="Espaçamento-alvo das terças (mm). Em treliça, as terças caem sobre os montantes: o nº de painéis é ajustado p/ ficar próximo deste valor (faixa usual 1500–1900)."/>
+                        </StackPanel>
+                        <Label Grid.Row="2" Grid.Column="0" Content="Elevação sobre o banzo (mm):" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                            <TextBox x:Name="txtElevTercas" Width="80" Margin="6 2 12 2" Text="150" ToolTip="Eleva a terça acima do banzo superior (ajuste conforme a altura do perfil)."/>
+                            <CheckBox x:Name="chkInverterTerca" Content="Inverter abertura das terças" VerticalAlignment="Center" ToolTip="Inverte o lado da abertura do perfil U da terça (acompanhar a subida ou a descida da água)."/>
+                        </StackPanel>
+                        <CheckBox x:Name="chkLigacaoTerca" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="Inserir ligação de terça (conexão no cruzamento com o banzo)" Margin="0 8 0 4"/>
+                        <Label Grid.Row="4" Grid.Column="0" Content="Perfil da ligação:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbLigacaoTerca" Grid.Row="4" Grid.Column="1" Margin="6 2 0 2"/>
+                        <Label Grid.Row="5" Grid.Column="0" Content="Ajuste ligação Z / lateral (mm):" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal">
+                            <TextBox x:Name="txtLigOffsetZ" Width="70" Margin="6 2 8 2" Text="0" ToolTip="Move a ligação no eixo vertical (Z)."/>
+                            <TextBox x:Name="txtLigOffsetX" Width="70" Margin="0 2 0 2" Text="0" ToolTip="Move a ligação ao longo do eixo da terça (lateral)."/>
+                        </StackPanel>
+                        <CheckBox x:Name="chkLigInverterFace" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Content="Inverter face da ligação (se sair no lado errado)" Margin="0 2 0 2"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Ligação pilar ↔ treliça" Padding="10" Margin="0 0 0 10">
+                    <StackPanel>
+                        <CheckBox x:Name="chkChapaTopo" Content="Inserir chapa no topo do pilar (pilar → chapa → treliça)" Margin="0 0 0 6"
+                                  ToolTip="Cria uma chapa no topo de cada pilar, pelas dimensões abaixo (não precisa de família carregada)."/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Espessura (mm):" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                            <TextBox x:Name="txtChapaEsp" Width="60" Text="9.5" Margin="0 0 12 0"/>
+                            <TextBlock Text="Largura (mm):" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                            <TextBox x:Name="txtChapaLarg" Width="60" Text="200" Margin="0 0 12 0"/>
+                            <TextBlock Text="Comprimento (mm):" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                            <TextBox x:Name="txtChapaComp" Width="60" Text="200"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Contraventamentos" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="230"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="55"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Cobertura: perfil + X a cada N terças + distribuição -->
+                        <CheckBox x:Name="chkContravCob" Grid.Row="0" Grid.Column="0" Content="Plano da cobertura" VerticalAlignment="Center" Margin="0 2 0 4"/>
+                        <ComboBox x:Name="cmbContravCob" Grid.Row="0" Grid.Column="1" Margin="6 2 0 4"/>
+                        <Label Grid.Row="0" Grid.Column="2" Content="X a cada (terças):" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumXCobertura" Grid.Row="0" Grid.Column="3" Margin="0 2 0 4" Text="2" ToolTip="1 X de contraventamento a cada N terças (ex.: 2 ou 3)."/>
+                        <Label Grid.Row="1" Grid.Column="0" Content="Distribuição (cobertura):" VerticalAlignment="Center" Margin="0 2 0 6"/>
+                        <ComboBox x:Name="cmbDistribContravCob" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 6" ToolTip="Em quais vãos lançar o X da cobertura."/>
+                        <!-- Pilares (paredes): perfil + distribuição (mesmo padrão da cobertura) -->
+                        <CheckBox x:Name="chkContravPil" Grid.Row="2" Grid.Column="0" Content="Plano dos pilares (lateral)" VerticalAlignment="Center" Margin="0 2 0 2"/>
+                        <ComboBox x:Name="cmbContravPil" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2"/>
+                        <Label Grid.Row="3" Grid.Column="0" Content="Distribuição (pilares):" VerticalAlignment="Center" Margin="0 2 0 2"/>
+                        <ComboBox x:Name="cmbDistribContravPil" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="6 2 0 2" ToolTip="Em quais vãos lançar o X vertical das paredes."/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Linha de corrente" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="230"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="55"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="chkLinha" Grid.Column="0" Content="Lançar linha de corrente" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbLinha" Grid.Column="1" Margin="6 2 0 2"/>
+                        <Label Grid.Column="2" Content="Nº de linhas:" VerticalAlignment="Center" Margin="8 0 6 0"/>
+                        <TextBox x:Name="txtNumLinhasCorrente" Grid.Column="3" Margin="0 2 0 2" Text="2" ToolTip="Nº de linhas de corrente ao longo do comprimento do galpão: divide o comprimento em (N+1) partes e põe N linhas nos pontos interiores (2 → nos terços, L/3 e 2L/3). Cada linha sobe a água do beiral à cumeeira."/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Fundações" Padding="10" Margin="0 0 0 10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="chkFundacoes" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Content="Lançar fundações (sapata sob cada pilar)" Margin="0 0 0 4"/>
+                        <Label Grid.Row="1" Grid.Column="0" Content="Família da fundação:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbFundacao" Grid.Row="1" Grid.Column="1" Margin="6 2 0 2"/>
+                        <CheckBox x:Name="chkArmaduraFundacao" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Armar fundações (requer família que aceite armadura)" Margin="0 4 0 2"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Extras" Padding="10" Margin="0 0 0 0">
+                    <StackPanel>
+                        <CheckBox x:Name="chkEixos" Content="Criar eixos (grid A-G × 1-2)" IsChecked="True" Margin="0 2 0 4"/>
+                        <CheckBox x:Name="chkPlacas" Content="Lançar placas de base nos pilares" Margin="0 2 0 2"/>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
