@@ -289,6 +289,16 @@ Pós-v2.8.9: auditoria sênior de 4 revisores (2026-05-31) — ver
   - Pendente (follow-up menor): subdividir parafusos por **bitola/comprimento** e romaneio por
     **marca** de fabricação (os dados de marca já existem na aba Detalhe).
 
+- **Escada — orientação das longarinas (pedido do Victor) — v2.8.39:**
+  - As **vigas laterais (perfil U)** saíam com a **boca para dentro** (longarinas espelhadas com
+    rotação 0°/180°), invadindo a largura útil. Agora saem com a **boca para fora** (180°/0°).
+  - As longarinas saíam **centradas** no eixo (±largura/2 = fim do degrau), comendo meia espessura do
+    perfil de cada lado. Agora cada longarina é **deslocada para fora por meia espessura do perfil**,
+    encostando a **face interna no fim do degrau** → a largura livre passa a ser a largura
+    configurada. A espessura é medida pela geometria real (projeção dos sólidos na direção
+    transversal), sem depender de parâmetro/família; o deslocamento é sempre para fora (nunca piora)
+    e, se a medição falhar, mantém o comportamento anterior. **Validar no Revit.**
+
 **Onda 1 (gates de CI / processo) — em andamento:**
 - `.gitignore` bloqueia a chave privada de licença (`license.private.key`/`*.key`) e job
   `secret-guard` no CI (defesa em profundidade — exposição da privada = forja ilimitada).
